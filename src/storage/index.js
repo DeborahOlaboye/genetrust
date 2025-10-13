@@ -1,9 +1,12 @@
 // Main export file for storage components
 // Provides unified interface for all storage functionality
 
-export { IPFSClient } from './ipfs-client.js';
-export { EncryptionManager } from './encryption.js';
-export { StorageManager } from './storage-manager.js';
+import { IPFSClient } from './ipfs-client.js';
+import { EncryptionManager } from './encryption.js';
+import { StorageManager } from './storage-manager.js';
+
+// Re-export for external consumers
+export { IPFSClient, EncryptionManager, StorageManager };
 
 /**
  * Storage Factory - Simplified interface for creating storage components

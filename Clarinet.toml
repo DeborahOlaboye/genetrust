@@ -1,0 +1,43 @@
+[project]
+name = 'genomic-chain-stacks'
+description = ''
+authors = []
+telemetry = true
+cache_dir = './.cache'
+requirements = []
+[contracts.dataset-registry]
+path = 'contracts/genetic-data.clar'
+clarity_version = 3
+epoch = 3.1
+
+[contracts.dataset-registry-trait]
+path = 'contracts/dataset-registry-trait.clar'
+clarity_version = 2
+epoch = 2.5
+
+[contracts.exchange]
+path = 'contracts/exchange.clar'
+clarity_version = 3
+epoch = 3.1
+
+[contracts.attestations]
+path = 'contracts/attestations.clar'
+clarity_version = 3
+epoch = 3.1
+
+[contracts.data-governance]
+path = 'contracts/data-governance.clar'
+clarity_version = 3
+epoch = 3.1
+[repl.analysis]
+passes = ['check_checker']
+
+[repl.analysis.check_checker]
+strict = false
+trusted_sender = false
+trusted_caller = false
+callee_filter = false
+
+[repl.remote_data]
+enabled = false
+api_url = 'https://api.hiro.so'

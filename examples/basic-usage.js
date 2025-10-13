@@ -1,20 +1,20 @@
-// Example demonstrating basic GenomicChain SDK usage
+// Example demonstrating basic GeneTrust SDK usage
 // Shows how to store, retrieve, and trade genetic data
 
-import GenomicChain from '../src/main.js';
+import GeneTrust from '../src/main.js';
 import { Phase2Config } from '../src/config/phase2-config.js';
 
 /**
- * Basic example of using GenomicChain SDK
+ * Basic example of using GeneTrust SDK
  */
 async function basicExample() {
-    console.log('🧬 GenomicChain SDK Basic Example\n');
+    console.log('🧬 GeneTrust SDK Basic Example\n');
 
     try {
         // 1. Initialize SDK with development configuration
-        console.log('1. Initializing GenomicChain SDK...');
+        console.log('1. Initializing GeneTrust SDK...');
         const config = Phase2Config.forEnvironment('development');
-        const genomicChain = GenomicChain.create({ config });
+        const geneTrust = GeneTrust.create({ config });
 
         // Initialize with mock Stacks API (in real usage, use actual Stacks API)
         const mockStacksApi = createMockStacksApi();
@@ -25,7 +25,7 @@ async function basicExample() {
             dataGovernance: { address: 'ST1TESTADDRESS', name: 'data-governance' }
         };
 
-        await genomicChain.initialize(mockStacksApi, contractAddresses);
+        await geneTrust.initialize(mockStacksApi, contractAddresses);
         console.log(' SDK initialized successfully\n');
 
         // 2. Prepare sample genetic data
@@ -116,7 +116,7 @@ async function basicExample() {
             }
         };
 
-        const storageResult = await genomicChain.storeGeneticData(
+        const storageResult = await geneTrust.storeGeneticData(
             sampleGeneticData,
             password,
             storageOptions
@@ -128,7 +128,7 @@ async function basicExample() {
 
         // 4. Retrieve and decrypt genetic data
         console.log('4. Retrieving genetic data...');
-        const retrievalResult = await genomicChain.retrieveGeneticData(
+        const retrievalResult = await geneTrust.retrieveGeneticData(
             storageResult.datasetId,
             password,
             2, // Access level 2 (detailed)
@@ -144,7 +144,7 @@ async function basicExample() {
 
         // 5. Generate zero-knowledge proofs separately
         console.log('5. Generating additional zero-knowledge proofs...');
-        const additionalProofs = await genomicChain.generateProofs(sampleGeneticData, {
+        const additionalProofs = await geneTrust.generateProofs(sampleGeneticData, {
             genePresence: [
                 { targetGene: 'TP53', options: { privacyLevel: 'high' } }
             ],
@@ -165,7 +165,7 @@ async function basicExample() {
 
         // 6. Verify proofs
         console.log('6. Verifying zero-knowledge proofs...');
-        const verificationResults = await genomicChain.verifyProofs(
+        const verificationResults = await geneTrust.verifyProofs(
             additionalProofs,
             {
                 genePresence: [
@@ -197,7 +197,7 @@ async function basicExample() {
             requiresVerification: true
         };
 
-        const listingResult = await genomicChain.createMarketplaceListing(
+        const listingResult = await geneTrust.createMarketplaceListing(
             listingData,
             'ST1SAMPLEOWNER123',
             {
@@ -216,7 +216,7 @@ async function basicExample() {
 
         // 8. Simulate data purchase
         console.log('8. Simulating data purchase...');
-        const purchaseResult = await genomicChain.purchaseGeneticData(
+        const purchaseResult = await geneTrust.purchaseGeneticData(
             listingResult.listingId,
             2, // Access level 2
             'ST1BUYER456',
@@ -230,7 +230,7 @@ async function basicExample() {
 
         // 9. Get SDK status
         console.log('9. Getting SDK status...');
-        const status = await genomicChain.getStatus();
+        const status = await geneTrust.getStatus();
         console.log('✅ SDK Status:');
         console.log(`   Initialized: ${status.initialized}`);
         console.log(`   Environment: ${status.environment}`);
@@ -240,10 +240,10 @@ async function basicExample() {
 
         // 10. Cleanup
         console.log('10. Cleaning up...');
-        await genomicChain.cleanup();
+        await geneTrust.cleanup();
         console.log('✅ Cleanup completed\n');
 
-        console.log('🎉 GenomicChain SDK example completed successfully!');
+        console.log('🎉 GeneTrust SDK example completed successfully!');
 
     } catch (error) {
         console.error('❌ Example failed:', error.message);
@@ -255,16 +255,16 @@ async function basicExample() {
  * Example showing advanced usage patterns
  */
 async function advancedExample() {
-    console.log('🔬 GenomicChain SDK Advanced Example\n');
+    console.log('🔬 GeneTrust SDK Advanced Example\n');
 
     try {
         // Initialize SDK
-        const genomicChain = GenomicChain.create({
+        const geneTrust = GeneTrust.create({
             config: Phase2Config.forEnvironment('development')
         });
 
         const mockStacksApi = createMockStacksApi();
-        await genomicChain.initialize(mockStacksApi, {
+        await geneTrust.initialize(mockStacksApi, {
             geneticData: { address: 'ST1TESTADDRESS', name: 'genetic-data' },
             marketplace: { address: 'ST1TESTADDRESS', name: 'marketplace' },
             verification: { address: 'ST1TESTADDRESS', name: 'verification' },
@@ -280,7 +280,7 @@ async function advancedExample() {
 
         const batchProofs = {};
         for (const dataset of datasets) {
-            batchProofs[dataset.id] = await genomicChain.generateProofs(dataset, {
+            batchProofs[dataset.id] = await geneTrust.generateProofs(dataset, {
                 genePresence: [
                     { targetGene: 'BRCA1', options: { privacyLevel: 'high' } }
                 ]
@@ -290,7 +290,7 @@ async function advancedExample() {
 
         // Demonstrate data format conversion
         console.log('2. Data format conversion...');
-        const vcfData = genomicChain.utils.formatter.toVCF({
+        const vcfData = geneTrust.utils.formatter.toVCF({
             variants: [
                 {
                     chromosome: '1',
@@ -306,7 +306,7 @@ async function advancedExample() {
 
         // Demonstrate cryptographic utilities
         console.log('3. Cryptographic operations...');
-        const dataFingerprint = genomicChain.utils.crypto.createDataFingerprint(
+        const dataFingerprint = geneTrust.utils.crypto.createDataFingerprint(
             { sample: 'genetic data' },
             { includeTimestamp: false }
         );
@@ -368,7 +368,7 @@ function createMockStacksApi() {
 
 // Run examples if this file is executed directly
 if (import.meta.url === `file://${process.argv[1]}`) {
-    console.log('Starting GenomicChain SDK Examples...\n');
+    console.log('Starting GeneTrust SDK Examples...\n');
     
     await basicExample();
     console.log('\n' + '='.repeat(60) + '\n');

@@ -1,0 +1,49 @@
+---
+id: 0
+name: Testnet deployment
+network: testnet
+stacks-node: "https://api.testnet.hiro.so"
+bitcoin-node: "http://blockstack:blockstacksystem@bitcoind.testnet.stacks.co:18332"
+plan:
+  batches:
+    - id: 0
+      transactions:
+        - contract-publish:
+            contract-name: dataset-registry-trait
+            expected-sender: ST2VXH7RRKSAYNMWCVVMD972B7HP3H2QY96V8Q161
+            cost: 5510
+            path: contracts/dataset-registry-trait.clar
+            anchor-block-only: true
+            clarity-version: 2
+      epoch: "2.5"
+    - id: 1
+      transactions:
+        - contract-publish:
+            contract-name: attestations
+            expected-sender: ST2VXH7RRKSAYNMWCVVMD972B7HP3H2QY96V8Q161
+            cost: 121130
+            path: contracts/attestations.clar
+            anchor-block-only: true
+            clarity-version: 3
+        - contract-publish:
+            contract-name: data-governance
+            expected-sender: ST2VXH7RRKSAYNMWCVVMD972B7HP3H2QY96V8Q161
+            cost: 164390
+            path: contracts/data-governance.clar
+            anchor-block-only: true
+            clarity-version: 3
+        - contract-publish:
+            contract-name: dataset-registry
+            expected-sender: ST2VXH7RRKSAYNMWCVVMD972B7HP3H2QY96V8Q161
+            cost: 74350
+            path: contracts/genetic-data.clar
+            anchor-block-only: true
+            clarity-version: 3
+        - contract-publish:
+            contract-name: exchange
+            expected-sender: ST2VXH7RRKSAYNMWCVVMD972B7HP3H2QY96V8Q161
+            cost: 191060
+            path: contracts/exchange.clar
+            anchor-block-only: true
+            clarity-version: 3
+      epoch: "3.1"

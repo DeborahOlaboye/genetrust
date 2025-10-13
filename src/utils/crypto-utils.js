@@ -1,5 +1,5 @@
 // src/utils/crypto-utils.js
-// General cryptographic utilities for GenomicChain
+// General cryptographic utilities for GeneTrust
 // Provides secure key generation, hashing, and validation functions
 
 import { createHash, createHmac, randomBytes, timingSafeEqual } from 'crypto';

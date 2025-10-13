@@ -1,0 +1,200 @@
+{
+  "name": "genetrust-stacks-tests",
+  "version": "1.0.0",
+  "description": "Privacy-preserved genetic data marketplace with zero-knowledge proofs",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "test": "vitest run",
+    "test:report": "vitest run -- --coverage --costs",
+    "test:watch": "chokidar \"tests/**/*.ts\" \"contracts/**/*.clar\" -c \"npm run test:report\"",
+    "test:phase2": "vitest run tests/phase2/**/*.test.js",
+    "dev": "node src/dev-server.js",
+    "build": "rollup -c",
+    "lint": "eslint src/**/*.js tests/**/*.js",
+    "lint:fix": "eslint src/**/*.js tests/**/*.js --fix",
+    "format": "prettier --write src/**/*.js tests/**/*.js",
+    "check-contracts": "clarinet check",
+    "deploy": "clarinet deploy",
+    "start": "node src/main.js",
+    "docker:build": "docker build -t genetrust .",
+    "docker:run": "docker run -p 3000:3000 genetrust"
+  },
+  "keywords": [
+    "blockchain",
+    "genetics",
+    "privacy",
+    "zero-knowledge",
+    "stacks",
+    "bitcoin",
+    "ipfs",
+    "genomics",
+    "marketplace",
+    "decentralized"
+  ],
+  "author": "Deborah Olaboye <deborah@genetrust.org>",
+  "license": "MIT",
+  "dependencies": {
+    "@hirosystems/clarinet-sdk": "^2.3.2",
+    "@stacks/transactions": "^6.12.0",
+    "@stacks/network": "^6.12.0",
+    "@stacks/auth": "^6.12.0",
+    "@stacks/connect": "^7.5.0",
+    "@stacks/storage": "^6.12.0",
+    "ipfs-http-client": "^60.0.1",
+    "ipfs-core": "^0.18.1",
+    "buffer": "^6.0.3",
+    "crypto-browserify": "^3.12.0",
+    "stream-browserify": "^3.0.0",
+    "util": "^0.12.5",
+    "events": "^3.3.0",
+    "axios": "^1.6.2",
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "helmet": "^7.1.0",
+    "express-rate-limit": "^7.1.5",
+    "winston": "^3.11.0",
+    "winston-daily-rotate-file": "^4.7.1",
+    "dotenv": "^16.3.1",
+    "joi": "^17.11.0",
+    "lodash": "^4.17.21",
+    "uuid": "^9.0.1",
+    "redis": "^4.6.10",
+    "sqlite3": "^5.1.6",
+    "pg": "^8.11.3",
+    "sequelize": "^6.35.1",
+    "multer": "^1.4.5-lts.1",
+    "jsonwebtoken": "^9.0.2",
+    "bcryptjs": "^2.4.3"
+  },
+  "devDependencies": {
+    "chokidar-cli": "^3.0.0",
+    "typescript": "^5.3.3",
+    "vite": "^5.1.4",
+    "vitest": "^1.3.1",
+    "vitest-environment-clarinet": "^2.0.0",
+    "@vitest/coverage-v8": "^1.3.1",
+    "eslint": "^8.55.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-node": "^11.1.0",
+    "prettier": "^3.1.1",
+    "rollup": "^3.29.4",
+    "@rollup/plugin-node-resolve": "^15.2.3",
+    "@rollup/plugin-commonjs": "^25.0.7",
+    "@rollup/plugin-json": "^6.0.1",
+    "@rollup/plugin-replace": "^5.0.5",
+    "rollup-plugin-polyfill-node": "^0.12.0",
+    "@rollup/plugin-terser": "^0.4.4",
+    "supertest": "^6.3.3",
+    "jest": "^29.7.0",
+    "jest-environment-node": "^29.7.0",
+    "@types/node": "^20.10.5",
+    "nodemon": "^3.0.2",
+    "concurrently": "^8.2.2",
+    "cross-env": "^7.0.3"
+  },
+  "peerDependencies": {
+    "node": ">=18.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/DeborahOlaboye/genetrust.git"
+  },
+  "bugs": {
+    "url": "https://github.com/DeborahOlaboye/genetrust/issues"
+  },
+  "homepage": "https://github.com/DeborahOlaboye/genetrust#readme",
+  "directories": {
+    "test": "tests",
+    "src": "src"
+  },
+  "exports": {
+    ".": {
+      "import": "./src/main.js",
+      "require": "./dist/main.cjs"
+    },
+    "./config": {
+      "import": "./src/config/phase2-config.js"
+    },
+    "./storage": {
+      "import": "./src/storage/storage-manager.js"
+    },
+    "./zk-proofs": {
+      "import": "./src/zk-proofs/index.js"
+    },
+    "./contracts": {
+      "import": "./src/contract-integration/index.js"
+    }
+  },
+  "browserslist": [
+    "defaults",
+    "not IE 11",
+    "not dead"
+  ],
+  "jest": {
+    "testEnvironment": "node",
+    "testMatch": [
+      "**/tests/**/*.test.js",
+      "**/tests/**/*.spec.js"
+    ],
+    "collectCoverageFrom": [
+      "src/**/*.js",
+      "!src/**/*.test.js",
+      "!src/**/*.spec.js"
+    ],
+    "coverageDirectory": "coverage",
+    "coverageReporters": [
+      "text",
+      "lcov",
+      "html"
+    ]
+  },
+  "eslintConfig": {
+    "env": {
+      "node": true,
+      "es2022": true,
+      "browser": true
+    },
+    "extends": [
+      "eslint:recommended",
+      "prettier"
+    ],
+    "parserOptions": {
+      "ecmaVersion": 2022,
+      "sourceType": "module"
+    },
+    "rules": {
+      "no-console": "warn",
+      "no-unused-vars": "error",
+      "prefer-const": "error",
+      "no-var": "error"
+    }
+  },
+  "prettier": {
+    "semi": true,
+    "singleQuote": true,
+    "tabWidth": 2,
+    "trailingComma": "es5",
+    "printWidth": 100,
+    "arrowParens": "avoid"
+  },
+  "nodemonConfig": {
+    "watch": [
+      "src/"
+    ],
+    "ext": "js,json",
+    "ignore": [
+      "tests/",
+      "node_modules/"
+    ],
+    "exec": "node src/main.js"
+  },
+  "funding": {
+    "type": "individual",
+    "url": "https://github.com/sponsors/DeborahOlaboye"
+  }
+}

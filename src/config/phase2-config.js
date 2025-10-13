@@ -174,7 +174,7 @@ export class Phase2Config {
                 cors: {
                     enabled: true,
                     origins: this.environment === 'production' ? 
-                        ['https://genomicchain.org'] : 
+                        ['https://genetrust.com'] : 
                         ['http://localhost:3000', 'http://localhost:8080']
                 },
                 
@@ -283,7 +283,7 @@ export class Phase2Config {
      */
     _applyStagingConfig() {
         this.config.contracts.network = 'testnet';
-        this.config.ipfs.host = 'staging-ipfs.genomicchain.org';
+        this.config.ipfs.host = 'staging-ipfs.genetrust.org';
         this.config.api.security.httpsOnly = true;
         this.config.monitoring.enabled = true;
         this.config.monitoring.alerts.enabled = false; // No alerts in staging
@@ -295,7 +295,7 @@ export class Phase2Config {
      */
     _applyProductionConfig() {
         this.config.contracts.network = 'mainnet';
-        this.config.ipfs.host = 'ipfs.genomicchain.org';
+        this.config.ipfs.host = 'ipfs.genetrust.org';
         this.config.api.security.httpsOnly = true;
         this.config.api.security.apiKeyRequired = true;
         this.config.dataProcessing.strictValidation = true;
@@ -481,8 +481,8 @@ export class Phase2Config {
      */
     getDatabaseUrl() {
         const dbConfig = {
-            development: 'sqlite://./genomic-chain-dev.db',
-            testing: 'sqlite://./genomic-chain-test.db',
+            development: 'sqlite://./genetrust-dev.db',
+            testing: 'sqlite://./genetrust-test.db',
             staging: process.env.STAGING_DATABASE_URL || 'postgresql://staging-db',
             production: process.env.PRODUCTION_DATABASE_URL || 'postgresql://prod-db'
         };
@@ -500,7 +500,7 @@ export class Phase2Config {
             port: process.env.REDIS_PORT || 6379,
             password: process.env.REDIS_PASSWORD || null,
             db: this.environment === 'testing' ? 1 : 0,
-            keyPrefix: `genomic-chain:${this.environment}:`
+            keyPrefix: `genetrust:${this.environment}:`
         };
     }
 

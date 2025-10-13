@@ -1,5 +1,5 @@
 // src/utils/data-formatter.js
-// Data formatting utilities for GenomicChain
+// Data formatting utilities for GeneTrust
 // Handles conversion between different data formats and standards
 
 /**
@@ -205,7 +205,7 @@ export class DataFormatter {
     static toJSONLD(geneticData, context = {}) {
         const defaultContext = {
             "@context": {
-                "genetics": "http://genomicchain.org/ontology/",
+                "genetics": "http://genetrust.org/ontology/",
                 "variant": "genetics:variant",
                 "gene": "genetics:gene",
                 "sequence": "genetics:sequence",
@@ -514,7 +514,7 @@ export class DataFormatter {
         const lines = [
             '##fileformat=VCFv4.2',
             '##fileDate=' + new Date().toISOString().split('T')[0].replace(/-/g, ''),
-            '##source=GenomicChain',
+            '##source=GeneTrust',
             '##reference=' + (options.reference || 'GRCh38'),
             '#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO'
         ];

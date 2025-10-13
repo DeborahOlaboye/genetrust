@@ -1,5 +1,5 @@
-// Main GenomicChain SDK entry point
-// Provides high-level interface for all GenomicChain functionality
+// Main GeneTrust SDK entry point
+// Provides high-level interface for all GeneTrust functionality
 
 import { Phase2Config } from './config/phase2-config.js';
 import { ZKProofFactory } from './zk-proofs/index.js';
@@ -8,10 +8,10 @@ import { ContractFactory } from './contract-integration/index.js';
 import { UtilityFactory } from './utils/index.js';
 
 /**
- * Main GenomicChain SDK Class
- * Provides a unified interface for all GenomicChain functionality
+ * Main GeneTrust SDK Class
+ * Provides a unified interface for all GeneTrust functionality
  */
-export class GenomicChain {
+export class GeneTrust {
     constructor(options = {}) {
         // Initialize configuration
         this.config = options.config || Phase2Config.fromEnvironment();
@@ -77,7 +77,7 @@ export class GenomicChain {
             }
 
             this.initialized = true;
-            console.log('GenomicChain SDK initialized successfully');
+            console.log('GeneTrust SDK initialized successfully');
         } catch (error) {
             throw new Error(`SDK initialization failed: ${error.message}`);
         }
@@ -454,7 +454,7 @@ export class GenomicChain {
                 await this.storage.storage.close();
             }
             
-            console.log('GenomicChain SDK cleaned up successfully');
+            console.log('GeneTrust SDK cleaned up successfully');
         } catch (error) {
             console.warn('Error during SDK cleanup:', error.message);
         }
@@ -639,14 +639,14 @@ export class GenomicChain {
     }
 
     /**
-     * Create a new GenomicChain SDK instance
+     * Create a new GeneTrust SDK instance
      * @param {Object} options - Configuration options
-     * @returns {GenomicChain} SDK instance
+     * @returns {GeneTrust} SDK instance
      */
     static create(options = {}) {
-        return new GenomicChain(options);
+        return new GeneTrust(options);
     }
 }
 
-// Export default instance for convenience
-export default GenomicChain;
+// Export default class for convenience
+export default GeneTrust;

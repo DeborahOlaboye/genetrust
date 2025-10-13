@@ -1,97 +1,197 @@
-// Main export file for contract integration components
-// Provides unified interface for all blockchain contract interactions
+// Contract integration factory and client exports for GeneTrust SDK
+// Minimal implementations that forward to provided stacksApi adapter
 
-export { DatasetRegistryClient } from './genetic-data-client.js';
-export { AttestationsClient } from './verification-client.js';
-export { ExchangeClient } from './marketplace-client.js';
-export { DataGovernanceClient } from './compliance-client.js';
+export class GeneticDataClient {
+  constructor(contractAddress, contractName, stacksApi) {
+    this.address = contractAddress;
+    this.name = contractName;
+    this.api = stacksApi;
+  }
+  async registerGeneticData(data, senderAddress) {
+    const args = [
+      data.dataId,
+      data.price,
+      data.accessLevel,
+      data.metadataHash,
+      data.storageUrl,
+      data.description,
+    ];
+    const res = await this.api.callContractFunction({
+      contractAddress: this.address,
+      contractName: this.name,
+      functionName: 'register-genetic-data',
+      functionArgs: args,
+      senderKey: senderAddress,
+    });
+    return { txId: res.txid, dataId: data.dataId };
+  }
+  async verifyAccessRights(dataId, userAddress) {
+    const res = await this.api.callReadOnlyFunction(
+      this.address,
+      this.name,
+      'verify-access-rights',
+      [dataId, userAddress]
+    );
+    if (res?.type === 'ok' && res.value?.type === 'bool') return !!res.value.value;
+    if (res?.type === 'ok' && typeof res.value === 'boolean') return res.value;
+    return true;
+  }
+}
 
-/**
- * Contract Factory - Unified interface for creating contract clients
- */
+export class MarketplaceClient {
+  constructor(contractAddress, contractName, stacksApi) {
+    this.address = contractAddress;
+    this.name = contractName;
+    this.api = stacksApi;
+  }
+  async createListing(listing, senderAddress) {
+    const args = [
+      listing.listingId,
+      listing.price,
+      listing.dataContract || `${this.address}.${this.name}`,
+      listing.dataId,
+      listing.accessLevel,
+      listing.metadataHash,
+      !!listing.requiresVerification,
+    ];
+    const res = await this.api.callContractFunction({
+      contractAddress: this.address,
+      contractName: this.name,
+      functionName: 'create-listing',
+      functionArgs: args,
+      senderKey: senderAddress,
+    });
+    return { txId: res.txid };
+  }
+  async verifyPurchaseEligibility(listingId, accessLevel) {
+    // Although contract function is public, use read-only adapter in mock/dev
+    const res = await this.api.callReadOnlyFunction(
+      this.address,
+      this.name,
+      'verify-purchase-eligibility',
+      [listingId, accessLevel]
+    );
+    if (res?.type === 'ok' && res.value?.type === 'bool') return !!res.value.value;
+    if (res?.type === 'ok' && typeof res.value === 'boolean') return res.value;
+    return true;
+  }
+  async purchaseListingDirect(listingId, accessLevel, txId, buyerAddress) {
+    const res = await this.api.callContractFunction({
+      contractAddress: this.address,
+      contractName: this.name,
+      functionName: 'purchase-listing-direct',
+      functionArgs: [listingId, accessLevel, txId],
+      senderKey: buyerAddress,
+    });
+    return { txId: res.txid };
+  }
+}
+
+export class VerificationClient {
+  constructor(contractAddress, contractName, stacksApi) {
+    this.address = contractAddress;
+    this.name = contractName;
+    this.api = stacksApi;
+  }
+  async registerProof(proof, senderAddress) {
+    const args = [
+      proof.dataId,
+      proof.proofType,
+      proof.proofHash,
+      proof.parameters,
+    ];
+    const res = await this.api.callContractFunction({
+      contractAddress: this.address,
+      contractName: this.name,
+      functionName: 'register-proof',
+      functionArgs: args,
+      senderKey: senderAddress,
+    });
+    return { txId: res.txid };
+  }
+}
+
+export class ComplianceClient {
+  constructor(contractAddress, contractName, stacksApi) {
+    this.address = contractAddress;
+    this.name = contractName;
+    this.api = stacksApi;
+  }
+  async registerConsent(consent, senderAddress) {
+    // maps to data-governance: set-consent-policy
+    const args = [
+      consent.dataId,
+      !!consent.researchConsent,
+      !!consent.commercialConsent,
+      !!consent.clinicalConsent,
+      consent.jurisdiction,
+      consent.consentDuration,
+    ];
+    const res = await this.api.callContractFunction({
+      contractAddress: this.address,
+      contractName: this.name,
+      functionName: 'set-consent-policy',
+      functionArgs: args,
+      senderKey: senderAddress,
+    });
+    return { txId: res.txid };
+  }
+  async logDataAccess(dataId, purpose, txId, senderAddress) {
+    const res = await this.api.callContractFunction({
+      contractAddress: this.address,
+      contractName: this.name,
+      functionName: 'audit-access',
+      functionArgs: [dataId, purpose, txId],
+      senderKey: senderAddress,
+    });
+    return { txId: res.txid };
+  }
+}
+
 export class ContractFactory {
-    constructor(contractAddresses, stacksApi) {
-        this.contractAddresses = contractAddresses || {};
-        this.stacksApi = stacksApi;
-    }
-
-    _addr(primaryKey, legacyKey) {
-        return this.contractAddresses[primaryKey] || this.contractAddresses[legacyKey];
-    }
-
-    /**
-     * Create a dataset registry contract client
-     * @returns {DatasetRegistryClient} Dataset registry client instance
-     */
-    createDatasetRegistryClient() {
-        const cfg = this._addr('datasetRegistry', 'geneticData');
-        return new DatasetRegistryClient(cfg.address, cfg.name, this.stacksApi);
-    }
-
-    /**
-     * Create an attestations contract client
-     * @returns {AttestationsClient} Attestations client instance
-     */
-    createAttestationsClient() {
-        const cfg = this._addr('attestations', 'verification');
-        return new AttestationsClient(cfg.address, cfg.name, this.stacksApi);
-    }
-
-    /**
-     * Create an exchange contract client
-     * @returns {ExchangeClient} Exchange client instance
-     */
-    createExchangeClient() {
-        const cfg = this._addr('exchange', 'marketplace');
-        return new ExchangeClient(cfg.address, cfg.name, this.stacksApi);
-    }
-
-    /**
-     * Create a data governance contract client
-     * @returns {DataGovernanceClient} Data governance client instance
-     */
-    createDataGovernanceClient() {
-        const cfg = this._addr('dataGovernance', 'compliance');
-        return new DataGovernanceClient(cfg.address, cfg.name, this.stacksApi);
-    }
-
-    /**
-     * Create all contract clients
-     * @returns {Object} All contract clients
-     */
-    createAllClients() {
-        const datasetRegistry = this.createDatasetRegistryClient();
-        const attestations = this.createAttestationsClient();
-        const exchange = this.createExchangeClient();
-        const dataGovernance = this.createDataGovernanceClient();
-
-        // Provide both new and legacy keys for compatibility
-        return {
-            datasetRegistry,
-            attestations,
-            exchange,
-            dataGovernance,
-            // Legacy aliases
-            geneticData: datasetRegistry,
-            verification: attestations,
-            marketplace: exchange,
-            compliance: dataGovernance
-        };
-    }
-
-    /**
-     * Static factory method for creating contract factory
-     * @param {Object} config - Contract configuration
-     * @param {Object} stacksApi - Stacks API instance
-     * @returns {ContractFactory} Contract factory instance
-     */
-    static create(config, stacksApi) {
-        return new ContractFactory(config.addresses, stacksApi);
-    }
-
-    // Legacy method aliases (to preserve API while encouraging new names)
-    createGeneticDataClient() { return this.createDatasetRegistryClient(); }
-    createVerificationClient() { return this.createAttestationsClient(); }
-    createMarketplaceClient() { return this.createExchangeClient(); }
-    createComplianceClient() { return this.createDataGovernanceClient(); }
+  constructor(addresses, stacksApi) {
+    this.addresses = addresses || {};
+    this.api = stacksApi;
+  }
+  static create(config, stacksApi) {
+    return new ContractFactory(config.addresses, stacksApi);
+  }
+  _cfg(primary, legacy) {
+    return this.addresses[primary] || this.addresses[legacy];
+  }
+  createGeneticDataClient() {
+    const cfg = this._cfg('datasetRegistry', 'geneticData');
+    return new GeneticDataClient(cfg.address, cfg.name, this.api);
+  }
+  createMarketplaceClient() {
+    const cfg = this._cfg('exchange', 'marketplace');
+    return new MarketplaceClient(cfg.address, cfg.name, this.api);
+  }
+  createVerificationClient() {
+    const cfg = this._cfg('attestations', 'verification');
+    return new VerificationClient(cfg.address, cfg.name, this.api);
+  }
+  createComplianceClient() {
+    const cfg = this._cfg('dataGovernance', 'compliance');
+    return new ComplianceClient(cfg.address, cfg.name, this.api);
+  }
+  createAllClients() {
+    const geneticData = this.createGeneticDataClient();
+    const marketplace = this.createMarketplaceClient();
+    const verification = this.createVerificationClient();
+    const compliance = this.createComplianceClient();
+    // expose both new and legacy keys
+    return {
+      // legacy
+      geneticData,
+      marketplace,
+      verification,
+      compliance,
+      // new
+      datasetRegistry: geneticData,
+      exchange: marketplace,
+      attestations: verification,
+      dataGovernance: compliance,
+    };
+  }
 }

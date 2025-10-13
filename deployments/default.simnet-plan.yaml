@@ -1,0 +1,54 @@
+---
+id: 0
+name: "Simulated deployment, used as a default for `clarinet console`, `clarinet test` and `clarinet check`"
+network: simnet
+genesis:
+  wallets:
+    - name: deployer
+      address: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+      balance: "100000000000000"
+      sbtc-balance: "1000000000"
+  contracts:
+    - costs
+    - pox
+    - pox-2
+    - pox-3
+    - pox-4
+    - lockup
+    - costs-2
+    - costs-3
+    - cost-voting
+    - bns
+plan:
+  batches:
+    - id: 0
+      transactions:
+        - emulated-contract-publish:
+            contract-name: dataset-registry-trait
+            emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            path: contracts/dataset-registry-trait.clar
+            clarity-version: 2
+      epoch: "2.5"
+    - id: 1
+      transactions:
+        - emulated-contract-publish:
+            contract-name: attestations
+            emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            path: contracts/attestations.clar
+            clarity-version: 3
+        - emulated-contract-publish:
+            contract-name: data-governance
+            emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            path: contracts/data-governance.clar
+            clarity-version: 3
+        - emulated-contract-publish:
+            contract-name: dataset-registry
+            emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            path: contracts/genetic-data.clar
+            clarity-version: 3
+        - emulated-contract-publish:
+            contract-name: exchange
+            emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            path: contracts/exchange.clar
+            clarity-version: 3
+      epoch: "3.1"

@@ -2,11 +2,14 @@
 // Main export file for ZK proof components
 // Provides unified interface for all zero-knowledge proof functionality
 
-export { GenePresenceProofGenerator } from './generators/gene-presence-proof.js';
-export { GeneVariantProofGenerator } from './generators/gene-variant-proof.js';
-export { AggregateProofGenerator } from './generators/aggregate-proof.js';
-export { ProofVerifier } from './verifiers/proof-verifier.js';
-export { ProofUtils } from './utils/proof-utils.js';
+import { GenePresenceProofGenerator } from './generators/gene-presence-proof.js';
+import { GeneVariantProofGenerator } from './generators/gene-variant-proof.js';
+import { AggregateProofGenerator } from './generators/aggregate-proof.js';
+import { ProofVerifier } from './verifiers/proof-verifier.js';
+import { ProofUtils } from './utils/proof-utils.js';
+
+// Re-export for external consumers
+export { GenePresenceProofGenerator, GeneVariantProofGenerator, AggregateProofGenerator, ProofVerifier, ProofUtils };
 
 /**
  * ZK Proof Factory - Unified interface for creating proofs
