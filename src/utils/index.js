@@ -1,8 +1,11 @@
 // Main export file for utility components
 // Provides unified interface for all utility functions
 
-export { CryptoUtils } from './crypto-utils.js';
-export { DataFormatter } from './data-formatter.js';
+import { CryptoUtils } from './crypto-utils.js';
+import { DataFormatter } from './data-formatter.js';
+
+// Re-export for external consumers
+export { CryptoUtils, DataFormatter };
 
 /**
  * Utility Factory - Simplified access to common utility functions

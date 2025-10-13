@@ -274,8 +274,59 @@ async function advancedExample() {
         // Demonstrate batch proof generation
         console.log('1. Batch proof generation for multiple datasets...');
         const datasets = [
-            { id: 'dataset1', variants: [/* ... */], genes: [/* ... */] },
-            { id: 'dataset2', variants: [/* ... */], genes: [/* ... */] }
+            {
+                id: 'dataset1',
+                variants: [
+                    {
+                        chromosome: '17',
+                        position: 43044295,
+                        reference: 'A',
+                        alternate: 'G',
+                        gene: 'BRCA1',
+                        type: 'SNP',
+                        quality: 99.0
+                    }
+                ],
+                genes: [
+                    {
+                        symbol: 'BRCA1',
+                        name: 'BRCA1 DNA Repair Associated',
+                        chromosome: '17',
+                        start: 43044295,
+                        end: 43125364
+                    }
+                ]
+            },
+            {
+                id: 'dataset2',
+                variants: [
+                    {
+                        chromosome: '19',
+                        position: 44905791,
+                        reference: 'C',
+                        alternate: 'T',
+                        gene: 'APOE',
+                        type: 'SNP',
+                        quality: 95.0
+                    }
+                ],
+                genes: [
+                    {
+                        symbol: 'APOE',
+                        name: 'Apolipoprotein E',
+                        chromosome: '19',
+                        start: 44905791,
+                        end: 44909393
+                    },
+                    {
+                        symbol: 'BRCA1',
+                        name: 'BRCA1 DNA Repair Associated',
+                        chromosome: '17',
+                        start: 43044295,
+                        end: 43125364
+                    }
+                ]
+            }
         ];
 
         const batchProofs = {};
