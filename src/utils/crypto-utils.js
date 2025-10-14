@@ -4,6 +4,7 @@
 
 import { createHash, createHmac, randomBytes, timingSafeEqual } from 'crypto';
 import { createCipheriv, createDecipheriv } from 'crypto';
+import { pbkdf2Sync } from 'crypto';
 
 /**
  * Cryptographic utilities for secure operations
@@ -126,8 +127,7 @@ export class CryptoUtils {
      * @returns {Buffer} Derived key
      */
     static deriveKey(password, salt, iterations = 100000, keyLength = 32, digest = 'sha256') {
-        const crypto = require('crypto');
-        return crypto.pbkdf2Sync(password, salt, iterations, keyLength, digest);
+        return pbkdf2Sync(password, salt, iterations, keyLength, digest);
     }
 
     /**

@@ -333,7 +333,7 @@ export class ProofUtils {
             version: options.version || '1.0.0',
             algorithm: options.algorithm || 'simplified-zk-snark',
             timestamp: Math.floor(Date.now() / 1000),
-            generator: options.generator || 'genomic-chain',
+            generator: options.generator || 'gene-trust',
             privacyLevel: options.privacyLevel || 'high',
             validUntil: options.validFor ? 
                 Math.floor(Date.now() / 1000) + options.validFor : null

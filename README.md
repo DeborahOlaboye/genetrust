@@ -1,6 +1,8 @@
 # GeneTrust
 
-Privacy-preserved genetic data platform on Stacks. This repository currently contains:
+GeneTrust is a privacy‑preserved genetic data platform built on the Stacks blockchain. It enables individuals and organizations to securely store, prove, govern, and exchange genetic datasets without exposing raw data.
+
+This repository currently contains:
 - Clarity smart contracts for dataset registry, attestations, data governance, and an exchange/marketplace.
 - A Node.js service layer and tooling for data formatting, encryption, IPFS storage integration, zero-knowledge proof scaffolding, and contract integration.
 - Tests (Vitest + Clarinet environment).

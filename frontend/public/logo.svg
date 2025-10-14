@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="g1" x1="0" y1="0" x2="128" y2="128" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#8B5CF6"/>
+      <stop offset="1" stop-color="#F472B6"/>
+    </linearGradient>
+    <linearGradient id="g2" x1="0" y1="128" x2="128" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#F59E0B"/>
+      <stop offset="1" stop-color="#8B5CF6"/>
+    </linearGradient>
+  </defs>
+  <rect width="128" height="128" rx="24" fill="#0B0B1D"/>
+  <!-- Stylized DNA double-helix -->
+  <path d="M40 20 C60 36, 68 44, 88 60 C68 76, 60 84, 40 100" stroke="url(#g1)" stroke-width="8" fill="none" stroke-linecap="round"/>
+  <path d="M88 20 C68 36, 60 44, 40 60 C60 76, 68 84, 88 100" stroke="url(#g2)" stroke-width="8" fill="none" stroke-linecap="round"/>
+  <!-- Rungs -->
+  <g stroke="#D6D7FF" stroke-opacity="0.5" stroke-width="3">
+    <line x1="52" y1="38" x2="76" y2="38" />
+    <line x1="48" y1="58" x2="80" y2="58" />
+    <line x1="52" y1="78" x2="76" y2="78" />
+  </g>
+</svg>

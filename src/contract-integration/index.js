@@ -109,6 +109,16 @@ export class VerificationClient {
     });
     return { txId: res.txid };
   }
+  async verifyProof(proofId, verifierId, verificationTx, senderAddress) {
+    const res = await this.api.callContractFunction({
+      contractAddress: this.address,
+      contractName: this.name,
+      functionName: 'verify-proof',
+      functionArgs: [proofId, verifierId, verificationTx],
+      senderKey: senderAddress,
+    });
+    return { txId: res.txid };
+  }
 }
 
 export class ComplianceClient {
