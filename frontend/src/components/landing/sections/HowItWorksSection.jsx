@@ -1,6 +1,8 @@
 // How GeneTrust Works section with 4-step process
 
 import React from 'react';
+import BackgroundGenomeField from '../BackgroundGenomeField.jsx';
+import BackgroundDNAIcons from '../BackgroundDNAIcons.jsx';
 
 /**
  * HowItWorksSection Component
@@ -63,6 +65,8 @@ const HowItWorksSection = () => {
     <section id="how-it-works" className="relative py-20 bg-gradient-to-b from-[#0B0B1D] to-[#14102E]">
       {/* Background Effects */}
       <div className="absolute inset-0 bg-gradient-to-r from-[#0B0B1D]/90 via-transparent to-[#1C1440]/90" />
+      <BackgroundGenomeField opacity={0.22} ribbons={2} nucleotides={70} speed={0.32} />
+      <BackgroundDNAIcons className="opacity-15" count={14} zIndex={0} />
       
       <div className="relative max-w-7xl mx-auto px-6 lg:px-8">
         {/* Section Header */}
@@ -151,16 +155,6 @@ const HowItWorksSection = () => {
               </svg>
             </div>
           ))}
-        </div>
-
-        {/* Bottom CTA */}
-        <div className="text-center mt-16">
-          <div className="inline-flex items-center space-x-4 px-6 py-3 bg-[#121F40]/60 backdrop-blur-sm border border-[#2DD4BF]/20 rounded-full">
-            <div className="w-3 h-3 bg-[#37A36B] rounded-full animate-pulse" />
-            <span className="text-[#C9E1FF] text-sm">
-              Join thousands already earning from their genetic data
-            </span>
-          </div>
         </div>
       </div>
 

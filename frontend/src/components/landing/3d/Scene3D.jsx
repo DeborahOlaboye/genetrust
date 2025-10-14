@@ -1,6 +1,7 @@
 // Simple 3D scene setup that works
 
 import React from 'react';
+import GeneParticles from './GeneParticles.jsx';
 
 /**
  * Scene3D Component
@@ -30,6 +31,9 @@ const Scene3D = ({ children, isMobile = false }) => {
         decay={2}
       />
       
+      {/* Subtle DNA-inspired particle field */}
+      <GeneParticles count={700} radius={10} height={16} turns={8} opacity={0.22} />
+
       {/* Children components */}
       {children}
     </>

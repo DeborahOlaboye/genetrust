@@ -1,7 +1,6 @@
 // Main navigation component for GeneTrust landing page
 
 import React, { useState } from 'react';
-import { ThemeToggle } from '../ThemeToggle.jsx';
 
 /**
  * Navigation Component
@@ -16,8 +15,7 @@ const Navigation = () => {
   const menuItems = [
     { label: 'About', href: '#about' },
     { label: 'How it works', href: '#how-it-works' },
-    { label: 'Tokenomics', href: '#tokenomics' },
-    { label: 'For Researchers', href: '#researchers' },
+    { label: 'Researchers Dashboard', href: '#researchers-dashboard' },
     { label: 'Dashboard', href: '#dashboard' }
   ];
 
@@ -77,7 +75,6 @@ const Navigation = () => {
 
           {/* Connect Wallet Button */}
           <div className="flex items-center space-x-4">
-            <ThemeToggle />
             <button
               onClick={handleConnectWallet}
               className={`

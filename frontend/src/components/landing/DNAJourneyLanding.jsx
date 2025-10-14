@@ -96,24 +96,24 @@ const SimpleNavigation = ({ currentSection, scrollProgress }) => {
 const SimpleFloatingSection = ({ currentSection, scrollProgress }) => {
   const sections = {
     hero: {
-      title: "Take Control of Your DNA",
-      subtitle: "Journey through the future of genetic data ownership",
-      content: "Securely store, manage, and monetize your genomic data while contributing to groundbreaking medical research."
+      title: "Own Your Genome",
+      subtitle: "License your impact on your terms",
+      content: "Create a private vault and decide who can use your data for research."
     },
     howItWorks: {
       title: "How GeneTrust Works", 
-      subtitle: "Four simple steps along your DNA journey",
-      content: "Upload & Encrypt → Lab Verification → Set Permissions → Earn Tokens"
+      subtitle: "From vault to verified research",
+      content: "Create Vault → Verify Provenance → Set Consent → License & Earn"
     },
     privacy: {
-      title: "Built for Privacy, Designed for Trust",
-      subtitle: "Traveling through medical-grade security", 
-      content: "End-to-end encryption, medical lab verification, and smart contract automation."
+      title: "Privacy by Design. Trust by Default.",
+      subtitle: "Zero‑knowledge controls, lab‑grade proofs", 
+      content: "Your genome stays sovereign with on‑chain receipts for every access."
     },
     cta: {
-      title: "Ready to Take Control?",
-      subtitle: "Complete your DNA journey with us",
-      content: "Join thousands already earning from their genetic data."
+      title: "Turn Your Genome Into Research Impact",
+      subtitle: "Create your vault in minutes",
+      content: "Approve access, track usage, and earn transparently."
     }
   };
 

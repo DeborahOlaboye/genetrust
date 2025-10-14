@@ -37,17 +37,10 @@ const GeneTrustLanding = () => {
       {/* Footer */}
       <Footer />
       
-      {/* Background Effects */}
+      {/* Background Gradients */}
       <div className="fixed inset-0 pointer-events-none z-0">
-        {/* Gradient Overlays */}
         <div className="absolute inset-0 bg-gradient-to-r from-[#0B0B1D]/80 via-transparent to-[#1C1440]/60" />
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#14102E]/30 to-[#0B0B1D]/90" />
-        
-        {/* Animated Background Particles */}
-        <div className="absolute top-1/4 left-1/4 w-2 h-2 bg-[#8B5CF6]/30 rounded-full animate-pulse" />
-        <div className="absolute top-3/4 right-1/3 w-1 h-1 bg-[#F472B6]/40 rounded-full animate-ping" />
-        <div className="absolute bottom-1/4 left-1/6 w-3 h-3 bg-[#34D399]/20 rounded-full animate-pulse" />
-        <div className="absolute top-1/2 right-1/4 w-1 h-1 bg-[#F59E0B]/50 rounded-full animate-ping" />
       </div>
     </div>
   );
