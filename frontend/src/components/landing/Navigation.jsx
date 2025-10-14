@@ -1,12 +1,18 @@
 // Main navigation component for GeneTrust landing page
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { showConnect } from '@stacks/connect';
+import { AppConfig, UserSession } from '@stacks/auth';
 
 /**
  * Navigation Component
  * Top navigation bar with GeneTrust branding and menu items
  * Includes Connect Wallet integration for Stacks blockchain
  */
+// Initialize Stacks App Config and User Session (module scope to persist across renders)
+const appConfig = new AppConfig(['store_write', 'publish_data']);
+const userSession = new UserSession({ appConfig });
+
 const Navigation = () => {
   const [isWalletConnected, setIsWalletConnected] = useState(false);
   const [walletAddress, setWalletAddress] = useState('');
@@ -19,17 +25,50 @@ const Navigation = () => {
     { label: 'Dashboard', href: '#dashboard' }
   ];
 
-  // Connect wallet function (Stacks integration)
+  // On mount, restore session if signed in
+  useEffect(() => {
+    try {
+      if (userSession.isUserSignedIn()) {
+        const userData = userSession.loadUserData();
+        const addr = userData?.profile?.stxAddress?.testnet || userData?.profile?.stxAddress?.mainnet || '';
+        setWalletAddress(addr);
+        setIsWalletConnected(true);
+      } else if (userSession.isSignInPending()) {
+        userSession.handlePendingSignIn().then(() => {
+          const userData = userSession.loadUserData();
+          const addr = userData?.profile?.stxAddress?.testnet || userData?.profile?.stxAddress?.mainnet || '';
+          setWalletAddress(addr);
+          setIsWalletConnected(true);
+        });
+      }
+    } catch (e) {
+      console.error('Wallet session restore error:', e);
+    }
+  }, []);
+
+  // Connect / Disconnect wallet via Stacks Connect
   const handleConnectWallet = async () => {
     try {
-      // TODO: Integrate with @stacks/connect
-      // For now, simulate connection
-      if (!isWalletConnected) {
-        // Simulate wallet connection
-        setIsWalletConnected(true);
-        setWalletAddress('ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM');
+      if (!userSession.isUserSignedIn()) {
+        showConnect({
+          userSession,
+          appDetails: {
+            name: 'GeneTrust',
+            icon: window?.location?.origin + '/favicon.svg',
+          },
+          redirectTo: '/',
+          onFinish: () => {
+            const userData = userSession.loadUserData();
+            const addr = userData?.profile?.stxAddress?.testnet || userData?.profile?.stxAddress?.mainnet || '';
+            setWalletAddress(addr);
+            setIsWalletConnected(true);
+          },
+          onCancel: () => {
+            console.log('User cancelled wallet connect');
+          },
+        });
       } else {
-        // Disconnect wallet
+        userSession.signUserOut('/');
         setIsWalletConnected(false);
         setWalletAddress('');
       }
