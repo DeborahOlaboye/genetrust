@@ -2,7 +2,10 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { contractService } from '../services/contractService.js';
+import { walletService } from '../services/walletService.js';
 import Navigation from '../components/landing/Navigation.jsx';
+import { APP_CONFIG } from '../config/app.js';
+import toast, { Toaster } from 'react-hot-toast';
 
 const StatCard = ({ title, value, accent = 'purple' }) => (
   <div className="p-4 rounded-xl border bg-[#14102E]/60 backdrop-blur-xl shadow-lg" style={{ borderColor: 'rgba(139,92,246,0.2)' }}>
@@ -25,25 +28,84 @@ export default function UserDashboard() {
   const [datasets, setDatasets] = useState([]);
   const [myListings, setMyListings] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [walletConnected, setWalletConnected] = useState(false);
+  const [walletAddress, setWalletAddress] = useState(null);
+  const [error, setError] = useState(null);
 
-  const [newDesc, setNewDesc] = useState('High-quality WGS sample');
-  const [newPrice, setNewPrice] = useState(1000000);
+  const [newDesc, setNewDesc] = useState('');
+  const [newPrice, setNewPrice] = useState('');
   const [newAccess, setNewAccess] = useState(3);
+  const [selectedDataset, setSelectedDataset] = useState('');
 
+  // Connect wallet on mount if using real SDK
   useEffect(() => {
-    (async () => {
-      await contractService.initialize({});
-      const s = await contractService.getStatus();
-      setStatus(s);
-      const ds = await contractService.listMyDatasets();
-      setDatasets(ds);
-      const ls = await contractService.listMarketplace({ ownerOnly: true });
-      setMyListings(ls);
-    })();
+    const initializeDashboard = async () => {
+      try {
+        // Connect wallet if using real SDK
+        if (APP_CONFIG.USE_REAL_SDK) {
+          const connected = await walletService.isConnected();
+          if (connected) {
+            const address = walletService.getAddress();
+            setWalletConnected(true);
+            setWalletAddress(address);
+          }
+        }
+
+        // Initialize contract service
+        const initResult = await contractService.initialize({
+          walletAddress: walletService.getAddress()
+        });
+
+        const s = await contractService.getStatus();
+        setStatus(s);
+
+        const ds = await contractService.listMyDatasets();
+        setDatasets(ds);
+
+        const ls = await contractService.listMarketplace({ ownerOnly: true });
+        setMyListings(ls);
+      } catch (err) {
+        console.error('Dashboard initialization error:', err);
+        setError(err.message);
+      }
+    };
+
+    initializeDashboard();
   }, []);
 
+  // Handle wallet connection
+  const handleConnectWallet = async () => {
+    const toastId = toast.loading('Connecting wallet...');
+    try {
+      setLoading(true);
+      await walletService.connect();
+      const address = walletService.getAddress();
+      setWalletConnected(true);
+      setWalletAddress(address);
+
+      // Reinitialize with wallet address
+      await contractService.initialize({ walletAddress: address });
+      const s = await contractService.getStatus();
+      setStatus(s);
+
+      toast.success('Wallet connected!', { id: toastId });
+    } catch (err) {
+      console.error('Wallet connection error:', err);
+      toast.error(err.message || 'Failed to connect wallet', { id: toastId });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleCreateVault = async () => {
+    if (!newDesc.trim()) {
+      toast.error('Please enter a description for your dataset');
+      return;
+    }
+
     setLoading(true);
+    const toastId = toast.loading('Creating dataset...');
+
     try {
       const sample = {
         variants: [
@@ -51,24 +113,56 @@ export default function UserDashboard() {
         ],
         genes: [{ symbol: 'BRCA1', name: 'BRCA1 DNA Repair Associated', chromosome: '17', start: 43044295, end: 43125364 }],
       };
-      const ds = await contractService.createVaultDataset({ sampleData: sample, description: newDesc });
+
+      const result = await contractService.createVaultDataset({ sampleData: sample, description: newDesc });
       const next = await contractService.listMyDatasets();
       setDatasets(next);
+
+      toast.success('Dataset created successfully!', { id: toastId });
+      setNewDesc(''); // Clear the input
     } catch (e) {
       console.error(e);
+      toast.error(e.message || 'Failed to create dataset', { id: toastId });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleCreateListing = async (dataId) => {
+  const handleCreateListing = async () => {
+    if (!selectedDataset) {
+      toast.error('Please select a dataset to list');
+      return;
+    }
+
+    if (!newPrice || Number(newPrice) <= 0) {
+      toast.error('Please enter a valid price');
+      return;
+    }
+
     setLoading(true);
+    const toastId = toast.loading('Creating listing...');
+
     try {
-      await contractService.createListing({ dataId, price: Number(newPrice) || 0, accessLevel: Number(newAccess) || 1, description: newDesc });
+      const dataset = datasets.find(d => d.id === Number(selectedDataset));
+      const description = dataset?.description || 'Genetic data listing';
+
+      await contractService.createListing({
+        dataId: Number(selectedDataset),
+        price: Number(newPrice),
+        accessLevel: Number(newAccess),
+        description
+      });
+
       const ls = await contractService.listMarketplace({ ownerOnly: true });
       setMyListings(ls);
+
+      toast.success('Listing created successfully!', { id: toastId });
+      // Clear form
+      setNewPrice('');
+      setSelectedDataset('');
     } catch (e) {
       console.error(e);
+      toast.error(e.message || 'Failed to create listing', { id: toastId });
     } finally {
       setLoading(false);
     }
@@ -76,15 +170,60 @@ export default function UserDashboard() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0B0B1D] via-[#14102E] to-[#0B0B1D] text-white">
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          duration: 4000,
+          style: {
+            background: '#1a1a2e',
+            color: '#fff',
+            border: '1px solid rgba(139,92,246,0.3)',
+          },
+          success: {
+            iconTheme: {
+              primary: '#8B5CF6',
+              secondary: '#fff',
+            },
+          },
+          error: {
+            iconTheme: {
+              primary: '#ef4444',
+              secondary: '#fff',
+            },
+          },
+        }}
+      />
       <Navigation />
       <div className="max-w-7xl mx-auto px-6 lg:px-8 py-10 space-y-8">
+
+        {/* Wallet Connection Status */}
+        {APP_CONFIG.USE_REAL_SDK && !walletConnected && (
+          <div className="p-6 rounded-xl bg-[#8B5CF6]/10 border border-[#8B5CF6]/20">
+            <h3 className="text-lg font-semibold mb-2">Connect Your Wallet</h3>
+            <p className="text-[#9AA0B2] mb-4">To interact with the blockchain, please connect your Stacks wallet.</p>
+            <button
+              onClick={handleConnectWallet}
+              disabled={loading}
+              className="px-6 py-3 bg-gradient-to-r from-[#8B5CF6] to-[#F472B6] rounded-lg font-semibold disabled:opacity-60"
+            >
+              {loading ? 'Connecting...' : 'Connect Wallet'}
+            </button>
+          </div>
+        )}
+
+        {/* Connection Info */}
+        {walletConnected && walletAddress && (
+          <div className="p-4 rounded-xl bg-green-500/10 border border-green-500/20 text-green-400">
+            <strong>Wallet Connected:</strong> {walletAddress.slice(0, 8)}...{walletAddress.slice(-6)}
+          </div>
+        )}
 
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <StatCard title="Datasets" value={datasets.length} />
           <StatCard title="Listings" value={myListings.length} />
-          <StatCard title="SDK Status" value={status?.initialized ? 'Ready' : 'Init'} accent="amber" />
-          <StatCard title="Time" value={status ? new Date(status.time).toLocaleTimeString() : '—'} />
+          <StatCard title="Mode" value={status?.mode || (APP_CONFIG.USE_REAL_SDK ? 'Real' : 'Mock')} accent="amber" />
+          <StatCard title="Network" value={APP_CONFIG.NETWORK} />
         </div>
 
         {/* Create / Manage */}
@@ -93,11 +232,21 @@ export default function UserDashboard() {
             <div className="space-y-4">
               <div className="grid md:grid-cols-3 gap-3">
                 <div className="md:col-span-3">
-                  <label className="text-sm text-[#9AA0B2]">Description</label>
-                  <input value={newDesc} onChange={e => setNewDesc(e.target.value)} className="mt-1 w-full bg-[#14102E] border border-[#8B5CF6]/20 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]/40" placeholder="Describe your dataset" />
+                  <label className="text-sm text-[#9AA0B2]">Description *</label>
+                  <input
+                    value={newDesc}
+                    onChange={e => setNewDesc(e.target.value)}
+                    className="mt-1 w-full bg-[#14102E] border border-[#8B5CF6]/20 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]/40 text-white"
+                    placeholder="Enter dataset description..."
+                    disabled={loading}
+                  />
                 </div>
               </div>
-              <button onClick={handleCreateVault} disabled={loading} className="px-6 py-3 bg-gradient-to-r from-[#8B5CF6] to-[#F472B6] rounded-lg font-semibold disabled:opacity-60">
+              <button
+                onClick={handleCreateVault}
+                disabled={loading || !newDesc.trim()}
+                className="px-6 py-3 bg-gradient-to-r from-[#8B5CF6] to-[#F472B6] rounded-lg font-semibold disabled:opacity-40 disabled:cursor-not-allowed"
+              >
                 {loading ? 'Processing...' : 'Create Dataset'}
               </button>
             </div>
@@ -105,36 +254,64 @@ export default function UserDashboard() {
 
           <SectionCard title="Create Listing">
             <div className="space-y-4">
-              <div className="grid md:grid-cols-3 gap-3">
-                <div>
-                  <label className="text-sm text-[#9AA0B2]">Price (uSTX)</label>
-                  <input type="number" value={newPrice} onChange={e => setNewPrice(e.target.value)} className="mt-1 w-full bg-[#14102E] border border-[#8B5CF6]/20 rounded-lg px-3 py-2" />
+              {datasets.length === 0 ? (
+                <div className="text-center py-4 text-[#9AA0B2]">
+                  Create a dataset first before listing
                 </div>
-                <div>
-                  <label className="text-sm text-[#9AA0B2]">Access Level</label>
-                  <select value={newAccess} onChange={e => setNewAccess(e.target.value)} className="mt-1 w-full bg-[#14102E] border border-[#8B5CF6]/20 rounded-lg px-3 py-2">
-                    <option value={1}>1 - Basic</option>
-                    <option value={2}>2 - Detailed</option>
-                    <option value={3}>3 - Full</option>
-                  </select>
-                </div>
-                <div className="md:col-span-3">
-                  <label className="text-sm text-[#9AA0B2]">Use dataset</label>
-                  <select className="mt-1 w-full bg-[#14102E] border border-[#8B5CF6]/20 rounded-lg px-3 py-2">
-                    {datasets.length === 0 && <option>No datasets yet</option>}
-                    {datasets.map(ds => (
-                      <option key={ds.id} value={ds.id}>{ds.id} • {ds.description}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {datasets.map(ds => (
-                  <button key={ds.id} onClick={() => handleCreateListing(ds.id)} disabled={loading} className="px-4 py-2 bg-[#8B5CF6]/10 text-[#C7B7FF] rounded-lg border border-[#8B5CF6]/20 hover:bg-[#8B5CF6]/20">
-                    List dataset #{ds.id}
+              ) : (
+                <>
+                  <div className="grid md:grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-sm text-[#9AA0B2]">Select Dataset *</label>
+                      <select
+                        value={selectedDataset}
+                        onChange={e => setSelectedDataset(e.target.value)}
+                        className="mt-1 w-full bg-[#14102E] border border-[#8B5CF6]/20 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]/40"
+                        disabled={loading}
+                      >
+                        <option value="">Choose a dataset...</option>
+                        {datasets.map(ds => (
+                          <option key={ds.id} value={ds.id}>
+                            Dataset #{ds.id} - {ds.description}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-sm text-[#9AA0B2]">Price (microSTX) *</label>
+                      <input
+                        type="number"
+                        value={newPrice}
+                        onChange={e => setNewPrice(e.target.value)}
+                        className="mt-1 w-full bg-[#14102E] border border-[#8B5CF6]/20 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]/40"
+                        placeholder="e.g., 1000000 (1 STX)"
+                        disabled={loading}
+                        min="0"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm text-[#9AA0B2]">Access Level</label>
+                      <select
+                        value={newAccess}
+                        onChange={e => setNewAccess(e.target.value)}
+                        className="mt-1 w-full bg-[#14102E] border border-[#8B5CF6]/20 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]/40"
+                        disabled={loading}
+                      >
+                        <option value={1}>Level 1 - Basic</option>
+                        <option value={2}>Level 2 - Detailed</option>
+                        <option value={3}>Level 3 - Full Access</option>
+                      </select>
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleCreateListing}
+                    disabled={loading || !selectedDataset || !newPrice}
+                    className="px-6 py-3 bg-gradient-to-r from-[#8B5CF6] to-[#F472B6] rounded-lg font-semibold disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    {loading ? 'Processing...' : 'Create Listing'}
                   </button>
-                ))}
-              </div>
+                </>
+              )}
             </div>
           </SectionCard>
         </div>
@@ -151,7 +328,7 @@ export default function UserDashboard() {
                     <div className="text-sm text-[#9AA0B2]">{ds.description}</div>
                   </div>
                   <div className="text-right text-sm text-[#9AA0B2]">
-                    {ds.stats.variants} variants • {ds.stats.genes} genes
+                    {ds.stats?.variants || 0} variants • {ds.stats?.genes || 0} genes
                   </div>
                 </div>
               ))}

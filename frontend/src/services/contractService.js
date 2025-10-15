@@ -1,17 +1,18 @@
-// Lightweight frontend contract service
-// For now, this uses mock implementations compatible with the existing UI.
-// Later, wire this to real Stacks contracts or a backend API.
+// Frontend contract service
+// Uses the browser-compatible GeneTrust SDK for real contract calls
 
-// NOTE: Avoid importing Node-only SDK code here to keep Vite/browser happy.
-// We simulate key actions and keep the API shape stable for future upgrades.
 import { walletService } from './walletService.js';
+import { geneTrust } from '../sdk/browserGeneTrust.js';
+import { APP_CONFIG } from '../config/app.js';
 
 export class ContractService {
   constructor() {
     this.initialized = false;
     this.walletAddress = null;
+    this.useRealSDK = APP_CONFIG.USE_REAL_SDK;
+    this.sdk = geneTrust;
 
-    // Mock in-memory state
+    // Mock in-memory state (used when USE_REAL_SDK is false)
     this._datasets = [];
     this._listings = [];
     this._seeded = false;
@@ -19,18 +20,37 @@ export class ContractService {
 
   async initialize({ walletAddress } = {}) {
     this.walletAddress = walletAddress || walletService.getAddress() || null;
+
+    // Initialize the real SDK
+    await this.sdk.initialize({
+      stacksNode: APP_CONFIG.STACKS_NODE,
+      contracts: APP_CONFIG.contracts,
+      userAddress: this.walletAddress,
+    });
+
     this.initialized = true;
-    // Seed demo data once in mock mode so marketplace isn't empty
-    if (!this._seeded) {
+
+    // Seed demo data in mock mode
+    if (!this.useRealSDK && !this._seeded) {
       this.seedDemoData();
     }
-    return { initialized: true, mode: 'mock' };
+
+    return {
+      initialized: true,
+      mode: this.useRealSDK ? 'real' : 'mock',
+      network: APP_CONFIG.NETWORK,
+      contracts: APP_CONFIG.contracts
+    };
   }
 
-  // Simulate creating a vault dataset and storing metadata
+  // Create a vault dataset and register on-chain
   async createVaultDataset({ sampleData, description = '' }) {
     const id = Math.floor(Math.random() * 1_000_000);
     const now = Date.now();
+
+    // Simulate storage result
+    const storageUrl = `ipfs://mock-${id}/genetic-data-${id}.enc`;
+
     const dataset = {
       id,
       owner: this.walletAddress || 'ST1MOCKOWNER',
@@ -41,33 +61,92 @@ export class ContractService {
         variants: sampleData?.variants?.length || 0,
         genes: sampleData?.genes?.length || 0,
       },
-      storageUrl: `ipfs://mock-${id}/genetic-data-${id}.enc`,
+      storageUrl,
     };
-    this._datasets.unshift(dataset);
-    return dataset;
+
+    // If using real SDK, register on-chain
+    if (this.useRealSDK) {
+      try {
+        const result = await this.sdk.registerDataset({
+          dataId: id,
+          price: 0, // Initial price 0, set when creating listing
+          accessLevel: 3,
+          metadataHash: new Uint8Array(32), // Mock hash
+          storageUrl,
+          description: description || 'Private genomic dataset',
+        });
+
+        // Return the dataset from SDK (which has proper structure)
+        console.log('Dataset registered on-chain:', result);
+        return result;
+      } catch (error) {
+        console.error('Failed to register dataset on-chain:', error);
+        throw error;
+      }
+    } else {
+      // Mock mode
+      this._datasets.unshift(dataset);
+      return dataset;
+    }
   }
 
   async listMyDatasets() {
+    if (this.useRealSDK) {
+      return await this.sdk.listMyDatasets();
+    }
     return this._datasets.filter(d => d.owner === (this.walletAddress || 'ST1MOCKOWNER'));
   }
 
   async createListing({ dataId, price, accessLevel, description }) {
-    const id = Math.floor(Math.random() * 1_000_000);
-    const listing = {
-      listingId: id,
-      dataId,
-      owner: this.walletAddress || 'ST1MOCKOWNER',
-      price: price || 1000000,
-      accessLevel: accessLevel || 3,
-      description: description || 'Genetic data listing',
-      active: true,
-      createdAt: Date.now(),
-    };
-    this._listings.unshift(listing);
-    return listing;
+    if (this.useRealSDK) {
+      try {
+        const result = await this.sdk.createMarketplaceListing({
+          dataId: Number(dataId),
+          price: Number(price || 1000000),
+          accessLevel: Number(accessLevel || 3),
+          description: description || 'Genetic data listing',
+          metadataHash: new Uint8Array(32), // Mock hash
+          requiresVerification: false, // Set to true if proofs are available
+        });
+        console.log('Listing created on-chain:', result);
+        return {
+          listingId: result.listingId,
+          dataId,
+          owner: this.walletAddress,
+          price: price || 1000000,
+          accessLevel: accessLevel || 3,
+          description,
+          active: true,
+          createdAt: Date.now(),
+          txId: result.txId,
+        };
+      } catch (error) {
+        console.error('Failed to create listing on-chain:', error);
+        throw error;
+      }
+    } else {
+      // Mock mode
+      const id = Math.floor(Math.random() * 1_000_000);
+      const listing = {
+        listingId: id,
+        dataId,
+        owner: this.walletAddress || 'ST1MOCKOWNER',
+        price: price || 1000000,
+        accessLevel: accessLevel || 3,
+        description: description || 'Genetic data listing',
+        active: true,
+        createdAt: Date.now(),
+      };
+      this._listings.unshift(listing);
+      return listing;
+    }
   }
 
   async listMarketplace({ ownerOnly = false } = {}) {
+    if (this.useRealSDK) {
+      return await this.sdk.listMarketplaceListings({ ownerOnly });
+    }
+
     if (ownerOnly) {
       return this._listings.filter(l => l.owner === (this.walletAddress || 'ST1MOCKOWNER'));
     }
@@ -75,28 +154,47 @@ export class ContractService {
   }
 
   async purchaseListing({ listingId, desiredAccessLevel = 1 }) {
-    const l = this._listings.find(x => x.listingId === listingId);
-    if (!l) throw new Error('Listing not found');
-    if (!l.active) throw new Error('Listing not active');
-    if (desiredAccessLevel > l.accessLevel) throw new Error('Access level not available');
+    if (this.useRealSDK) {
+      try {
+        const result = await this.sdk.purchaseGeneticData({
+          listingId: Number(listingId),
+          accessLevel: Number(desiredAccessLevel),
+        });
+        console.log('Purchase completed on-chain:', result);
+        return result;
+      } catch (error) {
+        console.error('Failed to purchase listing:', error);
+        throw error;
+      }
+    } else {
+      // Mock mode
+      const l = this._listings.find(x => x.listingId === listingId);
+      if (!l) throw new Error('Listing not found');
+      if (!l.active) throw new Error('Listing not active');
+      if (desiredAccessLevel > l.accessLevel) throw new Error('Access level not available');
 
-    // Simulate success
-    return {
-      success: true,
-      listingId,
-      accessLevel: desiredAccessLevel,
-      txId: `0x${'b'.repeat(64)}`,
-      purchasedAt: Date.now(),
-    };
+      return {
+        success: true,
+        listingId,
+        accessLevel: desiredAccessLevel,
+        txId: `0x${'b'.repeat(64)}`,
+        purchasedAt: Date.now(),
+      };
+    }
   }
 
   async getStatus() {
+    if (this.useRealSDK) {
+      return this.sdk.getStatus();
+    }
+
     return {
       initialized: this.initialized,
       walletAddress: this.walletAddress,
       datasets: this._datasets.length,
       listings: this._listings.length,
       time: Date.now(),
+      mode: 'mock',
     };
   }
 

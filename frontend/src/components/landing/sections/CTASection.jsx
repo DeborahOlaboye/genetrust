@@ -46,6 +46,7 @@ const CTASection = () => {
               <div className="text-3xl font-bold text-[#F472B6] mb-1">$1M+</div>
               <div className="text-sm text-[#9AA0B2]">Rewards Distributed</div>
             </div>
+            
             <div className="hidden sm:block w-px h-12 bg-[#8B5CF6]/20" />
             <div className="text-center">
               <div className="text-3xl font-bold text-[#F59E0B] mb-1">200+</div>
