@@ -38,17 +38,17 @@ const CTASection = () => {
           {/* Statistics */}
           <div className="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-12 py-8">
             <div className="text-center">
-              <div className="text-3xl font-bold text-[#8B5CF6] mb-1">10,000+</div>
+              <div className="text-3xl font-bold text-[#8B5CF6] mb-1">2,000+</div>
               <div className="text-sm text-[#9AA0B2]">Vaults Created</div>
             </div>
             <div className="hidden sm:block w-px h-12 bg-[#8B5CF6]/20" />
             <div className="text-center">
-              <div className="text-3xl font-bold text-[#F472B6] mb-1">$2.5M+</div>
+              <div className="text-3xl font-bold text-[#F472B6] mb-1">$1M+</div>
               <div className="text-sm text-[#9AA0B2]">Rewards Distributed</div>
             </div>
             <div className="hidden sm:block w-px h-12 bg-[#8B5CF6]/20" />
             <div className="text-center">
-              <div className="text-3xl font-bold text-[#F59E0B] mb-1">500+</div>
+              <div className="text-3xl font-bold text-[#F59E0B] mb-1">200+</div>
               <div className="text-sm text-[#9AA0B2]">Research Collaborations</div>
             </div>
           </div>
