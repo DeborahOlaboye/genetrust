@@ -1,10 +1,6 @@
 # GeneTrust - Decentralized Genetic Data Marketplace
 
-> **Privacy-first genetic data sharing on Stacks blockchain**
-
-[![Built on Stacks](https://img.shields.io/badge/Built%20on-Stacks-5546FF?style=flat-square)](https://www.stacks.co/)
-[![Smart Contracts](https://img.shields.io/badge/Smart%20Contracts-Clarity-blue?style=flat-square)](https://clarity-lang.org/)
-[![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
+GeneTrust is a privacy‑preserved genetic data platform built on the Stacks blockchain. It enables individuals and organizations to securely store, prove, govern, and exchange genetic datasets without exposing raw data.
 
 ## Problem Statement
 
@@ -22,10 +18,15 @@ The genomic research industry faces a critical paradox:
 GeneTrust is a **full-stack decentralized application** that enables:
 
 ✅ **Secure Storage** - Encrypted genetic datasets with tiered access levels
+
 ✅ **On-Chain Registry** - Immutable dataset registration on Stacks blockchain
+
 ✅ **Decentralized Marketplace** - Buy/sell genetic data with smart contract escrow
+
 ✅ **Privacy Preservation** - Zero-knowledge proofs for trait verification without revealing raw data
+
 ✅ **User Sovereignty** - Individuals fully control access permissions and pricing
+
 ✅ **IPFS Integration** - Decentralized storage with content-addressed data
 
 ---
@@ -315,11 +316,17 @@ User                    Frontend                Smart Contract              IPFS
 
 ### Technical Achievements
 - ✅ 4 production-ready Clarity smart contracts
+- 
 - ✅ Full frontend-to-blockchain integration
+- 
 - ✅ Real wallet transaction signing and confirmation
+- 
 - ✅ IPFS integration with content addressing
+- 
 - ✅ Comprehensive encryption system (AES-GCM)
+- 
 - ✅ Modern React UI with 3D DNA visualizations
+- 
 - ✅ Complete test suite with Vitest + Clarinet
 
 ### Real-World Impact
