@@ -20,6 +20,11 @@ export const RealAdapter = {
         dataGovernance: config.contracts.dataGovernance,
       });
     }
+    // Initialize the SDK with network node and contract addresses
+    await gt.initialize({
+      stacksNode: config?.STACKS_NODE,
+      contracts: config?.contracts,
+    });
     // Propagate wallet if SDK needs it later
     gt._frontendWalletAddress = walletAddress || null;
     return { ok: true };
