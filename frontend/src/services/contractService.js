@@ -5,8 +5,6 @@
 // NOTE: Avoid importing Node-only SDK code here to keep Vite/browser happy.
 // We simulate key actions and keep the API shape stable for future upgrades.
 import { walletService } from './walletService.js';
-import { APP_CONFIG } from '../config/app.js';
-import { RealAdapter } from './realAdapter.js';
 
 export class ContractService {
   constructor() {
@@ -16,24 +14,21 @@ export class ContractService {
     // Mock in-memory state
     this._datasets = [];
     this._listings = [];
+    this._seeded = false;
   }
 
   async initialize({ walletAddress } = {}) {
     this.walletAddress = walletAddress || walletService.getAddress() || null;
-    if (APP_CONFIG.USE_REAL_SDK) {
-      await RealAdapter.initialize({ walletAddress: this.walletAddress, config: APP_CONFIG });
-      this.initialized = true;
-      return { initialized: true, mode: 'real' };
-    }
     this.initialized = true;
+    // Seed demo data once in mock mode so marketplace isn't empty
+    if (!this._seeded) {
+      this.seedDemoData();
+    }
     return { initialized: true, mode: 'mock' };
   }
 
   // Simulate creating a vault dataset and storing metadata
   async createVaultDataset({ sampleData, description = '' }) {
-    if (APP_CONFIG.USE_REAL_SDK) {
-      return RealAdapter.createVaultDataset({ sampleData, description });
-    }
     const id = Math.floor(Math.random() * 1_000_000);
     const now = Date.now();
     const dataset = {
@@ -53,16 +48,10 @@ export class ContractService {
   }
 
   async listMyDatasets() {
-    if (APP_CONFIG.USE_REAL_SDK) {
-      return RealAdapter.listMyDatasets();
-    }
     return this._datasets.filter(d => d.owner === (this.walletAddress || 'ST1MOCKOWNER'));
   }
 
   async createListing({ dataId, price, accessLevel, description }) {
-    if (APP_CONFIG.USE_REAL_SDK) {
-      return RealAdapter.createListing({ dataId, price, accessLevel, description });
-    }
     const id = Math.floor(Math.random() * 1_000_000);
     const listing = {
       listingId: id,
@@ -79,9 +68,6 @@ export class ContractService {
   }
 
   async listMarketplace({ ownerOnly = false } = {}) {
-    if (APP_CONFIG.USE_REAL_SDK) {
-      return RealAdapter.listMarketplace({ ownerOnly });
-    }
     if (ownerOnly) {
       return this._listings.filter(l => l.owner === (this.walletAddress || 'ST1MOCKOWNER'));
     }
@@ -89,9 +75,6 @@ export class ContractService {
   }
 
   async purchaseListing({ listingId, desiredAccessLevel = 1 }) {
-    if (APP_CONFIG.USE_REAL_SDK) {
-      return RealAdapter.purchaseListing({ listingId, desiredAccessLevel });
-    }
     const l = this._listings.find(x => x.listingId === listingId);
     if (!l) throw new Error('Listing not found');
     if (!l.active) throw new Error('Listing not active');
@@ -115,6 +98,49 @@ export class ContractService {
       listings: this._listings.length,
       time: Date.now(),
     };
+  }
+
+  // Mock-mode demo utilities
+  seedDemoData() {
+    if (this._seeded) return;
+    const owner = this.walletAddress || 'ST1MOCKOWNER';
+    const now = Date.now();
+    const ds1 = {
+      id: 1001,
+      owner,
+      description: 'WGS sample A',
+      accessLevels: [1, 2, 3],
+      storedAt: now - 86_400_000,
+      stats: { variants: 15234, genes: 18456 },
+      storageUrl: 'ipfs://mock-1001/genetic-data-1001.enc',
+    };
+    const ds2 = {
+      id: 1002,
+      owner,
+      description: 'Exome sample B',
+      accessLevels: [1, 2],
+      storedAt: now - 43_200_000,
+      stats: { variants: 8234, genes: 12000 },
+      storageUrl: 'ipfs://mock-1002/genetic-data-1002.enc',
+    };
+    // Only add if not present
+    const ids = new Set(this._datasets.map(d => d.id));
+    if (!ids.has(ds1.id)) this._datasets.push(ds1);
+    if (!ids.has(ds2.id)) this._datasets.push(ds2);
+
+    const l1 = { listingId: 5001, dataId: ds1.id, owner, price: 2_500_000, accessLevel: 3, description: 'Full access WGS', active: true, createdAt: now - 3_600_000 };
+    const l2 = { listingId: 5002, dataId: ds2.id, owner, price: 900_000, accessLevel: 2, description: 'Exome detailed', active: true, createdAt: now - 7_200_000 };
+    const lids = new Set(this._listings.map(l => l.listingId));
+    if (!lids.has(l1.listingId)) this._listings.push(l1);
+    if (!lids.has(l2.listingId)) this._listings.push(l2);
+
+    this._seeded = true;
+  }
+
+  resetDemoData() {
+    this._datasets = [];
+    this._listings = [];
+    this._seeded = false;
   }
 }
 

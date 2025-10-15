@@ -8,15 +8,6 @@
 //     <DNAJourneyLanding />
 //   </React.StrictMode>
 // );
-
-
-
-
-
-
-
-
-
 import React, { useEffect, useState } from 'react';
 import ReactDOM from 'react-dom/client';
 import GeneTrustLanding from './components/landing/GeneTrustLanding.jsx';

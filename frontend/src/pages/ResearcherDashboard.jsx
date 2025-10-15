@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { contractService } from '../services/contractService.js';
+import Navigation from '../components/landing/Navigation.jsx';
 
 const SectionCard = ({ title, children, border = '#34D399' }) => (
   <div className="rounded-2xl p-6 bg-[#0B0B1D]/80 backdrop-blur-xl shadow-2xl" style={{ border: `1px solid ${border}33` }}>
@@ -46,20 +47,16 @@ export default function ResearcherDashboard() {
     }
   };
 
+  // No on-chain scanning in mock mode. Listings come from mock contractService.
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0B0B1D] via-[#14102E] to-[#0B0B1D] text-white">
+      <Navigation />
       <div className="max-w-7xl mx-auto px-6 lg:px-8 py-10 space-y-8">
-        <div className="flex items-center justify-between">
-          <h2 className="text-3xl font-bold">
-            <span className="text-white">Researchers </span>
-            <span className="bg-gradient-to-r from-[#34D399] to-[#8B5CF6] bg-clip-text text-transparent">Marketplace</span>
-          </h2>
-          <a href="#" onClick={() => { window.location.hash = ''; }} className="text-[#9AA0B2] hover:text-white">← Back to Home</a>
-        </div>
 
         {/* Controls */}
-        <SectionCard title="Filters & Controls" border="#8B5CF6">
-          <div className="grid md:grid-cols-4 gap-4">
+        <SectionCard title="Filters" border="#8B5CF6">
+          <div className="grid md:grid-cols-3 gap-4">
             <div>
               <label className="text-sm text-[#9AA0B2]">Desired Access Level</label>
               <select value={accessLevel} onChange={e => setAccessLevel(e.target.value)} className="mt-1 w-full bg-[#14102E] border border-[#8B5CF6]/20 rounded-lg px-3 py-2">
@@ -67,9 +64,6 @@ export default function ResearcherDashboard() {
                 <option value={2}>2 - Detailed</option>
                 <option value={3}>3 - Full</option>
               </select>
-            </div>
-            <div className="md:col-span-3 flex items-end">
-              <div className="text-xs text-[#9AA0B2]">SDK: {status?.initialized ? 'Ready' : 'Init'} • Listings: {status?.listings ?? 0}</div>
             </div>
           </div>
         </SectionCard>

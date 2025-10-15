@@ -9,6 +9,7 @@ import {
   bufferCV,
   boolCV,
   callReadOnlyFunction,
+  cvToJSON,
 } from '@stacks/transactions';
 
 const state = {
@@ -132,6 +133,45 @@ export const geneTrust = {
   // Return cached listings created via this session (no on-chain index available client-only)
   async listMarketplaceListings({ ownerOnly = false } = {}) {
     return state.cache.listings.slice();
+  },
+
+  // Demo on-chain scan: iterate listing-id range and fetch existing listings
+  async listMarketplaceListingsOnChain({ startId = 1, endId = 100 } = {}) {
+    if (!state.contracts?.exchange) throw new Error('Contracts not configured');
+    const exchange = state.contracts.exchange;
+    const results = [];
+
+    const s = Number(startId);
+    const e = Number(endId);
+    const lo = Math.min(s, e);
+    const hi = Math.max(s, e);
+
+    for (let id = lo; id <= hi; id++) {
+      try {
+        const res = await ro(exchange, 'get-listing', [uintCV(id)]);
+        const json = cvToJSON(res);
+        // Optional some -> tuple
+        const opt = json?.value || json?.some || json?.value?.some;
+        if (!opt) continue;
+        const tuple = opt?.value || opt; // handle shape variations
+        const owner = tuple?.owner?.value || tuple?.owner;
+        const priceStr = tuple?.price?.value || tuple?.price;
+        const accessLevelStr = tuple?.['access-level']?.value || tuple?.['access-level'];
+        const active = tuple?.active?.value ?? tuple?.active;
+        const dataIdStr = tuple?.['data-id']?.value || tuple?.['data-id'];
+        results.push({
+          listingId: id,
+          owner,
+          price: priceStr ? Number(String(priceStr).replace(/^u/, '')) : undefined,
+          accessLevel: accessLevelStr ? Number(String(accessLevelStr).replace(/^u/, '')) : undefined,
+          active: typeof active === 'boolean' ? active : !!active,
+          dataId: dataIdStr ? Number(String(dataIdStr).replace(/^u/, '')) : undefined,
+        });
+      } catch (e) {
+        // ignore missing IDs
+      }
+    }
+    return results;
   },
 
   // Purchase listing direct; wallet signs transaction

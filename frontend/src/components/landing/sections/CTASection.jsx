@@ -55,18 +55,22 @@ const CTASection = () => {
 
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-6">
-            <button className="group px-10 py-4 bg-gradient-to-r from-[#8B5CF6] to-[#F472B6] text-white font-semibold rounded-lg hover:shadow-2xl hover:shadow-[#8B5CF6]/25 transform hover:scale-105 transition-all duration-300 min-w-[200px]">
-              <span className="flex items-center justify-center space-x-2">
-                <span>Create Your Vault</span>
-                <svg className="w-5 h-5 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                </svg>
-              </span>
-            </button>
+            <a href="#dashboard">
+              <button className="group px-10 py-4 bg-gradient-to-r from-[#8B5CF6] to-[#F472B6] text-white font-semibold rounded-lg hover:shadow-2xl hover:shadow-[#8B5CF6]/25 transform hover:scale-105 transition-all duration-300 min-w-[200px]">
+                <span className="flex items-center justify-center space-x-2">
+                  <span>Create Your Vault</span>
+                  <svg className="w-5 h-5 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                  </svg>
+                </span>
+              </button>
+            </a>
 
-            <button className="px-8 py-4 text-[#F59E0B] border border-[#F59E0B]/30 rounded-lg hover:bg-[#F59E0B]/5 hover:border-[#F59E0B]/50 transition-all duration-300 min-w-[180px]">
-              Explore Live Demo
-            </button>
+            <a href="https://github.com/DeborahOlaboye/genetrust">
+              <button className="px-8 py-4 text-[#F59E0B] border border-[#F59E0B]/30 rounded-lg hover:bg-[#F59E0B]/5 hover:border-[#F59E0B]/50 transition-all duration-300 min-w-[180px]">
+                Documentation
+              </button>
+            </a>
           </div>
 
           {/* Trust Signals */}

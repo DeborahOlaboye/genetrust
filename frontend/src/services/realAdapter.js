@@ -2,7 +2,19 @@
 // Expectation: a global SDK instance is available as window.geneTrust, pre-initialized with config and Stacks API
 // If you prefer not to expose globals, you can import your browser-safe SDK bundle instead and replace references below.
 
-function requireSDK() {
+async function ensureSDK(timeoutMs = 2000) {
+  // Try immediate
+  if (window?.geneTrust) return window.geneTrust;
+  // Wait briefly in case scripts are still loading
+  const start = Date.now();
+  while (Date.now() - start < timeoutMs) {
+    if (window?.geneTrust) return window.geneTrust;
+    await new Promise(r => setTimeout(r, 50));
+  }
+  // Fallback: try dynamic import (path relative to this file)
+  try {
+    await import('../sdk/browserGeneTrust.js');
+  } catch {}
   const gt = window?.geneTrust;
   if (!gt) throw new Error('GeneTrust SDK not found (window.geneTrust is undefined)');
   return gt;
@@ -10,7 +22,7 @@ function requireSDK() {
 
 export const RealAdapter = {
   async initialize({ walletAddress, config }) {
-    const gt = requireSDK();
+    const gt = await ensureSDK();
     // Optionally pass contract addresses/network if not set
     if (config?.contracts && gt?.config?.setContractAddresses) {
       gt.config.setContractAddresses({
@@ -31,7 +43,7 @@ export const RealAdapter = {
   },
 
   async createVaultDataset({ sampleData, description }) {
-    const gt = requireSDK();
+    const gt = await ensureSDK();
     // The SDK's storeGeneticData expects formatted data and options
     const options = {
       description: description || 'Genomic dataset',
@@ -56,7 +68,7 @@ export const RealAdapter = {
   },
 
   async listMyDatasets() {
-    const gt = requireSDK();
+    const gt = await ensureSDK();
     // If SDK exposes a method, call it; otherwise, return an empty array placeholder
     if (typeof gt.listStoredDatasets === 'function') {
       const list = await gt.listStoredDatasets();
@@ -66,7 +78,7 @@ export const RealAdapter = {
   },
 
   async createListing({ dataId, price, accessLevel, description }) {
-    const gt = requireSDK();
+    const gt = await ensureSDK();
     const res = await gt.createMarketplaceListing({
       dataId,
       price,
@@ -86,7 +98,7 @@ export const RealAdapter = {
   },
 
   async listMarketplace({ ownerOnly = false } = {}) {
-    const gt = requireSDK();
+    const gt = await ensureSDK();
     if (typeof gt.listMarketplaceListings === 'function') {
       const listings = await gt.listMarketplaceListings({ ownerOnly });
       return listings || [];
@@ -94,8 +106,17 @@ export const RealAdapter = {
     return [];
   },
 
+  async listMarketplaceOnChain({ startId = 1, endId = 100 } = {}) {
+    const gt = await ensureSDK();
+    if (typeof gt.listMarketplaceListingsOnChain === 'function') {
+      const listings = await gt.listMarketplaceListingsOnChain({ startId, endId });
+      return listings || [];
+    }
+    return [];
+  },
+
   async purchaseListing({ listingId, desiredAccessLevel }) {
-    const gt = requireSDK();
+    const gt = await ensureSDK();
     const res = await gt.purchaseGeneticData({ listingId, accessLevel: desiredAccessLevel });
     return {
       success: !!res,

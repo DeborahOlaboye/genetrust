@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { contractService } from '../services/contractService.js';
+import Navigation from '../components/landing/Navigation.jsx';
 
 const StatCard = ({ title, value, accent = 'purple' }) => (
   <div className="p-4 rounded-xl border bg-[#14102E]/60 backdrop-blur-xl shadow-lg" style={{ borderColor: 'rgba(139,92,246,0.2)' }}>
@@ -75,14 +76,8 @@ export default function UserDashboard() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0B0B1D] via-[#14102E] to-[#0B0B1D] text-white">
+      <Navigation />
       <div className="max-w-7xl mx-auto px-6 lg:px-8 py-10 space-y-8">
-        <div className="flex items-center justify-between">
-          <h2 className="text-3xl font-bold">
-            <span className="text-white">Your </span>
-            <span className="bg-gradient-to-r from-[#8B5CF6] to-[#F472B6] bg-clip-text text-transparent">Genomic Vault</span>
-          </h2>
-          <a href="#" onClick={() => { window.location.hash = ''; }} className="text-[#9AA0B2] hover:text-white">← Back to Home</a>
-        </div>
 
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -118,9 +113,9 @@ export default function UserDashboard() {
                 <div>
                   <label className="text-sm text-[#9AA0B2]">Access Level</label>
                   <select value={newAccess} onChange={e => setNewAccess(e.target.value)} className="mt-1 w-full bg-[#14102E] border border-[#8B5CF6]/20 rounded-lg px-3 py-2">
-                    <option value={1}>1</option>
-                    <option value={2}>2</option>
-                    <option value={3}>3</option>
+                    <option value={1}>1 - Basic</option>
+                    <option value={2}>2 - Detailed</option>
+                    <option value={3}>3 - Full</option>
                   </select>
                 </div>
                 <div className="md:col-span-3">

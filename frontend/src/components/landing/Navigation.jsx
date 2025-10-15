@@ -93,15 +93,16 @@ const Navigation = () => {
       <div className="max-w-7xl mx-auto px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <div className="flex items-center">
-            <div className="flex-shrink-0 flex items-center space-x-2">
-              <img src="/logo.svg" alt="GeneTrust" className="h-6 w-6" />
-              <h1 className="text-xl font-bold text-white">
-                <span className="text-[#8B5CF6]">Gene</span>Trust
-              </h1>
+          <a href="/">
+            <div className="flex items-center">
+              <div className="flex-shrink-0 flex items-center space-x-2">
+                <img src="/logo.svg" alt="GeneTrust" className="h-6 w-6" />
+                <h1 className="text-xl font-bold text-white">
+                  <span className="text-[#8B5CF6]">Gene</span>Trust
+                </h1>
+              </div>
             </div>
-          </div>
-
+          </a>
           {/* Desktop Navigation Menu */}
           <div className="hidden md:block">
             <div className="ml-10 flex items-baseline space-x-8">

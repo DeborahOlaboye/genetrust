@@ -35,18 +35,22 @@ const HeroSection = () => {
 
           {/* CTA Button */}
           <div className="flex items-center space-x-6">
-            <button className="group px-8 py-4 bg-gradient-to-r from-[#8B5CF6] to-[#F472B6] text-white font-semibold rounded-lg hover:shadow-xl hover:shadow-[#8B5CF6]/25 transform hover:scale-105 transition-all duration-300">
-              <span className="flex items-center space-x-2">
-                <span>Create Your Vault</span>
-                <svg className="w-5 h-5 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                </svg>
-              </span>
-            </button>
+            <a href="#dashboard">
+              <button className="group px-8 py-4 bg-gradient-to-r from-[#8B5CF6] to-[#F472B6] text-white font-semibold rounded-lg hover:shadow-xl hover:shadow-[#8B5CF6]/25 transform hover:scale-105 transition-all duration-300 cursor-pointer">
+                <span className="flex items-center space-x-2">
+                  <span>Create Your Vault</span>
+                  <svg className="w-5 h-5 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                  </svg>
+                </span>
+              </button>
+            </a>
 
-            <button className="px-6 py-3 text-[#F59E0B] border border-[#F59E0B]/30 rounded-lg hover:bg-[#F59E0B]/5 transition-all duration-300">
-              See How It Works
-            </button>
+            <a href="#how-it-works">
+              <button className="px-6 py-3 text-[#F59E0B] border border-[#F59E0B]/30 rounded-lg hover:bg-[#F59E0B]/5 transition-all duration-300 cursor-pointer">
+                See How It Works
+              </button>
+            </a>
           </div>
 
           {/* Trust Indicators */}
