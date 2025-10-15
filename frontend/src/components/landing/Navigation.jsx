@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { showConnect } from '@stacks/connect';
 import { AppConfig, UserSession } from '@stacks/auth';
+import { walletService } from '../../services/walletService.js';
 
 /**
  * Navigation Component
@@ -33,12 +34,14 @@ const Navigation = () => {
         const addr = userData?.profile?.stxAddress?.testnet || userData?.profile?.stxAddress?.mainnet || '';
         setWalletAddress(addr);
         setIsWalletConnected(true);
+        walletService.setAddress(addr);
       } else if (userSession.isSignInPending()) {
         userSession.handlePendingSignIn().then(() => {
           const userData = userSession.loadUserData();
           const addr = userData?.profile?.stxAddress?.testnet || userData?.profile?.stxAddress?.mainnet || '';
           setWalletAddress(addr);
           setIsWalletConnected(true);
+          walletService.setAddress(addr);
         });
       }
     } catch (e) {
@@ -62,6 +65,7 @@ const Navigation = () => {
             const addr = userData?.profile?.stxAddress?.testnet || userData?.profile?.stxAddress?.mainnet || '';
             setWalletAddress(addr);
             setIsWalletConnected(true);
+            walletService.setAddress(addr);
           },
           onCancel: () => {
             console.log('User cancelled wallet connect');
@@ -71,6 +75,7 @@ const Navigation = () => {
         userSession.signUserOut('/');
         setIsWalletConnected(false);
         setWalletAddress('');
+        walletService.setAddress(null);
       }
     } catch (error) {
       console.error('Wallet connection error:', error);
