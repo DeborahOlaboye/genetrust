@@ -1,21 +1,29 @@
 // Simple global wallet service to share connected address across pages
 // Works alongside Navigation.jsx which handles Stacks Connect UI.
+// Ensure correct package imports to avoid SessionData version mismatches.
 
-import { AppConfig, UserSession, showConnect } from '@stacks/connect';
+'use client';
+
+import { AppConfig, UserSession } from '@stacks/auth';
+import { showConnect } from '@stacks/connect';
 
 class WalletService {
   constructor() {
     this._address = null;
     this._listeners = new Set();
 
-    // Initialize Stacks authentication
-    const appConfig = new AppConfig(['store_write', 'publish_data']);
-    this.userSession = new UserSession({ appConfig });
+    // Initialize Stacks authentication on client only
+    if (typeof window !== 'undefined') {
+      const appConfig = new AppConfig(['store_write', 'publish_data']);
+      this.userSession = new UserSession({ appConfig });
 
-    // Check if already signed in
-    if (this.userSession.isUserSignedIn()) {
-      const userData = this.userSession.loadUserData();
-      this._address = userData.profile.stxAddress.testnet || userData.profile.stxAddress.mainnet;
+      // Check if already signed in
+      if (this.userSession.isUserSignedIn()) {
+        const userData = this.userSession.loadUserData();
+        this._address = userData.profile.stxAddress.testnet || userData.profile.stxAddress.mainnet;
+      }
+    } else {
+      this.userSession = null;
     }
   }
 
@@ -35,10 +43,13 @@ class WalletService {
   // Connect wallet using Stacks Connect
   async connect() {
     return new Promise((resolve, reject) => {
+      if (!this.userSession) {
+        return reject(new Error('Wallet can only be connected in the browser environment'));
+      }
       showConnect({
         appDetails: {
           name: 'GeneTrust',
-          icon: '/favicon.svg',
+          icon: (typeof window !== 'undefined' ? window.location.origin : '') + '/favicon.svg',
         },
         redirectTo: '/',
         onFinish: () => {
@@ -61,7 +72,7 @@ class WalletService {
 
   // Disconnect wallet
   disconnect() {
-    if (this.userSession.isUserSignedIn()) {
+    if (this.userSession && this.userSession.isUserSignedIn()) {
       this.userSession.signUserOut('/');
     }
     this.setAddress(null);

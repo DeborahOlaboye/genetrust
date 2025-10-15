@@ -1,6 +1,8 @@
 // Main navigation component for GeneTrust landing page
 
-import React, { useEffect, useState } from 'react';
+'use client';
+
+import React, { useEffect, useRef, useState } from 'react';
 import { showConnect } from '@stacks/connect';
 import { AppConfig, UserSession } from '@stacks/auth';
 import { walletService } from '../../services/walletService.js';
@@ -10,13 +12,12 @@ import { walletService } from '../../services/walletService.js';
  * Top navigation bar with GeneTrust branding and menu items
  * Includes Connect Wallet integration for Stacks blockchain
  */
-// Initialize Stacks App Config and User Session (module scope to persist across renders)
-const appConfig = new AppConfig(['store_write', 'publish_data']);
-const userSession = new UserSession({ appConfig });
+// UserSession must be initialized only on the client to avoid SSR/localStorage issues
 
 const Navigation = () => {
   const [isWalletConnected, setIsWalletConnected] = useState(false);
   const [walletAddress, setWalletAddress] = useState('');
+  const userSessionRef = useRef(null);
 
   // Navigation menu items from design
   const menuItems = [
@@ -26,23 +27,30 @@ const Navigation = () => {
     { label: 'Dashboard', href: '#dashboard' }
   ];
 
-  // On mount, restore session if signed in
+  // On mount, initialize userSession and restore session if signed in
   useEffect(() => {
     try {
-      if (userSession.isUserSignedIn()) {
-        const userData = userSession.loadUserData();
-        const addr = userData?.profile?.stxAddress?.testnet || userData?.profile?.stxAddress?.mainnet || '';
-        setWalletAddress(addr);
-        setIsWalletConnected(true);
-        walletService.setAddress(addr);
-      } else if (userSession.isSignInPending()) {
-        userSession.handlePendingSignIn().then(() => {
+      if (typeof window !== 'undefined') {
+        if (!userSessionRef.current) {
+          const appConfig = new AppConfig(['store_write', 'publish_data']);
+          userSessionRef.current = new UserSession({ appConfig });
+        }
+        const userSession = userSessionRef.current;
+        if (userSession.isUserSignedIn()) {
           const userData = userSession.loadUserData();
           const addr = userData?.profile?.stxAddress?.testnet || userData?.profile?.stxAddress?.mainnet || '';
           setWalletAddress(addr);
           setIsWalletConnected(true);
           walletService.setAddress(addr);
-        });
+        } else if (userSession.isSignInPending()) {
+          userSession.handlePendingSignIn().then(() => {
+            const userData = userSession.loadUserData();
+            const addr = userData?.profile?.stxAddress?.testnet || userData?.profile?.stxAddress?.mainnet || '';
+            setWalletAddress(addr);
+            setIsWalletConnected(true);
+            walletService.setAddress(addr);
+          });
+        }
       }
     } catch (e) {
       console.error('Wallet session restore error:', e);
@@ -52,16 +60,17 @@ const Navigation = () => {
   // Connect / Disconnect wallet via Stacks Connect
   const handleConnectWallet = async () => {
     try {
-      if (!userSession.isUserSignedIn()) {
+      const userSession = userSessionRef.current;
+      if (!userSession || !userSession.isUserSignedIn()) {
         showConnect({
           userSession,
           appDetails: {
             name: 'GeneTrust',
-            icon: window?.location?.origin + '/favicon.svg',
+            icon: (typeof window !== 'undefined' ? window.location.origin : '') + '/favicon.svg',
           },
           redirectTo: '/',
           onFinish: () => {
-            const userData = userSession.loadUserData();
+            const userData = userSession?.loadUserData();
             const addr = userData?.profile?.stxAddress?.testnet || userData?.profile?.stxAddress?.mainnet || '';
             setWalletAddress(addr);
             setIsWalletConnected(true);
