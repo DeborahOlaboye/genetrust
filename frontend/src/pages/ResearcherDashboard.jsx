@@ -39,15 +39,13 @@ export default function ResearcherDashboard() {
     setLoadingId(listingId);
     try {
       const res = await contractService.purchaseListing({ listingId, desiredAccessLevel: Number(accessLevel) || 1 });
-      alert(`Purchase successful! Access Level ${res.accessLevel}. TX: ${res.txId.slice(0,10)}...`);
+      toast.success(`Purchase successful! Access Level ${res.accessLevel}. TX: ${res.txId.slice(0,10)}...`);
     } catch (e) {
-      alert(`Purchase failed: ${e.message}`);
+      toast.error(`Purchase failed: ${e.message}`);
     } finally {
       setLoadingId(null);
     }
   };
-
-  // No on-chain scanning in mock mode. Listings come from mock contractService.
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0B0B1D] via-[#14102E] to-[#0B0B1D] text-white">
