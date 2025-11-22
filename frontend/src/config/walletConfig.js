@@ -12,11 +12,11 @@ const appMetadata = {
 
 // Create Reown connector
 const reownConnector = createReownWagmiConnector({
-  appName: 'GeneTrust',
-  appIcon: '/logo192.png',
-  appUrl: typeof window !== 'undefined' ? window.location.origin : 'https://genetrust.xyz',
-  chains: [mainnet, sepolia], // Add other chains as needed
-  projectId: 'YOUR_PROJECT_ID' // Replace with your Reown project ID
+  appName: process.env.NEXT_PUBLIC_REOWN_APP_NAME || 'GeneTrust',
+  appIcon: process.env.NEXT_PUBLIC_REOWN_APP_ICON || '/logo192.png',
+  appUrl: process.env.NEXT_PUBLIC_REOWN_APP_URL || (typeof window !== 'undefined' ? window.location.origin : 'https://genetrust.xyz'),
+  chains: [mainnet, sepolia],
+  projectId: process.env.NEXT_PUBLIC_REOWN_PROJECT_ID || ''
 });
 
 // Create wagmi config
