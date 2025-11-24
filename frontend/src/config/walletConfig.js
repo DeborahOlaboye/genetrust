@@ -1,33 +1,41 @@
-import { createConfig, http } from 'wagmi';
-import { mainnet, sepolia } from 'wagmi/chains';
+import { AppConfig, UserSession } from '@stacks/auth';
 import { createReownWagmiConnector } from '@reown/appkit-adapter-wagmi';
+import { mainnet, sepolia } from 'wagmi/chains';
 
-// Configure your app's metadata
-const appMetadata = {
+// Stacks Configuration
+export const appConfig = new AppConfig(['store_write', 'publish_data']);
+export const userSession = new UserSession({ appConfig });
+
+// App Details
+export const appDetails = {
   name: 'GeneTrust',
-  description: 'Decentralized Genetic Data Marketplace',
-  url: typeof window !== 'undefined' ? window.location.origin : 'https://genetrust.xyz',
-  icons: ['/logo192.png']
+  icon: typeof window !== 'undefined' ? `${window.location.origin}/logo192.png` : '/logo192.png',
+  url: typeof window !== 'undefined' ? window.location.origin : 'https://genetrust.xyz'
 };
 
-// Create Reown connector
-const reownConnector = createReownWagmiConnector({
-  appName: process.env.NEXT_PUBLIC_REOWN_APP_NAME || 'GeneTrust',
-  appIcon: process.env.NEXT_PUBLIC_REOWN_APP_ICON || '/logo192.png',
-  appUrl: process.env.NEXT_PUBLIC_REOWN_APP_URL || (typeof window !== 'undefined' ? window.location.origin : 'https://genetrust.xyz'),
+// Reown Connector Configuration
+export const reownConnector = createReownWagmiConnector({
+  appName: appDetails.name,
+  appIcon: appDetails.icon,
+  appUrl: appDetails.url,
   chains: [mainnet, sepolia],
-  projectId: process.env.NEXT_PUBLIC_REOWN_PROJECT_ID || ''
+  projectId: process.env.NEXT_PUBLIC_REOWN_PROJECT_ID || 'YOUR_REOWN_PROJECT_ID'
 });
 
-// Create wagmi config
-export const config = createConfig({
-  chains: [mainnet, sepolia],
-  connectors: [reownConnector],
-  transports: {
-    [mainnet.id]: http(),
-    [sepolia.id]: http()
-  },
-  ssr: true
-});
+// Wallet Configuration
+export const walletConfig = {
+  appDetails,
+  redirectTo: '/',
+  onFinish: () => window.location.reload(),
+  userSession,
+  connectors: [reownConnector]
+};
 
-export { reownConnector };
+// Export all configurations
+export default {
+  appConfig,
+  userSession,
+  appDetails,
+  reownConnector,
+  walletConfig
+};

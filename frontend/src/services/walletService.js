@@ -1,30 +1,44 @@
-// Simple global wallet service to share connected address across pages
-// Works alongside Navigation.jsx which handles Stacks Connect UI.
-// Ensure correct package imports to avoid SessionData version mismatches.
-
+// Wallet service for managing Stacks wallet connections
 'use client';
 
-import { AppConfig, UserSession } from '@stacks/auth';
 import { showConnect } from '@stacks/connect';
+import { appDetails, userSession } from '../config/walletConfig';
 
 class WalletService {
   constructor() {
     this._address = null;
     this._listeners = new Set();
+    this.userSession = userSession;
 
-    // Initialize Stacks authentication on client only
-    if (typeof window !== 'undefined') {
-      const appConfig = new AppConfig(['store_write', 'publish_data']);
-      this.userSession = new UserSession({ appConfig });
-
-      // Check if already signed in
-      if (this.userSession.isUserSignedIn()) {
-        const userData = this.userSession.loadUserData();
-        this._address = userData.profile.stxAddress.testnet || userData.profile.stxAddress.mainnet;
-      }
-    } else {
-      this.userSession = null;
+    // Check if already signed in
+    if (typeof window !== 'undefined' && this.userSession.isUserSignedIn()) {
+      this._updateAddress();
     }
+  }
+
+  _updateAddress() {
+    if (this.userSession.isUserSignedIn()) {
+      const userData = this.userSession.loadUserData();
+      this._address = userData.profile.stxAddress.testnet || userData.profile.stxAddress.mainnet;
+    } else {
+      this._address = null;
+    }
+    this._emit();
+  }
+
+  _emit() {
+    this._listeners.forEach(callback => {
+      try {
+        callback(this._address);
+      } catch (error) {
+        console.error('Error in wallet listener:', error);
+      }
+    });
+  }
+
+  addListener(callback) {
+    this._listeners.add(callback);
+    return () => this._listeners.delete(callback);
   }
 
   getAddress() {
@@ -35,19 +49,27 @@ class WalletService {
     return !!this._address;
   }
 
-  setAddress(addr) {
-    this._address = addr || null;
-    this._emit();
-  }
-
   // Connect wallet using Stacks Connect
   async connect() {
     return new Promise((resolve, reject) => {
-      if (!this.userSession) {
+      if (typeof window === 'undefined') {
         return reject(new Error('Wallet can only be connected in the browser environment'));
       }
+
+      if (this.isConnected()) {
+        return resolve(this._address);
+      }
+
       showConnect({
-        appDetails: {
+        appDetails,
+        onFinish: () => {
+          this._updateAddress();
+          resolve(this._address);
+        },
+        onCancel: () => {
+          reject(new Error('User canceled wallet connection'));
+        },
+        userSession: this.userSession,
           name: 'GeneTrust',
           icon: (typeof window !== 'undefined' ? window.location.origin : '') + '/favicon.svg',
         },
