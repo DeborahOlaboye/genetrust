@@ -2,15 +2,29 @@
 ;; Core contract for dataset registry and access control on the Stacks blockchain
 ;; Handles dataset ownership, metadata, pricing tiers, and access delegation
 
-;; Import trait (renamed)
+;; Import trait and access control
 (impl-trait .dataset-registry-trait.dataset-registry-trait)
+(use-trait access-trait .access-control.access-control-trait)
 
 ;; Error codes
 (define-constant ERR-NOT-AUTHORIZED (err u100))
 (define-constant ERR-INVALID-DATA (err u101))
 (define-constant ERR-DATA-EXISTS (err u102))
 (define-constant ERR-DATA-NOT-FOUND (err u103))
-(define-constant ERR-INVALID-ACCESS-LEVEL (err u104))
+(define-constant ERR-INVALID-ACCESS_LEVEL (err u104))
+(define-constant ERR-RATE_LIMIT (err u105))
+(define-constant ERR-CONTRACT_PAUSED (err u106))
+(define-constant ERR-ACCESS_DENIED (err u107))
+
+;; Constants for rate limiting (blocks)
+(define-constant RATE_LIMIT_WINDOW 144)  ;; ~1 day (assuming 10 min/block)
+(define-constant MAX_OPERATIONS_PER_WINDOW 10
+
+;; Contract state
+(define-data-var is-paused bool false)
+(define-data-var last-operation (optional { user: principal, block: uint }) none)
+(define-data-var operation-count uint u0)
+(define-data-var operation-window-start uint u0)
 
 ;; Data structures
 (define-map genetic-datasets
@@ -18,12 +32,13 @@
     {
         owner: principal,
         price: uint,
-        access-level: uint,
-        metadata-hash: (buff 32),          ;; Hash of genetic data metadata
+        access-level: uint,               ;; 1=basic, 2=detailed, 3=full
+        metadata-hash: (buff 32),         ;; Hash of genetic data metadata
         encrypted-storage-url: (string-utf8 256),  ;; IPFS or other storage URL
-        description: (string-utf8 256),     ;; Brief description of the dataset
-        created-at: uint,                  ;; Block height when created
-        updated-at: uint                   ;; Block height when last updated
+        description: (string-utf8 256),   ;; Brief description
+        created-at: uint,                 ;; Block height when created
+        updated-at: uint,                 ;; Block height when last updated
+        is-active: bool                   ;; Whether the dataset is active
     }
 )
 
@@ -31,14 +46,76 @@
 (define-map access-rights
     { data-id: uint, user: principal }
     {
-        access-level: uint,                ;; 1=basic, 2=detailed, 3=full
-        expiration: uint,                  ;; Block height when access expires
-        granted-by: principal              ;; Who granted the access
+        access-level: uint,               ;; 1=basic, 2=detailed, 3=full
+        expiration: uint,                 ;; Block height when access expires
+        granted-by: principal,            ;; Who granted the access
+        created-at: uint                  ;; When access was granted
     }
 )
 
-;; Administrative functions
-(define-data-var contract-owner principal tx-sender)
+;; Track rate limiting for operations
+(define-map operation-counts
+    { user: principal }
+    {
+        count: uint,
+        window-start: uint
+    }
+)
+
+;; Events
+(define-constant EVENT-DATA-REGISTERED 0x01)
+(define-constant EVENT-DATA-UPDATED 0x02
+(define-constant EVENT-ACCESS-GRANTED 0x03
+(define-constant EVENT-ACCESS-REVOKED 0x04
+
+;; Security Helpers
+(define-private (check-paused)
+    (asserts! (not (var-get is-paused)) ERR-CONTRACT_PAUSED)
+    (ok true)
+)
+
+(define-private (check-rate-limit (user principal))
+    (let (
+        (current-window (get-window-start))
+        (user-stats (default-to 
+            { count: u1, window-start: current-window }
+            (map-get? operation-counts { user: user })
+        ))
+    )
+        (if (is-eq (get window-start user-stats) current-window)
+            (let ((new-count (+ (get count user-stats) u1)))
+                (asserts! (<= new-count MAX_OPERATIONS_PER_WINDOW) ERR-RATE_LIMIT)
+                (map-set operation-counts 
+                    { user: user } 
+                    { count: new-count, window-start: current-window }
+                )
+            )
+            (map-set operation-counts 
+                { user: user } 
+                { count: u1, window-start: current-window }
+            )
+        )
+    )
+    (ok true)
+)
+
+(define-read-only (get-window-start)
+    (let ((current-block stacks-block-height))
+        (- current-block (mod current-block RATE_LIMIT_WINDOW))
+    )
+)
+
+(define-private (only-owner (data-id uint))
+    (let ((dataset (unwrap! (map-get? genetic-datasets { data-id: data-id }) ERR-DATA-NOT-FOUND)))
+        (asserts! (is-eq (get owner dataset) tx-sender) ERR-NOT-AUTHORIZED)
+        (ok dataset)
+    )
+)
+
+(define-private (validate-access-level (level uint))
+    (asserts! (and (>= level u1) (<= level u3)) ERR-INVALID-ACCESS_LEVEL)
+    (ok true)
+)
 
 ;; Register a new genetic dataset
 (define-public (register-genetic-data
