@@ -1,15 +1,18 @@
-import { config, reownConnector } from '../config/walletConfig';
+import { reownConnector, walletConfig } from '../config/walletConfig';
 import { createReownClient } from '@reown/appkit';
 
-// Initialize Reown client
+// Initialize Reown client with proper configuration
 const reownClient = createReownClient({
-  appName: 'GeneTrust',
-  appIcon: '/logo192.png',
-  appUrl: typeof window !== 'undefined' ? window.location.origin : 'https://genetrust.xyz',
+  appName: walletConfig.appDetails.name,
+  appIcon: walletConfig.appDetails.icon,
+  appUrl: walletConfig.appDetails.url,
   connectors: [reownConnector],
   autoConnect: true,
-  chains: config.chains,
-  ssr: true
+  chains: reownConnector.chains,
+  ssr: true,
+  onError: (error) => {
+    console.error('Reown Wallet Error:', error);
+  }
 });
 
 class ReownWalletService {
@@ -21,21 +24,41 @@ class ReownWalletService {
   }
 
   async init() {
-    if (this._isInitialized) return;
+    if (this._isInitialized || typeof window === 'undefined') return;
     
-    // Auto-connect if previously connected
-    await reownClient.autoConnect();
-    
-    // Subscribe to account changes
-    this._unsubscribe = reownClient.subscribe((state) => {
-      const address = state.address || null;
-      if (this._address !== address) {
-        this._address = address;
-        this._emit();
+    try {
+      // Auto-connect if previously connected
+      await reownClient.autoConnect();
+      
+      // Subscribe to account changes
+      this._unsubscribe = reownClient.subscribe((state) => {
+        const address = state.address || null;
+        if (this._address !== address) {
+          this._address = address;
+          this._emit();
+        }
+      });
+      
+      this._isInitialized = true;
+    } catch (error) {
+      console.error('Failed to initialize Reown wallet:', error);
+      throw error;
+    }
+  }
+
+  _emit() {
+    this._listeners.forEach(callback => {
+      try {
+        callback(this._address);
+      } catch (error) {
+        console.error('Error in wallet listener:', error);
       }
     });
-    
-    this._isInitialized = true;
+  }
+
+  addListener(callback) {
+    this._listeners.add(callback);
+    return () => this._listeners.delete(callback);
   }
 
   getAddress() {
@@ -46,13 +69,10 @@ class ReownWalletService {
     return !!this._address;
   }
 
-  setAddress(addr) {
-    this._address = addr || null;
-    this._emit();
-  }
-
   async connect() {
     try {
+      if (this.isConnected()) return this._address;
+      
       await reownClient.connect();
       return this._address;
     } catch (error) {
@@ -64,11 +84,38 @@ class ReownWalletService {
   async disconnect() {
     try {
       await reownClient.disconnect();
-      this.setAddress(null);
+      this._address = null;
+      this._emit();
     } catch (error) {
       console.error('Failed to disconnect wallet:', error);
       throw error;
     }
+  }
+
+  setAddress(addr) {
+    this._address = addr || null;
+    this._emit();
+  }
+
+  // Clean up on destroy
+  destroy() {
+    if (this._unsubscribe) {
+      this._unsubscribe();
+      this._unsubscribe = null;
+    }
+    this._listeners.clear();
+  }
+}
+
+// Create and initialize the service
+const reownWalletService = new ReownWalletService();
+
+// Initialize when running in browser
+if (typeof window !== 'undefined') {
+  reownWalletService.init().catch(console.error);
+}
+
+export default reownWalletService;
   }
 
   async signMessage(message) {
