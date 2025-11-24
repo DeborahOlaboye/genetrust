@@ -27,13 +27,13 @@ class WalletService {
   }
 
   _emit() {
-    this._listeners.forEach(callback => {
-      try {
-        callback(this._address);
+    for (const cb of this._listeners) {
+      try { 
+        cb(this._address); 
       } catch (error) {
         console.error('Error in wallet listener:', error);
       }
-    });
+    }
   }
 
   addListener(callback) {
@@ -61,15 +61,8 @@ class WalletService {
       }
 
       showConnect({
-        appDetails,
-        onFinish: () => {
-          this._updateAddress();
-          resolve(this._address);
-        },
-        onCancel: () => {
-          reject(new Error('User canceled wallet connection'));
-        },
-        userSession: this.userSession,
+        appDetails: {
+          ...appDetails,
           name: 'GeneTrust',
           icon: (typeof window !== 'undefined' ? window.location.origin : '') + '/favicon.svg',
         },
@@ -79,6 +72,7 @@ class WalletService {
             const userData = this.userSession.loadUserData();
             const address = userData.profile.stxAddress.testnet || userData.profile.stxAddress.mainnet;
             this.setAddress(address);
+            this._updateAddress();
             resolve(address);
           } else {
             reject(new Error('User did not sign in'));
@@ -87,7 +81,7 @@ class WalletService {
         onCancel: () => {
           reject(new Error('User cancelled connection'));
         },
-        userSession: this.userSession,
+        userSession: this.userSession
       });
     });
   }
@@ -100,15 +94,9 @@ class WalletService {
     this.setAddress(null);
   }
 
+  // Alias for addListener for backward compatibility
   onChange(cb) {
-    this._listeners.add(cb);
-    return () => this._listeners.delete(cb);
-  }
-
-  _emit() {
-    for (const cb of this._listeners) {
-      try { cb(this._address); } catch {}
-    }
+    return this.addListener(cb);
   }
 }
 

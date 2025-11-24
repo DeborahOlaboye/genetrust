@@ -1,6 +1,7 @@
 import { AppConfig, UserSession } from '@stacks/auth';
-import { createReownWagmiConnector } from '@reown/appkit-adapter-wagmi';
-import { mainnet, sepolia } from 'wagmi/chains';
+import { createReownClient } from '@reown/appkit';
+
+// Note: Removed wagmi/chains import as we'll use Stacks chain configuration
 
 // Stacks Configuration
 export const appConfig = new AppConfig(['store_write', 'publish_data']);
@@ -13,13 +14,15 @@ export const appDetails = {
   url: typeof window !== 'undefined' ? window.location.origin : 'https://genetrust.xyz'
 };
 
-// Reown Connector Configuration
-export const reownConnector = createReownWagmiConnector({
+// Reown Client Configuration
+export const reownClient = createReownClient({
   appName: appDetails.name,
   appIcon: appDetails.icon,
   appUrl: appDetails.url,
-  chains: [mainnet, sepolia],
-  projectId: process.env.NEXT_PUBLIC_REOWN_PROJECT_ID || 'YOUR_REOWN_PROJECT_ID'
+  // Using Stacks mainnet by default
+  network: 'mainnet', // or 'testnet' for testnet
+  // Optional: Add any additional configuration needed by Reown
+  // projectId: process.env.NEXT_PUBLIC_REOWN_PROJECT_ID
 });
 
 // Wallet Configuration
@@ -27,8 +30,8 @@ export const walletConfig = {
   appDetails,
   redirectTo: '/',
   onFinish: () => window.location.reload(),
-  userSession,
-  connectors: [reownConnector]
+  userSession
+  // Removed reownConnector since we're using reownClient directly
 };
 
 // Export all configurations
@@ -36,6 +39,6 @@ export default {
   appConfig,
   userSession,
   appDetails,
-  reownConnector,
+  reownClient, // Exporting reownClient instead of reownConnector
   walletConfig
 };
