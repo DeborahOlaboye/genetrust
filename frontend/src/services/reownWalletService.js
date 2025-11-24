@@ -1,23 +1,11 @@
-import { reownConnector, walletConfig } from '../config/walletConfig';
-import { createReownClient } from '@reown/appkit';
+import { reownClient, walletConfig } from '../config/walletConfig';
 import { ErrorCodes, AppError, withErrorHandling } from '../utils/errorHandler';
 import { createLogger } from '../utils/logger';
 
 // Create a scoped logger for this service
 const logger = createLogger({ module: 'ReownWalletService' });
 
-// Initialize Reown client with proper configuration
-const reownClient = createReownClient({
-  appName: walletConfig.appDetails.name,
-  appIcon: walletConfig.appDetails.icon,
-  appUrl: walletConfig.appDetails.url,
-  connectors: [reownConnector],
-  autoConnect: true,
-  chains: reownConnector.chains,
-  ssr: true,
-  onError: (error) => {
-    logger.error('Reown Wallet Error', error);
-  }
+// Reown client is now imported from walletConfig
 });
 
 class ReownWalletService {
@@ -38,29 +26,18 @@ class ReownWalletService {
       logger.info('Initializing Reown wallet service');
       
       try {
-        // Auto-connect if previously connected
-        logger.debug('Attempting to auto-connect wallet');
-        await reownClient.autoConnect();
-        
-        // Subscribe to account changes
-        this._unsubscribe = reownClient.subscribe((state) => {
-          const address = state.address || null;
-          logger.debug('Account state changed', { newAddress: address });
-          
-          if (this._address !== address) {
-            this._address = address;
-            logger.info(`Wallet ${address ? 'connected' : 'disconnected'}`, { address });
-            this._emit();
-          }
-        });
-        
-        this._isInitialized = true;
-        logger.info('Reown wallet service initialized successfully');
-      } catch (error) {
-        logger.error('Failed to initialize Reown wallet', error);
-        throw new AppError('WALLET_CONNECTION_FAILED', error);
       }
-    }, { method: 'init' });
+      
+      this._isInitialized = true;
+      logger.info('Reown Wallet Service initialized');
+    } catch (error) {
+      logger.error('Failed to initialize Reown Wallet Service', error);
+      throw new AppError(
+        'Failed to initialize wallet service',
+        ErrorCodes.WALLET_INIT_FAILED,
+        { cause: error }
+      );
+    }
   }
 
   _emit() {
@@ -88,65 +65,80 @@ class ReownWalletService {
   }
 
   async connect() {
-    return withErrorHandling(async () => {
-      logger.info('Connecting wallet');
-      
-      if (this.isConnected()) {
-        logger.debug('Wallet already connected', { address: this._address });
+    if (!this._isInitialized) {
+      await this.init();
+    }
+    
+    try {
+      const accounts = await reownClient.request({ method: 'eth_requestAccounts' });
+      if (accounts && accounts.length > 0) {
+        this._address = accounts[0];
+        this._emit();
         return this._address;
       }
-      
-      try {
-        await reownClient.connect();
-        logger.info('Wallet connected successfully', { address: this._address });
-        return this._address;
-      } catch (error) {
-        logger.error('Failed to connect wallet', error);
-        throw new AppError('WALLET_CONNECTION_FAILED', error);
-      }
-    }, { method: 'connect' });
+      throw new Error('No accounts returned from wallet');
+    } catch (error) {
+      logger.error('Failed to connect wallet', error);
+      throw new AppError(
+        'Failed to connect wallet',
+        ErrorCodes.WALLET_CONNECTION_FAILED,
+        { cause: error }
+      );
+    }
   }
 
   async disconnect() {
-    return withErrorHandling(async () => {
-      logger.info('Disconnecting wallet');
-      
-      if (!this.isConnected()) {
-        logger.debug('No active wallet connection to disconnect');
-        return;
-      }
-      
-      try {
-        await reownClient.disconnect();
-        this._address = null;
-        logger.info('Wallet disconnected successfully');
-        this._emit();
-      } catch (error) {
-        logger.error('Failed to disconnect wallet', error);
-        throw new AppError('WALLET_DISCONNECT_FAILED', error);
-      }
-    }, { method: 'disconnect' });
+    if (this._unsubscribe) {
+      this._unsubscribe();
+      this._unsubscribe = null;
+    }
+    
+    try {
+      // Not all wallets support disconnect, so we'll just reset the state
+      this._address = null;
+      this._emit();
+      logger.info('Wallet disconnected');
+    } catch (error) {
+      logger.error('Failed to disconnect wallet', error);
+      throw new AppError(
+        'Failed to disconnect wallet',
+        ErrorCodes.WALLET_DISCONNECT_FAILED,
+        { cause: error }
+      );
+    }
   }
 
   async signMessage(message) {
-    return withErrorHandling(async () => {
-      if (!this.isConnected()) {
-        throw new AppError('WALLET_NOT_CONNECTED');
-      }
-      
-      logger.info('Signing message');
-      try {
-        const signature = await reownClient.signMessage({ message });
-        logger.debug('Message signed successfully');
-        return signature;
-      } catch (error) {
-        logger.error('Failed to sign message', error);
-        throw new AppError('WALLET_SIGN_FAILED', error);
-      }
-    }, { method: 'signMessage' });
+    if (!this._address) {
+      throw new AppError(
+        'Wallet not connected',
+        ErrorCodes.WALLET_NOT_CONNECTED
+      );
+    }
+    
+    try {
+      const signature = await reownClient.request({
+        method: 'personal_sign',
+        params: [message, this._address, ''], // Empty string as password parameter
+      });
+      return signature;
+    } catch (error) {
+      logger.error('Failed to sign message', error);
+      throw new AppError(
+        'Failed to sign message',
+        ErrorCodes.WALLET_SIGNATURE_FAILED,
+        { cause: error }
+      );
+    }
   }
 
   // Clean up on destroy
+  destroy() {
+    if (this._unsubscribe) {
+      this._unsubscribe();
+      this._unsubscribe = null;
+    }
+  }
 
   onAddressChange(listener) {
     this._listeners.add(listener);
