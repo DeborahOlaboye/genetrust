@@ -16,34 +16,26 @@
 (define-constant ERR-CONTRACT_PAUSED (err u106))
 (define-constant ERR-ACCESS_DENIED (err u107))
 
-;; Constants
-(define-constant BLOCKS_PER_DAY 144)  ;; ~1 day (assuming 10 min/block)
-(define-constant MAX_OPS_PER_WINDOW 10)  ;; Max operations per rate limit window
-(define-constant ACCESS_EXPIRATION_BLOCKS 8640)  ;; ~30 days (144 * 60)
-(define-constant ACCESS_LEVEL_BASIC u1)
-(define-constant ACCESS_LEVEL_DETAILED u2)
-(define-constant ACCESS_LEVEL_FULL u3
-
-;; Rate limiting constants
-(define-constant RATE_LIMIT_WINDOW BLOCKS_PER_DAY)  ;; Reuse constant
-(define-constant MAX_OPERATIONS_PER_WINDOW MAX_OPS_PER_WINDOW  ;; Reuse constant
+;; Constants for rate limiting (blocks)
+(define-constant RATE_LIMIT_WINDOW 144)  ;; ~1 day (assuming 10 min/block)
+(define-constant MAX_OPERATIONS_PER_WINDOW 10
 
 ;; Contract state
 (define-data-var is-paused bool false)
-;; Remove unused vars to save storage
-(define-data-var operation-window-start uint u0)  ;; Keep only necessary vars
+(define-data-var last-operation (optional { user: principal, block: uint }) none)
+(define-data-var operation-count uint u0)
+(define-data-var operation-window-start uint u0)
 
 ;; Data structures
-;; Optimized data structure with minimal storage
 (define-map genetic-datasets
     { data-id: uint }
     {
         owner: principal,
         price: uint,
-        access-level: uint,               ;; Using constants: ACCESS_LEVEL_*
+        access-level: uint,               ;; 1=basic, 2=detailed, 3=full
         metadata-hash: (buff 32),         ;; Hash of genetic data metadata
-        encrypted-storage-url: (string-utf8 200),  ;; Reduced from 256 to save gas
-        description: (string-utf8 200),   ;; Reduced from 256 to save gas
+        encrypted-storage-url: (string-utf8 256),  ;; IPFS or other storage URL
+        description: (string-utf8 256),   ;; Brief description
         created-at: uint,                 ;; Block height when created
         updated-at: uint,                 ;; Block height when last updated
         is-active: bool                   ;; Whether the dataset is active
@@ -54,7 +46,7 @@
 (define-map access-rights
     { data-id: uint, user: principal }
     {
-        access-level: uint,               ;; Using constants: ACCESS_LEVEL_*
+        access-level: uint,               ;; 1=basic, 2=detailed, 3=full
         expiration: uint,                 ;; Block height when access expires
         granted-by: principal,            ;; Who granted the access
         created-at: uint                  ;; When access was granted
@@ -71,17 +63,14 @@
 )
 
 ;; Events
-;; Use more efficient event encoding
 (define-constant EVENT-DATA-REGISTERED 0x01)
-(define-constant EVENT-DATA-UPDATED 0x02)
-(define-constant EVENT-ACCESS-GRANTED 0x03)
-(define-constant EVENT-ACCESS-REVOKED 0x04)
+(define-constant EVENT-DATA-UPDATED 0x02
+(define-constant EVENT-ACCESS-GRANTED 0x03
+(define-constant EVENT-ACCESS-REVOKED 0x04
 
 ;; Security Helpers
-(define-read-only (is-contract-paused) (var-get is-paused))
-
 (define-private (check-paused)
-    (asserts! (not (is-contract-paused)) ERR-CONTRACT_PAUSED)
+    (asserts! (not (var-get is-paused)) ERR-CONTRACT_PAUSED)
     (ok true)
 )
 
@@ -116,17 +105,10 @@
     )
 )
 
-(define-read-only (get-dataset-owner (data-id uint))
-    (match (map-get? genetic-datasets { data-id: data-id })
-        dataset (some (get owner dataset))
-        none
-    )
-)
-
 (define-private (only-owner (data-id uint))
-    (let ((owner (unwrap! (get-dataset-owner data-id) ERR-DATA-NOT-FOUND)))
-        (asserts! (is-eq owner tx-sender) ERR-NOT-AUTHORIZED)
-        (ok (unwrap! (map-get? genetic-datasets { data-id: data-id }) ERR-DATA-NOT-FOUND))
+    (let ((dataset (unwrap! (map-get? genetic-datasets { data-id: data-id }) ERR-DATA-NOT-FOUND)))
+        (asserts! (is-eq (get owner dataset) tx-sender) ERR-NOT-AUTHORIZED)
+        (ok dataset)
     )
 )
 
@@ -141,32 +123,29 @@
     (price uint)
     (access-level uint)
     (metadata-hash (buff 32))
-    (storage-url (string-utf8 200))
-    (description (string-utf8 200)))
+    (storage-url (string-utf8 256))
+    (description (string-utf8 256)))
     
-    (try! (check-paused))
-    
-    ;; Validate input
-    (asserts! (is-none (map-get? genetic-datasets { data-id: data-id })) ERR-DATA-EXISTS)
-    (asserts! (and (>= access-level ACCESS_LEVEL_BASIC) (<= access-level ACCESS_LEVEL_FULL)) ERR-INVALID-ACCESS-LEVEL)
-    
-    ;; Set the dataset
-    (map-set genetic-datasets
-        { data-id: data-id }
-        {
-            owner: tx-sender,
-            price: price,
-            access-level: access-level,
-            metadata-hash: metadata-hash,
-            encrypted-storage-url: storage-url,
-            description: description,
-            created-at: block-height,
-            updated-at: block-height,
-            is-active: true
-        }
+    (let ((existing-data (map-get? genetic-datasets { data-id: data-id })))
+        (asserts! (is-none existing-data) ERR-DATA-EXISTS)
+        (asserts! (> access-level u0) ERR-INVALID-ACCESS-LEVEL)
+        (asserts! (<= access-level u3) ERR-INVALID-ACCESS-LEVEL)
+        
+        (map-set genetic-datasets
+            { data-id: data-id }
+            {
+                owner: tx-sender,
+                price: price,
+                access-level: access-level,
+                metadata-hash: metadata-hash,
+                encrypted-storage-url: storage-url,
+                description: description,
+                created-at: stacks-block-height,
+                updated-at: stacks-block-height
+            }
+        )
+        (ok true)
     )
-    
-    (ok (print { event: EVENT-DATA-REGISTERED, data-id: data-id, by: tx-sender }))
 )
 
 ;; Update dataset metadata
@@ -175,36 +154,39 @@
     (new-price (optional uint))
     (new-access-level (optional uint))
     (new-metadata-hash (optional (buff 32)))
-    (new-storage-url (optional (string-utf8 200)))
-    (new-description (optional (string-utf8 200))))
-    
-    (try! (check-paused))
+    (new-storage-url (optional (string-utf8 256)))
+    (new-description (optional (string-utf8 256))))
     
     (let ((dataset (unwrap! (map-get? genetic-datasets { data-id: data-id }) ERR-DATA-NOT-FOUND)))
-        (try! (only-owner data-id))
+        ;; Only the owner can update
+        (asserts! (is-eq (get owner dataset) tx-sender) ERR-NOT-AUTHORIZED)
         
-        ;; Only update what's provided
-        (let ((updates {
-            owner: (get owner dataset),
-            price: (default-to (get price dataset) new-price),
-            access-level: (default-to (get access-level dataset) new-access-level),
-            metadata-hash: (default-to (get metadata-hash dataset) new-metadata-hash),
-            encrypted-storage-url: (default-to (get encrypted-storage-url dataset) new-storage-url),
-            description: (default-to (get description dataset) new-description),
-            created-at: (get created-at dataset),
-            updated-at: block-height,
-            is-active: (get is-active dataset)
-        }))
+        ;; Prepare updated values
+        (let (
+            (updated-price (default-to (get price dataset) new-price))
+            (updated-access-level (default-to (get access-level dataset) new-access-level))
+            (updated-metadata-hash (default-to (get metadata-hash dataset) new-metadata-hash))
+            (updated-storage-url (default-to (get encrypted-storage-url dataset) new-storage-url))
+            (updated-description (default-to (get description dataset) new-description))
+        )
+            ;; Validate access level range
+            (asserts! (> updated-access-level u0) ERR-INVALID-ACCESS-LEVEL)
+            (asserts! (<= updated-access-level u3) ERR-INVALID-ACCESS-LEVEL)
             
-            ;; Validate access level if it's being updated
-            (when (is-some new-access-level)
-                (asserts! (and (>= (get access-level updates) ACCESS_LEVEL_BASIC) 
-                              (<= (get access-level updates) ACCESS_LEVEL_FULL)) 
-                         ERR-INVALID-ACCESS-LEVEL)
+            (map-set genetic-datasets
+                { data-id: data-id }
+                {
+                    owner: (get owner dataset),
+                    price: updated-price,
+                    access-level: updated-access-level,
+                    metadata-hash: updated-metadata-hash,
+                    encrypted-storage-url: updated-storage-url,
+                    description: updated-description,
+                    created-at: (get created-at dataset),
+                    updated-at: stacks-block-height
+                }
             )
-            
-            (map-set genetic-datasets { data-id: data-id } updates)
-            (ok (print { event: EVENT-DATA-UPDATED, data-id: data-id, by: tx-sender }))
+            (ok true)
         )
     )
 )
@@ -225,48 +207,32 @@
 )
 
 ;; Verify access rights - implements trait function
-(define-read-only (has-access (data-id uint) (user principal) (required-level uint))
+(define-public (verify-access-rights (data-id uint) (user principal))
     (match (map-get? access-rights { data-id: data-id, user: user })
-        rights (and 
-            (>= (get access-level rights) required-level)
-            (< block-height (get expiration rights))
-        )
-        false
+        rights (ok (< stacks-block-height (get expiration rights)))
+        (err u404)
     )
-)
-
-(define-read-only (verify-access-rights (data-id uint) (user principal))
-    (has-access data-id user ACCESS_LEVEL_BASIC)
 )
 
 ;; Grant access - implements trait function
 (define-public (grant-access (data-id uint) (user principal) (access-level uint))
-    (try! (check-paused))
-    
     (let ((dataset (unwrap! (map-get? genetic-datasets { data-id: data-id }) ERR-DATA-NOT-FOUND)))
-        (try! (only-owner data-id))
+        ;; Only the owner can grant access
+        (asserts! (is-eq (get owner dataset) tx-sender) ERR-NOT-AUTHORIZED)
         
-        ;; Ensure access level is valid and doesn't exceed dataset's max level
-        (asserts! (and (>= access-level ACCESS_LEVEL_BASIC) 
-                      (<= access-level (get access-level dataset))) 
-                 ERR-INVALID-ACCESS-LEVEL)
+        ;; Ensure access level is valid
+        (asserts! (> access-level u0) ERR-INVALID-ACCESS-LEVEL)
+        (asserts! (<= access-level (get access-level dataset)) ERR-INVALID-ACCESS-LEVEL)
         
         (map-set access-rights
             { data-id: data-id, user: user }
             {
                 access-level: access-level,
-                expiration: (+ block-height ACCESS_EXPIRATION_BLOCKS),
-                granted-by: tx-sender,
-                created-at: block-height
+                expiration: (+ stacks-block-height u8640), ;; Access expires after ~30 days
+                granted-by: tx-sender
             }
         )
-        (ok (print { 
-            event: EVENT-ACCESS-GRANTED, 
-            data-id: data-id, 
-            to: user, 
-            level: access-level,
-            expires-at: (+ block-height ACCESS_EXPIRATION_BLOCKS)
-        }))
+        (ok true)
     )
 )
 
@@ -284,10 +250,9 @@
 
 ;; Transfer ownership of a dataset
 (define-public (transfer-ownership (data-id uint) (new-owner principal))
-    (try! (check-paused))
-    
     (let ((dataset (unwrap! (map-get? genetic-datasets { data-id: data-id }) ERR-DATA-NOT-FOUND)))
-        (try! (only-owner data-id))
+        ;; Only the owner can transfer ownership
+        (asserts! (is-eq (get owner dataset) tx-sender) ERR-NOT-AUTHORIZED)
         
         (map-set genetic-datasets
             { data-id: data-id }
@@ -299,16 +264,10 @@
                 encrypted-storage-url: (get encrypted-storage-url dataset),
                 description: (get description dataset),
                 created-at: (get created-at dataset),
-                updated-at: block-height,
-                is-active: (get is-active dataset)
+                updated-at: stacks-block-height
             }
         )
-        (ok (print { 
-            event: "ownership-transferred", 
-            data-id: data-id, 
-            from: tx-sender, 
-            to: new-owner 
-        }))
+        (ok true)
     )
 )
 
