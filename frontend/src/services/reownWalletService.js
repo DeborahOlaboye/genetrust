@@ -1,11 +1,24 @@
-import { reownClient, walletConfig } from '../config/walletConfig';
+import { AppConfig, UserSession } from '@stacks/auth';
+import { StacksMainnet, StacksTestnet } from '@stacks/network';
+import { createReownClient } from '@reown/appkit';
 import { ErrorCodes, AppError, withErrorHandling } from '../utils/errorHandler';
 import { createLogger } from '../utils/logger';
 
 // Create a scoped logger for this service
 const logger = createLogger({ module: 'ReownWalletService' });
 
-// Reown client is now imported from walletConfig
+// Stacks Network Configuration
+const network = process.env.NODE_ENV === 'production' 
+  ? new StacksMainnet() 
+  : new StacksTestnet();
+
+// Initialize Reown Client
+const reownClient = createReownClient({
+  appName: 'GeneTrust',
+  appIcon: typeof window !== 'undefined' ? `${window.location.origin}/logo192.png` : '/logo192.png',
+  appUrl: typeof window !== 'undefined' ? window.location.origin : 'https://genetrust.xyz',
+  network: process.env.NODE_ENV === 'production' ? 'mainnet' : 'testnet',
+  // Add any additional Reown configuration here
 });
 
 class ReownWalletService {
@@ -14,6 +27,7 @@ class ReownWalletService {
     this._listeners = new Set();
     this._unsubscribe = null;
     this._isInitialized = false;
+    this._reownClient = reownClient;
   }
 
   async init() {
@@ -26,60 +40,199 @@ class ReownWalletService {
       logger.info('Initializing Reown wallet service');
       
       try {
-      }
-      
-      this._isInitialized = true;
-      logger.info('Reown Wallet Service initialized');
-    } catch (error) {
-      logger.error('Failed to initialize Reown Wallet Service', error);
-      throw new AppError(
-        'Failed to initialize wallet service',
-        ErrorCodes.WALLET_INIT_FAILED,
-        { cause: error }
-      );
-    }
-  }
-
-  _emit() {
-    logger.debug('Emitting wallet state change', { address: this._address });
-    this._listeners.forEach((callback, i) => {
-      try {
-        callback(this._address);
+        // Initialize Reown client
+        await this._reownClient.init();
+        
+        // Check if already connected
+        const accounts = await this._reownClient.getAccounts();
+        if (accounts && accounts.length > 0) {
+          this._address = accounts[0];
+          this._emit();
+        }
+        
+        // Set up event listeners
+        this._setupEventListeners();
+        
+        this._isInitialized = true;
+        logger.info('Reown Wallet Service initialized');
       } catch (error) {
-        console.error('Error in wallet listener:', error);
+        logger.error('Failed to initialize Reown Wallet Service', error);
+        throw new AppError(
+          'Failed to initialize wallet service',
+          ErrorCodes.WALLET_INIT_FAILED,
+          { cause: error }
+        );
       }
     });
   }
 
+  _setupEventListeners() {
+    // Listen for account changes
+    this._reownClient.on('accountsChanged', (accounts) => {
+      logger.debug('Accounts changed', { accounts });
+      this._address = accounts && accounts.length > 0 ? accounts[0] : null;
+      this._emit();
+    });
+    
+    // Listen for chain changes
+    this._reownClient.on('chainChanged', (chainId) => {
+      logger.debug('Chain changed', { chainId });
+      window.location.reload();
+    });
+    
+    // Listen for disconnects
+    this._reownClient.on('disconnect', () => {
+      logger.debug('Wallet disconnected');
+      this._address = null;
+      this._emit();
+    });
+  }
+
+  _emit() {
+    logger.debug('Emitting wallet state change', { address: this._address });
+    this._listeners.forEach((callback) => {
+      try {
+        callback(this._address);
+      } catch (error) {
+        logger.error('Error in wallet listener:', error);
+      }
+    });
+  }
+
+  // Add a listener for wallet state changes
   addListener(callback) {
     this._listeners.add(callback);
+    // Return cleanup function
     return () => this._listeners.delete(callback);
   }
 
+  // Get current connected address
   getAddress() {
     return this._address;
   }
 
+  // Connect wallet
+  async connect() {
+    return withErrorHandling(async () => {
+      logger.info('Connecting wallet');
+      try {
+        await this._reownClient.connect();
+        const accounts = await this._reownClient.getAccounts();
+        if (accounts && accounts.length > 0) {
+          this._address = accounts[0];
+          this._emit();
+          return this._address;
+        }
+        throw new Error('No accounts found');
+      } catch (error) {
+        logger.error('Failed to connect wallet', error);
+        throw new AppError(
+          'Failed to connect wallet',
+          ErrorCodes.WALLET_CONNECTION_FAILED,
+          { cause: error }
+        );
+      }
+    });
+  }
+
+  // Disconnect wallet
+  async disconnect() {
+    return withErrorHandling(async () => {
+      logger.info('Disconnecting wallet');
+      try {
+        await this._reownClient.disconnect();
+        this._address = null;
+        this._emit();
+      } catch (error) {
+        logger.error('Failed to disconnect wallet', error);
+        throw new AppError(
+          'Failed to disconnect wallet',
+          ErrorCodes.WALLET_DISCONNECT_FAILED,
+          { cause: error }
+        );
+      }
+    });
+  }
+
+  // Sign a message
+  async signMessage(message) {
+    return withErrorHandling(async () => {
+      if (!this._address) {
+        throw new AppError('Wallet not connected', ErrorCodes.WALLET_NOT_CONNECTED);
+      }
+      
+      try {
+        return await this._reownClient.signMessage({
+          message,
+          address: this._address,
+        });
+      } catch (error) {
+        logger.error('Failed to sign message', { error, message });
+        throw new AppError(
+          'Failed to sign message',
+          ErrorCodes.MESSAGE_SIGNING_FAILED,
+          { cause: error }
+        );
+      }
+    });
+  }
+
+  // Send a transaction
+  async sendTransaction(transaction) {
+    return withErrorHandling(async () => {
+      if (!this._address) {
+        throw new AppError('Wallet not connected', ErrorCodes.WALLET_NOT_CONNECTED);
+      }
+      
+      try {
+        return await this._reownClient.sendTransaction({
+          ...transaction,
+          from: this._address,
+        });
+      } catch (error) {
+        logger.error('Failed to send transaction', { error, transaction });
+        throw new AppError(
+          'Failed to send transaction',
+          ErrorCodes.TRANSACTION_FAILED,
+          { cause: error }
+        );
+      }
+    });
+  }
+
+  // Get the Reown client instance
+  getClient() {
+    return this._reownClient;
+  }
+
+  // Cleanup
+  destroy() {
+    if (this._unsubscribe) {
+      this._unsubscribe();
+      this._unsubscribe = null;
+    }
+    this._listeners.clear();
+    this._address = null;
+    this._isInitialized = false;
+  }
+
+  // Check if wallet is connected
   isConnected() {
     return !!this._address;
   }
+}
 
-  async connect() {
-    if (!this._isInitialized) {
-      await this.init();
-    }
-    
-    try {
-      const accounts = await reownClient.request({ method: 'eth_requestAccounts' });
-      if (accounts && accounts.length > 0) {
-        this._address = accounts[0];
-        this._emit();
-        return this._address;
-      }
-      throw new Error('No accounts returned from wallet');
-    } catch (error) {
-      logger.error('Failed to connect wallet', error);
-      throw new AppError(
+// Create and export a singleton instance
+const reownWalletService = new ReownWalletService();
+
+// Initialize when running in browser
+if (typeof window !== 'undefined') {
+  reownWalletService.init().catch(error => {
+    console.error('Failed to initialize Reown wallet service:', error);
+  });
+}
+
+export default reownWalletService;
         'Failed to connect wallet',
         ErrorCodes.WALLET_CONNECTION_FAILED,
         { cause: error }
