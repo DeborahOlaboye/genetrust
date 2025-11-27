@@ -1,0 +1,158 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+# Environment variables available to all jobs and steps
+env:
+  NODE_VERSION: '20'
+  PNPM_VERSION: '8'
+  DOCKER_IMAGE: genetrust-app
+  DOCKER_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+  DOCKER_PASSWORD: ${{ secrets.DOCKERHUB_TOKEN }}
+  DOCKER_IMAGE_NAME: ${{ secrets.DOCKERHUB_USERNAME || 'genetrust' }}/genetrust-app
+
+jobs:
+  # Lint and Test Job
+  lint-and-test:
+    name: Lint and Test
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'pnpm'
+    
+    - name: Set up pnpm
+      uses: pnpm/action-setup@v2
+      with:
+        version: ${{ env.PNPM_VERSION }}
+        run_install: true
+    
+    - name: Install dependencies
+      run: pnpm install --frozen-lockfile
+    
+    - name: Run linter
+      run: pnpm lint
+    
+    - name: Run tests
+      run: pnpm test:ci
+    
+    - name: Upload test coverage
+      uses: codecov/codecov-action@v4
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        file: ./coverage/lcov.info
+        fail_ci_if_error: false
+  
+  # Build and Push Docker Image
+  build-and-push:
+    name: Build and Push Docker Image
+    needs: lint-and-test
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    
+    - name: Log in to Docker Hub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+    
+    - name: Extract metadata (tags, labels) for Docker
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.DOCKER_IMAGE_NAME }}
+        tags: |
+          type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+          type=raw,value=develop,enable=${{ github.ref == 'refs/heads/develop' }}
+          type=sha,format=long,prefix=,suffix=,enable=${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' }}
+    
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        push: ${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' }}
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+  
+  # Deploy to Staging
+  deploy-staging:
+    name: Deploy to Staging
+    needs: build-and-push
+    if: github.ref == 'refs/heads/develop'
+    runs-on: ubuntu-latest
+    environment: staging
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Install SSH key
+      uses: shimataro/ssh-key-action@v2
+      with:
+        key: ${{ secrets.STAGING_SSH_PRIVATE_KEY }}
+        known_hosts: 'just-a-placeholder'
+    
+    - name: Deploy to staging server
+      run: |
+        ssh -o StrictHostKeyChecking=no \
+            -i ${{ env.HOME }}/.ssh/id_rsa \
+            ${{ secrets.STAGING_SSH_USER }}@${{ secrets.STAGING_SERVER_IP }} \
+            "cd /path/to/staging && \
+             docker-compose pull && \
+             docker-compose up -d --force-recreate"
+  
+  # Deploy to Production
+  deploy-production:
+    name: Deploy to Production
+    needs: [build-and-push, deploy-staging]
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Install SSH key
+      uses: shimataro/ssh-key-action@v2
+      with:
+        key: ${{ secrets.PRODUCTION_SSH_PRIVATE_KEY }}
+        known_hosts: 'just-a-placeholder'
+    
+    - name: Deploy to production server
+      run: |
+        ssh -o StrictHostKeyChecking=no \
+            -i ${{ env.HOME }}/.ssh/id_rsa \
+            ${{ secrets.PRODUCTION_SSH_USER }}@${{ secrets.PRODUCTION_SERVER_IP }} \
+            "cd /path/to/production && \
+             docker-compose pull && \
+             docker-compose up -d --force-recreate"
+    
+    - name: Notify deployment status
+      uses: rtCamp/action-slack-notify@v2
+      env:
+        SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+        SLACK_MESSAGE: "🚀 Production deployment completed successfully!"
+        SLACK_TITLE: "Deployment Status"
+        SLACK_COLOR: "#36a64f"
+      if: success()
