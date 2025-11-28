@@ -14,6 +14,7 @@ import GeneTrustLanding from './components/landing/GeneTrustLanding.jsx';
 import UserDashboard from './pages/UserDashboard.jsx';
 import ResearcherDashboard from './pages/ResearcherDashboard.jsx';
 import { ThemeProvider } from './theme/ThemeProvider.jsx';
+import ErrorBoundary from './components/common/ErrorBoundary.jsx';
 import './index.css';
 
 function AppRouter() {
@@ -28,13 +29,25 @@ function AppRouter() {
   const route = (hash || '').replace(/^#/, '').toLowerCase();
 
   if (route === 'dashboard') {
-    return <UserDashboard />;
+    return (
+      <ErrorBoundary>
+        <UserDashboard />
+      </ErrorBoundary>
+    );
   }
   if (route === 'researchers-dashboard') {
-    return <ResearcherDashboard />;
+    return (
+      <ErrorBoundary>
+        <ResearcherDashboard />
+      </ErrorBoundary>
+    );
   }
   // default landing
-  return <GeneTrustLanding />;
+  return (
+    <ErrorBoundary>
+      <GeneTrustLanding />
+    </ErrorBoundary>
+  );
 }
 
 ReactDOM.createRoot(document.getElementById('root')).render(
