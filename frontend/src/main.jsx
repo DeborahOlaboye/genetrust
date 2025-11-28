@@ -8,11 +8,8 @@
 //     <DNAJourneyLanding />
 //   </React.StrictMode>
 // );
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, lazy, Suspense } from 'react';
 import ReactDOM from 'react-dom/client';
-import GeneTrustLanding from './components/landing/GeneTrustLanding.jsx';
-import UserDashboard from './pages/UserDashboard.jsx';
-import ResearcherDashboard from './pages/ResearcherDashboard.jsx';
 import { ThemeProvider } from './theme/ThemeProvider.jsx';
 import { AppStateProvider } from './contexts/AppStateContext.jsx';
 import ErrorBoundary from './components/common/ErrorBoundary.jsx';
@@ -20,8 +17,23 @@ import { disableHoverOnTouch } from './utils/mobileOptimization.js';
 import './index.css';
 import './styles/mobile.css';
 
+// Lazy load route components for code splitting
+const GeneTrustLanding = lazy(() => import('./components/landing/GeneTrustLanding.jsx'));
+const UserDashboard = lazy(() => import('./pages/UserDashboard.jsx'));
+const ResearcherDashboard = lazy(() => import('./pages/ResearcherDashboard.jsx'));
+
 // Initialize mobile optimizations
 disableHoverOnTouch();
+
+// Loading component
+const PageLoader = () => (
+  <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#0B0B1D] via-[#14102E] to-[#0B0B1D]">
+    <div className="text-center">
+      <div className="w-16 h-16 mx-auto mb-4 border-4 border-[#8B5CF6] border-t-transparent rounded-full animate-spin" />
+      <p className="text-[#9AA0B2] text-sm">Loading...</p>
+    </div>
+  </div>
+);
 
 function AppRouter() {
   const [hash, setHash] = useState(window.location.hash);
@@ -37,21 +49,27 @@ function AppRouter() {
   if (route === 'dashboard') {
     return (
       <ErrorBoundary>
-        <UserDashboard />
+        <Suspense fallback={<PageLoader />}>
+          <UserDashboard />
+        </Suspense>
       </ErrorBoundary>
     );
   }
   if (route === 'researchers-dashboard') {
     return (
       <ErrorBoundary>
-        <ResearcherDashboard />
+        <Suspense fallback={<PageLoader />}>
+          <ResearcherDashboard />
+        </Suspense>
       </ErrorBoundary>
     );
   }
   // default landing
   return (
     <ErrorBoundary>
-      <GeneTrustLanding />
+      <Suspense fallback={<PageLoader />}>
+        <GeneTrustLanding />
+      </Suspense>
     </ErrorBoundary>
   );
 }
