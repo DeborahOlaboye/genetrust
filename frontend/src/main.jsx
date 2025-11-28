@@ -16,7 +16,12 @@ import ResearcherDashboard from './pages/ResearcherDashboard.jsx';
 import { ThemeProvider } from './theme/ThemeProvider.jsx';
 import { AppStateProvider } from './contexts/AppStateContext.jsx';
 import ErrorBoundary from './components/common/ErrorBoundary.jsx';
+import { disableHoverOnTouch } from './utils/mobileOptimization.js';
 import './index.css';
+import './styles/mobile.css';
+
+// Initialize mobile optimizations
+disableHoverOnTouch();
 
 function AppRouter() {
   const [hash, setHash] = useState(window.location.hash);

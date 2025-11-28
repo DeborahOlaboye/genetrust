@@ -1,0 +1,190 @@
+/**
+ * Mobile-specific CSS optimizations
+ *
+ * Features:
+ * - Safe area insets for notched devices
+ * - Touch-friendly interactions
+ * - Reduced animations for low-end devices
+ * - Optimized scrolling
+ */
+
+/* Safe area insets for iOS devices with notches */
+:root {
+  --safe-area-inset-top: env(safe-area-inset-top, 0px);
+  --safe-area-inset-right: env(safe-area-inset-right, 0px);
+  --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-inset-left: env(safe-area-inset-left, 0px);
+}
+
+/* Apply safe area padding */
+.safe-area-top {
+  padding-top: var(--safe-area-inset-top);
+}
+
+.safe-area-bottom {
+  padding-bottom: var(--safe-area-inset-bottom);
+}
+
+.safe-area-left {
+  padding-left: var(--safe-area-inset-left);
+}
+
+.safe-area-right {
+  padding-right: var(--safe-area-inset-right);
+}
+
+.safe-area-all {
+  padding-top: var(--safe-area-inset-top);
+  padding-right: var(--safe-area-inset-right);
+  padding-bottom: var(--safe-area-inset-bottom);
+  padding-left: var(--safe-area-inset-left);
+}
+
+/* Disable hover effects on touch devices */
+.touch-device *:hover {
+  opacity: 1 !important;
+  transform: none !important;
+}
+
+/* Touch-friendly tap targets (minimum 44x44px) */
+.tap-target {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Momentum scrolling for iOS */
+.momentum-scroll {
+  -webkit-overflow-scrolling: touch;
+  overflow-y: auto;
+}
+
+/* Prevent text selection on touch */
+.no-select {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* Disable pull-to-refresh on mobile */
+body {
+  overscroll-behavior-y: contain;
+}
+
+/* Optimize font rendering on mobile */
+@media (max-width: 640px) {
+  body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+}
+
+/* Reduce animations for users who prefer reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Mobile-specific breakpoints */
+@media (max-width: 640px) {
+  /* Smaller text on mobile */
+  .text-responsive {
+    font-size: 0.875rem;
+  }
+
+  /* Stack columns on mobile */
+  .grid-responsive {
+    grid-template-columns: 1fr;
+  }
+
+  /* Full width on mobile */
+  .w-responsive {
+    width: 100%;
+  }
+
+  /* Reduce spacing on mobile */
+  .space-responsive {
+    gap: 0.5rem;
+  }
+}
+
+/* Tablet-specific */
+@media (min-width: 641px) and (max-width: 1024px) {
+  .grid-responsive {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Landscape orientation optimizations */
+@media (orientation: landscape) and (max-height: 500px) {
+  /* Reduce vertical spacing in landscape */
+  .landscape-compact {
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+  }
+}
+
+/* High DPI displays */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .retina-optimized {
+    image-rendering: -webkit-optimize-contrast;
+  }
+}
+
+/* Dark mode adjustments for mobile OLED screens */
+@media (prefers-color-scheme: dark) {
+  .oled-black {
+    background-color: #000000;
+  }
+}
+
+/* Prevent iOS input zoom */
+@media (max-width: 640px) {
+  input[type='text'],
+  input[type='email'],
+  input[type='number'],
+  input[type='tel'],
+  input[type='url'],
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
+
+/* Optimize scrollable containers */
+.scroll-container {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+/* Fix for iOS sticky positioning */
+.sticky-ios {
+  position: -webkit-sticky;
+  position: sticky;
+}
+
+/* Improve tap highlight color */
+* {
+  -webkit-tap-highlight-color: rgba(139, 92, 246, 0.2);
+}
+
+/* Gesture support classes */
+.swipeable {
+  touch-action: pan-y;
+}
+
+.pinchable {
+  touch-action: pinch-zoom;
+}
+
+.no-touch {
+  touch-action: none;
+}
