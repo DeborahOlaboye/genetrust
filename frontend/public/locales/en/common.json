@@ -1,0 +1,14 @@
+{
+  "welcome": "Welcome to GenTrust",
+  "connect_wallet": "Connect Wallet",
+  "disconnect": "Disconnect",
+  "language": "Language",
+  "english": "English",
+  "spanish": "Spanish",
+  "arabic": "العربية",
+  "home": "Home",
+  "dashboard": "Dashboard",
+  "settings": "Settings",
+  "profile": "Profile",
+  "sign_out": "Sign Out"
+}
