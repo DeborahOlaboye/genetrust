@@ -8,7 +8,7 @@
 'use client';
 
 import { showConnect } from '@stacks/connect';
-import { appDetails, userSession } from '../config/walletConfig';
+import { appDetails, userSession } from '@/config/walletConfig';
 
 /**
  * WalletService handles all wallet-related functionality including connection,
