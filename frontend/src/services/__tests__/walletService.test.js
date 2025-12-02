@@ -199,6 +199,105 @@ describe('WalletService', () => {
     it('should handle sign out when not connected', () => {
       service.disconnect();
       expect(userSession.signUserOut).toHaveBeenCalledWith('/');
+      expect(service.getAddress()).toBeNull();
+    });
+  });
+
+  describe('Listener Management', () => {
+    it('should add and notify listeners', () => {
+      const listener1 = jest.fn();
+      const listener2 = jest.fn();
+      
+      const removeListener1 = service.addListener(listener1);
+      const removeListener2 = service.addListener(listener2);
+      
+      // Simulate address update
+      service._address = mockAddress;
+      service._emit();
+      
+      expect(listener1).toHaveBeenCalledWith(mockAddress);
+      expect(listener2).toHaveBeenCalledWith(mockAddress);
+      
+      // Test removing a listener
+      removeListener1();
+      
+      // Update and notify again
+      service._address = mockMainnetAddress;
+      service._emit();
+      
+      expect(listener1).toHaveBeenCalledTimes(1); // Should not be called again
+      expect(listener2).toHaveBeenCalledWith(mockMainnetAddress);
+    });
+    
+    it('should handle errors in listeners gracefully', () => {
+      const error = new Error('Test error');
+      const badListener = jest.fn().mockImplementation(() => {
+        throw error;
+      });
+      const goodListener = jest.fn();
+      
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+      
+      service.addListener(badListener);
+      service.addListener(goodListener);
+      
+      // This should not throw
+      service._emit();
+      
+      expect(consoleErrorSpy).toHaveBeenCalledWith('Error in wallet listener:', error);
+      expect(goodListener).toHaveBeenCalled();
+      
+      consoleErrorSpy.mockRestore();
+    });
+    
+    it('should throw when adding non-function listener', () => {
+      expect(() => service.addListener('not a function')).toThrow('Listener must be a function');
+      expect(() => service.addListener(123)).toThrow('Listener must be a function');
+      expect(() => service.addListener(null)).toThrow('Listener must be a function');
+    });
+  });
+  
+  describe('onChange Alias', () => {
+    it('should be an alias for addListener', () => {
+      const listener = jest.fn();
+      const removeListener = service.onChange(listener);
+      
+      service._address = mockAddress;
+      service._emit();
+      
+      expect(listener).toHaveBeenCalledWith(mockAddress);
+      expect(removeListener).toBeInstanceOf(Function);
+    });
+  });
+  
+  describe('Singleton Instance', () => {
+    it('should export a singleton instance', () => {
+      expect(walletService).toBeInstanceOf(WalletService);
+      expect(walletService).toBe(service);
+    });
+  });
+  
+  describe('_updateAddress', () => {
+    it('should update address from user session', () => {
+      userSession.isUserSignedIn.mockReturnValue(true);
+      userSession.loadUserData.mockReturnValue(mockUserData);
+      
+      service._updateAddress();
+      
+      expect(service.getAddress()).toBe(mockAddress);
+      expect(userSession.loadUserData).toHaveBeenCalled();
+    });
+    
+    it('should handle missing user data gracefully', () => {
+      userSession.isUserSignedIn.mockReturnValue(true);
+      userSession.loadUserData.mockReturnValue(null);
+      
+      service._updateAddress();
+      
+      expect(service.getAddress()).toBeNull();
+    });
+  });
+      expect(userSession.signUserOut).toHaveBeenCalledWith('/');
     });
   });
 
