@@ -3,24 +3,28 @@ import { userSession, appDetails } from '../../config/walletConfig';
 import { showConnect } from '@stacks/connect';
 
 // Mock the userSession and showConnect
+const mockUserSession = {
+  isUserSignedIn: jest.fn(),
+  loadUserData: jest.fn(),
+  isSignInPending: jest.fn(),
+  handlePendingSignIn: jest.fn(),
+  signUserOut: jest.fn(),
+  onSignIn: jest.fn(),
+  onSignOut: jest.fn(),
+};
+
 jest.mock('../../config/walletConfig', () => {
   const originalModule = jest.requireActual('../../config/walletConfig');
   return {
     ...originalModule,
-    userSession: {
-      isUserSignedIn: jest.fn(),
-      loadUserData: jest.fn(),
-      isSignInPending: jest.fn(),
-      handlePendingSignIn: jest.fn(),
-      signUserOut: jest.fn(),
-      onSignIn: jest.fn(),
-      onSignOut: jest.fn(),
-    },
+    userSession: mockUserSession,
   };
 });
 
+const mockShowConnect = jest.fn();
+
 jest.mock('@stacks/connect', () => ({
-  showConnect: jest.fn(),
+  showConnect: (...args) => mockShowConnect(...args),
   UserSession: jest.fn(),
   AppConfig: jest.fn(),
 }));
@@ -45,6 +49,16 @@ describe('WalletService', () => {
     // Reset the singleton instance for testing
     service._address = null;
     service._listeners = new Set();
+    // Reset the singleton instance
+    walletService._address = null;
+    walletService._listeners = new Set();
+  });
+
+  afterEach(() => {
+    // Clean up any remaining listeners
+    service._listeners.clear();
+    walletService._listeners.clear();
+    jest.restoreAllMocks();
   });
 
   describe('Initialization', () => {
@@ -94,15 +108,20 @@ describe('WalletService', () => {
   });
 
   describe('connect', () => {
-    const originalWindow = global.window;
+    let originalWindow;
     
     beforeEach(() => {
+      originalWindow = global.window;
       delete global.window;
       global.window = { location: { origin: 'http://test.com' } };
     });
 
     afterEach(() => {
-      global.window = originalWindow;
+      if (originalWindow) {
+        global.window = originalWindow;
+      } else {
+        delete global.window;
+      }
     });
 
     it('should call showConnect with correct parameters', async () => {
