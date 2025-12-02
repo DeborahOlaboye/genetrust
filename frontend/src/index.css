@@ -1,33 +1,72 @@
 @import "tailwindcss";
 
-/* Theme variables (no light blue or green). Default: neo (violet/pink/amber). */
+/* Light theme (default) */
 :root {
+  /* Light theme colors */
+  --color-bg: #f8fafc;
+  --color-surface: #ffffff;
+  --color-text: #1e293b;
+  --color-text-secondary: #64748b;
+  --color-primary: #7c3aed;
+  --color-secondary: #10b981;
+  --color-accent: #8b5cf6;
+  
+  /* Legacy theme variables (kept for compatibility) */
+  --bg-0: #f8fafc;
+  --bg-1: #ffffff;
+  --bg-2: #f1f5f9;
+  --text-subtle: #64748b;
+  --accent-1: #7c3aed;
+  --accent-2: #10b981;
+  --accent-3: #8b5cf6;
+}
+
+/* Dark theme */
+.dark {
+  --color-bg: #0f172a;
+  --color-surface: #1e293b;
+  --color-text: #f8fafc;
+  --color-text-secondary: #94a3b8;
+  --color-primary: #8b5cf6;
+  --color-secondary: #34d399;
+  --color-accent: #a78bfa;
+  
+  /* Legacy theme variables (kept for compatibility) */
   --bg-0: #0b0b1d;
   --bg-1: #14102e;
   --bg-2: #1c1440;
   --text-subtle: #d6d7ff;
-  --accent-1: #8b5cf6; /* violet */
-  --accent-2: #f472b6; /* pink */
-  --accent-3: #f59e0b; /* amber */
+  --accent-1: #8b5cf6;
+  --accent-2: #f472b6;
+  --accent-3: #f59e0b;
 }
 
-/* Alternate dark theme: indigo/fuchsia/rose */
-[data-theme='alt'] {
-  --bg-0: #0a0a14;
-  --bg-1: #111028;
-  --bg-2: #17133a;
-  --text-subtle: #e6e7ff;
-  --accent-1: #4f46e5; /* indigo */
-  --accent-2: #d946ef; /* fuchsia */
-  --accent-3: #fb7185; /* rose */
+/* Smooth transitions for theme changes */
+html {
+  @apply transition-colors duration-200;
+  background-color: var(--color-bg);
+  color: var(--color-text);
 }
 
-/* Utility classes bound to CSS variables */
+/* Utility classes */
 @layer utilities {
+  /* Background utilities */
   .bg-surface-0 { background-color: var(--bg-0); }
   .bg-surface-1 { background-color: var(--bg-1); }
   .bg-surface-2 { background-color: var(--bg-2); }
+  
+  /* Text utilities */
   .text-subtle { color: var(--text-subtle); }
+  .text-primary { color: var(--color-primary); }
+  .text-secondary { color: var(--color-secondary); }
+  
+  /* Border utilities */
+  .border-primary { border-color: var(--color-primary); }
+  .border-secondary { border-color: var(--color-secondary); }
+  
+  /* Hover states */
+  .hover\:bg-surface-1:hover { background-color: var(--bg-1); }
+  .hover\:text-primary:hover { color: var(--color-primary); }
 
   .text-accent-1 { color: var(--accent-1); }
   .text-accent-2 { color: var(--accent-2); }

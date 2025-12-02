@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
-export default {
+module.exports = {
+  darkMode: 'class',
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
@@ -12,6 +13,24 @@ export default {
         'genomic-dark': '#14102E',
         'genomic-cyan': '#F472B6',
         'genomic-bg': '#0B0B1D',
+        // Dark mode colors
+        dark: {
+          primary: '#8B5CF6',
+          secondary: '#34D399',
+          background: '#0F172A',
+          surface: '#1E293B',
+          text: '#F8FAFC',
+          'text-secondary': '#94A3B8',
+        },
+        // Light mode colors
+        light: {
+          primary: '#7C3AED',
+          secondary: '#10B981',
+          background: '#F8FAFC',
+          surface: '#FFFFFF',
+          text: '#1E293B',
+          'text-secondary': '#64748B',
+        },
       },
       animation: {
         'dna-spin': 'spin 20s linear infinite',
