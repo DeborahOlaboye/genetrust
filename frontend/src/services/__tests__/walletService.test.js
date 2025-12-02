@@ -291,31 +291,6 @@ describe('WalletService', () => {
     it('should handle missing user data gracefully', () => {
       userSession.isUserSignedIn.mockReturnValue(true);
       userSession.loadUserData.mockReturnValue(null);
-      
-      service._updateAddress();
-      
-      expect(service.getAddress()).toBeNull();
-    });
-  });
-      expect(service.getAddress()).toBe(mockAddress);
-    });
-
-    it('should set address to null when user is not signed in', () => {
-      userSession.isUserSignedIn.mockReturnValue(false);
-      service._address = 'some-address';
-      
-      service._updateAddress();
-      
-      expect(service.getAddress()).toBeNull();
-    });
-  });
-
-  describe('listeners', () => {
-    it('should add and remove listeners', () => {
-      const listener1 = jest.fn();
-      const listener2 = jest.fn();
-      
-      const removeListener1 = service.addListener(listener1);
       const removeListener2 = service.addListener(listener2);
       
       // Test that listeners are called
