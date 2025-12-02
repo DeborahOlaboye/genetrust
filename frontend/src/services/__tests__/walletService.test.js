@@ -114,6 +114,11 @@ describe('WalletService', () => {
       originalWindow = global.window;
       delete global.window;
       global.window = { location: { origin: 'http://test.com' } };
+      
+      // Reset mocks
+      mockShowConnect.mockClear();
+      userSession.isUserSignedIn.mockClear();
+      userSession.loadUserData.mockClear();
     });
 
     afterEach(() => {
@@ -125,24 +130,22 @@ describe('WalletService', () => {
     });
 
     it('should call showConnect with correct parameters', async () => {
-      const mockResolve = jest.fn();
-      const mockReject = jest.fn();
-      const mockPromise = new Promise((resolve, reject) => {
-        mockResolve.mockImplementation(resolve);
-        mockReject.mockImplementation(reject);
+      // Setup mock implementation
+      let onFinishCallback;
+      mockShowConnect.mockImplementation(({ onFinish }) => {
+        onFinishCallback = onFinish;
+        return Promise.resolve();
       });
       
-      showConnect.mockImplementation(({ onFinish }) => {
-        onFinish();
-        return mockPromise;
-      });
-      
+      // Mock user session
       userSession.isUserSignedIn.mockReturnValue(true);
       userSession.loadUserData.mockReturnValue(mockUserData);
       
-      await service.connect();
+      // Start the connection
+      const connectPromise = service.connect();
       
-      expect(showConnect).toHaveBeenCalledWith({
+      // Verify showConnect was called with correct parameters
+      expect(mockShowConnect).toHaveBeenCalledWith({
         appDetails: {
           ...appDetails,
           name: 'GeneTrust',
@@ -151,8 +154,68 @@ describe('WalletService', () => {
         redirectTo: '/',
         onFinish: expect.any(Function),
         onCancel: expect.any(Function),
-        userSession: userSession
+        userSession: service.userSession,
       });
+      
+      // Simulate successful connection
+      onFinishCallback();
+      
+      // Wait for the connect promise to resolve
+      await expect(connectPromise).resolves.toBe(mockAddress);
+      
+      // Verify the service state was updated
+      expect(service.getAddress()).toBe(mockAddress);
+      expect(service.isConnected()).toBe(true);
+    });
+    
+    it('should reject with error when not in browser environment', async () => {
+      // Remove window object to simulate non-browser environment
+      delete global.window;
+      
+      await expect(service.connect()).rejects.toThrow(
+        'Wallet can only be connected in the browser environment'
+      );
+    });
+    
+    it('should resolve immediately if already connected', async () => {
+      // Set up initial connected state
+      service._address = mockAddress;
+      
+      const result = await service.connect();
+      
+      expect(result).toBe(mockAddress);
+      expect(mockShowConnect).not.toHaveBeenCalled();
+    });
+    
+    it('should handle user cancellation', async () => {
+      let onCancelCallback;
+      
+      mockShowConnect.mockImplementation(({ onCancel }) => {
+        onCancelCallback = onCancel;
+        return Promise.reject(new Error('User cancelled'));
+      });
+      
+      userSession.isUserSignedIn.mockReturnValue(false);
+      
+      const connectPromise = service.connect();
+      
+      // Simulate user cancellation
+      if (onCancelCallback) onCancelCallback();
+      
+      await expect(connectPromise).rejects.toThrow('User cancelled connection');
+      expect(service.isConnected()).toBe(false);
+    });
+    
+    it('should handle sign in failure', async () => {
+      mockShowConnect.mockImplementation(({ onFinish }) => {
+        onFinish();
+        return Promise.resolve();
+      });
+      
+      userSession.isUserSignedIn.mockReturnValue(false);
+      
+      await expect(service.connect()).rejects.toThrow('User did not sign in');
+      expect(service.isConnected()).toBe(false);
     });
 
     it('should resolve with address on successful connection', async () => {
