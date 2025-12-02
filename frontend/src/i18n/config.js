@@ -9,13 +9,15 @@ i18n
   .use(initReactI18next)
   .init({
     fallbackLng: 'en',
-    debug: false,
+    supportedLngs: ['en', 'es', 'ar'],
+    debug: process.env.NODE_ENV === 'development',
     interpolation: {
       escapeValue: false,
     },
     detection: {
       order: ['localStorage', 'navigator'],
       caches: ['localStorage'],
+      lookupLocalStorage: 'i18nextLng',
     },
     backend: {
       loadPath: '/locales/{{lng}}/{{ns}}.json',
