@@ -297,17 +297,6 @@ describe('WalletService', () => {
       expect(service.getAddress()).toBeNull();
     });
   });
-      expect(userSession.signUserOut).toHaveBeenCalledWith('/');
-    });
-  });
-
-  describe('_updateAddress', () => {
-    it('should update address when user is signed in', () => {
-      userSession.isUserSignedIn.mockReturnValue(true);
-      userSession.loadUserData.mockReturnValue(mockUserData);
-      
-      service._updateAddress();
-      
       expect(service.getAddress()).toBe(mockAddress);
     });
 
