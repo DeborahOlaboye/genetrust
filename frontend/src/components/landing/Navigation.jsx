@@ -6,6 +6,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { showConnect } from '@stacks/connect';
 import { AppConfig, UserSession } from '@stacks/auth';
 import { walletService } from '../../services/walletService.js';
+import LanguageSelector from '../LanguageSelector/LanguageSelector';
 
 /**
  * Navigation Component
@@ -127,8 +128,14 @@ const Navigation = () => {
             </div>
           </div>
 
-          {/* Connect Wallet Button */}
+          {/* Connect Wallet Button and Language Selector */}
           <div className="flex items-center space-x-4">
+            {/* Language Selector */}
+            <div className="hidden md:block">
+              <LanguageSelector />
+            </div>
+            
+            {/* Connect Wallet Button */}
             <button
               onClick={handleConnectWallet}
               className={`
