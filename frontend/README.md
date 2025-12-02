@@ -1,12 +1,69 @@
-# React + Vite
+# GeneTrust Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A modern React application for managing genomic data with blockchain integration.
 
-Currently, two official plugins are available:
+## 🚀 Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **Wallet Integration**: Connect with Stacks wallet for blockchain interactions
+- **Data Management**: Securely manage genomic datasets
+- **User Authentication**: Secure authentication flow
+- **Responsive Design**: Works on all device sizes
 
-## Expanding the ESLint configuration
+## 🛠️ Development
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+### Prerequisites
+- Node.js 16+
+- npm 8+ or yarn
+- Stacks wallet (for blockchain features)
+
+### Setup
+1. Install dependencies:
+   ```bash
+   npm install
+   # or
+   yarn
+   ```
+
+2. Start development server:
+   ```bash
+   npm run dev
+   # or
+   yarn dev
+   ```
+
+3. Open [http://localhost:5173](http://localhost:5173) in your browser.
+
+### Testing
+Run unit tests:
+```bash
+npm test
+# or
+yarn test
+```
+
+## 📁 Project Structure
+
+```
+src/
+├── components/     # Reusable UI components
+├── pages/         # Page components
+├── services/      # API and service integrations
+├── hooks/         # Custom React hooks
+├── utils/         # Utility functions
+├── assets/        # Static assets
+└── App.jsx        # Main application component
+```
+
+## 📚 Documentation
+
+- [Component Architecture](./docs/COMPONENT_ARCHITECTURE.md)
+- [State Management](./docs/STATE_MANAGEMENT.md)
+- [API Integration](./docs/API_INTEGRATION.md)
+
+## 🤝 Contributing
+
+Please read our [Contributing Guide](./CONTRIBUTING.md) for development setup and contribution guidelines.
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
