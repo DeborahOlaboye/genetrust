@@ -10,6 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@hookform/resolvers": "^5.2.2",
+    "@radix-ui/react-slot": "^1.2.4",
     "@react-three/drei": "^10.3.0",
     "@react-three/fiber": "^9.1.2",
     "@stacks/auth": "^7.1.0",
@@ -17,6 +19,7 @@
     "@stacks/network": "^7.0.2",
     "@stacks/transactions": "^7.1.0",
     "@tailwindcss/postcss": "^4.1.10",
+    "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "framer-motion": "^12.18.1",
     "i18next": "^25.7.1",
@@ -25,9 +28,12 @@
     "lucide-react": "^0.515.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
+    "react-hook-form": "^7.67.0",
     "react-hot-toast": "^2.6.0",
     "react-i18next": "^16.3.5",
-    "three": "^0.177.0"
+    "tailwind-merge": "^3.4.0",
+    "three": "^0.177.0",
+    "zod": "^4.1.13"
   },
   "devDependencies": {
     "@babel/preset-env": "^7.28.5",
