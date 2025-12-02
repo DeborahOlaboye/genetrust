@@ -1,9 +1,13 @@
 import { createLogger } from '../../utils/logger';
-import { providers, events, userProperties } from '../../config/analytics';
+import { providers, events, userProperties, ConsentCategories } from '../../config/analytics';
 import { consentManager } from './consentManager';
 
 const logger = createLogger({ module: 'AnalyticsService' });
 
+/**
+ * AnalyticsService - A service for handling analytics tracking
+ * Supports multiple analytics providers and respects user consent
+ */
 class AnalyticsService {
   constructor() {
     this._isInitialized = false;
@@ -20,10 +24,6 @@ class AnalyticsService {
     consentManager.onConsentChange(this._handleConsentChange);
   }
 
-  /**
-   * Initialize analytics services based on configuration
-   * @param {Object} config - Configuration object
-   */
   /**
    * Initialize the analytics service with the given configuration
    * @param {Object} config - Configuration object
@@ -68,11 +68,6 @@ class AnalyticsService {
     }
   }
 
-  /**
-   * Track an error
-   * @param {Error} error - The error to track
-   * @param {Object} context - Additional context about the error
-   */
   /**
    * Track a page view
    * @param {string} [path] - The path of the page (defaults to current path)
@@ -146,12 +141,6 @@ class AnalyticsService {
 
   /**
    * Track a performance metric
-   * @param {string} name - Name of the metric
-   * @param {number} value - Value of the metric
-   * @param {Object} tags - Additional tags for the metric
-   */
-  /**
-   * Track a performance metric
    * @param {string} name - Name of the metric (e.g., 'page_load', 'api_call')
    * @param {number} value - Value of the metric (e.g., duration in milliseconds)
    * @param {Object} [properties] - Additional properties for the metric
@@ -182,11 +171,6 @@ class AnalyticsService {
     }
   }
 
-  /**
-   * Track a user event
-   * @param {string} eventName - Name of the event
-   * @param {Object} properties - Additional properties for the event
-   */
   /**
    * Track a custom event
    * @param {string} eventName - Name of the event (should be one of the predefined events)
@@ -224,11 +208,6 @@ class AnalyticsService {
     }
   }
 
-  /**
-   * Identify a user for user analytics
-   * @param {string} userId - Unique identifier for the user
-   * @param {Object} traits - User traits/properties
-   */
   /**
    * Identify a user
    * @param {string} userId - Unique identifier for the user
@@ -290,6 +269,7 @@ class AnalyticsService {
 
   /**
    * Initialize Google Analytics
+   * @private
    */
   async _initGoogleAnalytics() {
     if (this._providers.ga) return;
@@ -309,15 +289,15 @@ class AnalyticsService {
       window.dataLayer = window.dataLayer || [];
       window.gtag = function() { window.dataLayer.push(arguments); };
       
-      gtag('js', new Date());
-      gtag('config', providers.googleAnalytics.measurementId, {
+      window.gtag('js', new Date());
+      window.gtag('config', providers.googleAnalytics.measurementId, {
         debug_mode: providers.googleAnalytics.debug,
         // Add any additional configuration here
       });
       
       this._providers.ga = {
         track: (eventData) => {
-          gtag('event', eventData.action, {
+          window.gtag('event', eventData.action || eventData.event, {
             event_category: eventData.category,
             event_label: eventData.label,
             value: eventData.value,
@@ -325,7 +305,7 @@ class AnalyticsService {
           });
         },
         trackMetric: (metricData) => {
-          gtag('event', 'timing_complete', {
+          window.gtag('event', 'timing_complete', {
             name: metricData.name,
             value: metricData.value,
             event_category: metricData.category,
@@ -334,12 +314,13 @@ class AnalyticsService {
           });
         },
         identify: (userData) => {
-          gtag('set', 'user_properties', userData.traits);
+          window.gtag('set', 'user_properties', userData.traits);
         },
         trackError: (errorData) => {
-          gtag('event', 'exception', {
+          window.gtag('event', 'exception', {
             description: errorData.message,
-            fatal: errorData.level === 'error'
+            fatal: errorData.level === 'error',
+            ...errorData.context
           });
         }
       };
@@ -352,6 +333,7 @@ class AnalyticsService {
   
   /**
    * Initialize Mixpanel
+   * @private
    */
   async _initMixpanel() {
     if (this._providers.mixpanel) return;
@@ -413,188 +395,200 @@ class AnalyticsService {
       logger.error('Failed to initialize Mixpanel', { error });
     }
   }
-    // function gtag(){dataLayer.push(arguments);}
-    // gtag('js', new Date());
-    // gtag('config', process.env.REACT_APP_GA_MEASUREMENT_ID);
-  }
 
-  _formatError(error, context) {
-    const isError = error instanceof Error;
+  /**
+   * Format an error for consistent error tracking
+   * @private
+   */
+  _formatError(error, context = {}) {
+    // Format error for consistent error tracking
+    if (error instanceof Error) {
+      return {
+        name: error.name,
+        message: error.message,
+        stack: error.stack,
+        context: {
+          ...context
+        }
+      };
+    }
     
+    // Handle non-Error objects
     return {
-      // Error properties
-      name: isError ? error.name : 'UnknownError',
+      name: 'NonError',
+      message: String(error),
+      context: {
+        originalError: error,
+        ...context
+      }
     };
   }
   
-  // Handle non-Error objects
-  return {
-    name: 'NonError',
-    message: String(error),
-    context: {
-      originalError: error,
-      ...context
-    }
-  };
-}
-
-/**
- * Get device type
- * @private
- */
-_getDeviceType() {
-  if (typeof window === 'undefined') return 'server';
-  
-  const userAgent = window.navigator.userAgent;
-  if (/(tablet|ipad|playbook|silk)|(android(?!.*mobi))/i.test(userAgent)) {
-    return 'tablet';
-  }
-  if (/Mobile|Android|iP(hone|od)|IEMobile|BlackBerry|Kindle|Silk-Accelerated|(hpw|web)OS|Opera M(obi|ini)/.test(userAgent)) {
-    return 'mobile';
-  }
-  return 'desktop';
-}
-
-/**
- * Get browser info
- * @private
- */
-_getBrowserInfo() {
-  if (typeof window === 'undefined') return 'server';
-  
-  const userAgent = window.navigator.userAgent;
-  let browserName = 'Unknown';
-  
-  if (userAgent.indexOf('Firefox') > -1) {
-    browserName = 'Firefox';
-  } else if (userAgent.indexOf('SamsungBrowser') > -1) {
-    browserName = 'Samsung Browser';
-  } else if (userAgent.indexOf('Opera') > -1 || userAgent.indexOf('OPR') > -1) {
-    browserName = 'Opera';
-  } else if (userAgent.indexOf('Trident') > -1) {
-    browserName = 'Internet Explorer';
-  } else if (userAgent.indexOf('Edge') > -1) {
-    browserName = 'Edge';
-  } else if (userAgent.indexOf('Chrome') > -1) {
-    browserName = 'Chrome';
-  } else if (userAgent.indexOf('Safari') > -1) {
-    browserName = 'Safari';
-  }
-  
-  return browserName;
-}
-
-/**
- * Get OS info
- * @private
- */
-_getOSInfo() {
-  if (typeof window === 'undefined') return 'server';
-  
-  const userAgent = window.navigator.userAgent;
-  let os = 'Unknown';
-  
-  if (userAgent.indexOf('Windows') > -1) {
-    os = 'Windows';
-  } else if (userAgent.indexOf('Mac') > -1) {
-    os = 'MacOS';
-  } else if (userAgent.indexOf('X11') > -1) {
-    os = 'UNIX';
-  } else if (userAgent.indexOf('Linux') > -1) {
-    os = 'Linux';
-  } else if (/Android/.test(userAgent)) {
-    os = 'Android';
-  } else if (/iPhone|iPad|iPod/.test(userAgent)) {
-    os = 'iOS';
-  }
-  
-  return os;
-}
-
-/**
- * Queue an event to be processed later
- * @private
- */
-_queueEvent(type, data) {
-  this._analyticsQueue.push({ type, data, timestamp: Date.now() });
-  
-  // Limit queue size to prevent memory issues
-  if (this._analyticsQueue.length > 100) {
-    this._analyticsQueue.shift();
-  }
-}
-
-/**
- * Process queued events
- * @private
- */
-_processQueue() {
-  while (this._analyticsQueue.length > 0) {
-    const { type, data } = this._analyticsQueue.shift();
+  /**
+   * Get device type
+   * @private
+   */
+  _getDeviceType() {
+    if (typeof window === 'undefined') return 'server';
     
-    try {
-      switch (type) {
-        case 'error':
-          this.trackError(data.error || data, data.context, data.level || 'error');
-          break;
-        case 'metric':
-          this.trackMetric(data.name, data.value, data.properties || data.tags, data.category);
-          break;
-        case 'event':
-          this.trackEvent(data.eventName || data.event, data.properties, data.category, data.action);
-          break;
-        case 'pageView':
-          this.trackPageView(data.path, data.title, data.properties);
-          break;
-        case 'identify':
-          this.identifyUser(data.userId, data.traits || data);
-          break;
-        default:
-          logger.warn(`Unknown event type in queue: ${type}`, data);
-      }
-    } catch (error) {
-      logger.error(`Failed to process queued ${type} event`, { error, eventData: data });
+    const userAgent = window.navigator.userAgent;
+    if (/(tablet|ipad|playbook|silk)|(android(?!.*mobi))/i.test(userAgent)) {
+      return 'tablet';
+    }
+    if (/Mobile|Android|iP(hone|od)|IEMobile|BlackBerry|Kindle|Silk-Accelerated|(hpw|web)OS|Opera M(obi|ini)/.test(userAgent)) {
+      return 'mobile';
+    }
+    return 'desktop';
+  }
+  
+  /**
+   * Get browser info
+   * @private
+   */
+  _getBrowserInfo() {
+    if (typeof window === 'undefined') return 'server';
+    
+    const userAgent = window.navigator.userAgent;
+    let browserName = 'Unknown';
+    
+    if (userAgent.indexOf('Firefox') > -1) {
+      browserName = 'Firefox';
+    } else if (userAgent.indexOf('SamsungBrowser') > -1) {
+      browserName = 'Samsung Browser';
+    } else if (userAgent.indexOf('Opera') > -1 || userAgent.indexOf('OPR') > -1) {
+      browserName = 'Opera';
+    } else if (userAgent.indexOf('Trident') > -1) {
+      browserName = 'Internet Explorer';
+    } else if (userAgent.indexOf('Edge') > -1) {
+      browserName = 'Edge';
+    } else if (userAgent.indexOf('Chrome') > -1) {
+      browserName = 'Chrome';
+    } else if (userAgent.indexOf('Safari') > -1) {
+      browserName = 'Safari';
+    }
+    
+    return browserName;
+  }
+  
+  /**
+   * Get OS info
+   * @private
+   */
+  _getOSInfo() {
+    if (typeof window === 'undefined') return 'server';
+    
+    const userAgent = window.navigator.userAgent;
+    let os = 'Unknown';
+    
+    if (userAgent.indexOf('Windows') > -1) {
+      os = 'Windows';
+    } else if (userAgent.indexOf('Mac') > -1) {
+      os = 'MacOS';
+    } else if (userAgent.indexOf('X11') > -1) {
+      os = 'UNIX';
+    } else if (userAgent.indexOf('Linux') > -1) {
+      os = 'Linux';
+    } else if (/Android/.test(userAgent)) {
+      os = 'Android';
+    } else if (/iPhone|iPad|iPod/.test(userAgent)) {
+      os = 'iOS';
+    }
+    
+    return os;
+  }
+  
+  /**
+   * Queue an event to be processed later
+   * @private
+   */
+  _queueEvent(type, data) {
+    this._analyticsQueue.push({ type, data, timestamp: Date.now() });
+    
+    // Limit queue size to prevent memory issues
+    if (this._analyticsQueue.length > 100) {
+      this._analyticsQueue.shift();
     }
   }
-}
-
-/**
- * Reset the analytics service
- * @private
- */
-reset() {
-  // Clear any stored data
-  this._providers = {};
-  this._isInitialized = false;
-  this._pageViewTracked = false;
   
-  // Note: We keep the current user and queue to avoid losing data
-  // if analytics is re-enabled
+  /**
+   * Process queued events
+   * @private
+   */
+  _processQueue() {
+    while (this._analyticsQueue.length > 0) {
+      const { type, data } = this._analyticsQueue.shift();
+      
+      try {
+        switch (type) {
+          case 'error':
+            this.trackError(data.error || data, data.context, data.level || 'error');
+            break;
+          case 'metric':
+            this.trackMetric(data.name, data.value, data.properties || data.tags, data.category);
+            break;
+          case 'event':
+            this.trackEvent(data.eventName || data.event, data.properties, data.category, data.action);
+            break;
+          case 'pageView':
+            this.trackPageView(data.path, data.title, data.properties);
+            break;
+          case 'identify':
+            this.identifyUser(data.userId, data.traits || data);
+            break;
+          default:
+            logger.warn(`Unknown event type in queue: ${type}`, data);
+        }
+      } catch (error) {
+        logger.error(`Failed to process queued ${type} event`, { error, eventData: data });
+      }
+    }
+  }
   
-  logger.info('Analytics service reset');
-}
-
-// Example method to send data to a service
-// _sendToService(endpoint, data) {
-//   // In a real implementation, this would send data to your analytics backend
-//   // or a third-party service
-//   fetch(`/api/analytics/${endpoint}`, {
-//     method: 'POST',
-//     headers: {
-//       'Content-Type': 'application/json',
-//     },
-//     body: JSON.stringify(data),
-//     keepalive: true, // Ensure the request completes even if the page is closed
-//   }).catch(error => {
-//     logger.error('Failed to send analytics data', { error, endpoint });
-//   });
-// }
-  //     body: JSON.stringify(data),
-  //     keepalive: true, // Ensure the request completes even if the page is closed
-  //   }).catch(error => {
-  //     logger.error('Failed to send analytics data', { error, endpoint });
-  //   });
-  // }
+  /**
+   * Send data to all enabled providers
+   * @param {string} method - The method to call on each provider
+   * @param {Object} data - The data to send
+   * @private
+   */
+  _sendToProviders(method, data) {
+    Object.values(this._providers).forEach(provider => {
+      try {
+        if (provider && typeof provider[method] === 'function') {
+          provider[method](data);
+        }
+      } catch (error) {
+        logger.error(`Error in provider.${method}`, { error, data });
+      }
+    });
+  }
+  
+  /**
+   * Handle consent changes
+   * @private
+   */
+  _handleConsentChange(consent) {
+    if (consent[ConsentCategories.ANALYTICS] && !this._isInitialized) {
+      this.init();
+    } else if (!consent[ConsentCategories.ANALYTICS] && this._isInitialized) {
+      this.reset();
+    }
+  }
+  
+  /**
+   * Reset the analytics service
+   * @private
+   */
+  reset() {
+    // Clear any stored data
+    this._providers = {};
+    this._isInitialized = false;
+    this._pageViewTracked = false;
+    
+    // Note: We keep the current user and queue to avoid losing data
+    // if analytics is re-enabled
+    
+    logger.info('Analytics service reset');
+  }
 }
 
 // Create and export a singleton instance
