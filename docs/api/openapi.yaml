@@ -1,0 +1,302 @@
+openapi: 3.0.0
+info:
+  title: GeneTrust API
+  description: |
+    # GeneTrust API Documentation
+    
+    This is the official API documentation for GeneTrust, a decentralized genetic data marketplace.
+    
+    ## Authentication
+    
+    Most endpoints require authentication. Use the following authentication methods:
+    
+    - **Stacks Authentication**: Use the Stacks Connect library to authenticate users and sign transactions
+    - **API Key**: Some endpoints may require an API key for access
+    
+  version: 1.0.0
+  contact:
+    name: GeneTrust Support
+    email: support@genetrust.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://api.genetrust.com/v1
+    description: Production API
+  - url: https://staging.api.genetrust.com/v1
+    description: Staging API
+  - url: http://localhost:3000/v1
+    description: Local development server
+
+tags:
+  - name: Genetic Data
+    description: Operations related to genetic data management
+  - name: Marketplace
+    description: Operations related to the genetic data marketplace
+  - name: Verification
+    description: Operations for zero-knowledge proof verification
+  - name: Compliance
+    description: Operations for regulatory compliance and consent management
+
+paths:
+  # Genetic Data Endpoints
+  /genetic-data:
+    post:
+      tags: [Genetic Data]
+      summary: Register new genetic data
+      description: Register a new genetic data entry on the blockchain
+      security:
+        - stacks_auth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GeneticDataRegistration'
+      responses:
+        '201':
+          description: Genetic data registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegistrationResponse'
+        '400':
+          description: Invalid input
+        '401':
+          description: Unauthorized
+          
+  /genetic-data/{dataId}/access:
+    get:
+      tags: [Genetic Data]
+      summary: Check access rights
+      description: Verify if a user has access to specific genetic data
+      parameters:
+        - name: dataId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ID of the genetic data
+      security:
+        - stacks_auth: []
+      responses:
+        '200':
+          description: Access verification result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  hasAccess:
+                    type: boolean
+                    description: Whether the user has access to the data
+        '401':
+          description: Unauthorized
+          
+  # Marketplace Endpoints
+  /marketplace/listings:
+    post:
+      tags: [Marketplace]
+      summary: Create a new listing
+      description: Create a new listing on the marketplace
+      security:
+        - stacks_auth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ListingRequest'
+      responses:
+        '201':
+          description: Listing created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListingResponse'
+        '400':
+          description: Invalid input
+        '401':
+          description: Unauthorized
+          
+  # Verification Endpoints
+  /verification/proofs:
+    post:
+      tags: [Verification]
+      summary: Register a new proof
+      description: Register a new zero-knowledge proof
+      security:
+        - stacks_auth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProofRegistration'
+      responses:
+        '201':
+          description: Proof registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProofResponse'
+        '400':
+          description: Invalid proof data
+        '401':
+          description: Unauthorized
+
+  # Compliance Endpoints
+  /compliance/consent:
+    post:
+      tags: [Compliance]
+      summary: Register user consent
+      description: Register a user's consent for data processing
+      security:
+        - stacks_auth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConsentRequest'
+      responses:
+        '201':
+          description: Consent registered successfully
+        '400':
+          description: Invalid consent data
+        '401':
+          description: Unauthorized
+
+components:
+  securitySchemes:
+    stacks_auth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        JWT token obtained after authenticating with Stacks Connect.
+        Include the token in the Authorization header as: `Bearer <token>`
+    
+  schemas:
+    GeneticDataRegistration:
+      type: object
+      required:
+        - dataId
+        - price
+        - accessLevel
+        - metadataHash
+        - storageUrl
+      properties:
+        dataId:
+          type: string
+          description: Unique identifier for the genetic data
+          example: "gd_12345abcde"
+        price:
+          type: integer
+          description: Price in microSTX (1 STX = 1,000,000 microSTX)
+          example: 1000000
+        accessLevel:
+          type: string
+          enum: [public, restricted, private]
+          description: Access level for the data
+        metadataHash:
+          type: string
+          description: IPFS hash of the metadata JSON
+        storageUrl:
+          type: string
+          description: URL where the encrypted data is stored
+        description:
+          type: string
+          description: Human-readable description of the data
+          
+    RegistrationResponse:
+      type: object
+      properties:
+        txId:
+          type: string
+          description: Transaction ID of the registration
+          example: "0x1234..."
+        dataId:
+          type: string
+          description: ID of the registered genetic data
+          example: "gd_12345abcde"
+          
+    ListingRequest:
+      type: object
+      required:
+        - listingId
+        - price
+        - dataId
+      properties:
+        listingId:
+          type: string
+          description: Unique identifier for the listing
+        price:
+          type: integer
+          description: Price in microSTX
+        dataId:
+          type: string
+          description: ID of the genetic data being listed
+          
+    ProofRegistration:
+      type: object
+      required:
+        - proofId
+        - proofData
+      properties:
+        proofId:
+          type: string
+          description: Unique identifier for the proof
+        proofData:
+          type: object
+          description: The zero-knowledge proof data
+          
+    ConsentRequest:
+      type: object
+      required:
+        - dataId
+        - purpose
+        - consentGiven
+      properties:
+        dataId:
+          type: string
+          description: ID of the genetic data
+        purpose:
+          type: string
+          description: Purpose of data processing
+        consentGiven:
+          type: boolean
+          description: Whether consent is given
+          
+  responses:
+    UnauthorizedError:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Authentication required"
+                
+    BadRequestError:
+      description: Bad Request
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Invalid input data"
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    field:
+                      type: string
+                    message:
+                      type: string
