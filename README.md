@@ -19,6 +19,27 @@ GeneTrust is a **full-stack decentralized application** that enables:
 
 ✅ **Secure Storage** - Encrypted genetic datasets with tiered access levels
 
+## API Documentation
+
+Comprehensive API documentation is available in the [docs/api](docs/api) directory. This includes:
+
+- [OpenAPI Specification](docs/api/openapi.yaml) - Machine-readable API definition
+- [Interactive Documentation](docs/api/README.md) - Human-readable documentation and usage examples
+
+To view the interactive API documentation locally:
+
+```bash
+# Install http-server if needed
+npm install -g http-server
+
+# Navigate to docs directory and start the server
+cd docs/api
+http-server -p 8080
+
+# Open in browser
+open http://localhost:8080/api-docs
+```
+
 ✅ **On-Chain Registry** - Immutable dataset registration on Stacks blockchain
 
 ✅ **Decentralized Marketplace** - Buy/sell genetic data with smart contract escrow
