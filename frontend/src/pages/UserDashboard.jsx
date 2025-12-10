@@ -8,9 +8,24 @@ import { APP_CONFIG } from '../config/app.js';
 import toast, { Toaster } from 'react-hot-toast';
 
 const StatCard = ({ title, value, accent = 'purple' }) => (
-  <div className="p-4 rounded-xl border bg-[#14102E]/60 backdrop-blur-xl shadow-lg" style={{ borderColor: 'rgba(139,92,246,0.2)' }}>
-    <div className="text-sm text-[#9AA0B2] mb-1">{title}</div>
-    <div className={`text-2xl font-bold ${accent === 'amber' ? 'text-[#F59E0B]' : 'text-[#8B5CF6]'}`}>{value}</div>
+  <div 
+    className="p-4 rounded-xl border bg-[#14102E]/60 backdrop-blur-xl shadow-lg" 
+    style={{ borderColor: 'rgba(139,92,246,0.2)' }}
+    role="region"
+    aria-labelledby={`stat-${title.toLowerCase().replace(/\s+/g, '-')}`}
+  >
+    <div 
+      id={`stat-${title.toLowerCase().replace(/\s+/g, '-')}`}
+      className="text-sm text-[#9AA0B2] mb-1"
+    >
+      {title}
+    </div>
+    <div 
+      className={`text-2xl font-bold ${accent === 'amber' ? 'text-[#F59E0B]' : 'text-[#8B5CF6]'}`}
+      aria-describedby={`stat-${title.toLowerCase().replace(/\s+/g, '-')}`}
+    >
+      {value}
+    </div>
   </div>
 );
 
@@ -170,6 +185,12 @@ export default function UserDashboard() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0B0B1D] via-[#14102E] to-[#0B0B1D] text-white">
+      <a 
+        href="#main-content" 
+        className="skip-link sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-gray-900 focus:text-white focus:rounded"
+      >
+        Skip to main content
+      </a>
       <Toaster
         position="top-right"
         toastOptions={{
@@ -194,7 +215,7 @@ export default function UserDashboard() {
         }}
       />
       <Navigation />
-      <div className="max-w-7xl mx-auto px-6 lg:px-8 py-10 space-y-8">
+      <main id="main-content" className="max-w-7xl mx-auto px-6 lg:px-8 py-10 space-y-8">
 
         {/* Wallet Connection Status */}
         {APP_CONFIG.USE_REAL_SDK && !walletConnected && (
@@ -219,12 +240,13 @@ export default function UserDashboard() {
         )}
 
         {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <section aria-labelledby="dashboard-stats" className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <h2 id="dashboard-stats" className="sr-only">Dashboard Statistics</h2>
           <StatCard title="Datasets" value={datasets.length} />
           <StatCard title="Listings" value={myListings.length} />
           <StatCard title="Mode" value={status?.mode || (APP_CONFIG.USE_REAL_SDK ? 'Real' : 'Mock')} accent="amber" />
           <StatCard title="Network" value={APP_CONFIG.NETWORK} />
-        </div>
+        </section>
 
         {/* Create / Manage */}
         <div className="grid md:grid-cols-2 gap-6">
@@ -352,7 +374,7 @@ export default function UserDashboard() {
             </div>
           </SectionCard>
         </div>
-      </div>
+      </main>
 
       {/* Background Glow */}
       <div className="fixed inset-0 pointer-events-none z-0">
