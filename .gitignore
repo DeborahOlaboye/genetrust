@@ -11,3 +11,8 @@ coverage
 *.info
 costs-reports.json
 node_modules
+
+# Playwright E2E test artifacts
+/playwright-report/
+/playwright/.cache/
+/test-results/
