@@ -16,9 +16,12 @@
     "test:e2e:report": "playwright show-report",
     "dev": "node src/dev-server.js",
     "build": "rollup -c",
-    "lint": "eslint src/**/*.js tests/**/*.js",
-    "lint:fix": "eslint src/**/*.js tests/**/*.js --fix",
-    "format": "prettier --write src/**/*.js tests/**/*.js",
+    "lint": "eslint . --ext .js,.jsx,.ts,.tsx --ignore-path .gitignore",
+    "lint:fix": "eslint . --ext .js,.jsx,.ts,.tsx --fix --ignore-path .gitignore",
+    "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,md,mdx}\" --ignore-path .gitignore",
+    "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json,md,mdx}\" --ignore-path .gitignore",
+    "prepare": "husky install",
+    "check-types": "tsc --noEmit",
     "check-contracts": "clarinet check",
     "deploy": "clarinet deploy",
     "start": "node src/main.js",
@@ -161,6 +164,15 @@
       "text",
       "lcov",
       "html"
+    ]
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,mdx}": [
+      "prettier --write"
     ]
   },
   "eslintConfig": {
