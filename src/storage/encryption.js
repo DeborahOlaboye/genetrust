@@ -2,6 +2,8 @@
 // Supports multi-tier encryption for different access levels
 
 import { createCipheriv, createDecipheriv, createHash, randomBytes, pbkdf2Sync, createHmac } from 'crypto';
+import { profiler } from '../utils/performance-profiler.js';
+import { Worker } from 'worker_threads';
 
 /**
  * Encryption utilities for genetic data storage
@@ -27,72 +29,67 @@ export class EncryptionManager {
     }
 
     /**
-     * Encrypt genetic data with multi-tier access control
+     * Encrypt genetic data with multi-tier access control and performance optimization
      * @param {Object} geneticData - Raw genetic data
      * @param {string} masterPassword - Master password for encryption
      * @param {Object} accessConfig - Access level configuration
      * @returns {Promise<Object>} Encrypted data with access keys
      */
     async encryptGeneticData(geneticData, masterPassword, accessConfig = {}) {
+        const dataSize = JSON.stringify(geneticData).length;
+        profiler.start('encryptGeneticData', { dataSize, accessLevels: accessConfig.accessLevels });
+        
         try {
             // Validate input
             if (!geneticData || typeof geneticData !== 'object') {
                 throw new Error('Invalid genetic data');
             }
 
+            profiler.checkpoint('encryptGeneticData', 'preparing_data_tiers');
             // Prepare data tiers based on access levels
-            const dataTiers = this._prepareDataTiers(geneticData, accessConfig);
+            const dataTiers = await this._prepareDataTiersOptimized(geneticData, accessConfig);
             
+            profiler.checkpoint('encryptGeneticData', 'generating_master_key');
             // Generate master key from password
             const masterSalt = randomBytes(this.config.saltLength);
             const masterKey = this._deriveKey(masterPassword, masterSalt, 32);
 
-            // Encrypt each tier with different keys
+            profiler.checkpoint('encryptGeneticData', 'encrypting_tiers');
+            // Encrypt tiers in parallel for better performance
+            const encryptionPromises = [];
+            const tierEntries = Object.entries(dataTiers);
+            
+            for (const [level, tierData] of tierEntries) {
+                encryptionPromises.push(this._encryptTierOptimized(level, tierData, masterKey));
+            }
+            
+            const encryptedTierResults = await Promise.all(encryptionPromises);
+            
+            // Organize results
             const encryptedTiers = {};
             const accessKeys = {};
+            
+            encryptedTierResults.forEach(({ level, encryptedTier, accessKey }) => {
+                encryptedTiers[level] = encryptedTier;
+                accessKeys[level] = accessKey;
+            });
 
-            for (const [level, tierData] of Object.entries(dataTiers)) {
-                const levelConfig = this.accessLevels[parseInt(level)] || this.accessLevels[3];
-                
-                // Derive tier-specific key
-                const tierSalt = randomBytes(this.config.saltLength);
-                const tierKey = this._deriveKey(masterKey.toString('hex'), tierSalt, levelConfig.keySize);
-
-                // Encrypt tier data
-                const encryptedTier = await this._encryptData(
-                    JSON.stringify(tierData), 
-                    tierKey, 
-                    levelConfig.algorithm
-                );
-
-                encryptedTiers[level] = {
-                    ...encryptedTier,
-                    salt: Array.from(tierSalt),
-                    algorithm: levelConfig.algorithm
-                };
-
-                // Store encrypted access key
-                accessKeys[level] = {
-                    encryptedKey: Array.from(await this._encryptAccessKey(tierKey, masterKey)),
-                    salt: Array.from(tierSalt)
-                };
-            }
-
-            // Create metadata
+            profiler.checkpoint('encryptGeneticData', 'encrypting_metadata');
+            // Create and encrypt metadata
             const metadata = {
                 version: '1.0.0',
                 timestamp: Date.now(),
                 accessLevels: Object.keys(dataTiers).map(Number),
                 algorithm: this.config.algorithm,
                 keyDerivation: 'pbkdf2',
-                iterations: this.config.keyDerivationIterations
+                iterations: this.config.keyDerivationIterations,
+                dataSize
             };
 
-            // Encrypt metadata
             const metadataKey = this._deriveKey(masterKey.toString('hex'), masterSalt, 32);
             const encryptedMetadata = await this._encryptData(JSON.stringify(metadata), metadataKey);
 
-            return {
+            const result = {
                 encryptedData: {
                     tiers: encryptedTiers,
                     metadata: {
@@ -104,7 +101,11 @@ export class EncryptionManager {
                 masterSalt: Array.from(masterSalt),
                 checksum: this._generateChecksum(geneticData)
             };
+
+            profiler.end('encryptGeneticData');
+            return result;
         } catch (error) {
+            profiler.end('encryptGeneticData');
             throw new Error(`Encryption failed: ${error.message}`);
         }
     }
@@ -224,11 +225,12 @@ export class EncryptionManager {
     }
 
     /**
-     * Prepare data tiers based on access levels
+     * Prepare data tiers based on access levels with optimization
      * @private
      */
-    _prepareDataTiers(geneticData, accessConfig) {
+    async _prepareDataTiersOptimized(geneticData, accessConfig) {
         const tiers = {};
+        const isLargeDataset = JSON.stringify(geneticData).length > 1024 * 1024; // 1MB threshold
 
         // Level 1: Basic metadata and aggregate statistics
         tiers[1] = {
@@ -236,15 +238,19 @@ export class EncryptionManager {
             totalVariants: geneticData.variants ? geneticData.variants.length : 0,
             totalGenes: geneticData.genes ? geneticData.genes.length : 0,
             dataTypes: Object.keys(geneticData),
-            generalStats: this._calculateBasicStats(geneticData),
+            generalStats: await this._calculateBasicStatsOptimized(geneticData, isLargeDataset),
             timestamp: Date.now()
         };
 
         // Level 2: Partial data with filtered information
+        const filteredVariants = isLargeDataset ? 
+            await this._filterSensitiveDataChunked(geneticData.variants || [], 'medium') :
+            this._filterSensitiveData(geneticData.variants || [], 'medium');
+            
         tiers[2] = {
             type: 'detailed',
             ...tiers[1],
-            filteredVariants: this._filterSensitiveData(geneticData.variants || [], 'medium'),
+            filteredVariants,
             geneList: geneticData.genes ? geneticData.genes.map(g => ({
                 symbol: g.symbol,
                 name: g.name,
@@ -253,8 +259,14 @@ export class EncryptionManager {
             phenotypes: geneticData.phenotypes || []
         };
 
-        // Level 3: Full access to all data
-        tiers[3] = {
+        // Level 3: Full access to all data (use reference for large datasets)
+        tiers[3] = isLargeDataset ? {
+            type: 'full',
+            dataReference: true,
+            ...this._createDataReference(geneticData),
+            accessLevel: 3,
+            encryptionLevel: 'maximum'
+        } : {
             type: 'full',
             ...geneticData,
             accessLevel: 3,
@@ -270,10 +282,18 @@ export class EncryptionManager {
     }
 
     /**
-     * Calculate basic statistics for genetic data
+     * Prepare data tiers based on access levels (legacy method)
      * @private
      */
-    _calculateBasicStats(geneticData) {
+    _prepareDataTiers(geneticData, accessConfig) {
+        return this._prepareDataTiersOptimized(geneticData, accessConfig);
+    }
+
+    /**
+     * Calculate basic statistics for genetic data with optimization
+     * @private
+     */
+    async _calculateBasicStatsOptimized(geneticData, isLargeDataset = false) {
         const stats = {
             variantTypes: {},
             chromosomeDistribution: {},
@@ -281,21 +301,75 @@ export class EncryptionManager {
         };
 
         if (geneticData.variants) {
-            geneticData.variants.forEach(variant => {
-                // Count variant types
-                if (variant.type) {
-                    stats.variantTypes[variant.type] = (stats.variantTypes[variant.type] || 0) + 1;
+            if (isLargeDataset && geneticData.variants.length > 50000) {
+                // Process in chunks for large datasets
+                const chunkSize = 10000;
+                for (let i = 0; i < geneticData.variants.length; i += chunkSize) {
+                    const chunk = geneticData.variants.slice(i, i + chunkSize);
+                    this._processVariantStatsChunk(chunk, stats);
+                    
+                    // Yield control periodically
+                    if (i % (chunkSize * 5) === 0) {
+                        await new Promise(resolve => setTimeout(resolve, 0));
+                    }
                 }
-
-                // Count chromosome distribution
-                if (variant.chromosome) {
-                    stats.chromosomeDistribution[variant.chromosome] = 
-                        (stats.chromosomeDistribution[variant.chromosome] || 0) + 1;
-                }
-            });
+            } else {
+                this._processVariantStatsChunk(geneticData.variants, stats);
+            }
         }
 
         return stats;
+    }
+
+    /**
+     * Calculate basic statistics for genetic data (legacy method)
+     * @private
+     */
+    _calculateBasicStats(geneticData) {
+        return this._calculateBasicStatsOptimized(geneticData, false);
+    }
+
+    /**
+     * Process variant statistics for a chunk of data
+     * @private
+     */
+    _processVariantStatsChunk(variants, stats) {
+        variants.forEach(variant => {
+            // Count variant types
+            if (variant.type) {
+                stats.variantTypes[variant.type] = (stats.variantTypes[variant.type] || 0) + 1;
+            }
+
+            // Count chromosome distribution
+            if (variant.chromosome) {
+                stats.chromosomeDistribution[variant.chromosome] = 
+                    (stats.chromosomeDistribution[variant.chromosome] || 0) + 1;
+            }
+        });
+    }
+
+    /**
+     * Filter sensitive data with chunked processing for large datasets
+     * @private
+     */
+    async _filterSensitiveDataChunked(data, privacyLevel) {
+        if (!Array.isArray(data)) return data;
+        
+        const result = [];
+        const chunkSize = 10000;
+        
+        for (let i = 0; i < data.length; i += chunkSize) {
+            const chunk = data.slice(i, i + chunkSize);
+            const filteredChunk = this._filterSensitiveData(chunk, privacyLevel);
+            result.push(...filteredChunk);
+            
+            // Yield control periodically
+            if (i % (chunkSize * 5) === 0) {
+                await new Promise(resolve => setTimeout(resolve, 0));
+            }
+        }
+        
+        return result;
     }
 
     /**
@@ -323,6 +397,56 @@ export class EncryptionManager {
             default:
                 return data;
         }
+    }
+
+    /**
+     * Encrypt tier data with optimization
+     * @private
+     */
+    async _encryptTierOptimized(level, tierData, masterKey) {
+        const levelConfig = this.accessLevels[parseInt(level)] || this.accessLevels[3];
+        
+        // Derive tier-specific key
+        const tierSalt = randomBytes(this.config.saltLength);
+        const tierKey = this._deriveKey(masterKey.toString('hex'), tierSalt, levelConfig.keySize);
+
+        // Encrypt tier data
+        const encryptedTier = await this._encryptData(
+            JSON.stringify(tierData), 
+            tierKey, 
+            levelConfig.algorithm
+        );
+
+        const result = {
+            level,
+            encryptedTier: {
+                ...encryptedTier,
+                salt: Array.from(tierSalt),
+                algorithm: levelConfig.algorithm
+            },
+            accessKey: {
+                encryptedKey: Array.from(await this._encryptAccessKey(tierKey, masterKey)),
+                salt: Array.from(tierSalt)
+            }
+        };
+
+        return result;
+    }
+
+    /**
+     * Create data reference for large datasets
+     * @private
+     */
+    _createDataReference(geneticData) {
+        return {
+            variantCount: geneticData.variants?.length || 0,
+            geneCount: geneticData.genes?.length || 0,
+            sequenceCount: geneticData.sequences?.length || 0,
+            phenotypeCount: geneticData.phenotypes?.length || 0,
+            dataTypes: Object.keys(geneticData),
+            sampleInfo: geneticData.sample || {},
+            assembly: geneticData.assembly || 'GRCh38'
+        };
     }
 
     /**
