@@ -7,7 +7,12 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "jest",
+    "test:a11y": "jest --testPathPattern=accessibility",
+    "test:watch": "jest --watch",
+    "a11y:audit": "node scripts/accessibility-audit.js",
+    "a11y:lighthouse": "lighthouse --only-categories=accessibility --output=json --output-path=./accessibility-report.json http://localhost:5173"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
@@ -33,7 +38,9 @@
     "react-i18next": "^16.3.5",
     "tailwind-merge": "^3.4.0",
     "three": "^0.177.0",
-    "zod": "^4.1.13"
+    "zod": "^4.1.13",
+    "jest-axe": "^9.0.0",
+    "axe-core": "^4.10.2"
   },
   "devDependencies": {
     "@babel/preset-env": "^7.28.5",
@@ -75,6 +82,8 @@
     "postcss": "^8.5.6",
     "tailwindcss": "^4.1.10",
     "ts-jest": "^29.4.5",
-    "vite": "^6.3.5"
+    "vite": "^6.3.5",
+    "lighthouse": "^12.2.1",
+    "pa11y": "^8.0.0"
   }
 }
