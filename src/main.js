@@ -2,10 +2,12 @@
 // Provides high-level interface for all GeneTrust functionality
 
 import { Phase2Config } from './config/phase2-config.js';
+import { PerformanceConfig } from './config/performance-config.js';
 import { ZKProofFactory } from './zk-proofs/index.js';
 import { StorageFactory } from './storage/index.js';
 import { ContractFactory } from './contract-integration/index.js';
 import { UtilityFactory } from './utils/index.js';
+import { profiler } from './utils/performance-profiler.js';
 
 /**
  * Main GeneTrust SDK Class
@@ -15,24 +17,43 @@ export class GeneTrust {
     constructor(options = {}) {
         // Initialize configuration
         this.config = options.config || Phase2Config.fromEnvironment();
+        this.performanceConfig = PerformanceConfig.getConfig(process.env.NODE_ENV || 'development');
         
-        // Initialize components
+        // Initialize components with performance optimizations
         this._initializeComponents(options);
         
         // Track initialization state
         this.initialized = false;
+        
+        // Start performance monitoring if enabled
+        if (this.performanceConfig.performanceMonitoring) {
+            this._initializePerformanceMonitoring();
+        }
     }
 
     /**
-     * Initialize all SDK components
+     * Initialize all SDK components with performance optimizations
      * @private
      */
     _initializeComponents(options) {
-        // Storage stack
+        // Storage stack with performance config
         this.storage = StorageFactory.createGeneticDataStack({
-            ipfs: this.config.getIPFSConfig(),
-            encryption: this.config.getEncryptionConfig(),
-            storage: options.storage || {}
+            ipfs: {
+                ...this.config.getIPFSConfig(),
+                maxConcurrentUploads: this.performanceConfig.maxConcurrentUploads,
+                batchSize: this.performanceConfig.batchSize,
+                retryAttempts: this.performanceConfig.retryAttempts,
+                timeout: this.performanceConfig.timeout
+            },
+            encryption: {
+                ...this.config.getEncryptionConfig(),
+                keyDerivationIterations: this.performanceConfig.keyDerivationIterations
+            },
+            storage: {
+                cacheEnabled: this.performanceConfig.cacheEnabled,
+                cacheSize: this.performanceConfig.cacheSize,
+                ...options.storage
+            }
         });
 
         // ZK Proof components
@@ -84,7 +105,7 @@ export class GeneTrust {
     }
 
     /**
-     * Store genetic data with encryption and zero-knowledge proofs
+     * Store genetic data with encryption and zero-knowledge proofs (performance optimized)
      * @param {Object} geneticData - Raw genetic data
      * @param {string} password - Encryption password
      * @param {Object} options - Storage options
@@ -92,11 +113,16 @@ export class GeneTrust {
      */
     async storeGeneticData(geneticData, password, options = {}) {
         this._ensureInitialized();
+        
+        const operationId = `store_genetic_data_${Date.now()}`;
+        profiler.start(operationId, { dataSize: JSON.stringify(geneticData).length });
 
         try {
-            // Format data for storage
-            const formattedData = this.utils.formatter.formatForStorage(geneticData, options.format);
+            profiler.checkpoint(operationId, 'formatting_data');
+            // Format data for storage with performance optimization
+            const formattedData = await this.utils.formatter.formatForStorage(geneticData, options.format);
 
+            profiler.checkpoint(operationId, 'storing_data');
             // Store encrypted data
             const storageResult = await this.storage.storage.storeGeneticData(
                 formattedData,
@@ -133,7 +159,7 @@ export class GeneTrust {
                 );
             }
 
-            return {
+            const result = {
                 success: true,
                 datasetId: storageResult.datasetId,
                 storage: storageResult,
@@ -141,7 +167,11 @@ export class GeneTrust {
                 blockchain: blockchainResult,
                 storedAt: Date.now()
             };
+            
+            profiler.end(operationId);
+            return result;
         } catch (error) {
+            profiler.end(operationId);
             throw new Error(`Failed to store genetic data: ${error.message}`);
         }
     }
@@ -445,11 +475,55 @@ export class GeneTrust {
     }
 
     /**
+     * Initialize performance monitoring
+     * @private
+     */
+    _initializePerformanceMonitoring() {
+        if (this.performanceConfig.profilingEnabled) {
+            profiler.start('genetrust_sdk_session');
+        }
+        
+        // Set up periodic performance reporting
+        this.performanceInterval = setInterval(() => {
+            const report = profiler.generateReport();
+            if (report.profiles && report.profiles.length > 0) {
+                console.log('GeneTrust Performance Report:', {
+                    operations: report.summary.totalProfiles,
+                    avgDuration: Math.round(report.summary.avgDuration),
+                    slowestOp: report.slowestOperations[0]?.name
+                });
+            }
+        }, 60000); // Every minute
+    }
+
+    /**
+     * Get performance metrics
+     * @returns {Object} Performance metrics
+     */
+    getPerformanceMetrics() {
+        return {
+            profiler: profiler.generateReport(),
+            storage: this.storage?.storage?.getCacheStats?.() || null,
+            ipfs: this.storage?.ipfs?.getMetrics?.() || null,
+            config: this.performanceConfig
+        };
+    }
+
+    /**
      * Clean up SDK resources
      * @returns {Promise<void>}
      */
     async cleanup() {
         try {
+            // Stop performance monitoring
+            if (this.performanceInterval) {
+                clearInterval(this.performanceInterval);
+            }
+            
+            if (this.performanceConfig.profilingEnabled) {
+                profiler.end('genetrust_sdk_session');
+            }
+            
             if (this.storage?.storage) {
                 await this.storage.storage.close();
             }
