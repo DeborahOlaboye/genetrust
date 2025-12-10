@@ -2,38 +2,71 @@
 // Data formatting utilities for GeneTrust
 // Handles conversion between different data formats and standards
 
+import { profiler } from './performance-profiler.js';
+
 /**
  * Data formatting utilities for genetic data processing
+ * Optimized for large datasets with streaming and chunking support
  */
 export class DataFormatter {
+    static CHUNK_SIZE = 10000; // Process in chunks of 10k items
+    static MEMORY_THRESHOLD = 100 * 1024 * 1024; // 100MB memory threshold
     
     /**
-     * Format genetic data for storage
+     * Format genetic data for storage with performance optimization
      * @param {Object} rawData - Raw genetic data
      * @param {Object} options - Formatting options
-     * @returns {Object} Formatted data
+     * @returns {Promise<Object>} Formatted data
      */
-    static formatForStorage(rawData, options = {}) {
-        const formatted = {
-            metadata: this._extractMetadata(rawData, options),
-            variants: this._formatVariants(rawData.variants || [], options),
-            genes: this._formatGenes(rawData.genes || [], options),
-            sequences: this._formatSequences(rawData.sequences || [], options),
-            phenotypes: this._formatPhenotypes(rawData.phenotypes || [], options),
-            formatVersion: options.version || '1.0.0',
-            processedAt: Date.now()
-        };
+    static async formatForStorage(rawData, options = {}) {
+        profiler.start('formatForStorage', { dataSize: JSON.stringify(rawData).length });
+        
+        try {
+            const formatted = {
+                metadata: this._extractMetadata(rawData, options),
+                formatVersion: options.version || '1.0.0',
+                processedAt: Date.now()
+            };
 
-        // Remove empty arrays if not needed
-        if (options.removeEmpty) {
-            Object.keys(formatted).forEach(key => {
-                if (Array.isArray(formatted[key]) && formatted[key].length === 0) {
-                    delete formatted[key];
-                }
-            });
+            // Process large arrays in chunks to avoid memory issues
+            if (rawData.variants?.length > this.CHUNK_SIZE) {
+                profiler.checkpoint('formatForStorage', 'processing_variants_chunked');
+                formatted.variants = await this._formatVariantsChunked(rawData.variants, options);
+            } else {
+                formatted.variants = this._formatVariants(rawData.variants || [], options);
+            }
+
+            if (rawData.genes?.length > this.CHUNK_SIZE) {
+                profiler.checkpoint('formatForStorage', 'processing_genes_chunked');
+                formatted.genes = await this._formatGenesChunked(rawData.genes, options);
+            } else {
+                formatted.genes = this._formatGenes(rawData.genes || [], options);
+            }
+
+            if (rawData.sequences?.length > this.CHUNK_SIZE) {
+                profiler.checkpoint('formatForStorage', 'processing_sequences_chunked');
+                formatted.sequences = await this._formatSequencesChunked(rawData.sequences, options);
+            } else {
+                formatted.sequences = this._formatSequences(rawData.sequences || [], options);
+            }
+
+            formatted.phenotypes = this._formatPhenotypes(rawData.phenotypes || [], options);
+
+            // Remove empty arrays if not needed
+            if (options.removeEmpty) {
+                Object.keys(formatted).forEach(key => {
+                    if (Array.isArray(formatted[key]) && formatted[key].length === 0) {
+                        delete formatted[key];
+                    }
+                });
+            }
+
+            profiler.end('formatForStorage');
+            return formatted;
+        } catch (error) {
+            profiler.end('formatForStorage');
+            throw error;
         }
-
-        return formatted;
     }
 
     /**
@@ -313,6 +346,28 @@ export class DataFormatter {
     }
 
     /**
+     * Format variants array with chunked processing for large datasets
+     * @private
+     */
+    static async _formatVariantsChunked(variants, options) {
+        const result = [];
+        const chunkSize = this.CHUNK_SIZE;
+        
+        for (let i = 0; i < variants.length; i += chunkSize) {
+            const chunk = variants.slice(i, i + chunkSize);
+            const formattedChunk = this._formatVariants(chunk, options);
+            result.push(...formattedChunk);
+            
+            // Yield control to prevent blocking
+            if (i % (chunkSize * 5) === 0) {
+                await new Promise(resolve => setTimeout(resolve, 0));
+            }
+        }
+        
+        return result;
+    }
+
+    /**
      * Format variants array
      * @private
      */
@@ -333,6 +388,28 @@ export class DataFormatter {
     }
 
     /**
+     * Format genes array with chunked processing for large datasets
+     * @private
+     */
+    static async _formatGenesChunked(genes, options) {
+        const result = [];
+        const chunkSize = this.CHUNK_SIZE;
+        
+        for (let i = 0; i < genes.length; i += chunkSize) {
+            const chunk = genes.slice(i, i + chunkSize);
+            const formattedChunk = this._formatGenes(chunk, options);
+            result.push(...formattedChunk);
+            
+            // Yield control to prevent blocking
+            if (i % (chunkSize * 5) === 0) {
+                await new Promise(resolve => setTimeout(resolve, 0));
+            }
+        }
+        
+        return result;
+    }
+
+    /**
      * Format genes array
      * @private
      */
@@ -348,6 +425,28 @@ export class DataFormatter {
             ensembl_id: gene.ensembl_id || gene.id || null,
             ncbi_id: gene.ncbi_id || gene.entrez_id || null
         }));
+    }
+
+    /**
+     * Format sequences array with chunked processing for large datasets
+     * @private
+     */
+    static async _formatSequencesChunked(sequences, options) {
+        const result = [];
+        const chunkSize = Math.min(this.CHUNK_SIZE, 1000); // Smaller chunks for sequences
+        
+        for (let i = 0; i < sequences.length; i += chunkSize) {
+            const chunk = sequences.slice(i, i + chunkSize);
+            const formattedChunk = this._formatSequences(chunk, options);
+            result.push(...formattedChunk);
+            
+            // Yield control to prevent blocking
+            if (i % (chunkSize * 2) === 0) {
+                await new Promise(resolve => setTimeout(resolve, 0));
+            }
+        }
+        
+        return result;
     }
 
     /**
