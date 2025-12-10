@@ -4,6 +4,7 @@
 import { IPFSClient } from './ipfs-client.js';
 import { EncryptionManager } from './encryption.js';
 import { ProofUtils } from '../zk-proofs/utils/proof-utils.js';
+import { profiler } from '../utils/performance-profiler.js';
 
 /**
  * Storage manager for genetic data
@@ -17,6 +18,9 @@ export class StorageManager {
             defaultAccessLevel: options.defaultAccessLevel || 1,
             autoPin: options.autoPin !== false,
             compressionEnabled: options.compressionEnabled !== false,
+            cacheEnabled: options.cacheEnabled !== false,
+            cacheSize: options.cacheSize || 100, // Cache up to 100 datasets
+            batchSize: options.batchSize || 10, // Batch operations
             ...options
         };
 
@@ -26,17 +30,34 @@ export class StorageManager {
 
         // Track stored datasets
         this.storedDatasets = new Map();
+        
+        // Performance caching
+        this.dataCache = new Map();
+        this.metadataCache = new Map();
+        this.cacheStats = {
+            hits: 0,
+            misses: 0,
+            evictions: 0
+        };
+        
+        // Batch operation queue
+        this.batchQueue = [];
+        this.batchTimer = null;
     }
 
     /**
-     * Store genetic data with encryption and IPFS storage
+     * Store genetic data with encryption and IPFS storage (optimized)
      * @param {Object} geneticData - Raw genetic data
      * @param {string} password - Encryption password
      * @param {Object} options - Storage options
      * @returns {Promise<Object>} Storage result with URLs and access information
      */
     async storeGeneticData(geneticData, password, options = {}) {
+        const dataSize = JSON.stringify(geneticData).length;
+        profiler.start('storeGeneticData', { dataSize, ownerAddress: options.ownerAddress });
+        
         try {
+            profiler.checkpoint('storeGeneticData', 'validating_data');
             // Validate genetic data
             const validation = ProofUtils.validateGeneticData(geneticData);
             if (!validation.valid) {
@@ -46,12 +67,19 @@ export class StorageManager {
             // Generate dataset ID
             const datasetId = options.datasetId || ProofUtils.generateDataId(geneticData, options.ownerAddress || 'anonymous');
 
+            // Check cache first
+            if (this.config.cacheEnabled && this._isCached(datasetId)) {
+                profiler.end('storeGeneticData');
+                return this._getCachedResult(datasetId);
+            }
+
             // Prepare access configuration
             const accessConfig = {
                 customTiers: options.customTiers,
                 accessLevels: options.accessLevels || [1, 2, 3]
             };
 
+            profiler.checkpoint('storeGeneticData', 'encrypting_data');
             // Encrypt the data
             console.log('Encrypting genetic data...');
             const encryptedPackage = await this.encryptionManager.encryptGeneticData(
@@ -60,6 +88,7 @@ export class StorageManager {
                 accessConfig
             );
 
+            profiler.checkpoint('storeGeneticData', 'preparing_metadata');
             // Prepare metadata
             const metadata = {
                 datasetId,
@@ -69,10 +98,11 @@ export class StorageManager {
                 dataTypes: Object.keys(geneticData),
                 encryptionVersion: '1.0.0',
                 compressionUsed: this.config.compressionEnabled,
-                totalSize: JSON.stringify(geneticData).length,
+                totalSize: dataSize,
                 checksum: encryptedPackage.checksum
             };
 
+            profiler.checkpoint('storeGeneticData', 'compressing_data');
             // Compress if enabled
             let finalData = Buffer.from(JSON.stringify(encryptedPackage));
             if (this.config.compressionEnabled) {
@@ -80,6 +110,7 @@ export class StorageManager {
                 metadata.compressed = true;
             }
 
+            profiler.checkpoint('storeGeneticData', 'uploading_to_ipfs');
             // Store on IPFS
             console.log('Uploading to IPFS...');
             const ipfsResult = await this.ipfsClient.uploadGeneticData(
@@ -113,7 +144,7 @@ export class StorageManager {
 
             this.storedDatasets.set(datasetId, datasetInfo);
 
-            return {
+            const result = {
                 success: true,
                 datasetId,
                 storageUrl: ipfsResult.storageUrl,
@@ -124,13 +155,22 @@ export class StorageManager {
                 metadata: metadata,
                 encryptedAt: Date.now()
             };
+
+            // Cache the result
+            if (this.config.cacheEnabled) {
+                this._cacheResult(datasetId, result);
+            }
+
+            profiler.end('storeGeneticData');
+            return result;
         } catch (error) {
+            profiler.end('storeGeneticData');
             throw new Error(`Storage failed: ${error.message}`);
         }
     }
 
     /**
-     * Retrieve and decrypt genetic data
+     * Retrieve and decrypt genetic data (optimized with caching)
      * @param {string} storageUrl - IPFS storage URL or hash
      * @param {string} password - Decryption password
      * @param {number} accessLevel - Requested access level
@@ -138,12 +178,25 @@ export class StorageManager {
      * @returns {Promise<Object>} Decrypted genetic data
      */
     async retrieveGeneticData(storageUrl, password, accessLevel = 1, options = {}) {
+        const cacheKey = `${storageUrl}_${accessLevel}`;
+        profiler.start('retrieveGeneticData', { storageUrl, accessLevel });
+        
         try {
+            // Check cache first
+            if (this.config.cacheEnabled && this.dataCache.has(cacheKey)) {
+                this.cacheStats.hits++;
+                profiler.end('retrieveGeneticData');
+                return this.dataCache.get(cacheKey);
+            }
+            
+            this.cacheStats.misses++;
             console.log(`Retrieving genetic data from ${storageUrl} with access level ${accessLevel}...`);
 
+            profiler.checkpoint('retrieveGeneticData', 'fetching_from_ipfs');
             // Retrieve from IPFS
             const ipfsResult = await this.ipfsClient.retrieveGeneticData(storageUrl);
             
+            profiler.checkpoint('retrieveGeneticData', 'decompressing_data');
             let encryptedPackage;
             if (ipfsResult.metadata && ipfsResult.metadata.compressed) {
                 // Decompress data
@@ -153,6 +206,7 @@ export class StorageManager {
                 encryptedPackage = JSON.parse(ipfsResult.data.toString());
             }
 
+            profiler.checkpoint('retrieveGeneticData', 'decrypting_data');
             // Decrypt data
             console.log('Decrypting genetic data...');
             const decryptedResult = await this.encryptionManager.decryptGeneticData(
@@ -161,6 +215,7 @@ export class StorageManager {
                 accessLevel
             );
 
+            profiler.checkpoint('retrieveGeneticData', 'verifying_integrity');
             // Verify data integrity if checksum is available
             if (ipfsResult.metadata && ipfsResult.metadata.checksum) {
                 const isIntact = this.encryptionManager.verifyIntegrity(
@@ -175,7 +230,7 @@ export class StorageManager {
                 decryptedResult.integrityVerified = isIntact;
             }
 
-            return {
+            const result = {
                 success: true,
                 data: decryptedResult.data,
                 accessLevel: decryptedResult.accessLevel,
@@ -186,7 +241,16 @@ export class StorageManager {
                     retrievedAt: Date.now()
                 }
             };
+
+            // Cache the result
+            if (this.config.cacheEnabled) {
+                this._cacheData(cacheKey, result);
+            }
+
+            profiler.end('retrieveGeneticData');
+            return result;
         } catch (error) {
+            profiler.end('retrieveGeneticData');
             throw new Error(`Retrieval failed: ${error.message}`);
         }
     }
@@ -489,12 +553,134 @@ export class StorageManager {
     }
 
     /**
+     * Check if data is cached
+     * @private
+     */
+    _isCached(datasetId) {
+        return this.dataCache.has(datasetId) || this.metadataCache.has(datasetId);
+    }
+
+    /**
+     * Get cached result
+     * @private
+     */
+    _getCachedResult(datasetId) {
+        this.cacheStats.hits++;
+        return this.dataCache.get(datasetId) || this.metadataCache.get(datasetId);
+    }
+
+    /**
+     * Cache storage result
+     * @private
+     */
+    _cacheResult(datasetId, result) {
+        this._evictIfNeeded();
+        this.metadataCache.set(datasetId, result);
+    }
+
+    /**
+     * Cache retrieved data
+     * @private
+     */
+    _cacheData(cacheKey, data) {
+        this._evictIfNeeded();
+        this.dataCache.set(cacheKey, data);
+    }
+
+    /**
+     * Evict cache entries if needed
+     * @private
+     */
+    _evictIfNeeded() {
+        const totalCacheSize = this.dataCache.size + this.metadataCache.size;
+        if (totalCacheSize >= this.config.cacheSize) {
+            // Evict oldest entries (simple LRU)
+            const oldestDataKey = this.dataCache.keys().next().value;
+            const oldestMetaKey = this.metadataCache.keys().next().value;
+            
+            if (oldestDataKey) {
+                this.dataCache.delete(oldestDataKey);
+                this.cacheStats.evictions++;
+            }
+            if (oldestMetaKey) {
+                this.metadataCache.delete(oldestMetaKey);
+                this.cacheStats.evictions++;
+            }
+        }
+    }
+
+    /**
+     * Batch store multiple datasets
+     * @param {Array} datasets - Array of {geneticData, password, options}
+     * @returns {Promise<Array>} Array of storage results
+     */
+    async batchStoreGeneticData(datasets) {
+        profiler.start('batchStoreGeneticData', { count: datasets.length });
+        
+        try {
+            const results = [];
+            const batchSize = this.config.batchSize;
+            
+            for (let i = 0; i < datasets.length; i += batchSize) {
+                const batch = datasets.slice(i, i + batchSize);
+                const batchPromises = batch.map(({ geneticData, password, options }) => 
+                    this.storeGeneticData(geneticData, password, options)
+                );
+                
+                const batchResults = await Promise.all(batchPromises);
+                results.push(...batchResults);
+                
+                // Brief pause between batches
+                if (i + batchSize < datasets.length) {
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                }
+            }
+            
+            profiler.end('batchStoreGeneticData');
+            return results;
+        } catch (error) {
+            profiler.end('batchStoreGeneticData');
+            throw new Error(`Batch storage failed: ${error.message}`);
+        }
+    }
+
+    /**
+     * Get cache statistics
+     * @returns {Object} Cache performance statistics
+     */
+    getCacheStats() {
+        const hitRate = this.cacheStats.hits / (this.cacheStats.hits + this.cacheStats.misses) || 0;
+        
+        return {
+            ...this.cacheStats,
+            hitRate: Math.round(hitRate * 100) / 100,
+            dataCache: this.dataCache.size,
+            metadataCache: this.metadataCache.size,
+            totalCached: this.dataCache.size + this.metadataCache.size
+        };
+    }
+
+    /**
+     * Clear all caches
+     */
+    clearCache() {
+        this.dataCache.clear();
+        this.metadataCache.clear();
+        this.cacheStats = { hits: 0, misses: 0, evictions: 0 };
+    }
+
+    /**
      * Close storage manager and cleanup resources
      */
     async close() {
         try {
             await this.ipfsClient.close();
             this.storedDatasets.clear();
+            this.clearCache();
+            
+            if (this.batchTimer) {
+                clearTimeout(this.batchTimer);
+            }
         } catch (error) {
             console.warn('Error closing storage manager:', error.message);
         }
