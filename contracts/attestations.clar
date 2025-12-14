@@ -1,7 +1,36 @@
 ;; title: attestations
-;; version: 1.0.2
+;; version: 2.0.0
 ;; summary: Handles medical lab attestations (historically referred to as ZK proofs) for genetic data
 ;; description: Enables verification of data properties via attestations without revealing the actual data
+;; Upgraded to Clarity 4 with enhanced features
+
+;; Clarity 4 Helpers
+(define-constant MAX_STRING_LENGTH u500)
+(define-constant MAX_BUFFER_LENGTH u1024)
+
+;; Safe string to uint conversion using Clarity 4's string-to-uint?
+(define-private (safe-string-to-uint (input (string-utf8 100)))
+    (match (string-to-uint? input)
+        value (ok value)
+        error (err ERR-INVALID-DATA)
+    )
+)
+
+;; Safe string slicing with bounds checking
+(define-private (safe-slice (input (string-utf8 500)) (start uint) (len uint))
+    (match (slice? input start len)
+        sliced (ok sliced)
+        error (err ERR-INVALID-DATA)
+    )
+)
+
+;; Safe buffer slicing with bounds checking
+(define-private (safe-buffer-slice (input (buff 1024)) (start uint) (len uint))
+    (match (slice? input start len)
+        sliced (ok sliced)
+        error (err ERR-INVALID-DATA)
+    )
+)
 
 ;; Error codes
 (define-constant ERR-NOT-AUTHORIZED (err u100))
@@ -41,11 +70,15 @@
         data-id: uint,              ;; Reference to the genetic data
         proof-type: uint,           ;; Type of proof (presence, absence, etc.)
         proof-hash: (buff 32),      ;; Hash of the actual ZK proof
-        parameters: (buff 256),     ;; Parameters for the proof verification
+        parameters: (buff 1024),    ;; Parameters for the proof verification (increased size)
         creator: principal,         ;; Who created this proof
         verified: bool,             ;; Has this been verified?
         verifier: (optional uint),  ;; Which verifier validated this
-        created-at: uint            ;; When this proof was registered
+        created-at: uint,           ;; When this proof was registered
+        metadata: (string-utf8 500),;; Additional metadata about the proof
+        verification-attempts: uint, ;; Number of verification attempts
+        last-verified: (optional uint), ;; When was this last verified
+        updated-at: uint            ;; When this proof was last updated
     }
 )
 
@@ -123,28 +156,35 @@
     )
 )
 
-;; Register a new zero-knowledge proof
+;; Register a new zero-knowledge proof with enhanced Clarity 4 features
 (define-public (register-proof 
     (data-id uint) 
     (proof-type uint) 
     (proof-hash (buff 32)) 
-    (parameters (buff 256)))
+    (parameters (buff 256))
+    (metadata (optional (string-utf8 500))))  ;; Added metadata parameter for additional context
     
-    (begin
-        ;; Validate proof type
-        (asserts! (or 
+    (let (
+        ;; Validate proof type using pattern matching
+        (valid-type? (or 
             (is-eq proof-type PROOF-TYPE-GENE-PRESENCE)
             (is-eq proof-type PROOF-TYPE-GENE-ABSENCE)
             (is-eq proof-type PROOF-TYPE-GENE-VARIANT)
             (is-eq proof-type PROOF-TYPE-AGGREGATE)
-        ) ERR-INVALID-PROOF-TYPE)
+        )))
         
-        (let ((proof-id (var-get next-proof-id)))
+        (asserts! valid-type? ERR-INVALID-PROOF-TYPE)
+        
+        (let ((proof-id (var-get next-proof-id))
+              (safe-metadata (match metadata 
+                (some meta) (unwrap! (safe-slice meta u0 (min (len (unwrap-panic meta)) u500)) "")
+                none "")))
+            
             ;; Update the counter for next proof
             (var-set next-proof-id (+ proof-id u1))
             
-            ;; Register the proof
-            (map-set proof-registry
+            ;; Register the proof with enhanced data
+            (match (map-insert proof-registry
                 { proof-id: proof-id }
                 {
                     data-id: data-id,
@@ -154,7 +194,11 @@
                     creator: tx-sender,
                     verified: false,
                     verifier: none,
-                    created-at: stacks-block-height
+                    created-at: block-height,
+                    metadata: safe-metadata,
+                    verification-attempts: u0,
+                    last-verified: none,
+                    updated-at: block-height
                 }
             )
             
@@ -171,7 +215,34 @@
                 )
             )
             
-            (ok proof-id)
+            (match (map-insert proof-registry
+                { proof-id: proof-id }
+                {
+                    data-id: data-id,
+                    proof-type: proof-type,
+                    proof-hash: proof-hash,
+                    parameters: parameters,
+                    creator: tx-sender,
+                    verified: false,
+                    verifier: none,
+                    created-at: block-height,
+                    metadata: safe-metadata,
+                    verification-attempts: u0,
+                    last-verified: none,
+                    updated-at: block-height
+                }
+            )
+            (ok _) (ok (print { 
+                event: "proof-registered", 
+                proof-id: proof-id, 
+                data-id: data-id,
+                proof-type: proof-type,
+                by: tx-sender,
+                block: block-height,
+                metadata: safe-metadata
+            }))
+            (err error) (err error)
+            )
         )
     )
 )
