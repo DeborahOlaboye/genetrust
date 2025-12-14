@@ -80,6 +80,22 @@
 ;; Security Helpers
 (define-read-only (is-contract-paused) (var-get is-paused))
 
+;; Clarity 4 Helper: Safe string to uint conversion
+(define-private (safe-string-to-uint (input (string-utf8 100)))
+    (match (string-to-uint? input)
+        value (ok value)
+        error (err ERR-INVALID-DATA)
+    )
+)
+
+;; Clarity 4 Helper: Safe string slicing with bounds checking
+(define-private (safe-slice-utf8 (input (string-utf8 500)) (start uint) (len uint))
+    (match (slice? input start len)
+        sliced (ok sliced)
+        error (err ERR-INVALID-DATA)
+    )
+)
+
 (define-private (check-paused)
     (asserts! (not (is-contract-paused)) ERR-CONTRACT_PAUSED)
     (ok true)
@@ -172,39 +188,64 @@
 ;; Update dataset metadata
 (define-public (update-genetic-data
     (data-id uint)
-    (new-price (optional uint))
+    (new-price (optional (string-utf8 20)))
     (new-access-level (optional uint))
     (new-metadata-hash (optional (buff 32)))
     (new-storage-url (optional (string-utf8 200)))
-    (new-description (optional (string-utf8 200))))
-    
+    (new-description (optional (string-utf8 200)))
+)
     (try! (check-paused))
+    (try! (check-rate-limit tx-sender))
     
-    (let ((dataset (unwrap! (map-get? genetic-datasets { data-id: data-id }) ERR-DATA-NOT-FOUND)))
-        (try! (only-owner data-id))
+    (let ((dataset (try! (only-owner data-id))))
         
-        ;; Only update what's provided
-        (let ((updates {
-            owner: (get owner dataset),
-            price: (default-to (get price dataset) new-price),
-            access-level: (default-to (get access-level dataset) new-access-level),
-            metadata-hash: (default-to (get metadata-hash dataset) new-metadata-hash),
-            encrypted-storage-url: (default-to (get encrypted-storage-url dataset) new-storage-url),
-            description: (default-to (get description dataset) new-description),
-            created-at: (get created-at dataset),
-            updated-at: block-height,
-            is-active: (get is-active dataset)
-        }))
+        ;; Convert string price to uint if provided (using Clarity 4's string-to-uint?)
+        (let ((parsed-price 
+                (if (is-some new-price) 
+                    (try! (safe-string-to-uint (unwrap-panic new-price)))
+                    (get price dataset)
+                )))
             
-            ;; Validate access level if it's being updated
-            (when (is-some new-access-level)
-                (asserts! (and (>= (get access-level updates) ACCESS_LEVEL_BASIC) 
-                              (<= (get access-level updates) ACCESS_LEVEL_FULL)) 
-                         ERR-INVALID-ACCESS-LEVEL)
+            ;; Process description with safe slicing if provided
+            (let ((processed-description 
+                    (if (is-some new-description)
+                        (let ((desc (unwrap-panic new-description)))
+                            ;; Truncate to first 200 chars if needed using safe-slice-utf8
+                            (unwrap! (safe-slice-utf8 desc u0 (min (len desc) u200)) "")
+                        )
+                        (get description dataset)
+                    )))
+                
+                ;; Only update what's provided
+                (let ((updates {
+                    owner: (get owner dataset),
+                    price: parsed-price,
+                    access-level: (default-to (get access-level dataset) new-access-level),
+                    metadata-hash: (default-to (get metadata-hash dataset) new-metadata-hash),
+                    encrypted-storage-url: (default-to (get encrypted-storage-url dataset) new-storage-url),
+                    description: processed-description,
+                    created-at: (get created-at dataset),
+                    updated-at: block-height,
+                    is-active: (get is-active dataset)
+                }))
+                    
+                    ;; Validate access level if it's being updated
+                    (when (is-some new-access-level)
+                        (asserts! (and (>= (get access-level updates) ACCESS_LEVEL_BASIC) 
+                                      (<= (get access-level updates) ACCESS_LEVEL_FULL)) 
+                                 ERR-INVALID-ACCESS-LEVEL)
+                    )
+                    
+                    (map-set genetic-datasets { data-id: data-id } updates)
+                    (ok (print { 
+                        event: EVENT-DATA-UPDATED, 
+                        data-id: data-id, 
+                        by: tx-sender,
+                        block: block-height,
+                        tx: tx-sender
+                    }))
+                )
             )
-            
-            (map-set genetic-datasets { data-id: data-id } updates)
-            (ok (print { event: EVENT-DATA-UPDATED, data-id: data-id, by: tx-sender }))
         )
     )
 )
