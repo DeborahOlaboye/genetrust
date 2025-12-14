@@ -154,7 +154,7 @@
 ;; Register a new genetic dataset
 (define-public (register-genetic-data
     (data-id uint)
-    (price uint)
+    (price (string-utf8 20))  ;; Accept price as string for better UX
     (access-level uint)
     (metadata-hash (buff 32))
     (storage-url (string-utf8 200))
@@ -162,27 +162,43 @@
     
     (try! (check-paused))
     
-    ;; Validate input
+    ;; Validate input using Clarity 4 features
     (asserts! (is-none (map-get? genetic-datasets { data-id: data-id })) ERR-DATA-EXISTS)
-    (asserts! (and (>= access-level ACCESS_LEVEL_BASIC) (<= access-level ACCESS_LEVEL_FULL)) ERR-INVALID-ACCESS-LEVEL)
     
-    ;; Set the dataset
-    (map-set genetic-datasets
-        { data-id: data-id }
-        {
-            owner: tx-sender,
-            price: price,
-            access-level: access-level,
-            metadata-hash: metadata-hash,
-            encrypted-storage-url: storage-url,
-            description: description,
-            created-at: block-height,
-            updated-at: block-height,
-            is-active: true
-        }
+    ;; Convert string price to uint with validation
+    (let ((parsed-price (try! (safe-string-to-uint price))))
+        
+        ;; Validate access level using helper function
+        (try! (validate-access-level access-level))
+        
+        ;; Process description with safe slicing
+        (let ((safe-description (unwrap! (safe-slice-utf8 description u0 (min (len description) u200)) "")))
+            
+            ;; Set the dataset with enhanced data
+            (map-set genetic-datasets
+                { data-id: data-id }
+                {
+                    owner: tx-sender,
+                    price: parsed-price,
+                    access-level: access-level,
+                    metadata-hash: metadata-hash,
+                    encrypted-storage-url: (unwrap! (safe-slice-utf8 storage-url u0 (min (len storage-url) u200)) ""),
+                    description: safe-description,
+                    created-at: block-height,
+                    updated-at: block-height,
+                    is-active: true
+                }
+            )
+        )
+        
+        (ok (print { 
+            event: EVENT-DATA-REGISTERED, 
+            data-id: data-id, 
+            by: tx-sender,
+            block: block-height,
+            tx: tx-sender
+        }))
     )
-    
-    (ok (print { event: EVENT-DATA-REGISTERED, data-id: data-id, by: tx-sender }))
 )
 
 ;; Update dataset metadata
