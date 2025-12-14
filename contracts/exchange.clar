@@ -1,8 +1,33 @@
 ;; exchange.clar
 ;; Core exchange for genetic data trading with expanded functionality
+;; Upgraded to Clarity 4 with enhanced features
 
-;; exchange.clar - Enhanced Version
-;; Core exchange for genetic data trading with expanded functionality
+;; Clarity 4 Helpers
+(define-constant MAX_STRING_LENGTH u500)
+
+;; Safe string to uint conversion using Clarity 4's string-to-uint?
+(define-private (safe-string-to-uint (input (string-utf8 100)))
+    (match (string-to-uint? input)
+        value (ok value)
+        error (err ERR-INVALID-PRICE)
+    )
+)
+
+;; Safe string slicing with bounds checking
+(define-private (safe-slice (input (string-utf8 500)) (start uint) (len uint))
+    (match (slice? input start len)
+        sliced (ok sliced)
+        error (err ERR-INVALID-DATA)
+    )
+)
+
+;; Safe string replacement using replace-at?
+(define-private (safe-replace (input (string-utf8 500)) (at uint) (replacement (string-utf8 1)))
+    (match (replace-at? input at replacement)
+        replaced (ok replaced)
+        error (err ERR-INVALID-DATA)
+    )
+)
 
 ;; Import trait (renamed)
 (impl-trait .dataset-registry-trait.dataset-registry-trait)
@@ -108,42 +133,53 @@
 ;; Listing management
 (define-public (create-listing 
     (listing-id uint) 
-    (price uint)
+    (price (string-utf8 20))  ;; Changed to string for better UX
     (data-contract principal)
     (data-id uint)
     (access-level uint)
     (metadata-hash (buff 32))
-    (requires-verification bool))
+    (requires-verification bool)
+    (description (string-utf8 500)))  ;; Added description for better metadata handling
     
-    (begin
-        (asserts! (> price u0) ERR-INVALID-PRICE)
-        (asserts! (> access-level u0) ERR-INVALID-ACCESS-LEVEL)
-        (asserts! (<= access-level u3) ERR-INVALID-ACCESS-LEVEL)
+    (let (
+        (parsed-price (try! (safe-string-to-uint price)))
+        (safe-description (unwrap! (safe-slice description u0 (min (len description) u500)) ""))
+    )
+        (asserts! (> parsed-price u0) ERR-INVALID-PRICE)
+        (asserts! (and (> access-level u0) (<= access-level u3)) ERR-INVALID-ACCESS-LEVEL)
         
-        (map-set listings
+        (match (map-insert listings
             { listing-id: listing-id }
             {
                 owner: tx-sender,
-                price: price,
+                price: parsed-price,
                 data-contract: data-contract,
                 data-id: data-id,
                 active: true,
                 access-level: access-level,
                 metadata-hash: metadata-hash,
+                description: safe-description,  ;; Store the processed description
                 requires-verification: requires-verification,
                 platform-fee-percent: (var-get platform-fee-percent),
-                created-at: stacks-block-height,
-                updated-at: stacks-block-height
+                created-at: block-height,
+                updated-at: block-height
             }
         )
-        
-        ;; Set up default pricing tier for this access level
-        (map-set access-level-pricing
-            { listing-id: listing-id, access-level: access-level }
-            { price: price }
+            (ok _) (begin
+                ;; Set up default pricing tier for this access level
+                (map-set access-level-pricing
+                    { listing-id: listing-id, access-level: access-level }
+                    { price: parsed-price }
+                )
+                (ok (print { 
+                    event: "listing-created", 
+                    listing-id: listing-id, 
+                    by: tx-sender,
+                    block: block-height
+                }))
+            )
+            (err error) (err error)
         )
-        
-        (ok true)
     )
 )
 
