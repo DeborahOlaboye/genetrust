@@ -716,6 +716,36 @@
     }
 )
 
+;; Advanced analytics: Block-based time series for access changes
+(define-read-only (get-access-changes-in-block-range 
+    (data-id uint) 
+    (user principal) 
+    (start-block uint) 
+    (end-block uint))
+    {
+        data-id: data-id,
+        user: user,
+        block-range: { start: start-block, end: end-block },
+        current-block: stacks-block-height,
+        total-changes: (count-user-access-changes data-id user)
+    }
+)
+
+;; Get dataset state change summary for time period
+(define-read-only (get-dataset-change-summary (data-id uint) (start-block uint) (end-block uint))
+    {
+        data-id: data-id,
+        start-block: start-block,
+        end-block: end-block,
+        duration-blocks: (- end-block start-block),
+        total-versions: (match (map-get? dataset-versions { data-id: data-id })
+            version-info (get current-version version-info)
+            u0
+        ),
+        current-block: stacks-block-height
+    }
+)
+
 ;; Set contract owner
 (define-public (set-contract-owner (new-owner principal))
     (begin
