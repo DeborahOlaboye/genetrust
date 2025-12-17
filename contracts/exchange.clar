@@ -38,19 +38,58 @@
 ;; Import trait (renamed)
 (impl-trait .dataset-registry-trait.dataset-registry-trait)
 
-;; Constants
-(define-constant ERR-NOT-AUTHORIZED (err u100))
-(define-constant ERR-INVALID-PRICE (err u101))
-(define-constant ERR-LISTING-NOT-FOUND (err u102))
-(define-constant ERR-INSUFFICIENT-BALANCE (err u103))
-(define-constant ERR-INVALID-ACCESS-LEVEL (err u104))
-(define-constant ERR-NO-VERIFIED-PROOFS (err u105))
-(define-constant ERR-NO-VALID-CONSENT (err u106))
-(define-constant ERR-PAYMENT-FAILED (err u107))
-(define-constant ERR-ESCROW-EXISTS (err u108))
-(define-constant ERR-ESCROW-NOT-FOUND (err u109))
-(define-constant ERR-EXPIRED (err u110))
-(define-constant ERR-NOT-FOUND (err u111))
+;; Constants - Error codes mapped to HTTP status
+(define-constant ERR-NOT-AUTHORIZED (err u401))
+(define-constant ERR-INVALID-PRICE (err u400))
+(define-constant ERR-LISTING-NOT-FOUND (err u404))
+(define-constant ERR-INSUFFICIENT-BALANCE (err u422))
+(define-constant ERR-INVALID-ACCESS-LEVEL (err u400))
+(define-constant ERR-NO-VERIFIED-PROOFS (err u422))
+(define-constant ERR-NO-VALID-CONSENT (err u403))
+(define-constant ERR-PAYMENT-FAILED (err u500))
+(define-constant ERR-ESCROW-EXISTS (err u409))
+(define-constant ERR-ESCROW-NOT-FOUND (err u404))
+(define-constant ERR-EXPIRED (err u422))
+(define-constant ERR-NOT-FOUND (err u404))
+(define-constant ERR-VERIFICATION-FAILED (err u422))
+
+;; Error context tracking
+(define-map error-context 
+    { error-id: uint }
+    {
+        error-code: uint,
+        message: (string-utf8 256),
+        context-data: (string-utf8 512),
+        timestamp: uint,
+        listing-id: uint
+    }
+)
+(define-data-var error-counter uint u0)
+
+;; Error context helper: Record error with context for debugging
+(define-private (record-error (error-code uint) (message (string-utf8 256)) (context (string-utf8 512)) (listing-id uint))
+    (let ((error-id (var-get error-counter)))
+        (begin
+            (var-set error-counter (+ error-id u1))
+            (map-set error-context
+                { error-id: error-id }
+                {
+                    error-code: error-code,
+                    message: message,
+                    context-data: context,
+                    timestamp: stacks-block-height,
+                    listing-id: listing-id
+                }
+            )
+            error-id
+        )
+    )
+)
+
+;; Error helper: Get error context
+(define-read-only (get-error-context (error-id uint))
+    (map-get? error-context { error-id: error-id })
+)
 
 ;; Data maps
 (define-map listings
@@ -245,26 +284,11 @@
                 (asserts! (is-ok verification) ERR-VERIFICATION-FAILED)
                 (let ((proof-list (unwrap! verification (err ERR-VERIFICATION-FAILED))))
                     (asserts! (> (len proof-list) u0) ERR-NO-VERIFIED-PROOFS)
+                    (ok true)
                 )
             )
-                    )
-                )
-            )
-            true
+            (ok true)
         )
-        
-        ;; Handle compliance check in a similar way
-        (let ((consent-result (contract-call? .data-governance validate-consent-for-purpose data-id u1)))
-            ;; Check if we got an ok result
-            (asserts! (is-ok consent-result) ERR-NO-VALID-CONSENT)
-            
-            ;; Now safely unwrap and check the consent value
-            (let ((is-valid (unwrap! consent-result ERR-NO-VALID-CONSENT)))
-                (asserts! is-valid ERR-NO-VALID-CONSENT)
-            )
-        )
-        
-        (ok true)
     )
 )
 

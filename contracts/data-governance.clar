@@ -3,17 +3,30 @@
 ;; summary: Manages data governance and regulatory compliance for genetic data
 ;; description: Tracks consent, usage, GDPR requests, and provides an audit trail for genetic data access
 
-;; Error codes
-(define-constant ERR-NOT-AUTHORIZED (err u100))
-(define-constant ERR-INVALID-DATA (err u101))
-(define-constant ERR-NOT-FOUND (err u102))
-(define-constant ERR-ALREADY-EXISTS (err u103))
-(define-constant ERR-EXPIRED (err u104))
-(define-constant ERR-NO-CONSENT (err u105))
-(define-constant ERR-INVALID-JURISDICTION (err u106))
-(define-constant ERR-INVALID-PURPOSE (err u107))
-(define-constant ERR-GDPR-RECORD-MISSING (err u108))
-(define-constant ERR-INVALID-BLOCK (err u109))
+;; Error codes mapped to HTTP status
+(define-constant ERR-NOT-AUTHORIZED (err u401))
+(define-constant ERR-INVALID-DATA (err u400))
+(define-constant ERR-NOT-FOUND (err u404))
+(define-constant ERR-ALREADY-EXISTS (err u409))
+(define-constant ERR-EXPIRED (err u403))
+(define-constant ERR-NO-CONSENT (err u403))
+(define-constant ERR-INVALID-JURISDICTION (err u400))
+(define-constant ERR-INVALID-PURPOSE (err u400))
+(define-constant ERR-GDPR-RECORD-MISSING (err u404))
+(define-constant ERR-INVALID-BLOCK (err u400))
+
+;; Error context tracking
+(define-map error-context 
+    { error-id: uint }
+    {
+        error-code: uint,
+        message: (string-utf8 256),
+        context-data: (string-utf8 512),
+        timestamp: uint,
+        data-id: uint
+    }
+)
+(define-data-var error-counter uint u0)
 
 ;; Constants for jurisdiction
 (define-constant JURISDICTION-GLOBAL u0)
@@ -82,6 +95,31 @@
 ;; Counters
 (define-data-var next-usage-id uint u1)
 (define-data-var next-log-id uint u1)
+
+;; Error context helper: Record error with context for debugging
+(define-private (record-error (error-code uint) (message (string-utf8 256)) (context (string-utf8 512)) (data-id uint))
+    (let ((error-id (var-get error-counter)))
+        (begin
+            (var-set error-counter (+ error-id u1))
+            (map-set error-context
+                { error-id: error-id }
+                {
+                    error-code: error-code,
+                    message: message,
+                    context-data: context,
+                    timestamp: stacks-block-height,
+                    data-id: data-id
+                }
+            )
+            error-id
+        )
+    )
+)
+
+;; Error helper: Get error context
+(define-read-only (get-error-context (error-id uint))
+    (map-get? error-context { error-id: error-id })
+)
 
 ;; Historical audit trail map - extended access log with more details
 (define-map historical-audit-trail

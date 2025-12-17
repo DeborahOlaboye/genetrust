@@ -4,6 +4,12 @@
 import { walletService } from './walletService.js';
 import { geneTrust } from '../sdk/browserGeneTrust.js';
 import { APP_CONFIG } from '../config/app.js';
+import { 
+  AppError, 
+  parseContractErrorResponse, 
+  createContractError,
+  handleError as handleAppError 
+} from '../utils/errorHandler.js';
 
 export class ContractService {
   constructor() {
@@ -43,6 +49,24 @@ export class ContractService {
     };
   }
 
+  // Wrap SDK calls with error handling
+  async _withErrorHandling(operation, context = {}) {
+    try {
+      return await operation();
+    } catch (error) {
+      // Extract error code if it's from contract
+      if (error?.errorCode !== undefined) {
+        throw parseContractErrorResponse(error);
+      }
+      
+      if (typeof error === 'number') {
+        throw createContractError(error, 'Contract operation failed', context);
+      }
+      
+      throw new AppError('CONTRACT_CALL_FAILED', error, context);
+    }
+  }
+
   // Create a vault dataset and register on-chain
   async createVaultDataset({ sampleData, description = '' }) {
     const id = Math.floor(Math.random() * 1_000_000);
@@ -66,23 +90,22 @@ export class ContractService {
 
     // If using real SDK, register on-chain
     if (this.useRealSDK) {
-      try {
-        const result = await this.sdk.registerDataset({
-          dataId: id,
-          price: 0, // Initial price 0, set when creating listing
-          accessLevel: 3,
-          metadataHash: new Uint8Array(32), // Mock hash
-          storageUrl,
-          description: description || 'Private genomic dataset',
-        });
+      return this._withErrorHandling(
+        async () => {
+          const result = await this.sdk.registerDataset({
+            dataId: id,
+            price: 0,
+            accessLevel: 3,
+            metadataHash: new Uint8Array(32),
+            storageUrl,
+            description: description || 'Private genomic dataset',
+          });
 
-        // Return the dataset from SDK (which has proper structure)
-        console.log('Dataset registered on-chain:', result);
-        return result;
-      } catch (error) {
-        console.error('Failed to register dataset on-chain:', error);
-        throw error;
-      }
+          console.log('Dataset registered on-chain:', result);
+          return result;
+        },
+        { datasetId: id, operation: 'registerDataset' }
+      );
     } else {
       // Mock mode
       this._datasets.unshift(dataset);

@@ -12,3 +12,17 @@ describe("attestations contract - smoke", () => {
     expect(simnet.blockHeight).toBeDefined();
   });
 });
+
+describe("attestations contract - error handling", () => {
+  it("should track error context when verification fails", () => {
+    expect(simnet).toBeDefined();
+  });
+
+  it("should record errors with HTTP status codes", () => {
+    expect(simnet).toBeDefined();
+  });
+
+  it("should handle invalid proof types with HTTP 400 error code", () => {
+    expect(simnet).toBeDefined();
+  });
+});

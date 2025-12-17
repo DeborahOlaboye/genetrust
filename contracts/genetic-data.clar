@@ -6,18 +6,34 @@
 (impl-trait .dataset-registry-trait.dataset-registry-trait)
 (use-trait access-trait .access-control.access-control-trait)
 
-;; Error codes
-(define-constant ERR-NOT-AUTHORIZED (err u100))
-(define-constant ERR-INVALID-DATA (err u101))
-(define-constant ERR-DATA-EXISTS (err u102))
-(define-constant ERR-DATA-NOT-FOUND (err u103))
-(define-constant ERR-INVALID-ACCESS_LEVEL (err u104))
-(define-constant ERR-RATE_LIMIT (err u105))
-(define-constant ERR-CONTRACT_PAUSED (err u106))
-(define-constant ERR-ACCESS_DENIED (err u107))
-(define-constant ERR-INVALID-BLOCK (err u108))
-(define-constant ERR-INVALID-PRICE (err u109))
-(define-constant ERR-INVALID-INPUT (err u110))
+;; Import error definitions
+(use-trait err-context .error-definitions.error-context)
+
+;; Error codes mapped to HTTP status
+(define-constant ERR-NOT-AUTHORIZED (err u401))
+(define-constant ERR-INVALID-DATA (err u400))
+(define-constant ERR-DATA-EXISTS (err u409))
+(define-constant ERR-DATA-NOT-FOUND (err u404))
+(define-constant ERR-INVALID-ACCESS_LEVEL (err u400))
+(define-constant ERR-RATE_LIMIT (err u429))
+(define-constant ERR-CONTRACT_PAUSED (err u503))
+(define-constant ERR-ACCESS_DENIED (err u403))
+(define-constant ERR-INVALID-BLOCK (err u400))
+(define-constant ERR-INVALID-PRICE (err u400))
+(define-constant ERR-INVALID-INPUT (err u400))
+
+;; Error context tracking
+(define-map error-context 
+    { error-id: uint }
+    {
+        error-code: uint,
+        message: (string-utf8 256),
+        context-data: (string-utf8 512),
+        timestamp: uint,
+        operator: principal
+    }
+)
+(define-data-var error-counter uint u0)
 
 ;; Constants
 (define-constant BLOCKS_PER_DAY 144)  ;; ~1 day (assuming 10 min/block)
@@ -125,6 +141,31 @@
 ;; Security Helpers
 (define-read-only (is-contract-paused) (var-get is-paused))
 
+;; Error context helper: Record error with context for debugging
+(define-private (record-error (error-code uint) (message (string-utf8 256)) (context (string-utf8 512)))
+    (let ((error-id (var-get error-counter)))
+        (begin
+            (var-set error-counter (+ error-id u1))
+            (map-set error-context
+                { error-id: error-id }
+                {
+                    error-code: error-code,
+                    message: message,
+                    context-data: context,
+                    timestamp: stacks-block-height,
+                    operator: tx-sender
+                }
+            )
+            error-id
+        )
+    )
+)
+
+;; Error helper: Get error context
+(define-read-only (get-error-context (error-id uint))
+    (map-get? error-context { error-id: error-id })
+)
+
 ;; Clarity 3 helper: min for uint
 (define-private (min-u (a uint) (b uint)) (if (<= a b) a b))
 
@@ -145,36 +186,47 @@
 )
 
 (define-private (check-paused)
-    (begin
-        (asserts! (not (is-contract-paused)) ERR-CONTRACT_PAUSED)
+    (if (is-contract-paused)
+        (begin
+            (record-error u503 (string-utf8 "Contract is paused") (string-utf8 "check-paused"))
+            ERR-CONTRACT_PAUSED
+        )
         (ok true)
     )
 )
 
 (define-private (check-rate-limit (user principal))
-    (begin
-        (let (
-            (current-window (get-window-start))
-            (user-stats (default-to 
-                { count: u1, window-start: current-window }
-                (map-get? operation-counts { user: user })
-            ))
-        )
-            (if (is-eq (get window-start user-stats) current-window)
-                (let ((new-count (+ (get count user-stats) u1)))
-                    (asserts! (<= new-count MAX_OPERATIONS_PER_WINDOW) ERR-RATE_LIMIT)
-                    (map-set operation-counts 
-                        { user: user } 
-                        { count: new-count, window-start: current-window }
+    (let (
+        (current-window (get-window-start))
+        (user-stats (default-to 
+            { count: u1, window-start: current-window }
+            (map-get? operation-counts { user: user })
+        ))
+    )
+        (if (is-eq (get window-start user-stats) current-window)
+            (let ((new-count (+ (get count user-stats) u1)))
+                (if (> new-count MAX_OPERATIONS_PER_WINDOW)
+                    (begin
+                        (record-error u429 (string-utf8 "Rate limit exceeded") (string-utf8 "user exceeded operation quota in window"))
+                        ERR-RATE_LIMIT
+                    )
+                    (begin
+                        (map-set operation-counts 
+                            { user: user } 
+                            { count: new-count, window-start: current-window }
+                        )
+                        (ok true)
                     )
                 )
+            )
+            (begin
                 (map-set operation-counts 
                     { user: user } 
                     { count: u1, window-start: current-window }
                 )
+                (ok true)
             )
         )
-        (ok true)
     )
 )
 

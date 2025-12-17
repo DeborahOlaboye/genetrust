@@ -35,16 +35,54 @@
     )
 )
 
-;; Error codes
-(define-constant ERR-NOT-AUTHORIZED (err u100))
-(define-constant ERR-INVALID-PROOF (err u101))
-(define-constant ERR-VERIFICATION-FAILED (err u102))
-(define-constant ERR-PROOF-NOT-FOUND (err u103))
-(define-constant ERR-INVALID-DATA (err u104))
-(define-constant ERR-ALREADY-EXISTS (err u105))
-(define-constant ERR-NOT-FOUND (err u106))
-(define-constant ERR-VERIFIER-INACTIVE (err u107))
-(define-constant ERR-INVALID-PROOF-TYPE (err u108))
+;; Error codes mapped to HTTP status
+(define-constant ERR-NOT-AUTHORIZED (err u401))
+(define-constant ERR-INVALID-PROOF (err u422))
+(define-constant ERR-VERIFICATION-FAILED (err u422))
+(define-constant ERR-PROOF-NOT-FOUND (err u404))
+(define-constant ERR-INVALID-DATA (err u400))
+(define-constant ERR-ALREADY-EXISTS (err u409))
+(define-constant ERR-NOT-FOUND (err u404))
+(define-constant ERR-VERIFIER-INACTIVE (err u503))
+(define-constant ERR-INVALID-PROOF-TYPE (err u400))
+
+;; Error context tracking
+(define-map error-context 
+    { error-id: uint }
+    {
+        error-code: uint,
+        message: (string-utf8 256),
+        context-data: (string-utf8 512),
+        timestamp: uint,
+        proof-id: uint
+    }
+)
+(define-data-var error-counter uint u0)
+
+;; Error context helper: Record error with context for debugging
+(define-private (record-error (error-code uint) (message (string-utf8 256)) (context (string-utf8 512)) (proof-id uint))
+    (let ((error-id (var-get error-counter)))
+        (begin
+            (var-set error-counter (+ error-id u1))
+            (map-set error-context
+                { error-id: error-id }
+                {
+                    error-code: error-code,
+                    message: message,
+                    context-data: context,
+                    timestamp: stacks-block-height,
+                    proof-id: proof-id
+                }
+            )
+            error-id
+        )
+    )
+)
+
+;; Error helper: Get error context
+(define-read-only (get-error-context (error-id uint))
+    (map-get? error-context { error-id: error-id })
+)
 
 ;; Constants for proof types
 (define-constant PROOF-TYPE-GENE-PRESENCE u1)  ;; Proof that a specific gene exists
@@ -177,9 +215,8 @@
         (let (
             (pid (var-get next-proof-id))
             (safe-meta (match metadata 
-                (some m) (unwrap! (safe-slice m u0 (min-u (len (unwrap-panic m)) u500)) "")
-                none "")
-            )
+                m (unwrap! (safe-slice m u0 (min-u (len (unwrap-panic m)) u500)) (string-utf8 ""))
+                (string-utf8 "")))
         )
             ;; increment
             (var-set next-proof-id (+ pid u1))
