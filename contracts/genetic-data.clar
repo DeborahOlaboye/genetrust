@@ -573,6 +573,41 @@
     )
 )
 
+;; Analytics: Get total access grants for a dataset
+(define-read-only (get-total-access-grants (data-id uint))
+    {
+        data-id: data-id,
+        total-grants: (var-get audit-trail-counter)
+    }
+)
+
+;; Analytics: Get dataset lifecycle information
+(define-read-only (get-dataset-lifecycle (data-id uint))
+    (match (map-get? genetic-datasets { data-id: data-id })
+        dataset {
+            data-id: data-id,
+            created-at: (get created-at dataset),
+            last-updated: (get updated-at dataset),
+            blocks-since-creation: (- stacks-block-height (get created-at dataset)),
+            is-active: (get is-active dataset),
+            owner: (get owner dataset)
+        }
+        none
+    )
+)
+
+;; Analytics: Get data modification frequency
+(define-read-only (get-modification-frequency (data-id uint))
+    (match (map-get? dataset-versions { data-id: data-id })
+        version-info {
+            data-id: data-id,
+            total-modifications: (get current-version version-info),
+            current-block: stacks-block-height
+        }
+        none
+    )
+)
+
 ;; Helper: Record access level change history
 (define-private (record-access-change
     (data-id uint)
