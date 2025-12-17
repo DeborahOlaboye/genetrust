@@ -152,8 +152,10 @@
 )
 
 (define-private (validate-access-level (level uint))
-    (asserts! (and (>= level u1) (<= level u3)) ERR-INVALID-ACCESS_LEVEL)
-    (ok true)
+    (begin
+        (asserts! (and (>= level u1) (<= level u3)) ERR-INVALID-ACCESS_LEVEL)
+        (ok true)
+    )
 )
 
 ;; Register a new genetic dataset
