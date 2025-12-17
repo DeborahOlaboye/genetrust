@@ -1,3 +1,29 @@
+// HTTP Status Code mapping
+const HTTP_STATUS_CODES = {
+  400: { name: 'Bad Request', level: 'warn' },
+  401: { name: 'Unauthorized', level: 'error' },
+  403: { name: 'Forbidden', level: 'error' },
+  404: { name: 'Not Found', level: 'warn' },
+  409: { name: 'Conflict', level: 'warn' },
+  422: { name: 'Unprocessable Entity', level: 'error' },
+  429: { name: 'Too Many Requests', level: 'warn' },
+  500: { name: 'Internal Server Error', level: 'error' },
+  503: { name: 'Service Unavailable', level: 'error' }
+};
+
+// Smart Contract Error Codes (HTTP-style)
+export const ContractErrorCodes = {
+  400: { message: 'Invalid input provided', userMessage: 'The request contained invalid data' },
+  401: { message: 'Authorization required', userMessage: 'You are not authorized to perform this action' },
+  403: { message: 'Access denied', userMessage: 'You do not have permission to access this resource' },
+  404: { message: 'Resource not found', userMessage: 'The requested resource was not found' },
+  409: { message: 'Resource already exists', userMessage: 'This resource already exists' },
+  422: { message: 'Invalid state', userMessage: 'The resource is in an invalid state for this operation' },
+  429: { message: 'Rate limit exceeded', userMessage: 'Too many requests. Please try again later' },
+  500: { message: 'Internal error', userMessage: 'An internal server error occurred' },
+  503: { message: 'Service unavailable', userMessage: 'The service is temporarily unavailable' }
+};
+
 // Error codes and messages
 export const ErrorCodes = {
   // Wallet errors (1000-1999)
@@ -57,28 +83,103 @@ export const ErrorCodes = {
   }
 };
 
+// Map contract error codes to application error codes
+export const mapContractError = (contractErrorCode) => {
+  const errorInfo = ContractErrorCodes[contractErrorCode];
+  const httpStatus = HTTP_STATUS_CODES[contractErrorCode];
+  
+  if (!errorInfo) {
+    return ErrorCodes.UNKNOWN_ERROR;
+  }
+  
+  return {
+    code: contractErrorCode,
+    message: errorInfo.message,
+    userMessage: errorInfo.userMessage,
+    level: httpStatus?.level || 'error',
+    httpStatus: contractErrorCode
+  };
+};
+
 /**
- * Custom error class for application errors
+ * Structured error response from smart contracts
+ */
+export class StructuredErrorResponse {
+  constructor(errorCode, message, context = {}) {
+    this.errorCode = errorCode;
+    this.message = message;
+    this.context = context;
+    this.timestamp = new Date().toISOString();
+    
+    // Map to application error
+    const mapped = mapContractError(errorCode);
+    this.userMessage = mapped.userMessage;
+    this.level = mapped.level;
+    this.httpStatus = mapped.httpStatus;
+  }
+  
+  toJSON() {
+    return {
+      errorCode: this.errorCode,
+      message: this.message,
+      userMessage: this.userMessage,
+      context: this.context,
+      level: this.level,
+      httpStatus: this.httpStatus,
+      timestamp: this.timestamp
+    };
+  }
+}
+
+/**
+ * Custom error class for application errors with Clarity 4 support
  */
 export class AppError extends Error {
   constructor(errorCode, originalError = null, context = {}) {
-    const errorInfo = typeof errorCode === 'string' ? 
-      ErrorCodes[errorCode] || ErrorCodes.UNKNOWN_ERROR : 
-      errorCode;
+    let errorInfo;
+    
+    // Check if it's a contract error code (number)
+    if (typeof errorCode === 'number') {
+      errorInfo = mapContractError(errorCode);
+    } else {
+      // Check if it's a string reference to ErrorCodes
+      errorInfo = typeof errorCode === 'string' ? 
+        ErrorCodes[errorCode] || ErrorCodes.UNKNOWN_ERROR : 
+        errorCode;
+    }
       
     super(errorInfo.message);
     this.name = 'AppError';
-    this.code = errorInfo.code;
+    this.code = errorInfo.code || errorCode;
     this.userMessage = errorInfo.userMessage;
     this.level = errorInfo.level || 'error';
+    this.httpStatus = errorInfo.httpStatus;
     this.originalError = originalError;
-    this.context = context;
+    this.context = {
+      ...context,
+      errorId: context.errorId || null,
+      operator: context.operator || null
+    };
     this.timestamp = new Date().toISOString();
     
     // Capture stack trace
     if (Error.captureStackTrace) {
       Error.captureStackTrace(this, AppError);
     }
+  }
+  
+  toJSON() {
+    return {
+      name: this.name,
+      code: this.code,
+      message: this.message,
+      userMessage: this.userMessage,
+      level: this.level,
+      httpStatus: this.httpStatus,
+      context: this.context,
+      timestamp: this.timestamp,
+      originalError: this.originalError?.message || null
+    };
   }
 }
 
@@ -152,10 +253,61 @@ export const withErrorHandling = (fn, errorContext = {}) => {
   };
 };
 
+/**
+ * Creates an error with contract context from response
+ */
+export const createContractError = (contractErrorCode, message, context = {}) => {
+  return new AppError(
+    contractErrorCode, 
+    null, 
+    { 
+      ...context, 
+      source: 'contract' 
+    }
+  );
+};
+
+/**
+ * Parses contract error responses and converts to AppError
+ */
+export const parseContractErrorResponse = (response) => {
+  if (!response) return new AppError('UNKNOWN_ERROR');
+  
+  // Handle error code as number
+  if (typeof response === 'number') {
+    return createContractError(response, 'Contract error occurred');
+  }
+  
+  // Handle structured response object
+  if (response.errorCode !== undefined) {
+    return createContractError(
+      response.errorCode,
+      response.message || 'Contract error',
+      response.context || {}
+    );
+  }
+  
+  // Handle error object
+  if (response.error) {
+    return createContractError(
+      response.error,
+      response.message || 'Contract call failed',
+      { errorDetails: response }
+    );
+  }
+  
+  return new AppError('UNKNOWN_ERROR', response);
+};
+
 export default {
   ErrorCodes,
+  ContractErrorCodes,
   AppError,
+  StructuredErrorResponse,
   handleError,
   withErrorHandling,
-  logError
+  logError,
+  mapContractError,
+  createContractError,
+  parseContractErrorResponse
 };
