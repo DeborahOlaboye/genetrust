@@ -299,6 +299,73 @@ export const parseContractErrorResponse = (response) => {
   return new AppError('UNKNOWN_ERROR', response);
 };
 
+export const isRetryableError = (error) => {
+  if (!(error instanceof AppError)) return false;
+  
+  const retryableCodes = [429, 503, 1003];
+  return retryableCodes.includes(error.httpStatus);
+};
+
+export const getErrorRecoveryStrategy = (error) => {
+  if (!(error instanceof AppError)) return 'LOG_AND_NOTIFY';
+  
+  switch (error.httpStatus) {
+    case 429:
+      return 'RETRY_WITH_BACKOFF';
+    case 503:
+      return 'RETRY_WITH_EXPONENTIAL_BACKOFF';
+    case 401:
+    case 403:
+      return 'REDIRECT_TO_LOGIN';
+    case 404:
+      return 'RESOURCE_NOT_FOUND';
+    case 400:
+    case 422:
+      return 'VALIDATE_INPUT';
+    default:
+      return 'LOG_AND_NOTIFY';
+  }
+};
+
+export const withRetry = async (fn, options = {}) => {
+  const {
+    maxRetries = 3,
+    delayMs = 1000,
+    backoffMultiplier = 2,
+    onRetry = null
+  } = options;
+  
+  let lastError;
+  
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error;
+      
+      if (attempt < maxRetries && isRetryableError(error)) {
+        const delay = delayMs * Math.pow(backoffMultiplier, attempt);
+        if (onRetry) {
+          onRetry(attempt + 1, error, delay);
+        }
+        await new Promise(resolve => setTimeout(resolve, delay));
+      } else {
+        throw error;
+      }
+    }
+  }
+  
+  throw lastError;
+};
+
+export const getErrorSeverity = (error) => {
+  if (!(error instanceof AppError)) return 'UNKNOWN';
+  
+  if (error.httpStatus >= 500) return 'CRITICAL';
+  if (error.httpStatus >= 400) return 'WARNING';
+  return 'INFO';
+};
+
 export default {
   ErrorCodes,
   ContractErrorCodes,
@@ -309,5 +376,9 @@ export default {
   logError,
   mapContractError,
   createContractError,
-  parseContractErrorResponse
+  parseContractErrorResponse,
+  isRetryableError,
+  getErrorRecoveryStrategy,
+  withRetry,
+  getErrorSeverity
 };
