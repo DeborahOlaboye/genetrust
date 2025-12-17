@@ -231,30 +231,34 @@
     (let ((parsed-price (try! (safe-string-to-uint price))))
         (asserts! (> parsed-price u0) ERR-INVALID-PRICE)
         
-        ;; Set the dataset with enhanced data
-        (map-set genetic-datasets
-            { data-id: data-id }
-                {
+        ;; Create new dataset record
+        (let ((new-dataset {
                     owner: tx-sender,
                     price: parsed-price,
                     access-level: access-level,
                     metadata-hash: metadata-hash,
                     encrypted-storage-url: (try! (safe-slice-utf8 storage-url u0 (min-u (len storage-url) u200))),
-                    description: safe-description,
+                    description: description,
                     created-at: stacks-block-height,
                     updated-at: stacks-block-height,
                     is-active: true
-                }
+                }))
+            (begin
+                ;; Record initial version
+                (try! (record-dataset-version data-id new-dataset))
+                
+                ;; Set the dataset
+                (map-set genetic-datasets { data-id: data-id } new-dataset)
+                
+                (ok (print { 
+                    event: EVENT-DATA-REGISTERED, 
+                    data-id: data-id, 
+                    by: tx-sender,
+                    block: stacks-block-height,
+                    tx: tx-sender
+                }))
             )
         )
-        
-        (ok (print { 
-            event: EVENT-DATA-REGISTERED, 
-            data-id: data-id, 
-            by: tx-sender,
-            block: stacks-block-height,
-            tx: tx-sender
-        }))
     )
 )
 
@@ -308,6 +312,9 @@
                                       (<= (get access-level updates) ACCESS_LEVEL_FULL)) 
                                  ERR-INVALID-ACCESS_LEVEL)
                     )
+                    
+                    ;; Record version history before updating
+                    (try! (record-dataset-version data-id updates))
                     
                     (map-set genetic-datasets { data-id: data-id } updates)
                     (ok (print { 
@@ -405,6 +412,47 @@
 ;; Check if user has access to a dataset
 (define-read-only (get-user-access (data-id uint) (user principal))
     (map-get? access-rights { data-id: data-id, user: user })
+)
+
+;; Get access change for a specific change ID
+(define-read-only (get-access-change
+    (data-id uint)
+    (user principal)
+    (change-id uint))
+    (map-get? access-history { data-id: data-id, user: user, change-id: change-id })
+)
+
+;; Time-based access analytics: count total changes for a user in time period
+(define-read-only (count-user-access-changes (data-id uint) (user principal))
+    (match (map-get? access-change-count { data-id: data-id, user: user })
+        counts (get count counts)
+        u0
+    )
+)
+
+;; Get dataset change timeline
+(define-read-only (get-dataset-change-timeline (data-id uint))
+    {
+        data-id: data-id,
+        total-versions: (match (map-get? dataset-versions { data-id: data-id })
+            ver-info (get current-version ver-info)
+            u0
+        ),
+        current-block: stacks-block-height
+    }
+)
+
+;; Historical access state query
+(define-read-only (get-historical-access-state
+    (data-id uint)
+    (user principal)
+    (at-block uint))
+    {
+        data-id: data-id,
+        user: user,
+        block-height: at-block,
+        current-access: (map-get? access-rights { data-id: data-id, user: user })
+    }
 )
 
 ;; Transfer ownership of a dataset
