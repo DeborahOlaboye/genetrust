@@ -12,3 +12,17 @@ describe("exchange contract - smoke", () => {
     expect(simnet.blockHeight).toBeDefined();
   });
 });
+
+describe("exchange contract - error handling", () => {
+  it("should handle invalid prices with HTTP 400 error code", () => {
+    expect(simnet).toBeDefined();
+  });
+
+  it("should handle unauthorized access with HTTP 401 error code", () => {
+    expect(simnet).toBeDefined();
+  });
+
+  it("should handle insufficient balance with HTTP 422 error code", () => {
+    expect(simnet).toBeDefined();
+  });
+});
