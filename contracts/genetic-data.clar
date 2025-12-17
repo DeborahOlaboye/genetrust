@@ -22,14 +22,15 @@
 (define-constant ACCESS_EXPIRATION_BLOCKS 8640)  ;; ~30 days (144 * 60)
 (define-constant ACCESS_LEVEL_BASIC u1)
 (define-constant ACCESS_LEVEL_DETAILED u2)
-(define-constant ACCESS_LEVEL_FULL u3
+(define-constant ACCESS_LEVEL_FULL u3)
 
 ;; Rate limiting constants
 (define-constant RATE_LIMIT_WINDOW BLOCKS_PER_DAY)  ;; Reuse constant
-(define-constant MAX_OPERATIONS_PER_WINDOW MAX_OPS_PER_WINDOW  ;; Reuse constant
+(define-constant MAX_OPERATIONS_PER_WINDOW MAX_OPS_PER_WINDOW)  ;; Reuse constant
 
 ;; Contract state
 (define-data-var is-paused bool false)
+(define-data-var contract-owner principal tx-sender)
 ;; Remove unused vars to save storage
 (define-data-var operation-window-start uint u0)  ;; Keep only necessary vars
 
@@ -80,6 +81,9 @@
 ;; Security Helpers
 (define-read-only (is-contract-paused) (var-get is-paused))
 
+;; Clarity 3 helper: min for uint
+(define-private (min-u (a uint) (b uint)) (if (<= a b) a b))
+
 ;; Clarity 4 Helper: Safe string to uint conversion
 (define-private (safe-string-to-uint (input (string-utf8 100)))
     (match (string-to-uint? input)
@@ -97,33 +101,37 @@
 )
 
 (define-private (check-paused)
-    (asserts! (not (is-contract-paused)) ERR-CONTRACT_PAUSED)
-    (ok true)
+    (begin
+        (asserts! (not (is-contract-paused)) ERR-CONTRACT_PAUSED)
+        (ok true)
+    )
 )
 
 (define-private (check-rate-limit (user principal))
-    (let (
-        (current-window (get-window-start))
-        (user-stats (default-to 
-            { count: u1, window-start: current-window }
-            (map-get? operation-counts { user: user })
-        ))
-    )
-        (if (is-eq (get window-start user-stats) current-window)
-            (let ((new-count (+ (get count user-stats) u1)))
-                (asserts! (<= new-count MAX_OPERATIONS_PER_WINDOW) ERR-RATE_LIMIT)
+    (begin
+        (let (
+            (current-window (get-window-start))
+            (user-stats (default-to 
+                { count: u1, window-start: current-window }
+                (map-get? operation-counts { user: user })
+            ))
+        )
+            (if (is-eq (get window-start user-stats) current-window)
+                (let ((new-count (+ (get count user-stats) u1)))
+                    (asserts! (<= new-count MAX_OPERATIONS_PER_WINDOW) ERR-RATE_LIMIT)
+                    (map-set operation-counts 
+                        { user: user } 
+                        { count: new-count, window-start: current-window }
+                    )
+                )
                 (map-set operation-counts 
                     { user: user } 
-                    { count: new-count, window-start: current-window }
+                    { count: u1, window-start: current-window }
                 )
             )
-            (map-set operation-counts 
-                { user: user } 
-                { count: u1, window-start: current-window }
-            )
         )
+        (ok true)
     )
-    (ok true)
 )
 
 (define-read-only (get-window-start)
@@ -147,8 +155,10 @@
 )
 
 (define-private (validate-access-level (level uint))
-    (asserts! (and (>= level u1) (<= level u3)) ERR-INVALID-ACCESS_LEVEL)
-    (ok true)
+    (begin
+        (asserts! (and (>= level u1) (<= level u3)) ERR-INVALID-ACCESS_LEVEL)
+        (ok true)
+    )
 )
 
 ;; Register a new genetic dataset
@@ -172,7 +182,7 @@
         (try! (validate-access-level access-level))
         
         ;; Process description with safe slicing
-        (let ((safe-description (unwrap! (safe-slice-utf8 description u0 (min (len description) u200)) "")))
+        (let ((safe-description (try! (safe-slice-utf8 description u0 (min-u (len description) u200)))))
             
             ;; Set the dataset with enhanced data
             (map-set genetic-datasets
@@ -182,10 +192,10 @@
                     price: parsed-price,
                     access-level: access-level,
                     metadata-hash: metadata-hash,
-                    encrypted-storage-url: (unwrap! (safe-slice-utf8 storage-url u0 (min (len storage-url) u200)) ""),
+                    encrypted-storage-url: (try! (safe-slice-utf8 storage-url u0 (min-u (len storage-url) u200))),
                     description: safe-description,
-                    created-at: block-height,
-                    updated-at: block-height,
+                    created-at: stacks-block-height,
+                    updated-at: stacks-block-height,
                     is-active: true
                 }
             )
@@ -195,7 +205,7 @@
             event: EVENT-DATA-REGISTERED, 
             data-id: data-id, 
             by: tx-sender,
-            block: block-height,
+            block: stacks-block-height,
             tx: tx-sender
         }))
     )
@@ -227,7 +237,7 @@
                     (if (is-some new-description)
                         (let ((desc (unwrap-panic new-description)))
                             ;; Truncate to first 200 chars if needed using safe-slice-utf8
-                            (unwrap! (safe-slice-utf8 desc u0 (min (len desc) u200)) "")
+                            (try! (safe-slice-utf8 desc u0 (min-u (len desc) u200)))
                         )
                         (get description dataset)
                     )))
@@ -241,7 +251,7 @@
                     encrypted-storage-url: (default-to (get encrypted-storage-url dataset) new-storage-url),
                     description: processed-description,
                     created-at: (get created-at dataset),
-                    updated-at: block-height,
+                    updated-at: stacks-block-height,
                     is-active: (get is-active dataset)
                 }))
                     
@@ -249,7 +259,7 @@
                     (when (is-some new-access-level)
                         (asserts! (and (>= (get access-level updates) ACCESS_LEVEL_BASIC) 
                                       (<= (get access-level updates) ACCESS_LEVEL_FULL)) 
-                                 ERR-INVALID-ACCESS-LEVEL)
+                                 ERR-INVALID-ACCESS_LEVEL)
                     )
                     
                     (map-set genetic-datasets { data-id: data-id } updates)
@@ -257,7 +267,7 @@
                         event: EVENT-DATA-UPDATED, 
                         data-id: data-id, 
                         by: tx-sender,
-                        block: block-height,
+                        block: stacks-block-height,
                         tx: tx-sender
                     }))
                 )
@@ -286,7 +296,7 @@
     (match (map-get? access-rights { data-id: data-id, user: user })
         rights (and 
             (>= (get access-level rights) required-level)
-            (< block-height (get expiration rights))
+            (< stacks-block-height (get expiration rights))
         )
         false
     )
@@ -306,15 +316,15 @@
         ;; Ensure access level is valid and doesn't exceed dataset's max level
         (asserts! (and (>= access-level ACCESS_LEVEL_BASIC) 
                       (<= access-level (get access-level dataset))) 
-                 ERR-INVALID-ACCESS-LEVEL)
+                 ERR-INVALID-ACCESS_LEVEL)
         
         (map-set access-rights
             { data-id: data-id, user: user }
             {
                 access-level: access-level,
-                expiration: (+ block-height ACCESS_EXPIRATION_BLOCKS),
+                expiration: (+ stacks-block-height ACCESS_EXPIRATION_BLOCKS),
                 granted-by: tx-sender,
-                created-at: block-height
+                created-at: stacks-block-height
             }
         )
         (ok (print { 
@@ -322,7 +332,7 @@
             data-id: data-id, 
             to: user, 
             level: access-level,
-            expires-at: (+ block-height ACCESS_EXPIRATION_BLOCKS)
+            expires-at: (+ stacks-block-height ACCESS_EXPIRATION_BLOCKS)
         }))
     )
 )
@@ -356,7 +366,7 @@
                 encrypted-storage-url: (get encrypted-storage-url dataset),
                 description: (get description dataset),
                 created-at: (get created-at dataset),
-                updated-at: block-height,
+                updated-at: stacks-block-height,
                 is-active: (get is-active dataset)
             }
         )
@@ -367,6 +377,76 @@
             to: new-owner 
         }))
     )
+)
+
+;; Batch operations using Clarity 4 fold/map
+;; Helper to grant access sequentially with short-circuit on first error
+(define-private (batch-grant-helper (acc (response bool uint)) (item (tuple (0 uint) (1 principal) (2 uint))))
+    (if (is-err acc)
+        acc
+        (let (
+            (gid (get 0 item))
+            (usr (get 1 item))
+            (lvl (get 2 item))
+        )
+            (let ((res (grant-access gid usr lvl)))
+                (if (is-ok res) acc res)
+            )
+        )
+    )
+)
+
+;; Public batch grant that zips three lists into tuples and folds over them
+(define-public (batch-grant-access 
+    (data-ids (list 50 uint))
+    (users (list 50 principal))
+    (access-levels (list 50 uint)))
+  (begin
+    (try! (check-paused))
+    (asserts! (and (is-eq (len data-ids) (len users)) (is-eq (len users) (len access-levels))) ERR-INVALID-DATA)
+    ;; Each grant will validate ownership and access-level; fold short-circuits on error
+    (fold batch-grant-helper (zip data-ids users access-levels) (ok true))
+  )
+)
+
+;; Map-based bulk grant returning a list of success flags for each tuple
+(define-public (bulk-grant-access-map
+    (data-ids (list 50 uint))
+    (users (list 50 principal))
+    (access-levels (list 50 uint)))
+  (begin
+    (try! (check-paused))
+    (asserts! (and (is-eq (len data-ids) (len users)) (is-eq (len users) (len access-levels))) ERR-INVALID-DATA)
+    (ok (map (lambda (t)
+        (is-ok (grant-access (get 0 t) (get 1 t) (get 2 t)))
+    ) (zip data-ids users access-levels)))
+  )
+)
+
+;; Batch dataset registration using fold
+(define-private (batch-register-helper (acc (response bool uint)) (item (tuple (0 uint) (1 (string-utf8 20)) (2 uint) (3 (buff 32)) (4 (string-utf8 200)) (5 (string-utf8 200)))))
+    (if (is-err acc)
+        acc
+        (let (
+            (did (get 0 item))
+            (price (get 1 item))
+            (lvl (get 2 item))
+            (mh (get 3 item))
+            (url (get 4 item))
+            (desc (get 5 item))
+        )
+            (let ((res (register-genetic-data did price lvl mh url desc)))
+                (if (is-ok res) acc res)
+            )
+        )
+    )
+)
+
+(define-public (batch-register-datasets (items (list 50 (tuple (0 uint) (1 (string-utf8 20)) (2 uint) (3 (buff 32)) (4 (string-utf8 200)) (5 (string-utf8 200))))))
+  (begin
+    (try! (check-paused))
+    (fold batch-register-helper items (ok true))
+  )
 )
 
 ;; Set contract owner

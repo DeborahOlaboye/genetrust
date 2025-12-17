@@ -5,6 +5,9 @@
 ;; Clarity 4 Helpers
 (define-constant MAX_STRING_LENGTH u500)
 
+;; Clarity 3: implement min for uints
+(define-private (min-u (a uint) (b uint)) (if (<= a b) a b))
+
 ;; Safe string to uint conversion using Clarity 4's string-to-uint?
 (define-private (safe-string-to-uint (input (string-utf8 100)))
     (match (string-to-uint? input)
@@ -57,6 +60,7 @@
         active: bool,
         access-level: uint,
         metadata-hash: (buff 32),
+        description: (string-utf8 500),  ;; Added description field
         requires-verification: bool,     ;; Requires verified proofs
         platform-fee-percent: uint,      ;; Fee percentage (in basis points, e.g. 250 = 2.5%)
         created-at: uint,                ;; When listing was created
@@ -143,7 +147,7 @@
     
     (let (
         (parsed-price (try! (safe-string-to-uint price)))
-        (safe-description (unwrap! (safe-slice description u0 (min (len description) u500)) ""))
+        (safe-description (unwrap! (safe-slice description u0 (min-u (len description) u500)) ""))
     )
         (asserts! (> parsed-price u0) ERR-INVALID-PRICE)
         (asserts! (and (> access-level u0) (<= access-level u3)) ERR-INVALID-ACCESS-LEVEL)
@@ -161,11 +165,11 @@
                 description: safe-description,  ;; Store the processed description
                 requires-verification: requires-verification,
                 platform-fee-percent: (var-get platform-fee-percent),
-                created-at: block-height,
-                updated-at: block-height
+                created-at: stacks-block-height,
+                updated-at: stacks-block-height
             }
         )
-            (ok _) (begin
+            (ok inserted) (begin
                 ;; Set up default pricing tier for this access level
                 (map-set access-level-pricing
                     { listing-id: listing-id, access-level: access-level }
@@ -175,7 +179,7 @@
                     event: "listing-created", 
                     listing-id: listing-id, 
                     by: tx-sender,
-                    block: block-height
+                    block: stacks-block-height
                 }))
             )
             (err error) (err error)
@@ -527,6 +531,57 @@
 
 (define-read-only (get-escrow (escrow-id uint))
     (map-get? purchase-escrows { escrow-id: escrow-id })
+)
+
+;; Batch operations leveraging Clarity 4 fold/map
+(define-private (batch-create-helper (acc (response bool uint)) (item (tuple (0 uint) (1 (string-utf8 20)) (2 principal) (3 uint) (4 uint) (5 (buff 32)) (6 bool) (7 (string-utf8 500)))))
+    (if (is-err acc)
+        acc
+        (let (
+            (lid (get 0 item))
+            (price (get 1 item))
+            (dc (get 2 item))
+            (did (get 3 item))
+            (lvl (get 4 item))
+            (mh (get 5 item))
+            (ver (get 6 item))
+            (desc (get 7 item))
+        )
+            (let ((res (create-listing lid price dc did lvl mh ver desc)))
+                (if (is-ok res) acc res)
+            )
+        )
+    )
+)
+
+(define-public (batch-create-listings (items (list 50 (tuple (0 uint) (1 (string-utf8 20)) (2 principal) (3 uint) (4 uint) (5 (buff 32)) (6 bool) (7 (string-utf8 500))))))
+    (fold batch-create-helper items (ok true))
+)
+
+(define-private (batch-status-helper (acc (response bool uint)) (item (tuple (0 uint) (1 bool))))
+    (if (is-err acc)
+        acc
+        (let ((res (update-listing-status (get 0 item) (get 1 item))))
+            (if (is-ok res) acc res)
+        )
+    )
+)
+
+(define-public (batch-update-status (items (list 50 (tuple (0 uint) (1 bool)))))
+    (fold batch-status-helper items (ok true))
+)
+
+(define-private (batch-purchase-helper (acc (response bool uint)) (item (tuple (0 uint) (1 uint) (2 (buff 32)))))
+    (if (is-err acc)
+        acc
+        (let ((res (purchase-listing-direct (get 0 item) (get 1 item) (get 2 item))))
+            (if (is-ok res) acc res)
+        )
+    )
+)
+
+(define-public (batch-purchase-direct (items (list 50 (tuple (0 uint) (1 uint) (2 (buff 32))))) )
+    (fold batch-purchase-helper items (ok true))
 )
 
 ;; Extend user access
