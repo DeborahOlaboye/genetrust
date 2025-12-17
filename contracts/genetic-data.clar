@@ -394,8 +394,49 @@
     (access-levels (list 50 uint)))
   (begin
     (try! (check-paused))
+    (asserts! (and (is-eq (len data-ids) (len users)) (is-eq (len users) (len access-levels))) ERR-INVALID-DATA)
     ;; Each grant will validate ownership and access-level; fold short-circuits on error
     (fold batch-grant-helper (zip data-ids users access-levels) (ok true))
+  )
+)
+
+;; Map-based bulk grant returning a list of success flags for each tuple
+(define-public (bulk-grant-access-map
+    (data-ids (list 50 uint))
+    (users (list 50 principal))
+    (access-levels (list 50 uint)))
+  (begin
+    (try! (check-paused))
+    (asserts! (and (is-eq (len data-ids) (len users)) (is-eq (len users) (len access-levels))) ERR-INVALID-DATA)
+    (ok (map (lambda (t)
+        (is-ok (grant-access (get 0 t) (get 1 t) (get 2 t)))
+    ) (zip data-ids users access-levels)))
+  )
+)
+
+;; Batch dataset registration using fold
+(define-private (batch-register-helper (acc (response bool uint)) (item (tuple (0 uint) (1 (string-utf8 20)) (2 uint) (3 (buff 32)) (4 (string-utf8 200)) (5 (string-utf8 200)))))
+    (if (is-err acc)
+        acc
+        (let (
+            (did (get 0 item))
+            (price (get 1 item))
+            (lvl (get 2 item))
+            (mh (get 3 item))
+            (url (get 4 item))
+            (desc (get 5 item))
+        )
+            (let ((res (register-genetic-data did price lvl mh url desc)))
+                (if (is-ok res) acc res)
+            )
+        )
+    )
+)
+
+(define-public (batch-register-datasets (items (list 50 (tuple (0 uint) (1 (string-utf8 20)) (2 uint) (3 (buff 32)) (4 (string-utf8 200)) (5 (string-utf8 200))))))
+  (begin
+    (try! (check-paused))
+    (fold batch-register-helper items (ok true))
   )
 )
 
