@@ -182,7 +182,7 @@
         (try! (validate-access-level access-level))
         
         ;; Process description with safe slicing
-        (let ((safe-description (unwrap! (safe-slice-utf8 description u0 (min-u (len description) u200)) "")))
+        (let ((safe-description (try! (safe-slice-utf8 description u0 (min-u (len description) u200)))))
             
             ;; Set the dataset with enhanced data
             (map-set genetic-datasets
@@ -192,7 +192,7 @@
                     price: parsed-price,
                     access-level: access-level,
                     metadata-hash: metadata-hash,
-                    encrypted-storage-url: (unwrap! (safe-slice-utf8 storage-url u0 (min-u (len storage-url) u200)) ""),
+                    encrypted-storage-url: (try! (safe-slice-utf8 storage-url u0 (min-u (len storage-url) u200))),
                     description: safe-description,
                     created-at: stacks-block-height,
                     updated-at: stacks-block-height,
@@ -237,7 +237,7 @@
                     (if (is-some new-description)
                         (let ((desc (unwrap-panic new-description)))
                             ;; Truncate to first 200 chars if needed using safe-slice-utf8
-                            (unwrap! (safe-slice-utf8 desc u0 (min-u (len desc) u200)) "")
+                            (try! (safe-slice-utf8 desc u0 (min-u (len desc) u200)))
                         )
                         (get description dataset)
                     )))
