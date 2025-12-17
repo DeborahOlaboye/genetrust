@@ -177,7 +177,7 @@
         
         (let ((proof-id (var-get next-proof-id))
               (safe-metadata (match metadata 
-                (some meta) (unwrap! (safe-slice meta u0 (min (len (unwrap-panic meta)) u500)) "")
+                (some meta) (unwrap! (safe-slice meta u0 (min-u (len (unwrap-panic meta)) u500)) "")
                 none "")))
             
             ;; Update the counter for next proof
@@ -232,13 +232,13 @@
                     updated-at: block-height
                 }
             )
-            (ok _) (ok (print { 
+            (ok inserted) (ok (print { 
                 event: "proof-registered", 
                 proof-id: proof-id, 
                 data-id: data-id,
                 proof-type: proof-type,
                 by: tx-sender,
-                block: block-height,
+                block: stacks-block-height,
                 metadata: safe-metadata
             }))
             (err error) (err error)

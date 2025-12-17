@@ -98,33 +98,37 @@
 )
 
 (define-private (check-paused)
-    (asserts! (not (is-contract-paused)) ERR-CONTRACT_PAUSED)
-    (ok true)
+    (begin
+        (asserts! (not (is-contract-paused)) ERR-CONTRACT_PAUSED)
+        (ok true)
+    )
 )
 
 (define-private (check-rate-limit (user principal))
-    (let (
-        (current-window (get-window-start))
-        (user-stats (default-to 
-            { count: u1, window-start: current-window }
-            (map-get? operation-counts { user: user })
-        ))
-    )
-        (if (is-eq (get window-start user-stats) current-window)
-            (let ((new-count (+ (get count user-stats) u1)))
-                (asserts! (<= new-count MAX_OPERATIONS_PER_WINDOW) ERR-RATE_LIMIT)
+    (begin
+        (let (
+            (current-window (get-window-start))
+            (user-stats (default-to 
+                { count: u1, window-start: current-window }
+                (map-get? operation-counts { user: user })
+            ))
+        )
+            (if (is-eq (get window-start user-stats) current-window)
+                (let ((new-count (+ (get count user-stats) u1)))
+                    (asserts! (<= new-count MAX_OPERATIONS_PER_WINDOW) ERR-RATE_LIMIT)
+                    (map-set operation-counts 
+                        { user: user } 
+                        { count: new-count, window-start: current-window }
+                    )
+                )
                 (map-set operation-counts 
                     { user: user } 
-                    { count: new-count, window-start: current-window }
+                    { count: u1, window-start: current-window }
                 )
             )
-            (map-set operation-counts 
-                { user: user } 
-                { count: u1, window-start: current-window }
-            )
         )
+        (ok true)
     )
-    (ok true)
 )
 
 (define-read-only (get-window-start)
