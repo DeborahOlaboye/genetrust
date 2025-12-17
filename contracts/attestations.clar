@@ -394,11 +394,12 @@
     (fold batch-verify-helper items (ok true))
 )
 
+(define-private (pair->verified (p (tuple (0 uint) (1 uint))))
+    (unwrap-panic (check-verified-proof (get 0 p) (get 1 p)))
+)
+
 (define-read-only (batch-get-verified-by-data (pairs (list 50 (tuple (0 uint) (1 uint)))))
-    ;; For each (data-id, proof-type) pair return the list of verified proof ids
-    (map (lambda (p)
-        (unwrap-panic (check-verified-proof (get 0 p) (get 1 p)))
-    ) pairs)
+    (map pair->verified pairs)
 )
 
 ;; Set contract owner
