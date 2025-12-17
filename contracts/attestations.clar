@@ -398,6 +398,27 @@
     )
 )
 
+;; Batch operations with fold/map
+(define-private (batch-verify-helper (acc (response bool uint)) (item (tuple (0 uint) (1 uint) (2 (buff 32)))))
+    (if (is-err acc)
+        acc
+        (let ((res (verify-proof (get 0 item) (get 1 item) (get 2 item))))
+            (if (is-ok res) acc res)
+        )
+    )
+)
+
+(define-public (batch-verify-proofs (items (list 50 (tuple (0 uint) (1 uint) (2 (buff 32))))))
+    (fold batch-verify-helper items (ok true))
+)
+
+(define-read-only (batch-get-verified-by-data (pairs (list 50 (tuple (0 uint) (1 uint)))))
+    ;; For each (data-id, proof-type) pair return the list of verified proof ids
+    (map (lambda (p)
+        (unwrap-panic (check-verified-proof (get 0 p) (get 1 p)))
+    ) pairs)
+)
+
 ;; Set contract owner
 (define-public (set-contract-owner (new-owner principal))
     (begin
