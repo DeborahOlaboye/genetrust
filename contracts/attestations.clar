@@ -162,30 +162,27 @@
     (proof-type uint) 
     (proof-hash (buff 32)) 
     (parameters (buff 256))
-    (metadata (optional (string-utf8 500))))  ;; Added metadata parameter for additional context
-    
+    (metadata (optional (string-utf8 500))))
     (let (
-        ;; Validate proof type using pattern matching
         (valid-type? (or 
             (is-eq proof-type PROOF-TYPE-GENE-PRESENCE)
             (is-eq proof-type PROOF-TYPE-GENE-ABSENCE)
             (is-eq proof-type PROOF-TYPE-GENE-VARIANT)
             (is-eq proof-type PROOF-TYPE-AGGREGATE)
         )))
-        
         (asserts! valid-type? ERR-INVALID-PROOF-TYPE)
-        
-        (let ((proof-id (var-get next-proof-id))
-              (safe-metadata (match metadata 
-                (some meta) (unwrap! (safe-slice meta u0 (min-u (len (unwrap-panic meta)) u500)) "")
-                none "")))
-            
-            ;; Update the counter for next proof
-            (var-set next-proof-id (+ proof-id u1))
-            
-            ;; Register the proof with enhanced data
+        (let (
+            (pid (var-get next-proof-id))
+            (safe-meta (match metadata 
+                (some m) (unwrap! (safe-slice m u0 (min-u (len (unwrap-panic m)) u500)) "")
+                none "")
+            )
+        )
+            ;; increment
+            (var-set next-proof-id (+ pid u1))
+            ;; insert proof
             (match (map-insert proof-registry
-                { proof-id: proof-id }
+                { proof-id: pid }
                 {
                     data-id: data-id,
                     proof-type: proof-type,
@@ -194,54 +191,36 @@
                     creator: tx-sender,
                     verified: false,
                     verifier: none,
-                    created-at: block-height,
-                    metadata: safe-metadata,
+                    created-at: stacks-block-height,
+                    metadata: safe-meta,
                     verification-attempts: u0,
                     last-verified: none,
-                    updated-at: block-height
+                    updated-at: stacks-block-height
                 }
             )
-            
-            ;; Update the data-proofs map to add this proof to the list
-            (match (map-get? data-proofs { data-id: data-id, proof-type: proof-type })
-                existing-proofs (map-set data-proofs
-                    { data-id: data-id, proof-type: proof-type }
-                    { proof-ids: (unwrap! (as-max-len? (append (get proof-ids existing-proofs) proof-id) u10) ERR-INVALID-DATA) }
+                (ok _) (begin
+                    ;; index
+                    (match (map-get? data-proofs { data-id: data-id, proof-type: proof-type })
+                        existing (map-set data-proofs
+                            { data-id: data-id, proof-type: proof-type }
+                            { proof-ids: (unwrap! (as-max-len? (append (get proof-ids existing) pid) u10) ERR-INVALID-DATA) }
+                        )
+                        (map-set data-proofs
+                            { data-id: data-id, proof-type: proof-type }
+                            { proof-ids: (list pid) }
+                        )
+                    )
+                    (ok (print { 
+                        event: "proof-registered", 
+                        proof-id: pid, 
+                        data-id: data-id,
+                        proof-type: proof-type,
+                        by: tx-sender,
+                        block: stacks-block-height,
+                        metadata: safe-meta
+                    }))
                 )
-                ;; If no existing proofs, create a new list with just this proof
-                (map-set data-proofs
-                    { data-id: data-id, proof-type: proof-type }
-                    { proof-ids: (list proof-id) }
-                )
-            )
-            
-            (match (map-insert proof-registry
-                { proof-id: proof-id }
-                {
-                    data-id: data-id,
-                    proof-type: proof-type,
-                    proof-hash: proof-hash,
-                    parameters: parameters,
-                    creator: tx-sender,
-                    verified: false,
-                    verifier: none,
-                    created-at: block-height,
-                    metadata: safe-metadata,
-                    verification-attempts: u0,
-                    last-verified: none,
-                    updated-at: block-height
-                }
-            )
-            (ok inserted) (ok (print { 
-                event: "proof-registered", 
-                proof-id: proof-id, 
-                data-id: data-id,
-                proof-type: proof-type,
-                by: tx-sender,
-                block: stacks-block-height,
-                metadata: safe-metadata
-            }))
-            (err error) (err error)
+                (err e) (err e)
             )
         )
     )
