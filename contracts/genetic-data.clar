@@ -369,6 +369,35 @@
     )
 )
 
+;; Batch operations using Clarity 4 fold/map
+;; Helper to grant access sequentially with short-circuit on first error
+(define-private (batch-grant-helper (acc (response bool uint)) (item (tuple (0 uint) (1 principal) (2 uint))))
+    (if (is-err acc)
+        acc
+        (let (
+            (gid (get 0 item))
+            (usr (get 1 item))
+            (lvl (get 2 item))
+        )
+            (let ((res (grant-access gid usr lvl)))
+                (if (is-ok res) acc res)
+            )
+        )
+    )
+)
+
+;; Public batch grant that zips three lists into tuples and folds over them
+(define-public (batch-grant-access 
+    (data-ids (list 50 uint))
+    (users (list 50 principal))
+    (access-levels (list 50 uint)))
+  (begin
+    (try! (check-paused))
+    ;; Each grant will validate ownership and access-level; fold short-circuits on error
+    (fold batch-grant-helper (zip data-ids users access-levels) (ok true))
+  )
+)
+
 ;; Set contract owner
 (define-public (set-contract-owner (new-owner principal))
     (begin
