@@ -691,6 +691,31 @@
   )
 )
 
+;; Get active datasets count
+(define-read-only (get-active-datasets-count)
+    (var-get audit-trail-counter)
+)
+
+;; Verify dataset version exists
+(define-read-only (dataset-version-exists (data-id uint) (version uint))
+    (is-some (map-get? dataset-version-history { data-id: data-id, version: version }))
+)
+
+;; Get historical ownership chain for a dataset
+(define-read-only (get-dataset-owner-history (data-id uint))
+    {
+        data-id: data-id,
+        current-owner: (match (map-get? genetic-datasets { data-id: data-id })
+            dataset (get owner dataset)
+            none
+        ),
+        total-versions: (match (map-get? dataset-versions { data-id: data-id })
+            version-info (get current-version version-info)
+            u0
+        )
+    }
+)
+
 ;; Set contract owner
 (define-public (set-contract-owner (new-owner principal))
     (begin
