@@ -57,6 +57,7 @@
         active: bool,
         access-level: uint,
         metadata-hash: (buff 32),
+        description: (string-utf8 500),  ;; Added description field
         requires-verification: bool,     ;; Requires verified proofs
         platform-fee-percent: uint,      ;; Fee percentage (in basis points, e.g. 250 = 2.5%)
         created-at: uint,                ;; When listing was created
@@ -161,8 +162,8 @@
                 description: safe-description,  ;; Store the processed description
                 requires-verification: requires-verification,
                 platform-fee-percent: (var-get platform-fee-percent),
-                created-at: block-height,
-                updated-at: block-height
+                created-at: stacks-block-height,
+                updated-at: stacks-block-height
             }
         )
             (ok _) (begin
@@ -175,7 +176,7 @@
                     event: "listing-created", 
                     listing-id: listing-id, 
                     by: tx-sender,
-                    block: block-height
+                    block: stacks-block-height
                 }))
             )
             (err error) (err error)
