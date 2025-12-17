@@ -724,6 +724,26 @@
     )
 )
 
+;; Advanced: Export audit trail data for compliance
+(define-read-only (get-audit-trail-export-summary)
+    {
+        total-audit-entries: (var-get audit-trail-counter),
+        total-access-logs: (var-get next-log-id),
+        total-usage-records: (var-get next-usage-id),
+        export-timestamp: stacks-block-height,
+        compliance-ready: true
+    }
+)
+
+;; Get all data processing purposes tracked
+(define-read-only (get-tracked-purposes)
+    {
+        research: CONSENT-RESEARCH,
+        commercial: CONSENT-COMMERCIAL,
+        clinical: CONSENT-CLINICAL
+    }
+)
+
 ;; Assign governance owner
 (define-public (assign-governance-owner (new-owner principal))
     (begin
