@@ -22,14 +22,15 @@
 (define-constant ACCESS_EXPIRATION_BLOCKS 8640)  ;; ~30 days (144 * 60)
 (define-constant ACCESS_LEVEL_BASIC u1)
 (define-constant ACCESS_LEVEL_DETAILED u2)
-(define-constant ACCESS_LEVEL_FULL u3
+(define-constant ACCESS_LEVEL_FULL u3)
 
 ;; Rate limiting constants
 (define-constant RATE_LIMIT_WINDOW BLOCKS_PER_DAY)  ;; Reuse constant
-(define-constant MAX_OPERATIONS_PER_WINDOW MAX_OPS_PER_WINDOW  ;; Reuse constant
+(define-constant MAX_OPERATIONS_PER_WINDOW MAX_OPS_PER_WINDOW)  ;; Reuse constant
 
 ;; Contract state
 (define-data-var is-paused bool false)
+(define-data-var contract-owner principal tx-sender)
 ;; Remove unused vars to save storage
 (define-data-var operation-window-start uint u0)  ;; Keep only necessary vars
 
@@ -184,8 +185,8 @@
                     metadata-hash: metadata-hash,
                     encrypted-storage-url: (unwrap! (safe-slice-utf8 storage-url u0 (min (len storage-url) u200)) ""),
                     description: safe-description,
-                    created-at: block-height,
-                    updated-at: block-height,
+                    created-at: stacks-block-height,
+                    updated-at: stacks-block-height,
                     is-active: true
                 }
             )
@@ -195,7 +196,7 @@
             event: EVENT-DATA-REGISTERED, 
             data-id: data-id, 
             by: tx-sender,
-            block: block-height,
+            block: stacks-block-height,
             tx: tx-sender
         }))
     )
@@ -241,7 +242,7 @@
                     encrypted-storage-url: (default-to (get encrypted-storage-url dataset) new-storage-url),
                     description: processed-description,
                     created-at: (get created-at dataset),
-                    updated-at: block-height,
+                    updated-at: stacks-block-height,
                     is-active: (get is-active dataset)
                 }))
                     
@@ -249,7 +250,7 @@
                     (when (is-some new-access-level)
                         (asserts! (and (>= (get access-level updates) ACCESS_LEVEL_BASIC) 
                                       (<= (get access-level updates) ACCESS_LEVEL_FULL)) 
-                                 ERR-INVALID-ACCESS-LEVEL)
+                                 ERR-INVALID-ACCESS_LEVEL)
                     )
                     
                     (map-set genetic-datasets { data-id: data-id } updates)
@@ -257,7 +258,7 @@
                         event: EVENT-DATA-UPDATED, 
                         data-id: data-id, 
                         by: tx-sender,
-                        block: block-height,
+                        block: stacks-block-height,
                         tx: tx-sender
                     }))
                 )
@@ -286,7 +287,7 @@
     (match (map-get? access-rights { data-id: data-id, user: user })
         rights (and 
             (>= (get access-level rights) required-level)
-            (< block-height (get expiration rights))
+            (< stacks-block-height (get expiration rights))
         )
         false
     )
@@ -306,15 +307,15 @@
         ;; Ensure access level is valid and doesn't exceed dataset's max level
         (asserts! (and (>= access-level ACCESS_LEVEL_BASIC) 
                       (<= access-level (get access-level dataset))) 
-                 ERR-INVALID-ACCESS-LEVEL)
+                 ERR-INVALID-ACCESS_LEVEL)
         
         (map-set access-rights
             { data-id: data-id, user: user }
             {
                 access-level: access-level,
-                expiration: (+ block-height ACCESS_EXPIRATION_BLOCKS),
+                expiration: (+ stacks-block-height ACCESS_EXPIRATION_BLOCKS),
                 granted-by: tx-sender,
-                created-at: block-height
+                created-at: stacks-block-height
             }
         )
         (ok (print { 
@@ -322,7 +323,7 @@
             data-id: data-id, 
             to: user, 
             level: access-level,
-            expires-at: (+ block-height ACCESS_EXPIRATION_BLOCKS)
+            expires-at: (+ stacks-block-height ACCESS_EXPIRATION_BLOCKS)
         }))
     )
 )
@@ -356,7 +357,7 @@
                 encrypted-storage-url: (get encrypted-storage-url dataset),
                 description: (get description dataset),
                 created-at: (get created-at dataset),
-                updated-at: block-height,
+                updated-at: stacks-block-height,
                 is-active: (get is-active dataset)
             }
         )
