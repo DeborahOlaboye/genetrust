@@ -5,6 +5,9 @@
 ;; Clarity 4 Helpers
 (define-constant MAX_STRING_LENGTH u500)
 
+;; Clarity 3: implement min for uints
+(define-private (min-u (a uint) (b uint)) (if (<= a b) a b))
+
 ;; Safe string to uint conversion using Clarity 4's string-to-uint?
 (define-private (safe-string-to-uint (input (string-utf8 100)))
     (match (string-to-uint? input)
@@ -144,7 +147,7 @@
     
     (let (
         (parsed-price (try! (safe-string-to-uint price)))
-        (safe-description (unwrap! (safe-slice description u0 (min (len description) u500)) ""))
+        (safe-description (unwrap! (safe-slice description u0 (min-u (len description) u500)) ""))
     )
         (asserts! (> parsed-price u0) ERR-INVALID-PRICE)
         (asserts! (and (> access-level u0) (<= access-level u3)) ERR-INVALID-ACCESS-LEVEL)
@@ -166,7 +169,7 @@
                 updated-at: stacks-block-height
             }
         )
-            (ok _) (begin
+            (ok inserted) (begin
                 ;; Set up default pricing tier for this access level
                 (map-set access-level-pricing
                     { listing-id: listing-id, access-level: access-level }
