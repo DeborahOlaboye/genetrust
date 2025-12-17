@@ -8,6 +8,9 @@
 (define-constant MAX_STRING_LENGTH u500)
 (define-constant MAX_BUFFER_LENGTH u1024)
 
+;; Clarity 3 helper: min for uint
+(define-private (min-u (a uint) (b uint)) (if (<= a b) a b))
+
 ;; Safe string to uint conversion using Clarity 4's string-to-uint?
 (define-private (safe-string-to-uint (input (string-utf8 100)))
     (match (string-to-uint? input)
@@ -198,7 +201,7 @@
                     updated-at: stacks-block-height
                 }
             )
-                (ok _) (begin
+                (ok inserted) (begin
                     ;; index
                     (match (map-get? data-proofs { data-id: data-id, proof-type: proof-type })
                         existing (map-set data-proofs
