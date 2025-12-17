@@ -5,7 +5,6 @@ authors = []
 telemetry = true
 cache_dir = './.cache'
 requirements = []
-
 [contracts.dataset-registry]
 path = 'contracts/genetic-data.clar'
 clarity_version = 3
@@ -30,7 +29,6 @@ epoch = 3.0
 path = 'contracts/data-governance.clar'
 clarity_version = 3
 epoch = 3.0
-
 [repl.analysis]
 passes = ['check_checker']
 

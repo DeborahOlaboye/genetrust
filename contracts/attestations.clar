@@ -13,25 +13,25 @@
 
 ;; Safe string to uint conversion using Clarity 4's string-to-uint?
 (define-private (safe-string-to-uint (input (string-utf8 100)))
-    (match (string-to-uint? input)
-        value (ok value)
-        error (err ERR-INVALID-DATA)
+    (match (string-to-uint? input) value
+        (ok value)
+        (err ERR-INVALID-DATA)
     )
 )
 
 ;; Safe string slicing with bounds checking
 (define-private (safe-slice (input (string-utf8 500)) (start uint) (len uint))
-    (match (slice? input start len)
-        sliced (ok sliced)
-        error (err ERR-INVALID-DATA)
+    (match (slice? input start len) result
+        (ok result)
+        (err ERR-INVALID-DATA)
     )
 )
 
 ;; Safe buffer slicing with bounds checking
 (define-private (safe-buffer-slice (input (buff 1024)) (start uint) (len uint))
-    (match (slice? input start len)
-        sliced (ok sliced)
-        error (err ERR-INVALID-DATA)
+    (match (slice? input start len) result
+        (ok result)
+        (err ERR-INVALID-DATA)
     )
 )
 

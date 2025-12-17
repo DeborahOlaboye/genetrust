@@ -2,6 +2,9 @@
 ;; Core exchange for genetic data trading with expanded functionality
 ;; Upgraded to Clarity 4 with enhanced features
 
+;; Contract constants
+(define-constant CONTRACT_ATTESTATIONS 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.attestations)
+
 ;; Clarity 4 Helpers
 (define-constant MAX_STRING_LENGTH u500)
 
@@ -238,16 +241,12 @@
         
         ;; If verification required, make a safer call to verify proofs
         (if (get requires-verification listing)
-            ;; Handle the verification call more carefully to avoid indeterminate types
-            (begin
-                ;; Make the contract call and handle the response directly
-                (let ((verification-result (contract-call? .attestations check-verified-proof data-id u1)))
-                    ;; Check if we got an ok result
-                    (asserts! (is-ok verification-result) ERR-NO-VERIFIED-PROOFS)
-                    
-                    ;; Now safely unwrap and check the proof list length
-                    (let ((proof-list (unwrap! verification-result ERR-NO-VERIFIED-PROOFS)))
-                        (asserts! (> (len proof-list) u0) ERR-NO-VERIFIED-PROOFS)
+            (let ((verification (contract-call? CONTRACT_ATTESTATIONS check-verified-proof data-id u1)))
+                (asserts! (is-ok verification) ERR-VERIFICATION-FAILED)
+                (let ((proof-list (unwrap! verification (err ERR-VERIFICATION-FAILED))))
+                    (asserts! (> (len proof-list) u0) ERR-NO-VERIFIED-PROOFS)
+                )
+            )
                     )
                 )
             )
