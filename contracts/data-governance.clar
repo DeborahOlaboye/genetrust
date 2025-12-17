@@ -379,14 +379,14 @@
         )
         
         ;; Also record in extended audit trail for compliance purposes
-        (record-extended-audit-trail
+        (asserts! (is-ok (record-extended-audit-trail
             data-id
             tx-sender
             purpose
             u1
             u"access"
             tx-id
-        )
+        )) ERR-TRANSACTION-FAILED)
         
         (ok log-id)
     )

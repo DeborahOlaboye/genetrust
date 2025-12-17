@@ -260,7 +260,7 @@
                         metadata: safe-meta
                     }))
                 )
-                ERR-DATA-EXISTS
+                ERR-ALREADY-EXISTS
             )
         )
     )
