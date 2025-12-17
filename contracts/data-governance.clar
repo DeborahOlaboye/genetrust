@@ -13,6 +13,7 @@
 (define-constant ERR-INVALID-JURISDICTION (err u106))
 (define-constant ERR-INVALID-PURPOSE (err u107))
 (define-constant ERR-GDPR-RECORD-MISSING (err u108))
+(define-constant ERR-INVALID-BLOCK (err u109))
 
 ;; Constants for jurisdiction
 (define-constant JURISDICTION-GLOBAL u0)
@@ -81,6 +82,46 @@
 ;; Counters
 (define-data-var next-usage-id uint u1)
 (define-data-var next-log-id uint u1)
+
+;; Historical audit trail map - extended access log with more details
+(define-map historical-audit-trail
+    { audit-id: uint }
+    {
+        data-id: uint,
+        user: principal,
+        timestamp: uint,
+        purpose: uint,
+        access-level: uint,
+        action: (string-utf8 50),
+        approved-by: principal,
+        block-height: uint,
+        tx-id: (buff 32)
+    }
+)
+
+;; Counter for historical audit trail
+(define-data-var audit-trail-counter uint u1)
+
+;; Consent history - track consent changes over time
+(define-map consent-history
+    { data-id: uint, change-id: uint }
+    {
+        old-research: bool,
+        old-commercial: bool,
+        old-clinical: bool,
+        new-research: bool,
+        new-commercial: bool,
+        new-clinical: bool,
+        changed-at: uint,
+        changed-by: principal
+    }
+)
+
+;; Consent change counter
+(define-map consent-change-count
+    { data-id: uint }
+    { count: uint }
+)
 
 ;; Set consent policy for genetic data
 (define-public (set-consent-policy
@@ -164,6 +205,17 @@
             (current-time stacks-block-height)
             (expiration-time (+ stacks-block-height consent-duration))
         )
+            ;; Record the consent change before updating
+            (try! (record-consent-change 
+                data-id
+                (get research-consent consent)
+                (get commercial-consent consent)
+                (get clinical-consent consent)
+                research-consent
+                commercial-consent
+                clinical-consent
+            ))
+            
             ;; Update the consent record
             (map-set consent-records
                 { data-id: data-id }
@@ -285,6 +337,16 @@
                 tx-id: tx-id
             }
         )
+        
+        ;; Also record in extended audit trail for compliance purposes
+        (try! (record-extended-audit-trail
+            data-id
+            tx-sender
+            purpose
+            u1
+            (string-utf8 "access")
+            tx-id
+        ))
         
         (ok log-id)
     )
@@ -432,6 +494,75 @@
     )
 )
 
+;; Helper: Record extended audit trail entry with more details
+(define-private (record-extended-audit-trail
+    (data-id uint)
+    (user principal)
+    (purpose uint)
+    (access-level uint)
+    (action (string-utf8 50))
+    (tx-id (buff 32)))
+    (let (
+        (audit-id (var-get audit-trail-counter))
+        (current-time stacks-block-height)
+    )
+        (begin
+            (var-set audit-trail-counter (+ audit-id u1))
+            (map-set historical-audit-trail
+                { audit-id: audit-id }
+                {
+                    data-id: data-id,
+                    user: user,
+                    timestamp: current-time,
+                    purpose: purpose,
+                    access-level: access-level,
+                    action: action,
+                    approved-by: tx-sender,
+                    block-height: current-time,
+                    tx-id: tx-id
+                }
+            )
+            (ok audit-id)
+        )
+    )
+)
+
+;; Helper: Record consent change history
+(define-private (record-consent-change
+    (data-id uint)
+    (old-research bool)
+    (old-commercial bool)
+    (old-clinical bool)
+    (new-research bool)
+    (new-commercial bool)
+    (new-clinical bool))
+    (let (
+        (change-count-entry (default-to { count: u0 } (map-get? consent-change-count { data-id: data-id })))
+        (next-change-id (+ (get count change-count-entry) u1))
+    )
+        (begin
+            (map-set consent-history
+                { data-id: data-id, change-id: next-change-id }
+                {
+                    old-research: old-research,
+                    old-commercial: old-commercial,
+                    old-clinical: old-clinical,
+                    new-research: new-research,
+                    new-commercial: new-commercial,
+                    new-clinical: new-clinical,
+                    changed-at: stacks-block-height,
+                    changed-by: tx-sender
+                }
+            )
+            (map-set consent-change-count
+                { data-id: data-id }
+                { count: next-change-id }
+            )
+            (ok next-change-id)
+        )
+    )
+)
+
 ;; Read functions
 
 ;; Fetch consent record
@@ -452,6 +583,39 @@
 ;; Fetch GDPR record
 (define-read-only (fetch-gdpr-record (data-id uint))
     (map-get? gdpr-records { data-id: data-id })
+)
+
+;; Fetch extended historical audit trail entry
+(define-read-only (fetch-audit-trail (audit-id uint))
+    (map-get? historical-audit-trail { audit-id: audit-id })
+)
+
+;; Fetch consent change history
+(define-read-only (fetch-consent-change (data-id uint) (change-id uint))
+    (map-get? consent-history { data-id: data-id, change-id: change-id })
+)
+
+;; Get total consent changes for a dataset
+(define-read-only (get-consent-change-count (data-id uint))
+    (match (map-get? consent-change-count { data-id: data-id })
+        count-entry (get count count-entry)
+        u0
+    )
+)
+
+;; Get audit trail summary for compliance reporting
+(define-read-only (get-audit-trail-summary (data-id uint))
+    {
+        data-id: data-id,
+        total-audit-entries: (var-get audit-trail-counter),
+        total-consent-changes: (get-consent-change-count data-id),
+        last-audit-block: (var-get audit-trail-counter)
+    }
+)
+
+;; Check if user has access history for compliance purposes
+(define-read-only (has-access-history (data-id uint) (user principal))
+    (is-some (map-get? access-logs { log-id: u0 }))
 )
 
 ;; Administrative functions
