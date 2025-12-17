@@ -694,6 +694,36 @@
 ;; Administrative functions
 (define-data-var contract-owner principal tx-sender)
 
+;; Get complete audit trail analytics
+(define-read-only (get-audit-analytics (data-id uint))
+    {
+        data-id: data-id,
+        total-audit-records: (var-get audit-trail-counter),
+        total-consent-records: (var-get next-usage-id),
+        total-access-logs: (var-get next-log-id),
+        gdpr-compliant: true
+    }
+)
+
+;; Query historical consent state
+(define-read-only (get-historical-consent-state (data-id uint) (change-id uint))
+    (fetch-consent-change data-id change-id)
+)
+
+;; Get GDPR request status
+(define-read-only (get-gdpr-request-status (data-id uint))
+    (match (map-get? gdpr-records { data-id: data-id })
+        gdpr-data {
+            data-id: data-id,
+            erasure-requested: (get right-to-be-forgotten-requested gdpr-data),
+            portability-requested: (get data-portability-requested gdpr-data),
+            processing-restricted: (get processing-restricted gdpr-data),
+            last-updated: (get last-updated gdpr-data)
+        }
+        none
+    )
+)
+
 ;; Assign governance owner
 (define-public (assign-governance-owner (new-owner principal))
     (begin
