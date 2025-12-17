@@ -215,13 +215,13 @@
         (let (
             (pid (var-get next-proof-id))
             (safe-meta (match metadata 
-                m (unwrap! (safe-slice m u0 (min-u (len (unwrap-panic m)) u500)) (string-utf8 ""))
-                (string-utf8 "")))
+                m (default-to u"" (as-max-len? m u500))
+                u""))
         )
             ;; increment
             (var-set next-proof-id (+ pid u1))
             ;; insert proof
-            (match (map-insert proof-registry
+            (if (map-insert proof-registry
                 { proof-id: pid }
                 {
                     data-id: data-id,
@@ -238,7 +238,7 @@
                     updated-at: stacks-block-height
                 }
             )
-                (ok inserted) (begin
+                (begin
                     ;; index
                     (match (map-get? data-proofs { data-id: data-id, proof-type: proof-type })
                         existing (map-set data-proofs
@@ -260,7 +260,7 @@
                         metadata: safe-meta
                     }))
                 )
-                (err e) (err e)
+                ERR-DATA-EXISTS
             )
         )
     )

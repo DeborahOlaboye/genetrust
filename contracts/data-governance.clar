@@ -243,46 +243,48 @@
             (current-time stacks-block-height)
             (expiration-time (+ stacks-block-height consent-duration))
         )
-            ;; Record the consent change before updating
-            (try! (record-consent-change 
-                data-id
-                (get research-consent consent)
-                (get commercial-consent consent)
-                (get clinical-consent consent)
-                research-consent
-                commercial-consent
-                clinical-consent
-            ))
-            
-            ;; Update the consent record
-            (map-set consent-records
-                { data-id: data-id }
-                {
-                    owner: tx-sender,
-                    research-consent: research-consent,
-                    commercial-consent: commercial-consent,
-                    clinical-consent: clinical-consent,
-                    jurisdiction: jurisdiction,
-                    consent-expires-at: expiration-time,
-                    last-updated: current-time
-                }
-            )
-            
-            ;; If changed to EU jurisdiction, initialize GDPR record if it doesn't exist
-            (if (and (is-eq jurisdiction JURISDICTION-EU) (is-none (map-get? gdpr-records { data-id: data-id })))
-                (map-set gdpr-records
+            ;; Record the consent change before updating and continue
+            (begin
+                (asserts! (is-ok (record-consent-change 
+                    data-id
+                    (get research-consent consent)
+                    (get commercial-consent consent)
+                    (get clinical-consent consent)
+                    research-consent
+                    commercial-consent
+                    clinical-consent
+                )) ERR-NOT-FOUND)
+                
+                ;; Update the consent record
+                (map-set consent-records
                     { data-id: data-id }
                     {
-                        right-to-be-forgotten-requested: false,
-                        data-portability-requested: false,
-                        processing-restricted: false,
+                        owner: tx-sender,
+                        research-consent: research-consent,
+                        commercial-consent: commercial-consent,
+                        clinical-consent: clinical-consent,
+                        jurisdiction: jurisdiction,
+                        consent-expires-at: expiration-time,
                         last-updated: current-time
                     }
                 )
-                true
+                
+                ;; If changed to EU jurisdiction, initialize GDPR record if it doesn't exist
+                (if (and (is-eq jurisdiction JURISDICTION-EU) (is-none (map-get? gdpr-records { data-id: data-id })))
+                    (map-set gdpr-records
+                        { data-id: data-id }
+                        {
+                            right-to-be-forgotten-requested: false,
+                            data-portability-requested: false,
+                            processing-restricted: false,
+                            last-updated: current-time
+                        }
+                    )
+                    true
+                )
+                
+                (ok true)
             )
-            
-            (ok true)
         )
     )
 )
@@ -377,14 +379,14 @@
         )
         
         ;; Also record in extended audit trail for compliance purposes
-        (try! (record-extended-audit-trail
+        (record-extended-audit-trail
             data-id
             tx-sender
             purpose
             u1
-            (string-utf8 "access")
+            u"access"
             tx-id
-        ))
+        )
         
         (ok log-id)
     )

@@ -68,7 +68,7 @@
         (if is-admin
             (ok is-admin)
             (begin
-                (record-error u401 (string-utf8 "Admin access required") (string-utf8 "only-admin") tx-sender)
+                (record-error u401 u"Admin access required" u"only-admin" tx-sender)
                 ERR-NOT-ADMIN
             )
         )
