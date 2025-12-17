@@ -1,16 +1,17 @@
 ;; access-control.clar
 ;; Role-based access control for GeneTrust smart contracts
 
-(define-constant ERR-NOT-ADMIN (err u100))
-(define-constant ERR-NOT-AUTHORIZED (err u101))
-(define-constant ERR-ALREADY-ROLE (err u102))
-(define-constant ERR-INVALID-ROLE (err u103))
+;; Error codes mapped to HTTP status
+(define-constant ERR-NOT-ADMIN (err u401))
+(define-constant ERR-NOT-AUTHORIZED (err u401))
+(define-constant ERR-ALREADY-ROLE (err u409))
+(define-constant ERR-INVALID-ROLE (err u400))
 
 ;; Role definitions
 (define-constant ROLE-ADMIN 0x0001)
-(define-constant ROLE_RESEARCHER 0x0002)
-(define-constant ROLE_DATA_PROVIDER 0x0004)
-(define-constant ROLE_VERIFIER 0x0008
+(define-constant ROLE-RESEARCHER 0x0002)
+(define-constant ROLE-DATA-PROVIDER 0x0004)
+(define-constant ROLE-VERIFIER 0x0008)
 
 ;; Role management
 (define-map roles principal uint)
@@ -18,16 +19,59 @@
 ;; Track contract admins
 (define-data-var admins (list 10 principal) (list tx-sender))
 
+;; Error context tracking
+(define-map error-context 
+    { error-id: uint }
+    {
+        error-code: uint,
+        message: (string-utf8 256),
+        context-data: (string-utf8 512),
+        timestamp: uint,
+        user: principal
+    }
+)
+(define-data-var error-counter uint u0)
+
 ;; Events
 (define-data-var nonce uint u0)
 (define-constant EVENT-ROLE-GRANTED 0x01)
-(define-constant EVENT-ROLE-REVOKED 0x02
+(define-constant EVENT-ROLE-REVOKED 0x02)
+
+;; Error context helper: Record error with context for debugging
+(define-private (record-error (error-code uint) (message (string-utf8 256)) (context (string-utf8 512)) (user principal))
+    (let ((error-id (var-get error-counter)))
+        (begin
+            (var-set error-counter (+ error-id u1))
+            (map-set error-context
+                { error-id: error-id }
+                {
+                    error-code: error-code,
+                    message: message,
+                    context-data: context,
+                    timestamp: stacks-block-height,
+                    user: user
+                }
+            )
+            error-id
+        )
+    )
+)
+
+;; Error helper: Get error context
+(define-read-only (get-error-context (error-id uint))
+    (map-get? error-context { error-id: error-id })
+)
 
 ;; Modifier to restrict access to admins only
 (define-private (only-admin)
     (let ((is-admin (contains? (var-get admins) tx-sender)))
-        (asserts! is-admin ERR-NOT-ADMIN)
-        (ok is-admin)
+        (if is-admin
+            (ok is-admin)
+            (begin
+                (record-error u401 (string-utf8 "Admin access required") (string-utf8 "only-admin") tx-sender)
+                ERR-NOT-ADMIN
+            )
+        )
     )
 )
 
