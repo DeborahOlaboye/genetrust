@@ -529,6 +529,57 @@
     (map-get? purchase-escrows { escrow-id: escrow-id })
 )
 
+;; Batch operations leveraging Clarity 4 fold/map
+(define-private (batch-create-helper (acc (response bool uint)) (item (tuple (0 uint) (1 (string-utf8 20)) (2 principal) (3 uint) (4 uint) (5 (buff 32)) (6 bool) (7 (string-utf8 500)))))
+    (if (is-err acc)
+        acc
+        (let (
+            (lid (get 0 item))
+            (price (get 1 item))
+            (dc (get 2 item))
+            (did (get 3 item))
+            (lvl (get 4 item))
+            (mh (get 5 item))
+            (ver (get 6 item))
+            (desc (get 7 item))
+        )
+            (let ((res (create-listing lid price dc did lvl mh ver desc)))
+                (if (is-ok res) acc res)
+            )
+        )
+    )
+)
+
+(define-public (batch-create-listings (items (list 50 (tuple (0 uint) (1 (string-utf8 20)) (2 principal) (3 uint) (4 uint) (5 (buff 32)) (6 bool) (7 (string-utf8 500))))))
+    (fold batch-create-helper items (ok true))
+)
+
+(define-private (batch-status-helper (acc (response bool uint)) (item (tuple (0 uint) (1 bool))))
+    (if (is-err acc)
+        acc
+        (let ((res (update-listing-status (get 0 item) (get 1 item))))
+            (if (is-ok res) acc res)
+        )
+    )
+)
+
+(define-public (batch-update-status (items (list 50 (tuple (0 uint) (1 bool)))))
+    (fold batch-status-helper items (ok true))
+)
+
+(define-private (batch-purchase-helper (acc (response bool uint)) (item (tuple (0 uint) (1 uint) (2 (buff 32)))))
+    (if (is-err acc)
+        acc
+        (let ((res (purchase-listing-direct (get 0 item) (get 1 item) (get 2 item))))
+            (if (is-ok res) acc res)
+        )
+    )
+)
+
+(define-public (batch-purchase-direct (items (list 50 (tuple (0 uint) (1 uint) (2 (buff 32))))) )
+    (fold batch-purchase-helper items (ok true))
+)
+
 ;; Extend user access
 (define-public (extend-access (listing-id uint) (user principal) (duration uint))
     (let (
