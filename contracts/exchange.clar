@@ -284,26 +284,11 @@
                 (asserts! (is-ok verification) ERR-VERIFICATION-FAILED)
                 (let ((proof-list (unwrap! verification (err ERR-VERIFICATION-FAILED))))
                     (asserts! (> (len proof-list) u0) ERR-NO-VERIFIED-PROOFS)
+                    (ok true)
                 )
             )
-                    )
-                )
-            )
-            true
+            (ok true)
         )
-        
-        ;; Handle compliance check in a similar way
-        (let ((consent-result (contract-call? .data-governance validate-consent-for-purpose data-id u1)))
-            ;; Check if we got an ok result
-            (asserts! (is-ok consent-result) ERR-NO-VALID-CONSENT)
-            
-            ;; Now safely unwrap and check the consent value
-            (let ((is-valid (unwrap! consent-result ERR-NO-VALID-CONSENT)))
-                (asserts! is-valid ERR-NO-VALID-CONSENT)
-            )
-        )
-        
-        (ok true)
     )
 )
 

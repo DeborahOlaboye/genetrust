@@ -215,9 +215,8 @@
         (let (
             (pid (var-get next-proof-id))
             (safe-meta (match metadata 
-                (some m) (unwrap! (safe-slice m u0 (min-u (len (unwrap-panic m)) u500)) "")
-                none "")
-            )
+                m (unwrap! (safe-slice m u0 (min-u (len (unwrap-panic m)) u500)) (string-utf8 ""))
+                (string-utf8 "")))
         )
             ;; increment
             (var-set next-proof-id (+ pid u1))
