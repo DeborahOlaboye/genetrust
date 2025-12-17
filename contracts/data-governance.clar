@@ -618,6 +618,79 @@
     (is-some (map-get? access-logs { log-id: u0 }))
 )
 
+;; Get compliance report for a dataset
+(define-read-only (get-compliance-report (data-id uint))
+    (let (
+        (consent-record (map-get? consent-records { data-id: data-id }))
+        (gdpr-record (map-get? gdpr-records { data-id: data-id }))
+    )
+        (match consent-record
+            consent (ok {
+                data-id: data-id,
+                jurisdiction: (get jurisdiction consent),
+                research-allowed: (get research-consent consent),
+                commercial-allowed: (get commercial-consent consent),
+                clinical-allowed: (get clinical-consent consent),
+                consent-expires-at: (get consent-expires-at consent),
+                gdpr-restricted: (match gdpr-record
+                    gdpr (get processing-restricted gdpr)
+                    false
+                ),
+                last-updated: (get last-updated consent)
+            })
+            (err ERR-NOT-FOUND)
+        )
+    )
+)
+
+;; Get time-based usage statistics for compliance
+(define-read-only (get-usage-statistics (data-id uint))
+    {
+        data-id: data-id,
+        total-usage-records: (var-get next-usage-id),
+        total-access-logs: (var-get next-log-id),
+        audit-trail-entries: (var-get audit-trail-counter),
+        current-block: stacks-block-height
+    }
+)
+
+;; Calculate compliance score based on audit trail completeness
+(define-read-only (calculate-compliance-score (data-id uint))
+    (let (
+        (consent-changes (get-consent-change-count data-id))
+        (audit-entries (var-get audit-trail-counter))
+    )
+        {
+            data-id: data-id,
+            audit-completeness: (if (> audit-entries u0) u100 u0),
+            consent-tracking: (if (> consent-changes u0) u100 u0),
+            overall-score: (if (and (> audit-entries u0) (> consent-changes u0)) u100 u50)
+        }
+    )
+)
+
+;; Verify GDPR Article 30 compliance with audit trail
+(define-read-only (verify-gdpr-article-30-compliance (data-id uint))
+    (let (
+        (consent-record (map-get? consent-records { data-id: data-id }))
+        (audit-summary (get-audit-trail-summary data-id))
+    )
+        (match consent-record
+            consent (ok {
+                data-id: data-id,
+                jurisdiction: (get jurisdiction consent),
+                is-eu-data: (is-eq (get jurisdiction consent) JURISDICTION-EU),
+                has-audit-trail: (> (get total-audit-entries audit-summary) u0),
+                compliant: (and
+                    (is-eq (get jurisdiction consent) JURISDICTION-EU)
+                    (> (get total-audit-entries audit-summary) u0)
+                )
+            })
+            (err ERR-NOT-FOUND)
+        )
+    )
+)
+
 ;; Administrative functions
 (define-data-var contract-owner principal tx-sender)
 
