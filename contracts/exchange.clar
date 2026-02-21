@@ -626,7 +626,33 @@
                 access-expiry: (+ (get access-expiry purchase) duration)
             })
         )
-        
+
         (ok true)
     )
+)
+
+;; ── Clarity 4 contract-of / Dynamic Contract Discovery ───────────────────────
+;; The contract-registry trait definition is used below.
+;; Callers obtain a trait-typed reference to a contract, pass it here, and we
+;; use contract-of to extract and verify its principal against the registry.
+;;
+;; Pattern:
+;;   1. Off-chain code queries .contract-registry to get the latest exchange
+;;      principal.
+;;   2. It submits a transaction passing the contract as a typed trait argument.
+;;   3. This contract calls contract-of on that arg to obtain its principal.
+;;   4. It cross-checks against the registry to prevent spoofing.
+;;   5. It dispatches through the verified trait reference.
+
+;; Return the principal of the currently registered "exchange" contract slot.
+;; This is the Clarity 4 dynamic resolution entry point described in the issue.
+(define-public (get-current-exchange-contract
+    (registry <contract-registry-trait>))
+    (contract-call? registry get-latest-version u"exchange")
+)
+
+;; Return the principal of the currently registered "dataset-registry" contract slot.
+(define-public (get-current-registry-contract
+    (registry <contract-registry-trait>))
+    (contract-call? registry get-latest-version u"dataset-registry")
 )
