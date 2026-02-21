@@ -471,3 +471,52 @@
 (define-read-only (get-migration-count)
     (var-get migration-counter)
 )
+
+;; ── Audit trail read functions ────────────────────────────────────────────────
+
+;; Read a single audit entry by its ID.
+(define-read-only (get-audit-entry (audit-id uint))
+    (map-get? registration-audit { audit-id: audit-id })
+)
+
+;; Return the total number of audit entries written.
+(define-read-only (get-audit-count)
+    (var-get audit-counter)
+)
+
+;; ── Compound discovery helpers ────────────────────────────────────────────────
+;; These helpers combine multiple lookups to give callers the information they
+;; need in a single read-only call, minimising round-trips.
+
+;; Return a summary of the latest registered version for a named contract:
+;; { version, principal, is-active, is-deprecated, capabilities }.
+(define-read-only (get-latest-summary (name (string-utf8 100)))
+    (match (map-get? latest-versions { name: name })
+        latest
+            (match (map-get? contract-versions { name: name, version: (get version latest) })
+                entry (some {
+                    version:            (get version latest),
+                    contract-principal: (get contract-principal entry),
+                    is-active:          (get is-active entry),
+                    is-deprecated:      (get is-deprecated entry),
+                    capabilities:       (get capabilities entry),
+                    registered-at:      (get registered-at entry)
+                })
+                none
+            )
+        none
+    )
+)
+
+;; Verify that a given principal matches the latest registered version.
+;; Designed to be called after contract-of extracts the principal from a
+;; trait-typed argument, allowing callers to confirm they received the
+;; correct (non-spoofed) contract before dispatching.
+(define-read-only (verify-is-latest
+    (name               (string-utf8 100))
+    (contract-principal principal))
+    (match (map-get? latest-versions { name: name })
+        latest (is-eq (get contract-principal latest) contract-principal)
+        false
+    )
+)
