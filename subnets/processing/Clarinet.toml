@@ -1,0 +1,36 @@
+[project]
+name = 'genetrust-processing-subnet'
+description = 'Processing subnet contracts for genetic data analysis'
+authors = []
+telemetry = false
+cache_dir = './.cache'
+requirements = []
+
+[contracts.subnet-data-processor]
+path = 'contracts/subnet-data-processor.clar'
+clarity_version = 3
+epoch = 3.1
+
+[contracts.zk-proof-generator]
+path = 'contracts/zk-proof-generator.clar'
+clarity_version = 3
+epoch = 3.1
+
+[contracts.batch-processor]
+path = 'contracts/batch-processor.clar'
+clarity_version = 3
+epoch = 3.1
+
+[contracts.processing-state-sync]
+path = 'contracts/processing-state-sync.clar'
+clarity_version = 3
+epoch = 3.1
+
+[repl.analysis]
+passes = ['check_checker']
+
+[repl.analysis.check_checker]
+strict = false
+trusted_sender = false
+trusted_caller = false
+callee_filter = false

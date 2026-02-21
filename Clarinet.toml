@@ -31,6 +31,31 @@ path = 'contracts/data-governance.clar'
 clarity_version = 3
 epoch = 3.0
 
+[contracts.subnet-bridge-trait]
+path = 'contracts/subnet-bridge-trait.clar'
+clarity_version = 3
+epoch = 3.1
+
+[contracts.subnet-registry]
+path = 'contracts/subnet-registry.clar'
+clarity_version = 3
+epoch = 3.1
+
+[contracts.cross-subnet-bridge]
+path = 'contracts/cross-subnet-bridge.clar'
+clarity_version = 3
+epoch = 3.1
+
+[contracts.cross-chain-proof-verifier]
+path = 'contracts/cross-chain-proof-verifier.clar'
+clarity_version = 3
+epoch = 3.1
+
+[contracts.subnet-settlement]
+path = 'contracts/subnet-settlement.clar'
+clarity_version = 3
+epoch = 3.1
+
 [repl.analysis]
 passes = ['check_checker']
 
