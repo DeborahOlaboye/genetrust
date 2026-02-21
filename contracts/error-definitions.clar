@@ -54,6 +54,12 @@
 (define-constant ERR-INVALID-STRING { code: u400, message: "Invalid string encoding", context: none })
 (define-constant ERR-STRING-TOO-LONG { code: u400, message: "String exceeds maximum length", context: none })
 
+;; Contract registry errors (Clarity 4 contract-of / dynamic discovery)
+(define-constant ERR-CONTRACT-NOT-FOUND { code: u404, message: "Contract not found in registry", context: none })
+(define-constant ERR-VERSION-NOT-FOUND  { code: u404, message: "Contract version not found",    context: none })
+(define-constant ERR-VERSION-DEPRECATED { code: u410, message: "Contract version is deprecated", context: none })
+(define-constant ERR-MIGRATION-FAILED   { code: u500, message: "Contract migration failed",      context: none })
+
 ;; Generic error code mapping
 (define-read-only (get-error-http-code (error-code uint))
     (match error-code
