@@ -215,3 +215,45 @@
         )
     )
 )
+
+;; ── Version query functions ───────────────────────────────────────────────────
+
+;; Return the principal of the currently active (latest) version of a named
+;; contract. Implements contract-registry-trait.get-latest-version.
+;; This is the primary entry point for dynamic contract discovery:
+;;   (let ((exchange-principal (try! (contract-call? .contract-registry get-latest-version u"exchange"))))
+;;     ...)
+(define-public (get-latest-version (name (string-utf8 100)))
+    (match (map-get? latest-versions { name: name })
+        entry (ok (get contract-principal entry))
+        ERR-CONTRACT-NOT-FOUND
+    )
+)
+
+;; Return the principal stored for a specific (name, version) pair.
+;; Implements contract-registry-trait.get-version.
+(define-public (get-version (name (string-utf8 100)) (version uint))
+    (match (map-get? contract-versions { name: name, version: version })
+        entry (ok (get contract-principal entry))
+        ERR-VERSION-NOT-FOUND
+    )
+)
+
+;; Return the full version metadata for a (name, version) pair.
+;; Read-only helper for off-chain indexers.
+(define-read-only (get-version-info (name (string-utf8 100)) (version uint))
+    (map-get? contract-versions { name: name, version: version })
+)
+
+;; Return the latest version pointer (version number + principal) for a name.
+(define-read-only (get-latest-version-info (name (string-utf8 100)))
+    (map-get? latest-versions { name: name })
+)
+
+;; Return how many versions have been registered for a name.
+(define-read-only (get-version-count (name (string-utf8 100)))
+    (match (map-get? version-counts { name: name })
+        info (get count info)
+        u0
+    )
+)
