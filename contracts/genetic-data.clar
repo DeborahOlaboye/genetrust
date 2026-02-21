@@ -188,7 +188,7 @@
 (define-private (check-paused)
     (if (is-contract-paused)
         (begin
-            (record-error u503 (string-utf8 "Contract is paused") (string-utf8 "check-paused"))
+            (record-error u503 u"Contract is paused" u"check-paused")
             ERR-CONTRACT_PAUSED
         )
         (ok true)
@@ -207,7 +207,7 @@
             (let ((new-count (+ (get count user-stats) u1)))
                 (if (> new-count MAX_OPERATIONS_PER_WINDOW)
                     (begin
-                        (record-error u429 (string-utf8 "Rate limit exceeded") (string-utf8 "user exceeded operation quota in window"))
+                        (record-error u429 u"Rate limit exceeded" u"user exceeded operation quota in window")
                         ERR-RATE_LIMIT
                     )
                     (begin
