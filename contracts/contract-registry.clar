@@ -257,3 +257,69 @@
         u0
     )
 )
+
+;; ── Version lifecycle ─────────────────────────────────────────────────────────
+
+;; Check if a specific version is still active (not deprecated, not superseded).
+;; Implements contract-registry-trait.is-version-active.
+(define-public (is-version-active (name (string-utf8 100)) (version uint))
+    (match (map-get? contract-versions { name: name, version: version })
+        entry (ok (and (get is-active entry) (not (get is-deprecated entry))))
+        ERR-VERSION-NOT-FOUND
+    )
+)
+
+;; Read-only variant of is-version-active for gas-free off-chain checks.
+(define-read-only (check-version-active (name (string-utf8 100)) (version uint))
+    (match (map-get? contract-versions { name: name, version: version })
+        entry (and (get is-active entry) (not (get is-deprecated entry)))
+        false
+    )
+)
+
+;; Deprecate a specific version so callers know it should not be used.
+;; Only the registry admin may deprecate versions.
+(define-public (deprecate-version (name (string-utf8 100)) (version uint))
+    (begin
+        (try! (assert-not-paused))
+        (try! (assert-admin))
+
+        (let ((entry (unwrap! (map-get? contract-versions { name: name, version: version })
+                              ERR-VERSION-NOT-FOUND)))
+            ;; Mark as deprecated and inactive
+            (map-set contract-versions
+                { name: name, version: version }
+                (merge entry { is-deprecated: true, is-active: false })
+            )
+
+            ;; Audit the deprecation
+            (write-audit name version (get contract-principal entry) u"deprecate")
+
+            (ok true)
+        )
+    )
+)
+
+;; Reactivate a previously deactivated (but not deprecated) version.
+;; Useful for emergency rollbacks. Only admin.
+(define-public (reactivate-version (name (string-utf8 100)) (version uint))
+    (begin
+        (try! (assert-not-paused))
+        (try! (assert-admin))
+
+        (let ((entry (unwrap! (map-get? contract-versions { name: name, version: version })
+                              ERR-VERSION-NOT-FOUND)))
+            ;; Cannot reactivate a deprecated entry
+            (asserts! (not (get is-deprecated entry)) ERR-VERSION-DEPRECATED)
+
+            (map-set contract-versions
+                { name: name, version: version }
+                (merge entry { is-active: true })
+            )
+
+            (write-audit name version (get contract-principal entry) u"reactivate")
+
+            (ok true)
+        )
+    )
+)
