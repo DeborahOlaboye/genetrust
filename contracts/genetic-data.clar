@@ -52,6 +52,8 @@
 (define-data-var contract-owner principal tx-sender)
 ;; Remove unused vars to save storage
 (define-data-var operation-window-start uint u0)  ;; Keep only necessary vars
+;; Counter used by analytics functions to track total access-grant events
+(define-data-var audit-trail-counter uint u0)
 
 ;; Data structures
 ;; Optimized data structure with minimal storage
