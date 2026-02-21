@@ -543,6 +543,86 @@
     )
 )
 
+;; ─── Bitcoin payment support ─────────────────────────────────────────────────
+
+;; Bitcoin price per listing in satoshis (optional; 0 means BTC not accepted)
+(define-map listing-btc-price
+    { listing-id: uint, access-level: uint }
+    { price-sats: uint }
+)
+
+;; Track Bitcoin-funded purchases separately
+(define-map btc-purchases
+    { user: principal, listing-id: uint }
+    {
+        btc-escrow-id: uint,
+        purchase-time: uint,
+        access-expiry: uint,
+        access-level: uint,
+        btc-txid: (buff 32),
+        amount-sats: uint
+    }
+)
+
+;; Set a Bitcoin price for a listing access level (owner only)
+(define-public (set-btc-price (listing-id uint) (access-level uint) (price-sats uint))
+    (let ((listing (unwrap! (map-get? listings { listing-id: listing-id }) ERR-LISTING-NOT-FOUND)))
+        (asserts! (is-eq tx-sender (get owner listing)) ERR-NOT-AUTHORIZED)
+        (asserts! (> price-sats u0) ERR-INVALID-PRICE)
+        (asserts! (and (> access-level u0) (<= access-level (get access-level listing)))
+            ERR-INVALID-ACCESS-LEVEL)
+        (map-set listing-btc-price
+            { listing-id: listing-id, access-level: access-level }
+            { price-sats: price-sats })
+        (ok true)
+    )
+)
+
+;; Get Bitcoin price for a listing access level
+(define-read-only (get-btc-price (listing-id uint) (access-level uint))
+    (map-get? listing-btc-price { listing-id: listing-id, access-level: access-level })
+)
+
+;; Get a Bitcoin purchase record
+(define-read-only (get-btc-purchase (user principal) (listing-id uint))
+    (map-get? btc-purchases { user: user, listing-id: listing-id })
+)
+
+;; Record a completed Bitcoin purchase (called by bitcoin-escrow after finalisation)
+;; Only the bitcoin-escrow contract (marketplace admin) may call this
+(define-public (record-btc-purchase
+    (listing-id uint)
+    (buyer principal)
+    (access-level uint)
+    (btc-escrow-id uint)
+    (btc-txid (buff 32))
+    (amount-sats uint))
+
+    (let ((listing (unwrap! (map-get? listings { listing-id: listing-id }) ERR-LISTING-NOT-FOUND)))
+        (asserts! (is-eq tx-sender (var-get marketplace-admin)) ERR-NOT-AUTHORIZED)
+        (asserts! (get active listing) ERR-LISTING-NOT-FOUND)
+
+        ;; Record BTC purchase
+        (map-set btc-purchases
+            { user: buyer, listing-id: listing-id }
+            {
+                btc-escrow-id: btc-escrow-id,
+                purchase-time: stacks-block-height,
+                access-expiry: (+ stacks-block-height u8640),
+                access-level: access-level,
+                btc-txid: btc-txid,
+                amount-sats: amount-sats
+            }
+        )
+
+        ;; Also grant access in the dataset registry
+        (try! (contract-call? .dataset-registry grant-access
+            (get data-id listing) buyer access-level))
+
+        (ok true)
+    )
+)
+
 ;; Query functions
 (define-read-only (get-listing (listing-id uint))
     (map-get? listings { listing-id: listing-id })
