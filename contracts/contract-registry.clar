@@ -384,3 +384,90 @@
         false
     )
 )
+
+;; ── Graceful migration support ────────────────────────────────────────────────
+;; A migration is a deliberate, admin-initiated promotion of the active version
+;; for a named contract slot. It records a structured log entry so that
+;; off-chain tooling (indexers, dashboards) can reconstruct the full upgrade
+;; history and provide rollback guidance.
+
+;; Promote a new contract principal as the active version for a name.
+;; This is similar to register-version but intended for post-audit upgrades
+;; where the new principal is already known and the migration note is mandatory.
+(define-public (migrate-contract
+    (name              (string-utf8 100))
+    (new-principal     principal)
+    (capabilities      (list 10 (string-utf8 50)))
+    (migration-note    (string-utf8 200)))
+    (begin
+        (try! (assert-not-paused))
+        (try! (assert-admin))
+        (asserts! (> (len name) u0) ERR-INVALID-INPUT)
+        (asserts! (> (len migration-note) u0) ERR-INVALID-INPUT)
+
+        (let (
+            (counts      (default-to { count: u0 } (map-get? version-counts { name: name })))
+            (from-ver    (get count counts))
+            (new-version (+ from-ver u1))
+            (mid         (var-get migration-counter))
+        )
+            ;; Deactivate previous latest if it exists
+            (match (map-get? latest-versions { name: name })
+                prev (map-set contract-versions
+                        { name: name, version: (get version prev) }
+                        (merge (unwrap-panic (map-get? contract-versions
+                                    { name: name, version: (get version prev) }))
+                               { is-active: false })
+                     )
+                true
+            )
+
+            ;; Register the new version
+            (map-set contract-versions
+                { name: name, version: new-version }
+                {
+                    contract-principal: new-principal,
+                    registered-at:      stacks-block-height,
+                    registered-by:      tx-sender,
+                    is-active:          true,
+                    is-deprecated:      false,
+                    capabilities:       capabilities
+                }
+            )
+
+            ;; Update latest pointer
+            (map-set latest-versions
+                { name: name }
+                { version: new-version, contract-principal: new-principal }
+            )
+            (map-set version-counts { name: name } { count: new-version })
+
+            ;; Record migration log
+            (map-set migration-records
+                { migration-id: mid }
+                {
+                    name:           name,
+                    from-version:   from-ver,
+                    to-version:     new-version,
+                    migrated-at:    stacks-block-height,
+                    migrated-by:    tx-sender,
+                    migration-note: migration-note
+                }
+            )
+            (var-set migration-counter (+ mid u1))
+
+            (write-audit name new-version new-principal u"migrate")
+            (ok new-version)
+        )
+    )
+)
+
+;; Read a migration record by its ID.
+(define-read-only (get-migration-record (migration-id uint))
+    (map-get? migration-records { migration-id: migration-id })
+)
+
+;; Return the total number of migrations recorded.
+(define-read-only (get-migration-count)
+    (var-get migration-counter)
+)
