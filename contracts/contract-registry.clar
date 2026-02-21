@@ -323,3 +323,64 @@
         )
     )
 )
+
+;; ── Capability discovery ──────────────────────────────────────────────────────
+;; Capabilities are free-form utf8 tags attached to each version entry.
+;; Examples: "exchange", "btc-escrow", "dataset-registry", "governance", "v2".
+;; They allow callers to discover what features a given contract version exposes
+;; without hard-coding interface assumptions.
+
+;; Return the capabilities list for a (name, version) pair.
+;; Implements contract-registry-trait.get-capabilities.
+(define-public (get-capabilities (name (string-utf8 100)) (version uint))
+    (match (map-get? contract-versions { name: name, version: version })
+        entry (ok (get capabilities entry))
+        ERR-VERSION-NOT-FOUND
+    )
+)
+
+;; Read-only variant for off-chain use.
+(define-read-only (read-capabilities (name (string-utf8 100)) (version uint))
+    (match (map-get? contract-versions { name: name, version: version })
+        entry (some (get capabilities entry))
+        none
+    )
+)
+
+;; Set the capabilities list for a registered version. Admin-only.
+;; Replaces the entire capabilities list; the caller should include all tags.
+(define-public (set-capabilities
+    (name         (string-utf8 100))
+    (version      uint)
+    (capabilities (list 10 (string-utf8 50))))
+    (begin
+        (try! (assert-not-paused))
+        (try! (assert-admin))
+
+        (let ((entry (unwrap! (map-get? contract-versions { name: name, version: version })
+                              ERR-VERSION-NOT-FOUND)))
+            (map-set contract-versions
+                { name: name, version: version }
+                (merge entry { capabilities: capabilities })
+            )
+            (write-audit name version (get contract-principal entry) u"set-capabilities")
+            (ok true)
+        )
+    )
+)
+
+;; Check if a specific capability tag is present for (name, latest-version).
+;; Used by callers to guard against calling a contract that lacks a feature.
+(define-read-only (has-capability
+    (name       (string-utf8 100))
+    (capability (string-utf8 50)))
+    (match (map-get? latest-versions { name: name })
+        latest-entry
+            (match (map-get? contract-versions { name: name, version: (get version latest-entry) })
+                version-entry
+                    (is-some (index-of (get capabilities version-entry) capability))
+                false
+            )
+        false
+    )
+)
