@@ -29,6 +29,7 @@ epoch = 3.1
 path = 'contracts/data-governance.clar'
 clarity_version = 3
 epoch = 3.1
+
 [contracts.subnet-bridge-trait]
 path = 'contracts/subnet-bridge-trait.clar'
 clarity_version = 3
