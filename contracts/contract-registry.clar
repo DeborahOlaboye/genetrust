@@ -88,3 +88,68 @@
     }
 )
 (define-data-var audit-counter uint u0)
+
+;; ── Internal helpers ──────────────────────────────────────────────────────────
+
+;; Guard: revert if the registry is paused
+(define-private (assert-not-paused)
+    (if (var-get is-paused)
+        ERR-CONTRACT-PAUSED
+        (ok true)
+    )
+)
+
+;; Guard: revert if tx-sender is not the admin
+(define-private (assert-admin)
+    (if (is-eq tx-sender (var-get registry-admin))
+        (ok true)
+        ERR-NOT-AUTHORIZED
+    )
+)
+
+;; Write an audit entry and advance the counter
+(define-private (write-audit
+    (name    (string-utf8 100))
+    (version uint)
+    (principal-val principal)
+    (action  (string-utf8 50)))
+    (let ((aid (var-get audit-counter)))
+        (map-set registration-audit
+            { audit-id: aid }
+            {
+                name:               name,
+                version:            version,
+                contract-principal: principal-val,
+                action:             action,
+                performed-at:       stacks-block-height,
+                performed-by:       tx-sender
+            }
+        )
+        (var-set audit-counter (+ aid u1))
+        aid
+    )
+)
+
+;; ── Admin public functions ────────────────────────────────────────────────────
+
+;; Transfer registry admin to a new principal
+(define-public (set-registry-admin (new-admin principal))
+    (begin
+        (try! (assert-admin))
+        (var-set registry-admin new-admin)
+        (ok true)
+    )
+)
+
+;; Pause / unpause the registry (admin only)
+(define-public (set-paused (paused bool))
+    (begin
+        (try! (assert-admin))
+        (var-set is-paused paused)
+        (ok paused)
+    )
+)
+
+;; ── Read-only admin helpers ───────────────────────────────────────────────────
+(define-read-only (get-registry-admin) (var-get registry-admin))
+(define-read-only (is-registry-paused) (var-get is-paused))
