@@ -1,0 +1,36 @@
+[project]
+name = 'genetrust-storage-subnet'
+description = 'Storage subnet contracts for IPFS coordination and replication'
+authors = []
+telemetry = false
+cache_dir = './.cache'
+requirements = []
+
+[contracts.ipfs-coordinator]
+path = 'contracts/ipfs-coordinator.clar'
+clarity_version = 3
+epoch = 3.1
+
+[contracts.replication-manager]
+path = 'contracts/replication-manager.clar'
+clarity_version = 3
+epoch = 3.1
+
+[contracts.storage-registry]
+path = 'contracts/storage-registry.clar'
+clarity_version = 3
+epoch = 3.1
+
+[contracts.storage-state-sync]
+path = 'contracts/storage-state-sync.clar'
+clarity_version = 3
+epoch = 3.1
+
+[repl.analysis]
+passes = ['check_checker']
+
+[repl.analysis.check_checker]
+strict = false
+trusted_sender = false
+trusted_caller = false
+callee_filter = false
