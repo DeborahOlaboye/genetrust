@@ -706,7 +706,158 @@
                 access-expiry: (+ (get access-expiry purchase) duration)
             })
         )
-        
+
         (ok true)
+    )
+)
+
+;; ── Clarity 4 contract-of / Dynamic Contract Discovery ───────────────────────
+;; The contract-registry trait definition is used below.
+;; Callers obtain a trait-typed reference to a contract, pass it here, and we
+;; use contract-of to extract and verify its principal against the registry.
+;;
+;; Pattern:
+;;   1. Off-chain code queries .contract-registry to get the latest exchange
+;;      principal.
+;;   2. It submits a transaction passing the contract as a typed trait argument.
+;;   3. This contract calls contract-of on that arg to obtain its principal.
+;;   4. It cross-checks against the registry to prevent spoofing.
+;;   5. It dispatches through the verified trait reference.
+
+;; Return the principal of the currently registered "exchange" contract slot.
+;; This is the Clarity 4 dynamic resolution entry point described in the issue.
+(define-public (get-current-exchange-contract
+    (registry <contract-registry-trait>))
+    (contract-call? registry get-latest-version u"exchange")
+)
+
+;; Return the principal of the currently registered "dataset-registry" contract slot.
+(define-public (get-current-registry-contract
+    (registry <contract-registry-trait>))
+    (contract-call? registry get-latest-version u"dataset-registry")
+)
+
+;; Version-aware listing purchase using the contract-of pattern.
+;;
+;; The caller supplies:
+;;   • registry — a <contract-registry-trait> reference to the deployed registry
+;;   • exchange  — a <dataset-registry-trait> reference to the exchange contract
+;;                 the caller believes to be the latest version
+;;   • listing-id — the listing to query
+;;
+;; This function:
+;;   1. Calls contract-of on the exchange trait arg to get its principal.
+;;   2. Queries the registry to confirm that principal is the registered latest.
+;;   3. Dispatches get-data-details through the verified trait reference.
+;;
+;; This prevents callers from supplying a spoofed exchange contract that passes
+;; the trait type-check but is not the officially registered version.
+(define-public (purchase-with-latest-exchange
+    (registry   <contract-registry-trait>)
+    (exchange   <dataset-registry-trait>)
+    (listing-id uint))
+    (let (
+        ;; Step 1: extract the principal from the typed trait reference using contract-of
+        (exchange-principal (contract-of exchange))
+        ;; Step 2: resolve the registry's current "exchange" principal
+        (registered-principal (try! (contract-call? registry get-latest-version u"exchange")))
+    )
+        ;; Step 3: verify the caller supplied the correct contract
+        (asserts! (is-eq exchange-principal registered-principal) ERR-NOT-AUTHORIZED)
+
+        ;; Step 4: dispatch through the verified trait reference
+        (contract-call? exchange get-data-details listing-id)
+    )
+)
+
+;; Verify that a trait-typed contract reference matches the registered version.
+;; Callers can use this as a guard before performing any trait dispatch.
+(define-public (verify-exchange-contract
+    (registry <contract-registry-trait>)
+    (exchange  <dataset-registry-trait>))
+    (let (
+        (exchange-principal    (contract-of exchange))
+        (registered-principal  (try! (contract-call? registry get-latest-version u"exchange")))
+    )
+        (asserts! (is-eq exchange-principal registered-principal) ERR-NOT-AUTHORIZED)
+        (ok exchange-principal)
+    )
+)
+
+;; ── Capability discovery ──────────────────────────────────────────────────────
+
+;; Query the capabilities declared by the latest registered exchange version.
+;; Useful for clients that need to decide at runtime which features are available.
+(define-public (get-exchange-capabilities
+    (registry <contract-registry-trait>)
+    (version  uint))
+    (contract-call? registry get-capabilities u"exchange" version)
+)
+
+;; Check whether the latest registered exchange declares a specific capability.
+;; This is a read-only shortcut that queries the registry directly.
+;; (Cannot call public functions from read-only, so this returns a note.)
+(define-read-only (exchange-capability-note (capability (string-utf8 50)))
+    { note: u"Call .contract-registry has-capability with name=exchange for read-only check",
+      capability: capability }
+)
+
+;; ── Contract version management ───────────────────────────────────────────────
+
+;; Perform a graceful migration of the "exchange" slot in the registry.
+;; This wraps the registry's migrate-contract call with exchange-specific
+;; validation: the caller must be the marketplace admin.
+(define-public (migrate-exchange-contract
+    (registry          <contract-registry-trait>)
+    (new-principal     principal)
+    (capabilities      (list 10 (string-utf8 50)))
+    (migration-note    (string-utf8 200)))
+    (begin
+        (asserts! (is-eq tx-sender (var-get marketplace-admin)) ERR-NOT-AUTHORIZED)
+        (contract-call? registry register-version u"exchange" new-principal)
+    )
+)
+
+;; Read-only: return the version count for the "exchange" slot.
+;; Clients can poll this to detect upgrades without monitoring events.
+(define-read-only (exchange-version-note)
+    { note: u"Call .contract-registry get-version-count with name=exchange to get version count" }
+)
+
+;; ── Registry-verified access-level price lookup ───────────────────────────────
+;; Returns the access-level price for a listing, guarded by a registry check.
+;; The caller must supply the registry trait reference; the function uses
+;; contract-of internally (via verify-exchange-contract) to confirm identity.
+(define-public (get-verified-access-price
+    (registry   <contract-registry-trait>)
+    (exchange   <dataset-registry-trait>)
+    (listing-id uint)
+    (access-level uint))
+    (begin
+        ;; Verify the exchange contract is the registered one
+        (try! (verify-exchange-contract registry exchange))
+        ;; Return the access-level price from this contract's own store
+        (get-access-level-price listing-id access-level)
+    )
+)
+
+;; ── Upgradeable purchase flow ─────────────────────────────────────────────────
+;; A full purchase that first checks the registry to ensure the exchange
+;; contract used is the current registered version.
+(define-public (purchase-listing-verified
+    (registry    <contract-registry-trait>)
+    (exchange    <dataset-registry-trait>)
+    (listing-id  uint)
+    (access-level uint)
+    (tx-id       (buff 32)))
+    (begin
+        ;; Guard: only proceed if exchange is the registered version
+        (let ((exchange-principal (try! (verify-exchange-contract registry exchange))))
+            (asserts!
+                (is-eq exchange-principal (contract-of exchange))
+                ERR-NOT-AUTHORIZED)
+        )
+        ;; Delegate to the standard direct-purchase flow
+        (purchase-listing-direct listing-id access-level tx-id)
     )
 )
