@@ -31,15 +31,35 @@ path = 'contracts/data-governance.clar'
 clarity_version = 3
 epoch = 3.0
 
-[contracts.contract-registry-trait]
-path = 'contracts/contract-registry-trait.clar'
+[contracts.bitcoin-validator-trait]
+path = 'contracts/bitcoin-validator-trait.clar'
 clarity_version = 3
-epoch = 3.1
+epoch = 3.0
 
-[contracts.contract-registry]
-path = 'contracts/contract-registry.clar'
+[contracts.segwit-validator]
+path = 'contracts/segwit-validator.clar'
 clarity_version = 3
-epoch = 3.1
+epoch = 3.0
+
+[contracts.segwit-tx-parser]
+path = 'contracts/segwit-tx-parser.clar'
+clarity_version = 3
+epoch = 3.0
+
+[contracts.bitcoin-multisig]
+path = 'contracts/bitcoin-multisig.clar'
+clarity_version = 3
+epoch = 3.0
+
+[contracts.bitcoin-payment-verifier]
+path = 'contracts/bitcoin-payment-verifier.clar'
+clarity_version = 3
+epoch = 3.0
+
+[contracts.bitcoin-escrow]
+path = 'contracts/bitcoin-escrow.clar'
+clarity_version = 3
+epoch = 3.0
 
 [contracts.subnet-bridge-trait]
 path = 'contracts/subnet-bridge-trait.clar'
