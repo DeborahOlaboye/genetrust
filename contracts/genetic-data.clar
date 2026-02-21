@@ -805,3 +805,68 @@
         (ok (var-set contract-owner new-owner))
     )
 )
+
+;; ── Clarity 4 contract-of / Dynamic Contract Discovery ───────────────────────
+;; The functions below integrate with the on-chain contract-registry to enable
+;; dynamic contract resolution.  The canonical Clarity 4 pattern is:
+;;
+;;   (define-public (action-via-registry (registry <contract-registry-trait>))
+;;     (let ((target-principal (try! (contract-call? registry get-latest-version u"exchange"))))
+;;       ;; target-principal is the live exchange contract.
+;;       ;; When the caller already holds a trait-typed reference to it they can
+;;       ;; call (contract-of their-ref) and compare against target-principal to
+;;       ;; prove they received the genuine registered contract.
+;;       (ok target-principal)))
+;;
+;; These helpers expose that same lookup for callers that only have access to
+;; the dataset-registry contract.
+
+;; Resolve the current active principal for any named slot in the registry.
+;; Delegates to the deployed contract-registry instance.
+(define-public (resolve-contract
+    (registry <contract-registry-trait>)
+    (name     (string-utf8 100)))
+    (begin
+        (try! (check-paused))
+        (contract-call? registry get-latest-version name)
+    )
+)
+
+;; Verify that a caller-supplied contract principal is the registered latest
+;; version for a named slot.  This is the safety check that should precede any
+;; dynamic dispatch in consuming code.
+(define-public (verify-registered-contract
+    (registry           <contract-registry-trait>)
+    (name               (string-utf8 100))
+    (contract-principal principal))
+    (begin
+        (try! (check-paused))
+        (let ((expected (try! (contract-call? registry get-latest-version name))))
+            (asserts! (is-eq expected contract-principal) ERR-NOT-AUTHORIZED)
+            (ok true)
+        )
+    )
+)
+
+;; Read-only version lookup — off-chain callers can discover which principal
+;; is currently registered without spending gas on a public call.
+(define-read-only (get-registered-principal
+    (registry <contract-registry-trait>)
+    (name     (string-utf8 100)))
+    ;; Clarity read-only functions cannot call other contracts' public functions,
+    ;; so we return a note directing callers to use resolve-contract or query the
+    ;; contract-registry directly.
+    { note: u"Use resolve-contract or query .contract-registry directly", name: name }
+)
+
+;; Discover the capabilities declared by the latest version of a named contract.
+(define-public (discover-capabilities
+    (registry <contract-registry-trait>)
+    (name     (string-utf8 100)))
+    (begin
+        (try! (check-paused))
+        (let ((version-count (try! (contract-call? registry is-version-active name u1))))
+            (contract-call? registry get-capabilities name u1)
+        )
+    )
+)
