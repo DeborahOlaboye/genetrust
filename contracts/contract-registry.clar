@@ -153,3 +153,65 @@
 ;; ── Read-only admin helpers ───────────────────────────────────────────────────
 (define-read-only (get-registry-admin) (var-get registry-admin))
 (define-read-only (is-registry-paused) (var-get is-paused))
+
+;; ── Version registration ──────────────────────────────────────────────────────
+
+;; Register a new contract version under a human-readable name.
+;; Implements the contract-registry-trait.register-version function.
+;; Only the registry admin may call this.
+;; Returns the newly assigned version number.
+(define-public (register-version
+    (name             (string-utf8 100))
+    (contract-principal principal))
+    (begin
+        (try! (assert-not-paused))
+        (try! (assert-admin))
+
+        ;; Validate inputs
+        (asserts! (> (len name) u0) ERR-INVALID-INPUT)
+
+        (let (
+            (counts     (default-to { count: u0 } (map-get? version-counts { name: name })))
+            (new-version (+ (get count counts) u1))
+            (prev-latest (map-get? latest-versions { name: name }))
+        )
+            ;; Deactivate the previous latest entry (but do not deprecate it yet)
+            (match prev-latest
+                prev (map-set contract-versions
+                        { name: name, version: (get version prev) }
+                        (merge (unwrap-panic (map-get? contract-versions
+                                    { name: name, version: (get version prev) }))
+                               { is-active: false })
+                     )
+                true  ;; no previous version — nothing to deactivate
+            )
+
+            ;; Write the new version entry (active, not deprecated, no capabilities yet)
+            (map-set contract-versions
+                { name: name, version: new-version }
+                {
+                    contract-principal: contract-principal,
+                    registered-at:      stacks-block-height,
+                    registered-by:      tx-sender,
+                    is-active:          true,
+                    is-deprecated:      false,
+                    capabilities:       (list)
+                }
+            )
+
+            ;; Update the latest pointer
+            (map-set latest-versions
+                { name: name }
+                { version: new-version, contract-principal: contract-principal }
+            )
+
+            ;; Bump the version counter
+            (map-set version-counts { name: name } { count: new-version })
+
+            ;; Audit
+            (write-audit name new-version contract-principal u"register")
+
+            (ok new-version)
+        )
+    )
+)
