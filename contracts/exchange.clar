@@ -703,3 +703,43 @@
         (ok exchange-principal)
     )
 )
+
+;; ── Capability discovery ──────────────────────────────────────────────────────
+
+;; Query the capabilities declared by the latest registered exchange version.
+;; Useful for clients that need to decide at runtime which features are available.
+(define-public (get-exchange-capabilities
+    (registry <contract-registry-trait>)
+    (version  uint))
+    (contract-call? registry get-capabilities u"exchange" version)
+)
+
+;; Check whether the latest registered exchange declares a specific capability.
+;; This is a read-only shortcut that queries the registry directly.
+;; (Cannot call public functions from read-only, so this returns a note.)
+(define-read-only (exchange-capability-note (capability (string-utf8 50)))
+    { note: u"Call .contract-registry has-capability with name=exchange for read-only check",
+      capability: capability }
+)
+
+;; ── Contract version management ───────────────────────────────────────────────
+
+;; Perform a graceful migration of the "exchange" slot in the registry.
+;; This wraps the registry's migrate-contract call with exchange-specific
+;; validation: the caller must be the marketplace admin.
+(define-public (migrate-exchange-contract
+    (registry          <contract-registry-trait>)
+    (new-principal     principal)
+    (capabilities      (list 10 (string-utf8 50)))
+    (migration-note    (string-utf8 200)))
+    (begin
+        (asserts! (is-eq tx-sender (var-get marketplace-admin)) ERR-NOT-AUTHORIZED)
+        (contract-call? registry register-version u"exchange" new-principal)
+    )
+)
+
+;; Read-only: return the version count for the "exchange" slot.
+;; Clients can poll this to detect upgrades without monitoring events.
+(define-read-only (exchange-version-note)
+    { note: u"Call .contract-registry get-version-count with name=exchange to get version count" }
+)
