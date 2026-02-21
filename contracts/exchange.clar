@@ -1,25 +1,95 @@
 ;; exchange.clar
 ;; Core exchange for genetic data trading with expanded functionality
+;; Upgraded to Clarity 4 with enhanced features
 
-;; exchange.clar - Enhanced Version
-;; Core exchange for genetic data trading with expanded functionality
+;; Contract constants
+(define-constant CONTRACT_ATTESTATIONS 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.attestations)
+
+;; Clarity 4 Helpers
+(define-constant MAX_STRING_LENGTH u500)
+
+;; Clarity 3: implement min for uints
+(define-private (min-u (a uint) (b uint)) (if (<= a b) a b))
+
+;; Safe string to uint conversion using Clarity 4's string-to-uint?
+(define-private (safe-string-to-uint (input (string-utf8 100)))
+    (match (string-to-uint? input)
+        value (ok value)
+        error (err ERR-INVALID-PRICE)
+    )
+)
+
+;; Safe string slicing with bounds checking
+(define-private (safe-slice (input (string-utf8 500)) (start uint) (len uint))
+    (match (slice? input start len)
+        sliced (ok sliced)
+        error (err ERR-INVALID-DATA)
+    )
+)
+
+;; Safe string replacement using replace-at?
+(define-private (safe-replace (input (string-utf8 500)) (at uint) (replacement (string-utf8 1)))
+    (match (replace-at? input at replacement)
+        replaced (ok replaced)
+        error (err ERR-INVALID-DATA)
+    )
+)
 
 ;; Import trait (renamed)
 (impl-trait .dataset-registry-trait.dataset-registry-trait)
 
-;; Constants
-(define-constant ERR-NOT-AUTHORIZED (err u100))
-(define-constant ERR-INVALID-PRICE (err u101))
-(define-constant ERR-LISTING-NOT-FOUND (err u102))
-(define-constant ERR-INSUFFICIENT-BALANCE (err u103))
-(define-constant ERR-INVALID-ACCESS-LEVEL (err u104))
-(define-constant ERR-NO-VERIFIED-PROOFS (err u105))
-(define-constant ERR-NO-VALID-CONSENT (err u106))
-(define-constant ERR-PAYMENT-FAILED (err u107))
-(define-constant ERR-ESCROW-EXISTS (err u108))
-(define-constant ERR-ESCROW-NOT-FOUND (err u109))
-(define-constant ERR-EXPIRED (err u110))
-(define-constant ERR-NOT-FOUND (err u111))
+;; Constants - Error codes mapped to HTTP status
+(define-constant ERR-NOT-AUTHORIZED (err u401))
+(define-constant ERR-INVALID-PRICE (err u400))
+(define-constant ERR-LISTING-NOT-FOUND (err u404))
+(define-constant ERR-INSUFFICIENT-BALANCE (err u422))
+(define-constant ERR-INVALID-ACCESS-LEVEL (err u400))
+(define-constant ERR-NO-VERIFIED-PROOFS (err u422))
+(define-constant ERR-NO-VALID-CONSENT (err u403))
+(define-constant ERR-PAYMENT-FAILED (err u500))
+(define-constant ERR-ESCROW-EXISTS (err u409))
+(define-constant ERR-ESCROW-NOT-FOUND (err u404))
+(define-constant ERR-EXPIRED (err u422))
+(define-constant ERR-NOT-FOUND (err u404))
+(define-constant ERR-VERIFICATION-FAILED (err u422))
+
+;; Error context tracking
+(define-map error-context 
+    { error-id: uint }
+    {
+        error-code: uint,
+        message: (string-utf8 256),
+        context-data: (string-utf8 512),
+        timestamp: uint,
+        listing-id: uint
+    }
+)
+(define-data-var error-counter uint u0)
+
+;; Error context helper: Record error with context for debugging
+(define-private (record-error (error-code uint) (message (string-utf8 256)) (context (string-utf8 512)) (listing-id uint))
+    (let ((error-id (var-get error-counter)))
+        (begin
+            (var-set error-counter (+ error-id u1))
+            (map-set error-context
+                { error-id: error-id }
+                {
+                    error-code: error-code,
+                    message: message,
+                    context-data: context,
+                    timestamp: stacks-block-height,
+                    listing-id: listing-id
+                }
+            )
+            error-id
+        )
+    )
+)
+
+;; Error helper: Get error context
+(define-read-only (get-error-context (error-id uint))
+    (map-get? error-context { error-id: error-id })
+)
 
 ;; Data maps
 (define-map listings
@@ -32,6 +102,7 @@
         active: bool,
         access-level: uint,
         metadata-hash: (buff 32),
+        description: (string-utf8 500),  ;; Added description field
         requires-verification: bool,     ;; Requires verified proofs
         platform-fee-percent: uint,      ;; Fee percentage (in basis points, e.g. 250 = 2.5%)
         created-at: uint,                ;; When listing was created
@@ -108,42 +179,53 @@
 ;; Listing management
 (define-public (create-listing 
     (listing-id uint) 
-    (price uint)
+    (price (string-utf8 20))  ;; Changed to string for better UX
     (data-contract principal)
     (data-id uint)
     (access-level uint)
     (metadata-hash (buff 32))
-    (requires-verification bool))
+    (requires-verification bool)
+    (description (string-utf8 500)))  ;; Added description for better metadata handling
     
-    (begin
-        (asserts! (> price u0) ERR-INVALID-PRICE)
-        (asserts! (> access-level u0) ERR-INVALID-ACCESS-LEVEL)
-        (asserts! (<= access-level u3) ERR-INVALID-ACCESS-LEVEL)
+    (let (
+        (parsed-price (try! (safe-string-to-uint price)))
+        (safe-description (unwrap! (safe-slice description u0 (min-u (len description) u500)) ""))
+    )
+        (asserts! (> parsed-price u0) ERR-INVALID-PRICE)
+        (asserts! (and (> access-level u0) (<= access-level u3)) ERR-INVALID-ACCESS-LEVEL)
         
-        (map-set listings
+        (match (map-insert listings
             { listing-id: listing-id }
             {
                 owner: tx-sender,
-                price: price,
+                price: parsed-price,
                 data-contract: data-contract,
                 data-id: data-id,
                 active: true,
                 access-level: access-level,
                 metadata-hash: metadata-hash,
+                description: safe-description,  ;; Store the processed description
                 requires-verification: requires-verification,
                 platform-fee-percent: (var-get platform-fee-percent),
                 created-at: stacks-block-height,
                 updated-at: stacks-block-height
             }
         )
-        
-        ;; Set up default pricing tier for this access level
-        (map-set access-level-pricing
-            { listing-id: listing-id, access-level: access-level }
-            { price: price }
+            (ok inserted) (begin
+                ;; Set up default pricing tier for this access level
+                (map-set access-level-pricing
+                    { listing-id: listing-id, access-level: access-level }
+                    { price: parsed-price }
+                )
+                (ok (print { 
+                    event: "listing-created", 
+                    listing-id: listing-id, 
+                    by: tx-sender,
+                    block: stacks-block-height
+                }))
+            )
+            (err error) (err error)
         )
-        
-        (ok true)
     )
 )
 
@@ -198,34 +280,15 @@
         
         ;; If verification required, make a safer call to verify proofs
         (if (get requires-verification listing)
-            ;; Handle the verification call more carefully to avoid indeterminate types
-            (begin
-                ;; Make the contract call and handle the response directly
-                (let ((verification-result (contract-call? .attestations check-verified-proof data-id u1)))
-                    ;; Check if we got an ok result
-                    (asserts! (is-ok verification-result) ERR-NO-VERIFIED-PROOFS)
-                    
-                    ;; Now safely unwrap and check the proof list length
-                    (let ((proof-list (unwrap! verification-result ERR-NO-VERIFIED-PROOFS)))
-                        (asserts! (> (len proof-list) u0) ERR-NO-VERIFIED-PROOFS)
-                    )
+            (let ((verification (contract-call? CONTRACT_ATTESTATIONS check-verified-proof data-id u1)))
+                (asserts! (is-ok verification) ERR-VERIFICATION-FAILED)
+                (let ((proof-list (unwrap! verification (err ERR-VERIFICATION-FAILED))))
+                    (asserts! (> (len proof-list) u0) ERR-NO-VERIFIED-PROOFS)
+                    (ok true)
                 )
             )
-            true
+            (ok true)
         )
-        
-        ;; Handle compliance check in a similar way
-        (let ((consent-result (contract-call? .data-governance validate-consent-for-purpose data-id u1)))
-            ;; Check if we got an ok result
-            (asserts! (is-ok consent-result) ERR-NO-VALID-CONSENT)
-            
-            ;; Now safely unwrap and check the consent value
-            (let ((is-valid (unwrap! consent-result ERR-NO-VALID-CONSENT)))
-                (asserts! is-valid ERR-NO-VALID-CONSENT)
-            )
-        )
-        
-        (ok true)
     )
 )
 
@@ -491,6 +554,57 @@
 
 (define-read-only (get-escrow (escrow-id uint))
     (map-get? purchase-escrows { escrow-id: escrow-id })
+)
+
+;; Batch operations leveraging Clarity 4 fold/map
+(define-private (batch-create-helper (acc (response bool uint)) (item (tuple (0 uint) (1 (string-utf8 20)) (2 principal) (3 uint) (4 uint) (5 (buff 32)) (6 bool) (7 (string-utf8 500)))))
+    (if (is-err acc)
+        acc
+        (let (
+            (lid (get 0 item))
+            (price (get 1 item))
+            (dc (get 2 item))
+            (did (get 3 item))
+            (lvl (get 4 item))
+            (mh (get 5 item))
+            (ver (get 6 item))
+            (desc (get 7 item))
+        )
+            (let ((res (create-listing lid price dc did lvl mh ver desc)))
+                (if (is-ok res) acc res)
+            )
+        )
+    )
+)
+
+(define-public (batch-create-listings (items (list 50 (tuple (0 uint) (1 (string-utf8 20)) (2 principal) (3 uint) (4 uint) (5 (buff 32)) (6 bool) (7 (string-utf8 500))))))
+    (fold batch-create-helper items (ok true))
+)
+
+(define-private (batch-status-helper (acc (response bool uint)) (item (tuple (0 uint) (1 bool))))
+    (if (is-err acc)
+        acc
+        (let ((res (update-listing-status (get 0 item) (get 1 item))))
+            (if (is-ok res) acc res)
+        )
+    )
+)
+
+(define-public (batch-update-status (items (list 50 (tuple (0 uint) (1 bool)))))
+    (fold batch-status-helper items (ok true))
+)
+
+(define-private (batch-purchase-helper (acc (response bool uint)) (item (tuple (0 uint) (1 uint) (2 (buff 32)))))
+    (if (is-err acc)
+        acc
+        (let ((res (purchase-listing-direct (get 0 item) (get 1 item) (get 2 item))))
+            (if (is-ok res) acc res)
+        )
+    )
+)
+
+(define-public (batch-purchase-direct (items (list 50 (tuple (0 uint) (1 uint) (2 (buff 32))))) )
+    (fold batch-purchase-helper items (ok true))
 )
 
 ;; Extend user access

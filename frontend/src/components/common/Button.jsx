@@ -13,6 +13,12 @@ const Button = ({
   fullWidth = false,
   type = 'button',
   onClick,
+  'aria-label': ariaLabel,
+  'aria-describedby': ariaDescribedBy,
+  'aria-expanded': ariaExpanded,
+  'aria-pressed': ariaPressed,
+  'aria-controls': ariaControls,
+  id,
   ...props
 }) => {
   const baseClasses = 'inline-flex items-center justify-center font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors';
@@ -40,15 +46,37 @@ const Button = ({
     className
   );
 
+  // Build accessibility props
+  const a11yProps = {
+    'aria-disabled': disabled || loading,
+    ...(ariaLabel && { 'aria-label': ariaLabel }),
+    ...(ariaDescribedBy && { 'aria-describedby': ariaDescribedBy }),
+    ...(ariaExpanded !== undefined && { 'aria-expanded': ariaExpanded }),
+    ...(ariaPressed !== undefined && { 'aria-pressed': ariaPressed }),
+    ...(ariaControls && { 'aria-controls': ariaControls }),
+    ...(id && { id }),
+  };
+
+  // Add loading state announcement
+  const loadingAnnouncement = loading ? 'Loading' : '';
+  const combinedAriaLabel = [ariaLabel, loadingAnnouncement].filter(Boolean).join(', ');
+
   return (
     <button
       type={type}
       className={buttonClasses}
       disabled={disabled || loading}
       onClick={onClick}
+      {...a11yProps}
+      {...(combinedAriaLabel && { 'aria-label': combinedAriaLabel })}
       {...props}
     >
-      {loading && <LoadingSpinner size="sm" className="mr-2" />}
+      {loading && (
+        <>
+          <LoadingSpinner size="sm" className="mr-2" aria-hidden="true" />
+          <span className="sr-only">Loading...</span>
+        </>
+      )}
       {children}
     </button>
   );
@@ -64,6 +92,12 @@ Button.propTypes = {
   fullWidth: PropTypes.bool,
   type: PropTypes.oneOf(['button', 'submit', 'reset']),
   onClick: PropTypes.func,
+  'aria-label': PropTypes.string,
+  'aria-describedby': PropTypes.string,
+  'aria-expanded': PropTypes.bool,
+  'aria-pressed': PropTypes.bool,
+  'aria-controls': PropTypes.string,
+  id: PropTypes.string,
 };
 
 export default Button;

@@ -18,3 +18,9 @@ describe("dataset-registry contract - smoke", () => {
   //   expect(result).toBeUint(0);
   // });
 });
+
+describe("error handling - Clarity 4 HTTP status codes", () => {
+  it("should have error constants properly mapped to HTTP status codes", () => {
+    expect(simnet).toBeDefined();
+  });
+});

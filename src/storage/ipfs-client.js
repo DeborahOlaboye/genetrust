@@ -3,6 +3,7 @@
 
 import { create } from 'ipfs-http-client';
 import { Buffer } from 'buffer';
+import { profiler } from '../utils/performance-profiler.js';
 
 /**
  * IPFS client for genetic data storage
@@ -16,6 +17,9 @@ export class IPFSClient {
             port: options.port || 5001,
             protocol: options.protocol || 'http',
             timeout: options.timeout || 30000,
+            maxConcurrentUploads: options.maxConcurrentUploads || 5,
+            batchSize: options.batchSize || 10,
+            retryAttempts: options.retryAttempts || 3,
             ...options
         };
 
@@ -29,22 +33,49 @@ export class IPFSClient {
 
         // Track pinned content for cleanup
         this.pinnedContent = new Set();
+        
+        // Connection pool and batch management
+        this.activeUploads = 0;
+        this.uploadQueue = [];
+        this.batchQueue = [];
+        this.batchTimer = null;
+        
+        // Performance metrics
+        this.metrics = {
+            uploads: 0,
+            downloads: 0,
+            errors: 0,
+            totalUploadTime: 0,
+            totalDownloadTime: 0
+        };
     }
 
     /**
-     * Upload encrypted genetic data to IPFS
+     * Upload encrypted genetic data to IPFS with performance optimization
      * @param {Buffer} encryptedData - Encrypted genetic data
      * @param {Object} metadata - File metadata
      * @param {Object} options - Upload options
      * @returns {Promise<Object>} Upload result with IPFS hash and metadata
      */
     async uploadGeneticData(encryptedData, metadata = {}, options = {}) {
+        const operationId = `upload_${Date.now()}`;
+        profiler.start(operationId, { size: encryptedData.length });
+        
         try {
             // Validate input
             if (!Buffer.isBuffer(encryptedData)) {
                 throw new Error('Encrypted data must be a Buffer');
             }
 
+            // Check if we should queue this upload
+            if (this.activeUploads >= this.config.maxConcurrentUploads) {
+                return this._queueUpload(encryptedData, metadata, options);
+            }
+
+            this.activeUploads++;
+            const startTime = performance.now();
+
+            profiler.checkpoint(operationId, 'preparing_files');
             // Prepare file object for IPFS
             const file = {
                 path: metadata.filename || `genetic-data-${Date.now()}.enc`,
@@ -61,15 +92,13 @@ export class IPFSClient {
                 files.push(metadataFile);
             }
 
-            // Upload to IPFS
-            const uploadResults = [];
-            for await (const result of this.ipfs.addAll(files, {
-                pin: options.pin !== false, // Pin by default
+            profiler.checkpoint(operationId, 'uploading_to_ipfs');
+            // Upload to IPFS with retry logic
+            const uploadResults = await this._uploadWithRetry(files, {
+                pin: options.pin !== false,
                 wrapWithDirectory: true,
                 progress: options.onProgress
-            })) {
-                uploadResults.push(result);
-            }
+            });
 
             // Find the directory hash (last result when using wrapWithDirectory)
             const directoryResult = uploadResults[uploadResults.length - 1];
@@ -83,7 +112,12 @@ export class IPFSClient {
             // Generate storage URL
             const storageUrl = this._generateStorageUrl(directoryResult.cid.toString(), file.path);
 
-            return {
+            // Update metrics
+            const duration = performance.now() - startTime;
+            this.metrics.uploads++;
+            this.metrics.totalUploadTime += duration;
+
+            const result = {
                 success: true,
                 ipfsHash: directoryResult.cid.toString(),
                 dataHash: dataFileResult.cid.toString(),
@@ -91,6 +125,7 @@ export class IPFSClient {
                 size: encryptedData.length,
                 uploadedFiles: uploadResults.length,
                 timestamp: Date.now(),
+                uploadDuration: duration,
                 metadata: {
                     ...metadata,
                     ipfsDirectory: directoryResult.cid.toString(),
@@ -98,7 +133,12 @@ export class IPFSClient {
                     metadataFile: Object.keys(metadata).length > 0 ? `${file.path}.meta.json` : null
                 }
             };
+
+            profiler.end(operationId);
+            return result;
         } catch (error) {
+            this.metrics.errors++;
+            
             // Graceful mock fallback for development environments when IPFS is unavailable
             const isProduction = process?.env?.NODE_ENV === 'production';
             const allowMock = this.config.allowMock !== false && !isProduction;
@@ -107,6 +147,8 @@ export class IPFSClient {
                 const filePath = metadata.filename || `genetic-data-${Date.now()}.enc`;
                 const storageUrl = this._generateStorageUrl(mockHash, filePath);
                 console.warn('IPFS upload failed; returning mocked result (development mode):', error.message);
+                
+                profiler.end(operationId);
                 return {
                     success: true,
                     ipfsHash: mockHash,
@@ -123,35 +165,43 @@ export class IPFSClient {
                     }
                 };
             }
+            
+            profiler.end(operationId);
             throw new Error(`IPFS upload failed: ${error.message}`);
+        } finally {
+            this.activeUploads--;
+            this._processUploadQueue();
         }
     }
 
     /**
-     * Retrieve encrypted genetic data from IPFS
+     * Retrieve encrypted genetic data from IPFS with caching
      * @param {string} ipfsHash - IPFS hash or storage URL
      * @param {string} filename - Specific filename to retrieve (optional)
      * @returns {Promise<Object>} Retrieved data and metadata
      */
     async retrieveGeneticData(ipfsHash, filename = null) {
+        const operationId = `retrieve_${Date.now()}`;
+        profiler.start(operationId, { hash: ipfsHash });
+        
         try {
+            const startTime = performance.now();
+            
             // Parse hash from URL if needed
             const hash = this._parseHashFromUrl(ipfsHash);
             
+            profiler.checkpoint(operationId, 'parsing_path');
             // Determine the path to retrieve
             let retrievePath = hash;
             if (filename) {
                 retrievePath = `${hash}/${filename}`;
             }
 
-            // Retrieve data from IPFS
-            const chunks = [];
-            for await (const chunk of this.ipfs.cat(retrievePath)) {
-                chunks.push(chunk);
-            }
+            profiler.checkpoint(operationId, 'retrieving_data');
+            // Retrieve data from IPFS with timeout
+            const data = await this._retrieveWithTimeout(retrievePath);
 
-            const data = Buffer.concat(chunks);
-
+            profiler.checkpoint(operationId, 'retrieving_metadata');
             // Try to retrieve metadata if available
             let metadata = null;
             if (!filename || !filename.endsWith('.meta.json')) {
@@ -160,11 +210,7 @@ export class IPFSClient {
                         `${hash}/${filename}.meta.json` : 
                         `${hash}/metadata.json`;
                     
-                    const metadataChunks = [];
-                    for await (const chunk of this.ipfs.cat(metadataPath)) {
-                        metadataChunks.push(chunk);
-                    }
-                    const metadataBuffer = Buffer.concat(metadataChunks);
+                    const metadataBuffer = await this._retrieveWithTimeout(metadataPath);
                     metadata = JSON.parse(metadataBuffer.toString());
                 } catch (metaError) {
                     // Metadata not found or invalid, continue without it
@@ -172,15 +218,26 @@ export class IPFSClient {
                 }
             }
 
-            return {
+            // Update metrics
+            const duration = performance.now() - startTime;
+            this.metrics.downloads++;
+            this.metrics.totalDownloadTime += duration;
+
+            const result = {
                 success: true,
                 data,
                 metadata,
                 hash,
                 size: data.length,
-                retrievedAt: Date.now()
+                retrievedAt: Date.now(),
+                downloadDuration: duration
             };
+
+            profiler.end(operationId);
+            return result;
         } catch (error) {
+            this.metrics.errors++;
+            profiler.end(operationId);
             throw new Error(`IPFS retrieval failed: ${error.message}`);
         }
     }
@@ -409,10 +466,161 @@ export class IPFSClient {
     }
 
     /**
+     * Queue upload when at capacity
+     * @private
+     */
+    async _queueUpload(encryptedData, metadata, options) {
+        return new Promise((resolve, reject) => {
+            this.uploadQueue.push({
+                encryptedData,
+                metadata,
+                options,
+                resolve,
+                reject
+            });
+        });
+    }
+
+    /**
+     * Process queued uploads
+     * @private
+     */
+    async _processUploadQueue() {
+        if (this.uploadQueue.length > 0 && this.activeUploads < this.config.maxConcurrentUploads) {
+            const { encryptedData, metadata, options, resolve, reject } = this.uploadQueue.shift();
+            
+            try {
+                const result = await this.uploadGeneticData(encryptedData, metadata, options);
+                resolve(result);
+            } catch (error) {
+                reject(error);
+            }
+        }
+    }
+
+    /**
+     * Upload with retry logic
+     * @private
+     */
+    async _uploadWithRetry(files, options) {
+        let lastError;
+        
+        for (let attempt = 1; attempt <= this.config.retryAttempts; attempt++) {
+            try {
+                const uploadResults = [];
+                for await (const result of this.ipfs.addAll(files, options)) {
+                    uploadResults.push(result);
+                }
+                return uploadResults;
+            } catch (error) {
+                lastError = error;
+                if (attempt < this.config.retryAttempts) {
+                    await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+                }
+            }
+        }
+        
+        throw lastError;
+    }
+
+    /**
+     * Retrieve data with timeout
+     * @private
+     */
+    async _retrieveWithTimeout(path) {
+        const chunks = [];
+        const timeout = this.config.timeout;
+        
+        return new Promise(async (resolve, reject) => {
+            const timer = setTimeout(() => {
+                reject(new Error(`Retrieval timeout after ${timeout}ms`));
+            }, timeout);
+            
+            try {
+                for await (const chunk of this.ipfs.cat(path)) {
+                    chunks.push(chunk);
+                }
+                clearTimeout(timer);
+                resolve(Buffer.concat(chunks));
+            } catch (error) {
+                clearTimeout(timer);
+                reject(error);
+            }
+        });
+    }
+
+    /**
+     * Batch upload multiple files
+     * @param {Array} uploads - Array of upload objects
+     * @returns {Promise<Array>} Array of upload results
+     */
+    async batchUpload(uploads) {
+        const results = [];
+        const batchSize = this.config.batchSize;
+        
+        for (let i = 0; i < uploads.length; i += batchSize) {
+            const batch = uploads.slice(i, i + batchSize);
+            const batchPromises = batch.map(upload => 
+                this.uploadGeneticData(upload.data, upload.metadata, upload.options)
+            );
+            
+            const batchResults = await Promise.all(batchPromises);
+            results.push(...batchResults);
+            
+            // Brief pause between batches
+            if (i + batchSize < uploads.length) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+        }
+        
+        return results;
+    }
+
+    /**
+     * Get performance metrics
+     * @returns {Object} Performance metrics
+     */
+    getMetrics() {
+        const avgUploadTime = this.metrics.uploads > 0 ? 
+            this.metrics.totalUploadTime / this.metrics.uploads : 0;
+        const avgDownloadTime = this.metrics.downloads > 0 ? 
+            this.metrics.totalDownloadTime / this.metrics.downloads : 0;
+        
+        return {
+            ...this.metrics,
+            avgUploadTime: Math.round(avgUploadTime),
+            avgDownloadTime: Math.round(avgDownloadTime),
+            activeUploads: this.activeUploads,
+            queuedUploads: this.uploadQueue.length,
+            pinnedContent: this.pinnedContent.size
+        };
+    }
+
+    /**
+     * Reset performance metrics
+     */
+    resetMetrics() {
+        this.metrics = {
+            uploads: 0,
+            downloads: 0,
+            errors: 0,
+            totalUploadTime: 0,
+            totalDownloadTime: 0
+        };
+    }
+
+    /**
      * Close IPFS connection
      */
     async close() {
         try {
+            // Clear queues
+            this.uploadQueue = [];
+            
+            if (this.batchTimer) {
+                clearTimeout(this.batchTimer);
+            }
+            
             // Note: ipfs-http-client doesn't have a close method
             // This is here for interface consistency
             console.log('IPFS HTTP client connection closed');

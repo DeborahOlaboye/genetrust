@@ -1,0 +1,278 @@
+/* Accessibility styles for WCAG 2.1 AA compliance */
+
+/* Screen reader only utility class */
+.sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+/* Skip link styles */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 6px;
+  background: #000;
+  color: #fff;
+  padding: 8px 16px;
+  text-decoration: none;
+  z-index: 9999;
+  border-radius: 4px;
+  font-weight: 500;
+  transition: top 0.2s ease-in-out;
+}
+
+.skip-link:focus {
+  top: 6px;
+}
+
+/* High contrast focus indicators */
+*:focus {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
+/* Enhanced focus for interactive elements */
+button:focus,
+a:focus,
+input:focus,
+select:focus,
+textarea:focus,
+[tabindex]:focus {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+}
+
+/* Focus within for containers */
+.focus-within:focus-within {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
+/* Reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  * {
+    border-color: currentColor;
+  }
+  
+  button,
+  input,
+  select,
+  textarea {
+    border: 2px solid currentColor;
+  }
+}
+
+/* Color scheme preferences */
+@media (prefers-color-scheme: dark) {
+  .auto-dark {
+    background-color: #1f2937;
+    color: #f9fafb;
+  }
+  
+  .auto-dark input,
+  .auto-dark select,
+  .auto-dark textarea {
+    background-color: #374151;
+    color: #f9fafb;
+    border-color: #6b7280;
+  }
+}
+
+/* Error states with sufficient contrast */
+.error {
+  color: #dc2626;
+  border-color: #dc2626;
+}
+
+.error:focus {
+  outline-color: #dc2626;
+  box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.1);
+}
+
+/* Success states */
+.success {
+  color: #166534;
+  border-color: #166534;
+}
+
+.success:focus {
+  outline-color: #166534;
+  box-shadow: 0 0 0 4px rgba(22, 101, 52, 0.1);
+}
+
+/* Warning states */
+.warning {
+  color: #d97706;
+  border-color: #d97706;
+}
+
+.warning:focus {
+  outline-color: #d97706;
+  box-shadow: 0 0 0 4px rgba(217, 119, 6, 0.1);
+}
+
+/* Disabled states with proper contrast */
+.disabled,
+:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Loading states */
+.loading {
+  position: relative;
+  pointer-events: none;
+}
+
+.loading::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 20px;
+  height: 20px;
+  margin: -10px 0 0 -10px;
+  border: 2px solid transparent;
+  border-top: 2px solid currentColor;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Keyboard navigation helpers */
+.keyboard-nav button:focus,
+.keyboard-nav a:focus,
+.keyboard-nav [tabindex]:focus {
+  outline: 3px solid #2563eb;
+  outline-offset: 2px;
+}
+
+/* Touch target size (minimum 44x44px) */
+button,
+a,
+input[type="checkbox"],
+input[type="radio"],
+select {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Exception for inline elements */
+a:not(.button) {
+  min-height: auto;
+  min-width: auto;
+}
+
+/* Form validation styles */
+.field-error {
+  border-color: #dc2626;
+  background-color: #fef2f2;
+}
+
+.field-error:focus {
+  outline-color: #dc2626;
+  box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.1);
+}
+
+/* Required field indicator */
+.required::after {
+  content: " *";
+  color: #dc2626;
+  font-weight: bold;
+}
+
+/* Visually hidden but accessible to screen readers */
+.visually-hidden {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+/* Modal and dialog styles */
+.modal-overlay {
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+}
+
+.modal-content {
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+/* Ensure sufficient color contrast for links */
+a {
+  color: #1d4ed8;
+  text-decoration: underline;
+}
+
+a:hover {
+  color: #1e40af;
+}
+
+a:visited {
+  color: #7c3aed;
+}
+
+/* Dark mode link colors */
+@media (prefers-color-scheme: dark) {
+  a {
+    color: #60a5fa;
+  }
+  
+  a:hover {
+    color: #93c5fd;
+  }
+  
+  a:visited {
+    color: #c4b5fd;
+  }
+}
+
+/* Print styles for accessibility */
+@media print {
+  .skip-link,
+  .sr-only {
+    display: none !important;
+  }
+  
+  a::after {
+    content: " (" attr(href) ")";
+    font-size: 0.8em;
+    color: #666;
+  }
+  
+  a[href^="#"]::after,
+  a[href^="javascript:"]::after {
+    content: "";
+  }
+}
