@@ -743,3 +743,41 @@
 (define-read-only (exchange-version-note)
     { note: u"Call .contract-registry get-version-count with name=exchange to get version count" }
 )
+
+;; ── Registry-verified access-level price lookup ───────────────────────────────
+;; Returns the access-level price for a listing, guarded by a registry check.
+;; The caller must supply the registry trait reference; the function uses
+;; contract-of internally (via verify-exchange-contract) to confirm identity.
+(define-public (get-verified-access-price
+    (registry   <contract-registry-trait>)
+    (exchange   <dataset-registry-trait>)
+    (listing-id uint)
+    (access-level uint))
+    (begin
+        ;; Verify the exchange contract is the registered one
+        (try! (verify-exchange-contract registry exchange))
+        ;; Return the access-level price from this contract's own store
+        (get-access-level-price listing-id access-level)
+    )
+)
+
+;; ── Upgradeable purchase flow ─────────────────────────────────────────────────
+;; A full purchase that first checks the registry to ensure the exchange
+;; contract used is the current registered version.
+(define-public (purchase-listing-verified
+    (registry    <contract-registry-trait>)
+    (exchange    <dataset-registry-trait>)
+    (listing-id  uint)
+    (access-level uint)
+    (tx-id       (buff 32)))
+    (begin
+        ;; Guard: only proceed if exchange is the registered version
+        (let ((exchange-principal (try! (verify-exchange-contract registry exchange))))
+            (asserts!
+                (is-eq exchange-principal (contract-of exchange))
+                ERR-NOT-AUTHORIZED)
+        )
+        ;; Delegate to the standard direct-purchase flow
+        (purchase-listing-direct listing-id access-level tx-id)
+    )
+)
