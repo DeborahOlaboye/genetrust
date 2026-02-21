@@ -656,3 +656,50 @@
     (registry <contract-registry-trait>))
     (contract-call? registry get-latest-version u"dataset-registry")
 )
+
+;; Version-aware listing purchase using the contract-of pattern.
+;;
+;; The caller supplies:
+;;   • registry — a <contract-registry-trait> reference to the deployed registry
+;;   • exchange  — a <dataset-registry-trait> reference to the exchange contract
+;;                 the caller believes to be the latest version
+;;   • listing-id — the listing to query
+;;
+;; This function:
+;;   1. Calls contract-of on the exchange trait arg to get its principal.
+;;   2. Queries the registry to confirm that principal is the registered latest.
+;;   3. Dispatches get-data-details through the verified trait reference.
+;;
+;; This prevents callers from supplying a spoofed exchange contract that passes
+;; the trait type-check but is not the officially registered version.
+(define-public (purchase-with-latest-exchange
+    (registry   <contract-registry-trait>)
+    (exchange   <dataset-registry-trait>)
+    (listing-id uint))
+    (let (
+        ;; Step 1: extract the principal from the typed trait reference using contract-of
+        (exchange-principal (contract-of exchange))
+        ;; Step 2: resolve the registry's current "exchange" principal
+        (registered-principal (try! (contract-call? registry get-latest-version u"exchange")))
+    )
+        ;; Step 3: verify the caller supplied the correct contract
+        (asserts! (is-eq exchange-principal registered-principal) ERR-NOT-AUTHORIZED)
+
+        ;; Step 4: dispatch through the verified trait reference
+        (contract-call? exchange get-data-details listing-id)
+    )
+)
+
+;; Verify that a trait-typed contract reference matches the registered version.
+;; Callers can use this as a guard before performing any trait dispatch.
+(define-public (verify-exchange-contract
+    (registry <contract-registry-trait>)
+    (exchange  <dataset-registry-trait>))
+    (let (
+        (exchange-principal    (contract-of exchange))
+        (registered-principal  (try! (contract-call? registry get-latest-version u"exchange")))
+    )
+        (asserts! (is-eq exchange-principal registered-principal) ERR-NOT-AUTHORIZED)
+        (ok exchange-principal)
+    )
+)
