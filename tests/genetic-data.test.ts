@@ -283,6 +283,56 @@ describe('dataset-registry - verify-registered-contract', () => {
   });
 });
 
+// ─── revoke-access ────────────────────────────────────────────────────────────
+
+describe('dataset-registry - revoke-access', () => {
+  beforeEach(() => {
+    registerDataset(50);
+    simnet.callPublicFn(
+      'dataset-registry',
+      'grant-access',
+      [Cl.uint(50), Cl.principal(wallet1), Cl.uint(1)],
+      deployer,
+    );
+  });
+
+  it('owner can revoke access', () => {
+    const { result } = simnet.callPublicFn(
+      'dataset-registry',
+      'revoke-access',
+      [Cl.uint(50), Cl.principal(wallet1)],
+      deployer,
+    );
+    expect(result).toBeOk(expect.anything());
+  });
+
+  it('has-access returns false after revocation', () => {
+    simnet.callPublicFn(
+      'dataset-registry',
+      'revoke-access',
+      [Cl.uint(50), Cl.principal(wallet1)],
+      deployer,
+    );
+    const { result } = simnet.callReadOnlyFn(
+      'dataset-registry',
+      'has-access',
+      [Cl.uint(50), Cl.principal(wallet1), Cl.uint(1)],
+      deployer,
+    );
+    expect(result).toStrictEqual(Cl.bool(false));
+  });
+
+  it('non-owner cannot revoke access', () => {
+    const { result } = simnet.callPublicFn(
+      'dataset-registry',
+      'revoke-access',
+      [Cl.uint(50), Cl.principal(wallet1)],
+      wallet2, // not the owner
+    );
+    expect(result).toBeErr(Cl.uint(401));
+  });
+});
+
 // ─── version history ──────────────────────────────────────────────────────────
 
 describe('dataset-registry - version history', () => {
