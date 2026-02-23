@@ -154,6 +154,16 @@
 (define-read-only (get-registry-admin) (var-get registry-admin))
 (define-read-only (is-registry-paused) (var-get is-paused))
 
+;; Return a compact status snapshot useful for off-chain operator dashboards.
+(define-read-only (get-contract-status)
+    {
+        admin:            (var-get registry-admin),
+        is-paused:        (var-get is-paused),
+        total-migrations: (var-get migration-counter),
+        total-audits:     (var-get audit-counter)
+    }
+)
+
 ;; ── Version registration ──────────────────────────────────────────────────────
 
 ;; Register a new contract version under a human-readable name.
