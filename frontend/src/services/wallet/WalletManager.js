@@ -1,12 +1,14 @@
 import { createLogger } from '../../utils/logger';
 import { ReownWalletService } from './ReownWalletService';
 import { HiroWalletService } from './HiroWalletService';
+import { LedgerWalletService } from './LedgerWalletService';
 
 const logger = createLogger({ module: 'WalletManager' });
 
 const PROVIDERS = {
-  REOWN: 'reown',
-  HIRO: 'hiro'
+  REOWN:  'reown',
+  HIRO:   'hiro',
+  LEDGER: 'ledger',
 };
 
 class WalletManager {
@@ -60,6 +62,19 @@ class WalletManager {
         this._providers.set(PROVIDERS.HIRO, hiroService);
       } catch (error) {
         logger.error('Failed to initialize Hiro wallet', { error });
+      }
+    }
+
+    // Initialize Ledger if enabled (opt-in; disabled by default)
+    if (this._config.providers[PROVIDERS.LEDGER]?.enabled === true) {
+      try {
+        const ledgerService = new LedgerWalletService({
+          ...this._config.providers[PROVIDERS.LEDGER],
+          network: this._config.network,
+        });
+        this._providers.set(PROVIDERS.LEDGER, ledgerService);
+      } catch (error) {
+        logger.error('Failed to initialize Ledger wallet', { error });
       }
     }
   }
