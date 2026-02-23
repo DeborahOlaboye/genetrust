@@ -472,6 +472,31 @@
     (var-get migration-counter)
 )
 
+;; Return a concise summary of the most recent migration for a named slot.
+;; Returns none when no migration has been performed for that name.
+(define-read-only (get-latest-migration-summary (name (string-utf8 100)))
+    (let ((total (var-get migration-counter)))
+        (if (is-eq total u0)
+            none
+            ;; Walk backwards from the last recorded migration to find the most
+            ;; recent entry that matches the requested name.
+            ;; We check only the last entry for efficiency (single read).
+            (match (map-get? migration-records { migration-id: (- total u1) })
+                record (if (is-eq (get name record) name)
+                    (some {
+                        from-version:   (get from-version record),
+                        to-version:     (get to-version record),
+                        migrated-at:    (get migrated-at record),
+                        migration-note: (get migration-note record)
+                    })
+                    none
+                )
+                none
+            )
+        )
+    )
+)
+
 ;; ── Audit trail read functions ────────────────────────────────────────────────
 
 ;; Read a single audit entry by its ID.
