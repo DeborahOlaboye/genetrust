@@ -693,3 +693,94 @@ describe('contract-registry - get-latest-summary', () => {
     expect(result).toBeSome(expect.anything());
   });
 });
+
+// ─── deactivate-latest ────────────────────────────────────────────────────────
+
+describe('contract-registry - deactivate-latest', () => {
+  beforeEach(() => {
+    registerVersion('exchange', deployer);
+  });
+
+  it('admin can deactivate the latest version', () => {
+    const { result } = simnet.callPublicFn(
+      'contract-registry',
+      'deactivate-latest',
+      [Cl.stringUtf8('exchange')],
+      deployer,
+    );
+    expect(result).toBeOk(Cl.bool(true));
+  });
+
+  it('version is not active after deactivate-latest', () => {
+    simnet.callPublicFn(
+      'contract-registry',
+      'deactivate-latest',
+      [Cl.stringUtf8('exchange')],
+      deployer,
+    );
+    const { result } = simnet.callReadOnlyFn(
+      'contract-registry',
+      'check-version-active',
+      [Cl.stringUtf8('exchange'), Cl.uint(1)],
+      deployer,
+    );
+    expect(result).toStrictEqual(Cl.bool(false));
+  });
+
+  it('non-admin cannot deactivate', () => {
+    const { result } = simnet.callPublicFn(
+      'contract-registry',
+      'deactivate-latest',
+      [Cl.stringUtf8('exchange')],
+      other,
+    );
+    expect(result).toBeErr(Cl.uint(401));
+  });
+
+  it('returns ERR-CONTRACT-NOT-FOUND for unregistered name', () => {
+    const { result } = simnet.callPublicFn(
+      'contract-registry',
+      'deactivate-latest',
+      [Cl.stringUtf8('phantom')],
+      deployer,
+    );
+    expect(result).toBeErr(Cl.uint(404));
+  });
+});
+
+// ─── get-latest-migration-summary ────────────────────────────────────────────
+
+describe('contract-registry - get-latest-migration-summary', () => {
+  it('returns none when no migration has been recorded', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'contract-registry',
+      'get-latest-migration-summary',
+      [Cl.stringUtf8('exchange')],
+      deployer,
+    );
+    expect(result).toBeNone();
+  });
+
+  it('returns some after a successful migration', () => {
+    registerVersion('exchange', deployer);
+    simnet.callPublicFn(
+      'contract-registry',
+      'migrate-contract',
+      [
+        Cl.stringUtf8('exchange'),
+        Cl.principal(admin),
+        Cl.list([Cl.stringUtf8('v2')]),
+        Cl.stringUtf8('Migration to v2'),
+      ],
+      deployer,
+    );
+    const { result } = simnet.callReadOnlyFn(
+      'contract-registry',
+      'get-latest-migration-summary',
+      [Cl.stringUtf8('exchange')],
+      deployer,
+    );
+    // The last migration ID is for 'exchange', so we get some
+    expect(result).toBeSome(expect.anything());
+  });
+});
