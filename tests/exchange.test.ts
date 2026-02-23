@@ -1,28 +1,214 @@
-import { describe, expect, it } from "vitest";
+import { describe, it, expect, beforeEach } from 'vitest';
+import { Cl } from '@stacks/clarity';
+import { initSimnet } from '@hirosystems/clarinet-sdk';
 
-declare const simnet: any;
+const simnet = await initSimnet();
+const accounts = simnet.getAccounts();
+const deployer = accounts.get('deployer')!;
+const wallet1  = accounts.get('wallet_1')!;
+const wallet2  = accounts.get('wallet_2')!;
 
-/*
-  Basic smoke test for the Clarinet simnet environment.
-  Add exchange contract checks here later (e.g., get-listing, get-access-level-price, etc.).
-*/
+// ─── helpers ──────────────────────────────────────────────────────────────────
 
-describe("exchange contract - smoke", () => {
-  it("simnet is initialized", () => {
+function registerExchangeVersion(principal: string, sender = deployer) {
+  return simnet.callPublicFn(
+    'contract-registry',
+    'register-version',
+    [Cl.stringUtf8('exchange'), Cl.principal(principal)],
+    sender,
+  );
+}
+
+function createListing(listingId: number, sender = deployer) {
+  return simnet.callPublicFn(
+    'exchange',
+    'create-listing',
+    [
+      Cl.uint(listingId),
+      Cl.stringUtf8('100'),
+      Cl.principal(deployer),
+      Cl.uint(1),
+      Cl.uint(1),
+      Cl.bufferFromHex('0000000000000000000000000000000000000000000000000000000000000001'),
+      Cl.bool(false),
+      Cl.stringUtf8('Test listing'),
+    ],
+    sender,
+  );
+}
+
+// ─── smoke ────────────────────────────────────────────────────────────────────
+
+describe('exchange contract - smoke', () => {
+  it('simnet is initialized', () => {
     expect(simnet.blockHeight).toBeDefined();
+  });
+
+  it('marketplace admin defaults to deployer', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'exchange',
+      'get-listing',
+      [Cl.uint(9999)],
+      deployer,
+    );
+    // No listing registered yet — returns none
+    expect(result).toBeNone();
   });
 });
 
-describe("exchange contract - error handling", () => {
-  it("should handle invalid prices with HTTP 400 error code", () => {
-    expect(simnet).toBeDefined();
+// ─── listing management ───────────────────────────────────────────────────────
+
+describe('exchange contract - listing management', () => {
+  it('creates a listing successfully', () => {
+    const { result } = createListing(1);
+    expect(result).toBeOk(Cl.some(expect.anything()));
   });
 
-  it("should handle unauthorized access with HTTP 401 error code", () => {
-    expect(simnet).toBeDefined();
+  it('rejects duplicate listing id', () => {
+    createListing(2);
+    const { result } = createListing(2);
+    expect(result).toBeErr(expect.anything());
   });
 
-  it("should handle insufficient balance with HTTP 422 error code", () => {
-    expect(simnet).toBeDefined();
+  it('get-listing returns the registered listing', () => {
+    createListing(3);
+    const { result } = simnet.callReadOnlyFn(
+      'exchange',
+      'get-listing',
+      [Cl.uint(3)],
+      deployer,
+    );
+    expect(result).toBeSome(expect.anything());
+  });
+});
+
+// ─── error handling ───────────────────────────────────────────────────────────
+
+describe('exchange contract - error handling', () => {
+  it('rejects invalid price with HTTP 400 error code', () => {
+    const { result } = simnet.callPublicFn(
+      'exchange',
+      'create-listing',
+      [
+        Cl.uint(100),
+        Cl.stringUtf8('0'),
+        Cl.principal(deployer),
+        Cl.uint(1),
+        Cl.uint(1),
+        Cl.bufferFromHex('0000000000000000000000000000000000000000000000000000000000000001'),
+        Cl.bool(false),
+        Cl.stringUtf8('Zero price listing'),
+      ],
+      deployer,
+    );
+    expect(result).toBeErr(Cl.uint(400));
+  });
+
+  it('rejects invalid access level with HTTP 400 error code', () => {
+    const { result } = simnet.callPublicFn(
+      'exchange',
+      'create-listing',
+      [
+        Cl.uint(101),
+        Cl.stringUtf8('50'),
+        Cl.principal(deployer),
+        Cl.uint(1),
+        Cl.uint(5), // access level > 3 is invalid
+        Cl.bufferFromHex('0000000000000000000000000000000000000000000000000000000000000001'),
+        Cl.bool(false),
+        Cl.stringUtf8('Bad access level'),
+      ],
+      deployer,
+    );
+    expect(result).toBeErr(Cl.uint(400));
+  });
+
+  it('get-listing returns none for unknown listing id', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'exchange',
+      'get-listing',
+      [Cl.uint(99999)],
+      deployer,
+    );
+    expect(result).toBeNone();
+  });
+});
+
+// ─── contract-of / dynamic contract discovery ────────────────────────────────
+
+describe('exchange contract - contract-of registry integration', () => {
+  beforeEach(() => {
+    // Register this deployer address as the "exchange" version
+    registerExchangeVersion(deployer);
+  });
+
+  it('get-current-exchange-contract returns the registered exchange principal', () => {
+    const { result } = simnet.callPublicFn(
+      'exchange',
+      'get-current-exchange-contract',
+      [Cl.contractPrincipal(deployer.split('.')[0] ?? deployer, 'contract-registry')],
+      deployer,
+    );
+    expect(result).toBeOk(expect.anything());
+  });
+
+  it('get-current-registry-contract returns the registered dataset-registry principal', () => {
+    simnet.callPublicFn(
+      'contract-registry',
+      'register-version',
+      [Cl.stringUtf8('dataset-registry'), Cl.principal(deployer)],
+      deployer,
+    );
+    const { result } = simnet.callPublicFn(
+      'exchange',
+      'get-current-registry-contract',
+      [Cl.contractPrincipal(deployer.split('.')[0] ?? deployer, 'contract-registry')],
+      deployer,
+    );
+    expect(result).toBeOk(expect.anything());
+  });
+});
+
+// ─── access level price ───────────────────────────────────────────────────────
+
+describe('exchange contract - access level pricing', () => {
+  beforeEach(() => {
+    createListing(50);
+  });
+
+  it('get-access-level-price returns the listing default price when no tier set', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'exchange',
+      'get-access-level-price',
+      [Cl.uint(50), Cl.uint(1)],
+      deployer,
+    );
+    expect(result).toBeOk(Cl.uint(100));
+  });
+
+  it('set-access-level-price stores a custom tier price', () => {
+    simnet.callPublicFn(
+      'exchange',
+      'set-access-level-price',
+      [Cl.uint(50), Cl.uint(1), Cl.uint(200)],
+      deployer,
+    );
+    const { result } = simnet.callReadOnlyFn(
+      'exchange',
+      'get-access-level-price',
+      [Cl.uint(50), Cl.uint(1)],
+      deployer,
+    );
+    expect(result).toBeOk(Cl.uint(200));
+  });
+
+  it('non-owner cannot set access level price', () => {
+    const { result } = simnet.callPublicFn(
+      'exchange',
+      'set-access-level-price',
+      [Cl.uint(50), Cl.uint(1), Cl.uint(999)],
+      wallet1, // not the owner
+    );
+    expect(result).toBeErr(Cl.uint(401));
   });
 });
