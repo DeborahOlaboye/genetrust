@@ -18,6 +18,9 @@ const SESSION_KEY_ACTIVE_IDX = 'genetrust_active_account';
 const SESSION_KEY_EXPIRY     = 'genetrust_session_expiry';
 const SESSION_DURATION_MS    = 24 * 60 * 60 * 1000; // 24 hours
 
+// ── LocalStorage key (persists across tabs/reloads) ─────────────────────────
+const LS_KEY_PROVIDER = 'genetrust_last_provider';
+
 // ── Transaction batch status constants ─────────────────────────────────────
 export const TX_STATUS = {
   PENDING:  'pending',
@@ -641,6 +644,47 @@ class WalletService {
     }
 
     return results;
+  }
+
+  // ── Wallet state persistence (localStorage) ─────────────────────────────
+
+  /**
+   * Persist the last-used provider name to localStorage so the app can
+   * pre-select the same provider on the next page load.
+   * @param {string} providerName
+   */
+  persistProvider(providerName) {
+    if (typeof window === 'undefined') return;
+    try {
+      localStorage.setItem(LS_KEY_PROVIDER, providerName);
+    } catch (_) {
+      // Quota exceeded or private mode
+    }
+  }
+
+  /**
+   * Retrieve the last persisted provider name, or null if none.
+   * @returns {string|null}
+   */
+  getPersistedProvider() {
+    if (typeof window === 'undefined') return null;
+    try {
+      return localStorage.getItem(LS_KEY_PROVIDER);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /**
+   * Clear the persisted provider entry from localStorage.
+   */
+  clearPersistedProvider() {
+    if (typeof window === 'undefined') return;
+    try {
+      localStorage.removeItem(LS_KEY_PROVIDER);
+    } catch (_) {
+      // ignore
+    }
   }
 
   // ── Internal setter (kept for backward compat) ───────────────────────────
