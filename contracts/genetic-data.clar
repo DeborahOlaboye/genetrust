@@ -808,6 +808,34 @@
     )
 )
 
+;; Revoke a user's access to a dataset.
+;; Only the dataset owner or the contract owner may revoke access.
+;; Records the revocation in the access-history map for audit purposes.
+(define-public (revoke-access (data-id uint) (user principal))
+    (begin
+        (try! (check-paused))
+        (let (
+            (dataset (unwrap! (map-get? genetic-datasets { data-id: data-id }) ERR-DATA-NOT-FOUND))
+            (rights  (unwrap! (map-get? access-rights   { data-id: data-id, user: user }) ERR-DATA-NOT-FOUND))
+        )
+            (asserts!
+                (or (is-eq tx-sender (get owner dataset))
+                    (is-eq tx-sender (var-get contract-owner)))
+                ERR-NOT-AUTHORIZED
+            )
+            ;; Record the revocation in history before deleting the right
+            (try! (record-access-change data-id user (get access-level rights) u0))
+            (map-delete access-rights { data-id: data-id, user: user })
+            (ok (print {
+                event:   EVENT-ACCESS-REVOKED,
+                data-id: data-id,
+                user:    user,
+                block:   stacks-block-height
+            }))
+        )
+    )
+)
+
 ;; ── Clarity 4 contract-of / Dynamic Contract Discovery ───────────────────────
 ;; The functions below integrate with the on-chain contract-registry to enable
 ;; dynamic contract resolution.  The canonical Clarity 4 pattern is:
