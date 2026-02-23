@@ -520,3 +520,35 @@
         false
     )
 )
+
+;; ── Additional discovery helpers ──────────────────────────────────────────────
+
+;; Return true if any version has been registered under the given name.
+;; Off-chain callers can use this to cheaply check existence before querying
+;; further details.
+(define-read-only (is-contract-registered (name (string-utf8 100)))
+    (is-some (map-get? latest-versions { name: name }))
+)
+
+;; Atomic single-call lookup that returns the latest version's principal,
+;; active status, and capabilities together.  This reduces round-trips for
+;; callers that need all three fields before dispatching.
+;; Returns none when the name has never been registered.
+(define-read-only (lookup-and-verify
+    (name               (string-utf8 100))
+    (contract-principal principal))
+    (match (map-get? latest-versions { name: name })
+        latest
+            (match (map-get? contract-versions { name: name, version: (get version latest) })
+                entry (some {
+                    is-latest:          (is-eq (get contract-principal latest) contract-principal),
+                    is-active:          (get is-active entry),
+                    is-deprecated:      (get is-deprecated entry),
+                    capabilities:       (get capabilities entry),
+                    registered-version: (get version latest)
+                })
+                none
+            )
+        none
+    )
+)
