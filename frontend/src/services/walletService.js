@@ -258,6 +258,7 @@ class WalletService {
             this.setAddress(address);
             this._updateAddress();
             this._persistSessionExpiry();
+            this.persistProvider('stacks-connect');
             resolve(address);
           } else {
             reject(new Error('User did not sign in'));
@@ -282,6 +283,7 @@ class WalletService {
     this._ledgerTransport = null;
     this._txQueue = [];
     this._clearSession();
+    this.clearPersistedProvider();
     this.setAddress(null);
   }
 
