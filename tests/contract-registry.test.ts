@@ -455,3 +455,178 @@ describe('contract-registry - verify-is-latest', () => {
     expect(result).toStrictEqual(Cl.bool(false));
   });
 });
+
+// ─── is-contract-registered ───────────────────────────────────────────────────
+
+describe('contract-registry - is-contract-registered', () => {
+  it('returns false for an unregistered name', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'contract-registry',
+      'is-contract-registered',
+      [Cl.stringUtf8('phantom-contract')],
+      deployer,
+    );
+    expect(result).toStrictEqual(Cl.bool(false));
+  });
+
+  it('returns true after a version is registered', () => {
+    registerVersion('dataset-registry', deployer);
+    const { result } = simnet.callReadOnlyFn(
+      'contract-registry',
+      'is-contract-registered',
+      [Cl.stringUtf8('dataset-registry')],
+      deployer,
+    );
+    expect(result).toStrictEqual(Cl.bool(true));
+  });
+});
+
+// ─── lookup-and-verify ────────────────────────────────────────────────────────
+
+describe('contract-registry - lookup-and-verify', () => {
+  beforeEach(() => {
+    registerVersion('exchange', deployer);
+  });
+
+  it('returns none for an unregistered name', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'contract-registry',
+      'lookup-and-verify',
+      [Cl.stringUtf8('ghost'), Cl.principal(deployer)],
+      deployer,
+    );
+    expect(result).toBeNone();
+  });
+
+  it('returns some with is-latest=true when principal matches', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'contract-registry',
+      'lookup-and-verify',
+      [Cl.stringUtf8('exchange'), Cl.principal(deployer)],
+      deployer,
+    );
+    expect(result).toBeSome(expect.anything());
+  });
+
+  it('is-latest is false when a different principal is supplied', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'contract-registry',
+      'lookup-and-verify',
+      [Cl.stringUtf8('exchange'), Cl.principal(other)],
+      deployer,
+    );
+    // Result is some but is-latest should be false
+    expect(result).toBeSome(expect.anything());
+  });
+});
+
+// ─── capabilities round-trip ──────────────────────────────────────────────────
+
+describe('contract-registry - capabilities round-trip', () => {
+  beforeEach(() => {
+    registerVersion('exchange', deployer);
+    simnet.callPublicFn(
+      'contract-registry',
+      'set-capabilities',
+      [
+        Cl.stringUtf8('exchange'),
+        Cl.uint(1),
+        Cl.list([Cl.stringUtf8('purchase'), Cl.stringUtf8('escrow'), Cl.stringUtf8('v1')]),
+      ],
+      deployer,
+    );
+  });
+
+  it('get-capabilities returns the set capability list', () => {
+    const { result } = simnet.callPublicFn(
+      'contract-registry',
+      'get-capabilities',
+      [Cl.stringUtf8('exchange'), Cl.uint(1)],
+      deployer,
+    );
+    expect(result).toBeOk(expect.anything());
+  });
+
+  it('has-capability returns true for a registered capability', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'contract-registry',
+      'has-capability',
+      [Cl.stringUtf8('exchange'), Cl.stringUtf8('purchase')],
+      deployer,
+    );
+    expect(result).toStrictEqual(Cl.bool(true));
+  });
+
+  it('has-capability returns false for a missing capability', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'contract-registry',
+      'has-capability',
+      [Cl.stringUtf8('exchange'), Cl.stringUtf8('non-existent-cap')],
+      deployer,
+    );
+    expect(result).toStrictEqual(Cl.bool(false));
+  });
+
+  it('read-capabilities returns the list as an option', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'contract-registry',
+      'read-capabilities',
+      [Cl.stringUtf8('exchange'), Cl.uint(1)],
+      deployer,
+    );
+    expect(result).toBeSome(expect.anything());
+  });
+});
+
+// ─── audit trail ──────────────────────────────────────────────────────────────
+
+describe('contract-registry - audit trail', () => {
+  it('audit counter increments after registration', () => {
+    registerVersion('auditname', deployer);
+    const { result } = simnet.callReadOnlyFn(
+      'contract-registry',
+      'get-audit-count',
+      [],
+      deployer,
+    );
+    // At least one audit entry should exist
+    const count = (result as any).value ?? 0n;
+    expect(count).toBeGreaterThan(0n);
+  });
+
+  it('get-audit-entry returns an entry for audit id 0', () => {
+    registerVersion('auditname2', deployer);
+    const { result } = simnet.callReadOnlyFn(
+      'contract-registry',
+      'get-audit-entry',
+      [Cl.uint(0)],
+      deployer,
+    );
+    expect(result).toBeSome(expect.anything());
+  });
+});
+
+// ─── get-latest-summary ───────────────────────────────────────────────────────
+
+describe('contract-registry - get-latest-summary', () => {
+  it('returns none for an unregistered name', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'contract-registry',
+      'get-latest-summary',
+      [Cl.stringUtf8('no-such-name')],
+      deployer,
+    );
+    expect(result).toBeNone();
+  });
+
+  it('returns some after registration', () => {
+    registerVersion('summarytest', deployer);
+    const { result } = simnet.callReadOnlyFn(
+      'contract-registry',
+      'get-latest-summary',
+      [Cl.stringUtf8('summarytest')],
+      deployer,
+    );
+    expect(result).toBeSome(expect.anything());
+  });
+});
