@@ -808,6 +808,34 @@
     )
 )
 
+;; Revoke a user's access to a dataset.
+;; Only the dataset owner or the contract owner may revoke access.
+;; Records the revocation in the access-history map for audit purposes.
+(define-public (revoke-access (data-id uint) (user principal))
+    (begin
+        (try! (check-paused))
+        (let (
+            (dataset (unwrap! (map-get? genetic-datasets { data-id: data-id }) ERR-DATA-NOT-FOUND))
+            (rights  (unwrap! (map-get? access-rights   { data-id: data-id, user: user }) ERR-DATA-NOT-FOUND))
+        )
+            (asserts!
+                (or (is-eq tx-sender (get owner dataset))
+                    (is-eq tx-sender (var-get contract-owner)))
+                ERR-NOT-AUTHORIZED
+            )
+            ;; Record the revocation in history before deleting the right
+            (try! (record-access-change data-id user (get access-level rights) u0))
+            (map-delete access-rights { data-id: data-id, user: user })
+            (ok (print {
+                event:   EVENT-ACCESS-REVOKED,
+                data-id: data-id,
+                user:    user,
+                block:   stacks-block-height
+            }))
+        )
+    )
+)
+
 ;; ── Clarity 4 contract-of / Dynamic Contract Discovery ───────────────────────
 ;; The functions below integrate with the on-chain contract-registry to enable
 ;; dynamic contract resolution.  The canonical Clarity 4 pattern is:
@@ -861,14 +889,36 @@
     { note: u"Use resolve-contract or query .contract-registry directly", name: name }
 )
 
-;; Discover the capabilities declared by the latest version of a named contract.
-(define-public (discover-capabilities
-    (registry <contract-registry-trait>)
-    (name     (string-utf8 100)))
+;; Registry-verified access grant.
+;; Before recording the access right the function confirms that tx-sender is
+;; the currently registered exchange contract, preventing rogue callers from
+;; writing access records directly to this contract.
+(define-public (grant-access-with-registry
+    (registry     <contract-registry-trait>)
+    (data-id      uint)
+    (user         principal)
+    (access-level uint))
     (begin
         (try! (check-paused))
-        (let ((version-count (try! (contract-call? registry is-version-active name u1))))
-            (contract-call? registry get-capabilities name u1)
+        ;; Resolve the registered exchange principal and verify the caller.
+        (let ((registered-exchange (try! (contract-call? registry get-latest-version u"exchange"))))
+            (asserts! (is-eq tx-sender registered-exchange) ERR-NOT-AUTHORIZED)
+            ;; Delegate to the existing grant-access logic.
+            (grant-access data-id user access-level)
         )
+    )
+)
+
+;; Discover the capabilities declared by a specific named contract version.
+;; The caller supplies the version number so this works even when the latest
+;; version has been superseded by a newer one.
+(define-public (discover-capabilities
+    (registry <contract-registry-trait>)
+    (name     (string-utf8 100))
+    (version  uint))
+    (begin
+        (try! (check-paused))
+        (try! (contract-call? registry is-version-active name version))
+        (contract-call? registry get-capabilities name version)
     )
 )

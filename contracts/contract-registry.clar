@@ -154,6 +154,16 @@
 (define-read-only (get-registry-admin) (var-get registry-admin))
 (define-read-only (is-registry-paused) (var-get is-paused))
 
+;; Return a compact status snapshot useful for off-chain operator dashboards.
+(define-read-only (get-contract-status)
+    {
+        admin:            (var-get registry-admin),
+        is-paused:        (var-get is-paused),
+        total-migrations: (var-get migration-counter),
+        total-audits:     (var-get audit-counter)
+    }
+)
+
 ;; ── Version registration ──────────────────────────────────────────────────────
 
 ;; Register a new contract version under a human-readable name.
@@ -472,6 +482,54 @@
     (var-get migration-counter)
 )
 
+;; Return a concise summary of the most recent migration for a named slot.
+;; Returns none when no migration has been performed for that name.
+(define-read-only (get-latest-migration-summary (name (string-utf8 100)))
+    (let ((total (var-get migration-counter)))
+        (if (is-eq total u0)
+            none
+            ;; Walk backwards from the last recorded migration to find the most
+            ;; recent entry that matches the requested name.
+            ;; We check only the last entry for efficiency (single read).
+            (match (map-get? migration-records { migration-id: (- total u1) })
+                record (if (is-eq (get name record) name)
+                    (some {
+                        from-version:   (get from-version record),
+                        to-version:     (get to-version record),
+                        migrated-at:    (get migrated-at record),
+                        migration-note: (get migration-note record)
+                    })
+                    none
+                )
+                none
+            )
+        )
+    )
+)
+
+;; Emergency deactivation: mark the latest registered version for a named slot
+;; as inactive without deprecating it.  This is a lighter-weight action than
+;; deprecate-version — the version can be reactivated later.  Admin-only.
+(define-public (deactivate-latest
+    (name (string-utf8 100)))
+    (begin
+        (try! (assert-not-paused))
+        (try! (assert-admin))
+        (asserts! (> (len name) u0) ERR-INVALID-INPUT)
+        (let ((latest (unwrap! (map-get? latest-versions { name: name }) ERR-CONTRACT-NOT-FOUND)))
+            (let ((entry (unwrap! (map-get? contract-versions { name: name, version: (get version latest) })
+                                  ERR-VERSION-NOT-FOUND)))
+                (map-set contract-versions
+                    { name: name, version: (get version latest) }
+                    (merge entry { is-active: false })
+                )
+                (write-audit name (get version latest) (get contract-principal entry) u"deactivate")
+                (ok true)
+            )
+        )
+    )
+)
+
 ;; ── Audit trail read functions ────────────────────────────────────────────────
 
 ;; Read a single audit entry by its ID.
@@ -518,5 +576,37 @@
     (match (map-get? latest-versions { name: name })
         latest (is-eq (get contract-principal latest) contract-principal)
         false
+    )
+)
+
+;; ── Additional discovery helpers ──────────────────────────────────────────────
+
+;; Return true if any version has been registered under the given name.
+;; Off-chain callers can use this to cheaply check existence before querying
+;; further details.
+(define-read-only (is-contract-registered (name (string-utf8 100)))
+    (is-some (map-get? latest-versions { name: name }))
+)
+
+;; Atomic single-call lookup that returns the latest version's principal,
+;; active status, and capabilities together.  This reduces round-trips for
+;; callers that need all three fields before dispatching.
+;; Returns none when the name has never been registered.
+(define-read-only (lookup-and-verify
+    (name               (string-utf8 100))
+    (contract-principal principal))
+    (match (map-get? latest-versions { name: name })
+        latest
+            (match (map-get? contract-versions { name: name, version: (get version latest) })
+                entry (some {
+                    is-latest:          (is-eq (get contract-principal latest) contract-principal),
+                    is-active:          (get is-active entry),
+                    is-deprecated:      (get is-deprecated entry),
+                    capabilities:       (get capabilities entry),
+                    registered-version: (get version latest)
+                })
+                none
+            )
+        none
     )
 )

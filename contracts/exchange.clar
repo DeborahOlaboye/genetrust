@@ -824,6 +824,20 @@
     { note: u"Call .contract-registry get-version-count with name=exchange to get version count" }
 )
 
+;; Check whether the supplied principal is the registered latest exchange.
+;; Uses contract-of on the trait reference so the principal is extracted from
+;; the typed argument — not supplied raw — preventing spoofing.
+(define-public (is-exchange-registered
+    (registry <contract-registry-trait>)
+    (exchange  <dataset-registry-trait>))
+    (let (
+        (exchange-principal    (contract-of exchange))
+        (registered-principal  (try! (contract-call? registry get-latest-version u"exchange")))
+    )
+        (ok (is-eq exchange-principal registered-principal))
+    )
+)
+
 ;; ── Registry-verified access-level price lookup ───────────────────────────────
 ;; Returns the access-level price for a listing, guarded by a registry check.
 ;; The caller must supply the registry trait reference; the function uses
