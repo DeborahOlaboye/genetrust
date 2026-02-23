@@ -507,6 +507,29 @@
     )
 )
 
+;; Emergency deactivation: mark the latest registered version for a named slot
+;; as inactive without deprecating it.  This is a lighter-weight action than
+;; deprecate-version — the version can be reactivated later.  Admin-only.
+(define-public (deactivate-latest
+    (name (string-utf8 100)))
+    (begin
+        (try! (assert-not-paused))
+        (try! (assert-admin))
+        (asserts! (> (len name) u0) ERR-INVALID-INPUT)
+        (let ((latest (unwrap! (map-get? latest-versions { name: name }) ERR-CONTRACT-NOT-FOUND)))
+            (let ((entry (unwrap! (map-get? contract-versions { name: name, version: (get version latest) })
+                                  ERR-VERSION-NOT-FOUND)))
+                (map-set contract-versions
+                    { name: name, version: (get version latest) }
+                    (merge entry { is-active: false })
+                )
+                (write-audit name (get version latest) (get contract-principal entry) u"deactivate")
+                (ok true)
+            )
+        )
+    )
+)
+
 ;; ── Audit trail read functions ────────────────────────────────────────────────
 
 ;; Read a single audit entry by its ID.
