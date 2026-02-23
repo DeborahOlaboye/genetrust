@@ -861,14 +861,16 @@
     { note: u"Use resolve-contract or query .contract-registry directly", name: name }
 )
 
-;; Discover the capabilities declared by the latest version of a named contract.
+;; Discover the capabilities declared by a specific named contract version.
+;; The caller supplies the version number so this works even when the latest
+;; version has been superseded by a newer one.
 (define-public (discover-capabilities
     (registry <contract-registry-trait>)
-    (name     (string-utf8 100)))
+    (name     (string-utf8 100))
+    (version  uint))
     (begin
         (try! (check-paused))
-        (let ((version-count (try! (contract-call? registry is-version-active name u1))))
-            (contract-call? registry get-capabilities name u1)
-        )
+        (try! (contract-call? registry is-version-active name version))
+        (contract-call? registry get-capabilities name version)
     )
 )
