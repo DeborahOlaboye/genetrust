@@ -861,6 +861,26 @@
     { note: u"Use resolve-contract or query .contract-registry directly", name: name }
 )
 
+;; Registry-verified access grant.
+;; Before recording the access right the function confirms that tx-sender is
+;; the currently registered exchange contract, preventing rogue callers from
+;; writing access records directly to this contract.
+(define-public (grant-access-with-registry
+    (registry     <contract-registry-trait>)
+    (data-id      uint)
+    (user         principal)
+    (access-level uint))
+    (begin
+        (try! (check-paused))
+        ;; Resolve the registered exchange principal and verify the caller.
+        (let ((registered-exchange (try! (contract-call? registry get-latest-version u"exchange"))))
+            (asserts! (is-eq tx-sender registered-exchange) ERR-NOT-AUTHORIZED)
+            ;; Delegate to the existing grant-access logic.
+            (grant-access data-id user access-level)
+        )
+    )
+)
+
 ;; Discover the capabilities declared by a specific named contract version.
 ;; The caller supplies the version number so this works even when the latest
 ;; version has been superseded by a newer one.
