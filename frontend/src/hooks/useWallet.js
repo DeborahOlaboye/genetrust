@@ -18,7 +18,12 @@ const defaultConfig = {
       appName: 'GeneTrust',
       appIcon: typeof window !== 'undefined' ? `${window.location.origin}/logo192.png` : '/logo192.png',
       appDomain: typeof window !== 'undefined' ? window.location.hostname : 'genetrust.xyz'
-    }
+    },
+    // Ledger is opt-in: set enabled:true in config to activate
+    [PROVIDERS.LEDGER]: {
+      enabled: false,
+      network: process.env.NODE_ENV === 'production' ? 'mainnet' : 'testnet',
+    },
   }
 };
 
