@@ -1,5 +1,5 @@
 import { AppConfig, UserSession } from '@stacks/auth';
-import { createReownClient } from '@reown/appkit';
+import { createReownClient } from '../utils/reownClientStub';
 
 // Note: Removed wagmi/chains import as we'll use Stacks chain configuration
 

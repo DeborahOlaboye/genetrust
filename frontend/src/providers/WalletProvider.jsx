@@ -3,7 +3,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { WagmiProvider } from 'wagmi';
 import { config } from '../config/walletConfig';
-import { createReownClient } from '@reown/appkit';
+import { createReownClient } from '../utils/reownClientStub';
 import { useEffect, useState } from 'react';
 
 // Create a client for React Query

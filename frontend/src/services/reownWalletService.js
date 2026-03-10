@@ -1,5 +1,5 @@
 import { StacksMainnet, StacksTestnet } from '@stacks/network';
-import { createReownClient } from '@reown/appkit';
+import { createReownClient } from '../utils/reownClientStub';
 import { ErrorCodes, AppError, withErrorHandling } from '../utils/errorHandler';
 import { createLogger } from '../utils/logger';
 

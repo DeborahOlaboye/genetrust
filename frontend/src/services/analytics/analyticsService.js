@@ -1,6 +1,6 @@
 import { createLogger } from '../../utils/logger';
-import { providers, events, userProperties, ConsentCategories } from '../../config/analytics';
-import { consentManager } from './consentManager';
+import { providers, events, userProperties } from '../../config/analytics';
+import { consentManager, ConsentCategories } from './consentManager';
 
 const logger = createLogger({ module: 'AnalyticsService' });
 
