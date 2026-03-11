@@ -989,6 +989,46 @@
     )
 )
 
+;; ── Identity-gated governance read-only helpers ──────────────────────────────
+
+;; Return the signer proof record for a given principal
+(define-read-only (get-signer-proof (signer principal))
+    (map-get? signer-proofs { signer: signer })
+)
+
+;; Check whether a signer proof is active (no gas cost for callers)
+(define-read-only (signer-proof-active (signer principal))
+    (match (map-get? signer-proofs { signer: signer })
+        p (get is-active p)
+        false
+    )
+)
+
+;; Record data access only when the accessor has an active signer proof.
+;; This creates a verifiable audit chain: every access entry links to a
+;; verified on-chain identity.
+(define-public (audit-verified-access
+    (data-id  uint)
+    (purpose  uint)
+    (tx-id    (buff 32))
+    (pubkey   (buff 33)))
+    (begin
+        ;; Identity gate: accessor must prove key ownership
+        (let ((derived (unwrap! (principal-of? pubkey) ERR-INVALID-PUBKEY)))
+            (asserts! (is-eq derived tx-sender) ERR-PUBKEY-MISMATCH)
+            (asserts!
+                (match (map-get? signer-proofs { signer: tx-sender })
+                    p (get is-active p)
+                    false
+                )
+                ERR-SIGNER-NOT-VERIFIED
+            )
+            ;; Delegate to existing audit-access
+            (audit-access data-id purpose tx-id)
+        )
+    )
+)
+
 ;; Administrative functions
 (define-data-var contract-owner principal tx-sender)
 
