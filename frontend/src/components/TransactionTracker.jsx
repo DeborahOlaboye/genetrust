@@ -6,7 +6,7 @@
  * block reorg alerts for genetic data trades.
  */
 
-import { useCallback } from 'react';
+import PropTypes from 'prop-types';
 import { useTransactionStatus } from '../hooks/useTransactionStatus';
 import { NAKAMOTO } from '../services/walletService';
 
@@ -332,5 +332,16 @@ export function TransactionTracker({
 
   return <FullView txId={txId} shortId={shortId} title={title} status={status} meta={meta} />;
 }
+
+TransactionTracker.propTypes = {
+  txId:           PropTypes.string.isRequired,
+  title:          PropTypes.string,
+  onConfirmed:    PropTypes.func,
+  onFastFinality: PropTypes.func,
+  onSafeFinality: PropTypes.func,
+  onReorg:        PropTypes.func,
+  onFailed:       PropTypes.func,
+  compact:        PropTypes.bool,
+};
 
 export default TransactionTracker;
