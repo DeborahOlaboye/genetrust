@@ -14,6 +14,13 @@
 (define-constant ERR-INVALID-PURPOSE (err u400))
 (define-constant ERR-GDPR-RECORD-MISSING (err u404))
 (define-constant ERR-INVALID-BLOCK (err u400))
+(define-constant ERR-TRANSACTION-FAILED (err u500))
+
+;; Clarity 4 principal-of? identity error codes
+(define-constant ERR-INVALID-PUBKEY (err u422))
+(define-constant ERR-PUBKEY-MISMATCH (err u403))
+(define-constant ERR-SIGNER-NOT-VERIFIED (err u403))
+(define-constant ERR-MULTISIG-CONSENT-THRESHOLD (err u400))
 
 ;; Error context tracking
 (define-map error-context 
