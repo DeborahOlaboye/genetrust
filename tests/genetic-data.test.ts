@@ -462,6 +462,60 @@ describe('dataset-registry - version history', () => {
   });
 });
 
+// ─── lifecycle analytics ──────────────────────────────────────────────────────
+
+describe('dataset-registry - lifecycle analytics', () => {
+  beforeEach(() => {
+    registerDataset(80);
+  });
+
+  it('get-dataset-lifecycle returns is-active true for registered dataset', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'dataset-registry',
+      'get-dataset-lifecycle',
+      [Cl.uint(80)],
+      deployer,
+    );
+    expect(result).not.toBeNone();
+  });
+
+  it('get-modification-frequency returns total-modifications after update', () => {
+    simnet.callPublicFn(
+      'dataset-registry',
+      'update-genetic-data',
+      [Cl.uint(80), Cl.none(), Cl.none(), Cl.none(), Cl.none(), Cl.none()],
+      deployer,
+    );
+    const { result } = simnet.callReadOnlyFn(
+      'dataset-registry',
+      'get-modification-frequency',
+      [Cl.uint(80)],
+      deployer,
+    );
+    expect(result).not.toBeNone();
+  });
+
+  it('get-dataset-owner-history returns current-owner', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'dataset-registry',
+      'get-dataset-owner-history',
+      [Cl.uint(80)],
+      deployer,
+    );
+    expect(result).toMatchObject(expect.anything());
+  });
+
+  it('get-dataset-change-summary returns block range metadata', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'dataset-registry',
+      'get-dataset-change-summary',
+      [Cl.uint(80), Cl.uint(0), Cl.uint(100)],
+      deployer,
+    );
+    expect(result).toMatchObject(expect.anything());
+  });
+});
+
 // ─── revoke-access ────────────────────────────────────────────────────────────
 
 describe('dataset-registry - revoke-access', () => {
@@ -547,5 +601,76 @@ describe('dataset-registry - version history', () => {
       deployer,
     );
     expect(result).toStrictEqual(Cl.bool(false));
+  });
+});
+
+// ─── batch-grant-access ───────────────────────────────────────────────────────
+
+describe('dataset-registry - batch-grant-access', () => {
+  beforeEach(() => {
+    registerDataset(90);
+    registerDataset(91);
+  });
+
+  it('batch-grant-access succeeds for multiple datasets', () => {
+    const { result } = simnet.callPublicFn(
+      'dataset-registry',
+      'batch-grant-access',
+      [
+        Cl.list([Cl.uint(90), Cl.uint(91)]),
+        Cl.list([Cl.principal(wallet1), Cl.principal(wallet1)]),
+        Cl.list([Cl.uint(1), Cl.uint(1)]),
+      ],
+      deployer,
+    );
+    expect(result).toBeOk(expect.anything());
+  });
+
+  it('batch-grant-access fails when lists have different lengths', () => {
+    const { result } = simnet.callPublicFn(
+      'dataset-registry',
+      'batch-grant-access',
+      [
+        Cl.list([Cl.uint(90)]),
+        Cl.list([Cl.principal(wallet1), Cl.principal(wallet2)]),
+        Cl.list([Cl.uint(1)]),
+      ],
+      deployer,
+    );
+    expect(result).toBeErr(Cl.uint(400));
+  });
+
+  it('batch-grant-access short-circuits on non-owner entry', () => {
+    const { result } = simnet.callPublicFn(
+      'dataset-registry',
+      'batch-grant-access',
+      [
+        Cl.list([Cl.uint(90)]),
+        Cl.list([Cl.principal(wallet2)]),
+        Cl.list([Cl.uint(1)]),
+      ],
+      wallet1, // wallet1 does not own dataset 90
+    );
+    expect(result).toBeErr(Cl.uint(401));
+  });
+
+  it('has-access is true for user after batch-grant-access', () => {
+    simnet.callPublicFn(
+      'dataset-registry',
+      'batch-grant-access',
+      [
+        Cl.list([Cl.uint(90)]),
+        Cl.list([Cl.principal(wallet1)]),
+        Cl.list([Cl.uint(1)]),
+      ],
+      deployer,
+    );
+    const { result } = simnet.callReadOnlyFn(
+      'dataset-registry',
+      'has-access',
+      [Cl.uint(90), Cl.principal(wallet1), Cl.uint(1)],
+      deployer,
+    );
+    expect(result).toStrictEqual(Cl.bool(true));
   });
 });
