@@ -276,6 +276,56 @@
     )
 )
 
+;; Multi-signature consent proposal: requires N verified data subjects to
+;; co-sign before a major consent change goes live. Suitable for institutional
+;; genomic data sharing governed by multiple stakeholders.
+(define-public (propose-multisig-consent
+    (data-id           uint)
+    (new-research      bool)
+    (new-commercial    bool)
+    (new-clinical      bool)
+    (jurisdiction      uint)
+    (duration          uint)
+    (threshold         uint)
+    (pubkey            (buff 33)))
+    (begin
+        ;; Identity proof gate
+        (let ((derived (unwrap! (principal-of? pubkey) ERR-INVALID-PUBKEY)))
+            (asserts! (is-eq derived tx-sender) ERR-PUBKEY-MISMATCH)
+            (asserts! (>= threshold u2) ERR-MULTISIG-CONSENT-THRESHOLD)
+
+            (let ((proposal-id (var-get next-proposal-id)))
+                (map-set multisig-consent-proposals
+                    { data-id: data-id, proposal-id: proposal-id }
+                    {
+                        proposer:       tx-sender,
+                        new-research:   new-research,
+                        new-commercial: new-commercial,
+                        new-clinical:   new-clinical,
+                        jurisdiction:   jurisdiction,
+                        duration:       duration,
+                        threshold:      threshold,
+                        approval-count: u1,
+                        executed:       false,
+                        expires-at:     (+ stacks-block-height u288)
+                    }
+                )
+                (map-set multisig-consent-approvals
+                    { data-id: data-id, proposal-id: proposal-id, approver: tx-sender }
+                    { approved-at: stacks-block-height }
+                )
+                (var-set next-proposal-id (+ proposal-id u1))
+                (ok (print {
+                    event:       "multisig-consent-proposed",
+                    data-id:     data-id,
+                    proposal-id: proposal-id,
+                    proposer:    tx-sender
+                }))
+            )
+        )
+    )
+)
+
 ;; Set consent policy for genetic data
 (define-public (set-consent-policy
     (data-id uint)
