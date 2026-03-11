@@ -22,6 +22,19 @@
 ;; Role management
 (define-map roles principal uint)
 
+;; ── Identity verification via principal-of? ──────────────────────────────────
+;; On-chain proof that a principal controls the corresponding private key.
+;; Stored as the hash160 of their compressed pubkey so we never store raw keys.
+(define-map identity-proofs
+    { user: principal }
+    {
+        pubkey-hash:     (buff 20),   ;; hash160 of the compressed secp256k1 pubkey
+        verified-at:     uint,         ;; Block height of verification
+        is-active:       bool,
+        verification-count: uint       ;; How many times the proof was renewed
+    }
+)
+
 ;; Track contract admins
 (define-data-var admins (list 10 principal) (list tx-sender))
 
