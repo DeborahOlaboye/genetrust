@@ -103,6 +103,44 @@
 (define-data-var next-usage-id uint u1)
 (define-data-var next-log-id uint u1)
 
+;; ── Clarity 4 principal-of? signer identity maps ─────────────────────────────
+
+;; Track signers who have proved key ownership via principal-of?
+;; Used to enforce identity-gated consent operations.
+(define-map signer-proofs
+    { signer: principal }
+    {
+        pubkey-hash:  (buff 20),
+        verified-at:  uint,
+        is-active:    bool
+    }
+)
+
+;; Multi-signature consent: require N data subjects to co-sign a consent change
+;; before it takes effect (institutional data sharing governance).
+(define-map multisig-consent-proposals
+    { data-id: uint, proposal-id: uint }
+    {
+        proposer:        principal,
+        new-research:    bool,
+        new-commercial:  bool,
+        new-clinical:    bool,
+        jurisdiction:    uint,
+        duration:        uint,
+        threshold:       uint,
+        approval-count:  uint,
+        executed:        bool,
+        expires-at:      uint
+    }
+)
+
+(define-map multisig-consent-approvals
+    { data-id: uint, proposal-id: uint, approver: principal }
+    { approved-at: uint }
+)
+
+(define-data-var next-proposal-id uint u1)
+
 ;; Error context helper: Record error with context for debugging
 (define-private (record-error (error-code uint) (message (string-utf8 256)) (context (string-utf8 512)) (data-id uint))
     (let ((error-id (var-get error-counter)))
