@@ -723,6 +723,39 @@ class WalletService {
     this._address = address;
     this._emit();
   }
+
+  // ── Nakamoto fast-finality API ────────────────────────────────────────────
+
+  /**
+   * Fetch the raw transaction status from the Hiro Stacks API.
+   * Uses Nakamoto fast polling intervals.
+   *
+   * @async
+   * @param {string} txId - Transaction ID (hex)
+   * @returns {Promise<Object>} Raw API response object
+   */
+  async fetchTxStatus(txId) {
+    if (!txId) throw new Error('txId is required');
+    const url = `${NAKAMOTO.API_BASE}/extended/v1/tx/${txId}`;
+    const res  = await fetch(url);
+    if (!res.ok) throw new Error(`Hiro API error: ${res.status}`);
+    return res.json();
+  }
+
+  /**
+   * Get the current block height from the Hiro API.
+   * Used to calculate confirmation depth after Nakamoto fast blocks.
+   *
+   * @async
+   * @returns {Promise<number>} Current block height
+   */
+  async getCurrentBlockHeight() {
+    const url = `${NAKAMOTO.API_BASE}/extended/v1/block?limit=1`;
+    const res  = await fetch(url);
+    if (!res.ok) throw new Error(`Block height fetch failed: ${res.status}`);
+    const data = await res.json();
+    return data.results?.[0]?.height ?? 0;
+  }
 }
 
 /**
