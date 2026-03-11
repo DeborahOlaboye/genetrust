@@ -104,6 +104,7 @@ export function useTransactionStatus(txId, options = {}) {
 
   const poll = useCallback(async () => {
     if (!txId) return;
+    // eslint-disable-next-line no-use-before-define
 
     try {
       const txData = await walletService.fetchTxStatus(txId);
@@ -122,9 +123,10 @@ export function useTransactionStatus(txId, options = {}) {
         const count = await walletService.getConfirmationCount(txId);
         const level = walletService.classifyFinality(count);
 
-        // Store block hash for reorg detection
+        // Store block hash for reorg detection, then start watcher
         if (!blockHash.current && txData.block_hash) {
           blockHash.current = txData.block_hash;
+          startReorgWatch();
         }
 
         setPartial({
@@ -225,11 +227,12 @@ export function useTransactionStatus(txId, options = {}) {
     };
   }, [txId, poll, clearPoll, startElapsed, stopElapsed]);
 
-  // Stop timers on unmount
+  // Stop all timers on unmount
   useEffect(() => {
     return () => {
       clearPoll();
       stopElapsed();
+      if (reorgPollRef.current) clearTimeout(reorgPollRef.current);
     };
   }, [clearPoll, stopElapsed]);
 
