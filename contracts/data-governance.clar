@@ -326,6 +326,99 @@
     )
 )
 
+;; Approve a multi-sig consent proposal with identity proof.
+(define-public (approve-multisig-consent
+    (data-id     uint)
+    (proposal-id uint)
+    (pubkey      (buff 33)))
+    (begin
+        (let ((derived (unwrap! (principal-of? pubkey) ERR-INVALID-PUBKEY)))
+            (asserts! (is-eq derived tx-sender) ERR-PUBKEY-MISMATCH)
+            (asserts!
+                (match (map-get? signer-proofs { signer: tx-sender })
+                    p (get is-active p)
+                    false
+                )
+                ERR-SIGNER-NOT-VERIFIED
+            )
+            (let ((proposal (unwrap!
+                    (map-get? multisig-consent-proposals { data-id: data-id, proposal-id: proposal-id })
+                    ERR-NOT-FOUND)))
+                (asserts! (not (get executed proposal)) ERR-NOT-AUTHORIZED)
+                (asserts! (< stacks-block-height (get expires-at proposal)) ERR-EXPIRED)
+                (asserts!
+                    (is-none (map-get? multisig-consent-approvals
+                        { data-id: data-id, proposal-id: proposal-id, approver: tx-sender }))
+                    ERR-ALREADY-EXISTS
+                )
+                (map-set multisig-consent-approvals
+                    { data-id: data-id, proposal-id: proposal-id, approver: tx-sender }
+                    { approved-at: stacks-block-height }
+                )
+                (let ((new-count (+ (get approval-count proposal) u1)))
+                    (map-set multisig-consent-proposals
+                        { data-id: data-id, proposal-id: proposal-id }
+                        (merge proposal { approval-count: new-count })
+                    )
+                    (ok (print {
+                        event:          "multisig-consent-approved",
+                        data-id:        data-id,
+                        proposal-id:    proposal-id,
+                        approval-count: new-count
+                    }))
+                )
+            )
+        )
+    )
+)
+
+;; Execute a multi-sig consent proposal once threshold is reached.
+(define-public (execute-multisig-consent
+    (data-id     uint)
+    (proposal-id uint)
+    (pubkey      (buff 33)))
+    (begin
+        (let ((derived (unwrap! (principal-of? pubkey) ERR-INVALID-PUBKEY)))
+            (asserts! (is-eq derived tx-sender) ERR-PUBKEY-MISMATCH)
+            (let ((proposal (unwrap!
+                    (map-get? multisig-consent-proposals { data-id: data-id, proposal-id: proposal-id })
+                    ERR-NOT-FOUND)))
+                (asserts! (not (get executed proposal)) ERR-NOT-AUTHORIZED)
+                (asserts! (< stacks-block-height (get expires-at proposal)) ERR-EXPIRED)
+                (asserts!
+                    (>= (get approval-count proposal) (get threshold proposal))
+                    ERR-MULTISIG-CONSENT-THRESHOLD
+                )
+                ;; Mark executed before write
+                (map-set multisig-consent-proposals
+                    { data-id: data-id, proposal-id: proposal-id }
+                    (merge proposal { executed: true })
+                )
+                ;; Write the new consent policy
+                (try! (amend-consent-policy
+                    data-id
+                    (get new-research proposal)
+                    (get new-commercial proposal)
+                    (get new-clinical proposal)
+                    (get jurisdiction proposal)
+                    (get duration proposal)
+                ))
+                (ok (print {
+                    event:       "multisig-consent-executed",
+                    data-id:     data-id,
+                    proposal-id: proposal-id,
+                    by:          tx-sender
+                }))
+            )
+        )
+    )
+)
+
+;; Read-only: get multisig consent proposal
+(define-read-only (get-multisig-consent-proposal (data-id uint) (proposal-id uint))
+    (map-get? multisig-consent-proposals { data-id: data-id, proposal-id: proposal-id })
+)
+
 ;; Set consent policy for genetic data
 (define-public (set-consent-policy
     (data-id uint)
