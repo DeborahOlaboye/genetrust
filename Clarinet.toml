@@ -8,7 +8,7 @@ requirements = []
 
 [contracts.dataset-registry]
 path = 'contracts/genetic-data.clar'
-clarity_version = 3
+clarity_version = 4
 epoch = 3.1
 
 [contracts.dataset-registry-trait]
@@ -26,10 +26,15 @@ path = 'contracts/attestations.clar'
 clarity_version = 3
 epoch = 3.0
 
+[contracts.access-control]
+path = 'contracts/access-control.clar'
+clarity_version = 4
+epoch = 3.1
+
 [contracts.data-governance]
 path = 'contracts/data-governance.clar'
-clarity_version = 3
-epoch = 3.0
+clarity_version = 4
+epoch = 3.1
 
 [contracts.bitcoin-validator-trait]
 path = 'contracts/bitcoin-validator-trait.clar'

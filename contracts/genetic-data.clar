@@ -22,6 +22,15 @@
 (define-constant ERR-INVALID-PRICE (err u400))
 (define-constant ERR-INVALID-INPUT (err u400))
 
+;; Clarity 4 principal-of? / delegation error codes
+(define-constant ERR-INVALID-PUBKEY (err u422))
+(define-constant ERR-PUBKEY-MISMATCH (err u403))
+(define-constant ERR-DELEGATION-NOT-FOUND (err u404))
+(define-constant ERR-DELEGATION-EXPIRED (err u403))
+(define-constant ERR-MULTISIG-THRESHOLD (err u400))
+(define-constant ERR-ALREADY-APPROVED (err u409))
+(define-constant ERR-ACTION-NOT-FOUND (err u404))
+
 ;; Error context tracking
 (define-map error-context 
     { error-id: uint }
@@ -133,12 +142,67 @@
     { count: uint }
 )
 
+;; ── Clarity 4 principal-of? delegation maps ─────────────────────────────────
+
+;; Track active delegations: owner delegates read/write access to another principal
+;; using cryptographic proof via principal-of? on a compressed secp256k1 pubkey
+(define-map delegations
+    { data-id: uint, delegator: principal }
+    {
+        delegate:       principal,   ;; Who receives the delegated access
+        access-level:   uint,        ;; What level they can exercise
+        granted-at:     uint,        ;; Block height when delegation was made
+        expires-at:     uint,        ;; Block height when delegation expires
+        pubkey-hash:    (buff 20),   ;; hash160 of the delegator's pubkey used
+        is-active:      bool
+    }
+)
+
+;; Delegation expiration window: ~7 days at Nakamoto block times
+(define-constant DELEGATION-EXPIRY-BLOCKS u1008)
+
+;; ── Multi-signature support maps ─────────────────────────────────────────────
+;; Multi-sig actions require N-of-M approvals from verified principals
+
+;; Pending multisig actions (e.g. ownership transfer, bulk access grant)
+(define-map multisig-actions
+    { action-id: uint }
+    {
+        data-id:       uint,
+        action-type:   (string-utf8 50),    ;; "transfer-ownership" | "bulk-grant" | "deactivate"
+        proposer:      principal,
+        target:        principal,            ;; The beneficiary/new owner
+        access-level:  uint,
+        threshold:     uint,                 ;; Required number of approvals
+        approval-count:uint,
+        executed:      bool,
+        proposed-at:   uint,
+        expires-at:    uint
+    }
+)
+
+;; Track which principals have approved a given action
+(define-map multisig-approvals
+    { action-id: uint, approver: principal }
+    { approved-at: uint, pubkey-hash: (buff 20) }
+)
+
+;; Global action counter
+(define-data-var next-action-id uint u1)
+
+;; Multisig expiry: ~3 days
+(define-constant MULTISIG-EXPIRY-BLOCKS u432)
+
 ;; Events
 ;; Use more efficient event encoding
 (define-constant EVENT-DATA-REGISTERED 0x01)
 (define-constant EVENT-DATA-UPDATED 0x02)
 (define-constant EVENT-ACCESS-GRANTED 0x03)
 (define-constant EVENT-ACCESS-REVOKED 0x04)
+(define-constant EVENT-DELEGATION-GRANTED 0x05)
+(define-constant EVENT-DELEGATION-REVOKED 0x06)
+(define-constant EVENT-MULTISIG-PROPOSED 0x07)
+(define-constant EVENT-MULTISIG-EXECUTED 0x08)
 
 ;; Security Helpers
 (define-read-only (is-contract-paused) (var-get is-paused))
@@ -832,6 +896,268 @@
                 user:    user,
                 block:   stacks-block-height
             }))
+        )
+    )
+)
+
+;; ── Clarity 4 principal-of? Delegation API ───────────────────────────────────
+
+;; Secure delegation with cryptographic verification.
+;; The caller provides their compressed secp256k1 public key (33 bytes).
+;; principal-of? derives the Stacks principal from the pubkey and asserts it
+;; matches tx-sender — proving ownership of the private key without revealing it.
+;;
+;; This implements the pattern from issue #97:
+;;   (let ((derived-principal (unwrap! (principal-of? pubkey) ERR-INVALID-PUBKEY)))
+;;     (asserts! (is-eq derived-principal tx-sender) ERR-PUBKEY-MISMATCH)
+;;     (grant-access data-id delegate access-level))
+(define-public (delegate-access
+    (data-id      uint)
+    (delegate     principal)
+    (access-level uint)
+    (pubkey       (buff 33)))   ;; compressed secp256k1 public key (33 bytes)
+    (begin
+        (try! (check-paused))
+        (try! (check-rate-limit tx-sender))
+
+        ;; Cryptographic identity verification via Clarity 4 principal-of?
+        (let ((derived-principal (unwrap! (principal-of? pubkey) ERR-INVALID-PUBKEY)))
+            ;; Verify the pubkey belongs to the caller — no key exposure needed
+            (asserts! (is-eq derived-principal tx-sender) ERR-PUBKEY-MISMATCH)
+
+            ;; Caller must own the dataset to delegate access
+            (try! (only-owner data-id))
+
+            ;; Validate access level
+            (try! (validate-access-level access-level))
+
+            ;; Record the delegation
+            (map-set delegations
+                { data-id: data-id, delegator: tx-sender }
+                {
+                    delegate:       delegate,
+                    access-level:   access-level,
+                    granted-at:     stacks-block-height,
+                    expires-at:     (+ stacks-block-height DELEGATION-EXPIRY-BLOCKS),
+                    pubkey-hash:    (hash160 pubkey),
+                    is-active:      true
+                }
+            )
+
+            ;; Also write the actual access right so delegate can use it
+            (grant-access data-id delegate access-level)
+        )
+    )
+)
+
+;; ── Multi-signature API ───────────────────────────────────────────────────────
+
+;; Propose a multi-sig action for a dataset.
+;; The proposer's identity is verified via principal-of? before the proposal
+;; is registered on-chain.
+(define-public (propose-multisig-action
+    (data-id      uint)
+    (action-type  (string-utf8 50))
+    (target       principal)
+    (access-level uint)
+    (threshold    uint)
+    (pubkey       (buff 33)))
+    (begin
+        (try! (check-paused))
+        (try! (check-rate-limit tx-sender))
+
+        ;; Identity verification — proposer must prove key ownership
+        (let ((derived (unwrap! (principal-of? pubkey) ERR-INVALID-PUBKEY)))
+            (asserts! (is-eq derived tx-sender) ERR-PUBKEY-MISMATCH)
+
+            ;; Proposer must own the dataset
+            (try! (only-owner data-id))
+
+            ;; Threshold must be at least 2 for multi-sig
+            (asserts! (>= threshold u2) ERR-MULTISIG-THRESHOLD)
+
+            (let ((action-id (var-get next-action-id)))
+                (map-set multisig-actions
+                    { action-id: action-id }
+                    {
+                        data-id:        data-id,
+                        action-type:    action-type,
+                        proposer:       tx-sender,
+                        target:         target,
+                        access-level:   access-level,
+                        threshold:      threshold,
+                        approval-count: u1,   ;; Proposer auto-approves
+                        executed:       false,
+                        proposed-at:    stacks-block-height,
+                        expires-at:     (+ stacks-block-height MULTISIG-EXPIRY-BLOCKS)
+                    }
+                )
+                ;; Record proposer's auto-approval
+                (map-set multisig-approvals
+                    { action-id: action-id, approver: tx-sender }
+                    { approved-at: stacks-block-height, pubkey-hash: (hash160 pubkey) }
+                )
+                (var-set next-action-id (+ action-id u1))
+                (ok (print { event: "multisig-proposed", action-id: action-id, data-id: data-id }))
+            )
+        )
+    )
+)
+
+;; Approve a pending multi-sig action.
+;; Each approver provides their compressed pubkey; principal-of? proves identity.
+(define-public (approve-multisig-action (action-id uint) (pubkey (buff 33)))
+    (begin
+        (try! (check-paused))
+
+        ;; Verify approver identity
+        (let ((derived (unwrap! (principal-of? pubkey) ERR-INVALID-PUBKEY)))
+            (asserts! (is-eq derived tx-sender) ERR-PUBKEY-MISMATCH)
+
+            (let ((action (unwrap! (map-get? multisig-actions { action-id: action-id }) ERR-ACTION-NOT-FOUND)))
+                ;; Action must not be expired or already executed
+                (asserts! (not (get executed action)) ERR-NOT-AUTHORIZED)
+                (asserts! (< stacks-block-height (get expires-at action)) ERR-DELEGATION-EXPIRED)
+
+                ;; Prevent double-approval
+                (asserts!
+                    (is-none (map-get? multisig-approvals { action-id: action-id, approver: tx-sender }))
+                    ERR-ALREADY-APPROVED
+                )
+
+                ;; Record this approval
+                (map-set multisig-approvals
+                    { action-id: action-id, approver: tx-sender }
+                    { approved-at: stacks-block-height, pubkey-hash: (hash160 pubkey) }
+                )
+
+                ;; Increment approval count
+                (let ((new-count (+ (get approval-count action) u1)))
+                    (map-set multisig-actions
+                        { action-id: action-id }
+                        (merge action { approval-count: new-count })
+                    )
+                    (ok (print {
+                        event:          "multisig-approved",
+                        action-id:      action-id,
+                        approver:       tx-sender,
+                        approval-count: new-count,
+                        threshold:      (get threshold action)
+                    }))
+                )
+            )
+        )
+    )
+)
+
+;; Execute a multi-sig action once threshold is reached.
+;; Dispatches to the appropriate internal handler based on action-type.
+(define-public (execute-multisig-action (action-id uint) (pubkey (buff 33)))
+    (begin
+        (try! (check-paused))
+
+        ;; Executor identity verification
+        (let ((derived (unwrap! (principal-of? pubkey) ERR-INVALID-PUBKEY)))
+            (asserts! (is-eq derived tx-sender) ERR-PUBKEY-MISMATCH)
+
+            (let ((action (unwrap! (map-get? multisig-actions { action-id: action-id }) ERR-ACTION-NOT-FOUND)))
+                (asserts! (not (get executed action)) ERR-NOT-AUTHORIZED)
+                (asserts! (< stacks-block-height (get expires-at action)) ERR-DELEGATION-EXPIRED)
+
+                ;; Check threshold has been met
+                (asserts! (>= (get approval-count action) (get threshold action)) ERR-MULTISIG-THRESHOLD)
+
+                ;; Mark executed before dispatch (re-entrancy guard)
+                (map-set multisig-actions
+                    { action-id: action-id }
+                    (merge action { executed: true })
+                )
+
+                ;; Dispatch to action handler
+                (let ((result
+                    (if (is-eq (get action-type action) u"transfer-ownership")
+                        (transfer-ownership (get data-id action) (get target action))
+                        (if (is-eq (get action-type action) u"grant-access")
+                            (grant-access (get data-id action) (get target action) (get access-level action))
+                            (if (is-eq (get action-type action) u"revoke-access")
+                                (revoke-access (get data-id action) (get target action))
+                                ERR-INVALID-INPUT
+                            )
+                        )
+                    )
+                ))
+                    (try! result)
+                    (ok (print { event: "multisig-executed", action-id: action-id, by: tx-sender }))
+                )
+            )
+        )
+    )
+)
+
+;; Read-only: Get multisig action details
+(define-read-only (get-multisig-action (action-id uint))
+    (map-get? multisig-actions { action-id: action-id })
+)
+
+;; Read-only: Check if a principal has approved an action
+(define-read-only (has-approved-action (action-id uint) (approver principal))
+    (is-some (map-get? multisig-approvals { action-id: action-id, approver: approver }))
+)
+
+;; Verify that an active, non-expired delegation exists for a data-id
+(define-read-only (verify-delegation (data-id uint) (delegator principal))
+    (match (map-get? delegations { data-id: data-id, delegator: delegator })
+        delegation (ok {
+            is-valid:       (and
+                                (get is-active delegation)
+                                (< stacks-block-height (get expires-at delegation))
+                            ),
+            delegate:       (get delegate delegation),
+            access-level:   (get access-level delegation),
+            expires-at:     (get expires-at delegation),
+            granted-at:     (get granted-at delegation)
+        })
+        ERR-DELEGATION-NOT-FOUND
+    )
+)
+
+;; Get delegation details for off-chain consumers
+(define-read-only (get-delegation (data-id uint) (delegator principal))
+    (map-get? delegations { data-id: data-id, delegator: delegator })
+)
+
+;; Revoke an active delegation. The caller must be the original delegator.
+;; Also revokes the delegate's access right on the dataset.
+(define-public (revoke-delegation (data-id uint) (pubkey (buff 33)))
+    (begin
+        (try! (check-paused))
+
+        ;; Verify caller owns the pubkey via principal-of?
+        (let ((derived-principal (unwrap! (principal-of? pubkey) ERR-INVALID-PUBKEY)))
+            (asserts! (is-eq derived-principal tx-sender) ERR-PUBKEY-MISMATCH)
+
+            ;; Load the delegation
+            (let ((delegation (unwrap!
+                    (map-get? delegations { data-id: data-id, delegator: tx-sender })
+                    ERR-DELEGATION-NOT-FOUND)))
+
+                ;; Mark inactive instead of deleting, preserving audit trail
+                (map-set delegations
+                    { data-id: data-id, delegator: tx-sender }
+                    (merge delegation { is-active: false })
+                )
+
+                ;; Revoke the delegate's access right
+                (try! (revoke-access data-id (get delegate delegation)))
+
+                (ok (print {
+                    event:      "delegation-revoked",
+                    data-id:    data-id,
+                    delegator:  tx-sender,
+                    delegate:   (get delegate delegation),
+                    block:      stacks-block-height
+                }))
+            )
         )
     )
 )

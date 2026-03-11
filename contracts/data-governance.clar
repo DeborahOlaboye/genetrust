@@ -14,6 +14,13 @@
 (define-constant ERR-INVALID-PURPOSE (err u400))
 (define-constant ERR-GDPR-RECORD-MISSING (err u404))
 (define-constant ERR-INVALID-BLOCK (err u400))
+(define-constant ERR-TRANSACTION-FAILED (err u500))
+
+;; Clarity 4 principal-of? identity error codes
+(define-constant ERR-INVALID-PUBKEY (err u422))
+(define-constant ERR-PUBKEY-MISMATCH (err u403))
+(define-constant ERR-SIGNER-NOT-VERIFIED (err u403))
+(define-constant ERR-MULTISIG-CONSENT-THRESHOLD (err u400))
 
 ;; Error context tracking
 (define-map error-context 
@@ -96,6 +103,44 @@
 (define-data-var next-usage-id uint u1)
 (define-data-var next-log-id uint u1)
 
+;; ── Clarity 4 principal-of? signer identity maps ─────────────────────────────
+
+;; Track signers who have proved key ownership via principal-of?
+;; Used to enforce identity-gated consent operations.
+(define-map signer-proofs
+    { signer: principal }
+    {
+        pubkey-hash:  (buff 20),
+        verified-at:  uint,
+        is-active:    bool
+    }
+)
+
+;; Multi-signature consent: require N data subjects to co-sign a consent change
+;; before it takes effect (institutional data sharing governance).
+(define-map multisig-consent-proposals
+    { data-id: uint, proposal-id: uint }
+    {
+        proposer:        principal,
+        new-research:    bool,
+        new-commercial:  bool,
+        new-clinical:    bool,
+        jurisdiction:    uint,
+        duration:        uint,
+        threshold:       uint,
+        approval-count:  uint,
+        executed:        bool,
+        expires-at:      uint
+    }
+)
+
+(define-map multisig-consent-approvals
+    { data-id: uint, proposal-id: uint, approver: principal }
+    { approved-at: uint }
+)
+
+(define-data-var next-proposal-id uint u1)
+
 ;; Error context helper: Record error with context for debugging
 (define-private (record-error (error-code uint) (message (string-utf8 256)) (context (string-utf8 512)) (data-id uint))
     (let ((error-id (var-get error-counter)))
@@ -159,6 +204,219 @@
 (define-map consent-change-count
     { data-id: uint }
     { count: uint }
+)
+
+;; ── Clarity 4 principal-of? Governance API ───────────────────────────────────
+
+;; Register a signer proof in the governance contract.
+;; Callers provide their compressed pubkey; principal-of? proves they hold the
+;; corresponding private key without revealing it.
+(define-public (register-signer-proof (pubkey (buff 33)))
+    (let ((derived (unwrap! (principal-of? pubkey) ERR-INVALID-PUBKEY)))
+        (asserts! (is-eq derived tx-sender) ERR-PUBKEY-MISMATCH)
+        (map-set signer-proofs
+            { signer: tx-sender }
+            {
+                pubkey-hash:  (hash160 pubkey),
+                verified-at:  stacks-block-height,
+                is-active:    true
+            }
+        )
+        (ok (print {
+            event:       "signer-registered",
+            signer:      tx-sender,
+            pubkey-hash: (hash160 pubkey),
+            block:       stacks-block-height
+        }))
+    )
+)
+
+;; Read-only: check if a signer has an active proof
+(define-read-only (is-signer-verified (signer principal))
+    (match (map-get? signer-proofs { signer: signer })
+        proof (ok (get is-active proof))
+        ERR-SIGNER-NOT-VERIFIED
+    )
+)
+
+;; Consent operations gated by identity: the owner must prove key ownership
+;; via principal-of? before amending consent, strengthening GDPR accountability.
+(define-public (amend-consent-with-proof
+    (data-id         uint)
+    (research-consent  bool)
+    (commercial-consent bool)
+    (clinical-consent  bool)
+    (jurisdiction    uint)
+    (consent-duration uint)
+    (pubkey          (buff 33)))
+    (begin
+        ;; Cryptographic identity gate
+        (let ((derived (unwrap! (principal-of? pubkey) ERR-INVALID-PUBKEY)))
+            (asserts! (is-eq derived tx-sender) ERR-PUBKEY-MISMATCH)
+
+            ;; Caller must have a registered signer proof
+            (asserts!
+                (match (map-get? signer-proofs { signer: tx-sender })
+                    p (get is-active p)
+                    false
+                )
+                ERR-SIGNER-NOT-VERIFIED
+            )
+
+            ;; Delegate to the existing amend-consent-policy logic
+            (amend-consent-policy
+                data-id
+                research-consent
+                commercial-consent
+                clinical-consent
+                jurisdiction
+                consent-duration
+            )
+        )
+    )
+)
+
+;; Multi-signature consent proposal: requires N verified data subjects to
+;; co-sign before a major consent change goes live. Suitable for institutional
+;; genomic data sharing governed by multiple stakeholders.
+(define-public (propose-multisig-consent
+    (data-id           uint)
+    (new-research      bool)
+    (new-commercial    bool)
+    (new-clinical      bool)
+    (jurisdiction      uint)
+    (duration          uint)
+    (threshold         uint)
+    (pubkey            (buff 33)))
+    (begin
+        ;; Identity proof gate
+        (let ((derived (unwrap! (principal-of? pubkey) ERR-INVALID-PUBKEY)))
+            (asserts! (is-eq derived tx-sender) ERR-PUBKEY-MISMATCH)
+            (asserts! (>= threshold u2) ERR-MULTISIG-CONSENT-THRESHOLD)
+
+            (let ((proposal-id (var-get next-proposal-id)))
+                (map-set multisig-consent-proposals
+                    { data-id: data-id, proposal-id: proposal-id }
+                    {
+                        proposer:       tx-sender,
+                        new-research:   new-research,
+                        new-commercial: new-commercial,
+                        new-clinical:   new-clinical,
+                        jurisdiction:   jurisdiction,
+                        duration:       duration,
+                        threshold:      threshold,
+                        approval-count: u1,
+                        executed:       false,
+                        expires-at:     (+ stacks-block-height u288)
+                    }
+                )
+                (map-set multisig-consent-approvals
+                    { data-id: data-id, proposal-id: proposal-id, approver: tx-sender }
+                    { approved-at: stacks-block-height }
+                )
+                (var-set next-proposal-id (+ proposal-id u1))
+                (ok (print {
+                    event:       "multisig-consent-proposed",
+                    data-id:     data-id,
+                    proposal-id: proposal-id,
+                    proposer:    tx-sender
+                }))
+            )
+        )
+    )
+)
+
+;; Approve a multi-sig consent proposal with identity proof.
+(define-public (approve-multisig-consent
+    (data-id     uint)
+    (proposal-id uint)
+    (pubkey      (buff 33)))
+    (begin
+        (let ((derived (unwrap! (principal-of? pubkey) ERR-INVALID-PUBKEY)))
+            (asserts! (is-eq derived tx-sender) ERR-PUBKEY-MISMATCH)
+            (asserts!
+                (match (map-get? signer-proofs { signer: tx-sender })
+                    p (get is-active p)
+                    false
+                )
+                ERR-SIGNER-NOT-VERIFIED
+            )
+            (let ((proposal (unwrap!
+                    (map-get? multisig-consent-proposals { data-id: data-id, proposal-id: proposal-id })
+                    ERR-NOT-FOUND)))
+                (asserts! (not (get executed proposal)) ERR-NOT-AUTHORIZED)
+                (asserts! (< stacks-block-height (get expires-at proposal)) ERR-EXPIRED)
+                (asserts!
+                    (is-none (map-get? multisig-consent-approvals
+                        { data-id: data-id, proposal-id: proposal-id, approver: tx-sender }))
+                    ERR-ALREADY-EXISTS
+                )
+                (map-set multisig-consent-approvals
+                    { data-id: data-id, proposal-id: proposal-id, approver: tx-sender }
+                    { approved-at: stacks-block-height }
+                )
+                (let ((new-count (+ (get approval-count proposal) u1)))
+                    (map-set multisig-consent-proposals
+                        { data-id: data-id, proposal-id: proposal-id }
+                        (merge proposal { approval-count: new-count })
+                    )
+                    (ok (print {
+                        event:          "multisig-consent-approved",
+                        data-id:        data-id,
+                        proposal-id:    proposal-id,
+                        approval-count: new-count
+                    }))
+                )
+            )
+        )
+    )
+)
+
+;; Execute a multi-sig consent proposal once threshold is reached.
+(define-public (execute-multisig-consent
+    (data-id     uint)
+    (proposal-id uint)
+    (pubkey      (buff 33)))
+    (begin
+        (let ((derived (unwrap! (principal-of? pubkey) ERR-INVALID-PUBKEY)))
+            (asserts! (is-eq derived tx-sender) ERR-PUBKEY-MISMATCH)
+            (let ((proposal (unwrap!
+                    (map-get? multisig-consent-proposals { data-id: data-id, proposal-id: proposal-id })
+                    ERR-NOT-FOUND)))
+                (asserts! (not (get executed proposal)) ERR-NOT-AUTHORIZED)
+                (asserts! (< stacks-block-height (get expires-at proposal)) ERR-EXPIRED)
+                (asserts!
+                    (>= (get approval-count proposal) (get threshold proposal))
+                    ERR-MULTISIG-CONSENT-THRESHOLD
+                )
+                ;; Mark executed before write
+                (map-set multisig-consent-proposals
+                    { data-id: data-id, proposal-id: proposal-id }
+                    (merge proposal { executed: true })
+                )
+                ;; Write the new consent policy
+                (try! (amend-consent-policy
+                    data-id
+                    (get new-research proposal)
+                    (get new-commercial proposal)
+                    (get new-clinical proposal)
+                    (get jurisdiction proposal)
+                    (get duration proposal)
+                ))
+                (ok (print {
+                    event:       "multisig-consent-executed",
+                    data-id:     data-id,
+                    proposal-id: proposal-id,
+                    by:          tx-sender
+                }))
+            )
+        )
+    )
+)
+
+;; Read-only: get multisig consent proposal
+(define-read-only (get-multisig-consent-proposal (data-id uint) (proposal-id uint))
+    (map-get? multisig-consent-proposals { data-id: data-id, proposal-id: proposal-id })
 )
 
 ;; Set consent policy for genetic data
@@ -727,6 +985,46 @@
                 )
             })
             (err ERR-NOT-FOUND)
+        )
+    )
+)
+
+;; ── Identity-gated governance read-only helpers ──────────────────────────────
+
+;; Return the signer proof record for a given principal
+(define-read-only (get-signer-proof (signer principal))
+    (map-get? signer-proofs { signer: signer })
+)
+
+;; Check whether a signer proof is active (no gas cost for callers)
+(define-read-only (signer-proof-active (signer principal))
+    (match (map-get? signer-proofs { signer: signer })
+        p (get is-active p)
+        false
+    )
+)
+
+;; Record data access only when the accessor has an active signer proof.
+;; This creates a verifiable audit chain: every access entry links to a
+;; verified on-chain identity.
+(define-public (audit-verified-access
+    (data-id  uint)
+    (purpose  uint)
+    (tx-id    (buff 32))
+    (pubkey   (buff 33)))
+    (begin
+        ;; Identity gate: accessor must prove key ownership
+        (let ((derived (unwrap! (principal-of? pubkey) ERR-INVALID-PUBKEY)))
+            (asserts! (is-eq derived tx-sender) ERR-PUBKEY-MISMATCH)
+            (asserts!
+                (match (map-get? signer-proofs { signer: tx-sender })
+                    p (get is-active p)
+                    false
+                )
+                ERR-SIGNER-NOT-VERIFIED
+            )
+            ;; Delegate to existing audit-access
+            (audit-access data-id purpose tx-id)
         )
     )
 )
