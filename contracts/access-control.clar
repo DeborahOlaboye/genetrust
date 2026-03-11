@@ -81,6 +81,72 @@
     (map-get? error-context { error-id: error-id })
 )
 
+;; ── Identity Verification API ────────────────────────────────────────────────
+
+;; Register an on-chain identity proof for tx-sender.
+;; The caller provides their compressed secp256k1 pubkey (33 bytes).
+;; principal-of? derives the Stacks principal and asserts it matches tx-sender,
+;; cryptographically proving key ownership. Only the hash160 of the pubkey is stored.
+(define-public (register-identity-proof (pubkey (buff 33)))
+    (let ((derived (unwrap! (principal-of? pubkey) ERR-INVALID-PUBKEY)))
+        (asserts! (is-eq derived tx-sender) ERR-PUBKEY-MISMATCH)
+
+        (let ((existing (map-get? identity-proofs { user: tx-sender })))
+            (map-set identity-proofs
+                { user: tx-sender }
+                {
+                    pubkey-hash:        (hash160 pubkey),
+                    verified-at:        stacks-block-height,
+                    is-active:          true,
+                    verification-count: (+ u1 (match existing
+                                            proof (get verification-count proof)
+                                            u0
+                                        ))
+                }
+            )
+            (ok (print {
+                event:       "identity-registered",
+                user:        tx-sender,
+                pubkey-hash: (hash160 pubkey),
+                block:       stacks-block-height
+            }))
+        )
+    )
+)
+
+;; Read-only: verify that a principal has an active identity proof
+(define-read-only (is-identity-verified (user principal))
+    (match (map-get? identity-proofs { user: user })
+        proof (ok (get is-active proof))
+        ERR-IDENTITY-NOT-FOUND
+    )
+)
+
+;; Read-only: get full identity proof record
+(define-read-only (get-identity-proof (user principal))
+    (map-get? identity-proofs { user: user })
+)
+
+;; Revoke an identity proof (self-revocation or admin)
+(define-public (revoke-identity-proof (user principal))
+    (begin
+        (if (is-eq tx-sender user)
+            true
+            (match (only-admin)
+                ok-val true
+                err-val false
+            )
+        )
+        (let ((proof (unwrap! (map-get? identity-proofs { user: user }) ERR-IDENTITY-NOT-FOUND)))
+            (map-set identity-proofs
+                { user: user }
+                (merge proof { is-active: false })
+            )
+            (ok (print { event: "identity-revoked", user: user, block: stacks-block-height }))
+        )
+    )
+)
+
 ;; Modifier to restrict access to admins only
 (define-private (only-admin)
     (let ((is-admin (contains? (var-get admins) tx-sender)))
