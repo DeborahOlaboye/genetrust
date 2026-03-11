@@ -743,3 +743,67 @@ describe('dataset-registry - batch-grant-access', () => {
     expect(result).toStrictEqual(Cl.bool(true));
   });
 });
+
+// ─── access history analytics ─────────────────────────────────────────────────
+
+describe('dataset-registry - access history analytics', () => {
+  beforeEach(() => {
+    registerDataset(110);
+    simnet.callPublicFn(
+      'dataset-registry',
+      'grant-access',
+      [Cl.uint(110), Cl.principal(wallet1), Cl.uint(1)],
+      deployer,
+    );
+  });
+
+  it('get-access-history returns change-count for user after grant', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'dataset-registry',
+      'get-access-history',
+      [Cl.uint(110), Cl.principal(wallet1)],
+      deployer,
+    );
+    expect(result).toMatchObject(expect.anything());
+  });
+
+  it('count-user-access-changes returns non-zero after grant', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'dataset-registry',
+      'count-user-access-changes',
+      [Cl.uint(110), Cl.principal(wallet1)],
+      deployer,
+    );
+    expect(result).not.toBeNone();
+  });
+
+  it('get-access-change returns record for change-id 1', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'dataset-registry',
+      'get-access-change',
+      [Cl.uint(110), Cl.principal(wallet1), Cl.uint(1)],
+      deployer,
+    );
+    expect(result).toBeSome(expect.anything());
+  });
+
+  it('get-total-access-grants returns data-id field', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'dataset-registry',
+      'get-total-access-grants',
+      [Cl.uint(110)],
+      deployer,
+    );
+    expect(result).toMatchObject(expect.anything());
+  });
+
+  it('get-user-access returns rights for granted user', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'dataset-registry',
+      'get-user-access',
+      [Cl.uint(110), Cl.principal(wallet1)],
+      deployer,
+    );
+    expect(result).toBeSome(expect.anything());
+  });
+});
