@@ -914,6 +914,28 @@
     )
 )
 
+;; Verify that an active, non-expired delegation exists for a data-id
+(define-read-only (verify-delegation (data-id uint) (delegator principal))
+    (match (map-get? delegations { data-id: data-id, delegator: delegator })
+        delegation (ok {
+            is-valid:       (and
+                                (get is-active delegation)
+                                (< stacks-block-height (get expires-at delegation))
+                            ),
+            delegate:       (get delegate delegation),
+            access-level:   (get access-level delegation),
+            expires-at:     (get expires-at delegation),
+            granted-at:     (get granted-at delegation)
+        })
+        ERR-DELEGATION-NOT-FOUND
+    )
+)
+
+;; Get delegation details for off-chain consumers
+(define-read-only (get-delegation (data-id uint) (delegator principal))
+    (map-get? delegations { data-id: data-id, delegator: delegator })
+)
+
 ;; ── Clarity 4 contract-of / Dynamic Contract Discovery ───────────────────────
 ;; The functions below integrate with the on-chain contract-registry to enable
 ;; dynamic contract resolution.  The canonical Clarity 4 pattern is:
