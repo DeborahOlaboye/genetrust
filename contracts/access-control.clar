@@ -7,6 +7,12 @@
 (define-constant ERR-ALREADY-ROLE (err u409))
 (define-constant ERR-INVALID-ROLE (err u400))
 
+;; Clarity 4 principal-of? identity error codes
+(define-constant ERR-INVALID-PUBKEY (err u422))
+(define-constant ERR-PUBKEY-MISMATCH (err u403))
+(define-constant ERR-IDENTITY-NOT-FOUND (err u404))
+(define-constant ERR-IDENTITY-REVOKED (err u403))
+
 ;; Role definitions
 (define-constant ROLE-ADMIN 0x0001)
 (define-constant ROLE-RESEARCHER 0x0002)
