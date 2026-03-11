@@ -30,6 +30,35 @@ export const TX_STATUS = {
   FAILED:   'failed',
 };
 
+// ── Nakamoto upgrade constants ───────────────────────────────────────────────
+// Nakamoto sub-second block times (~0.5s per microblock, ~5s per block)
+export const NAKAMOTO = {
+  // Polling intervals (ms)
+  FAST_POLL_MS:          500,   // sub-second poll during pending phase
+  NORMAL_POLL_MS:        3000,  // normal polling once broadcast
+  SLOW_POLL_MS:          10000, // slow polling after initial confirmation
+
+  // Confirmation thresholds for genetic data trades
+  OPTIMISTIC_CONFIRMS:   1,     // show as likely-confirmed after 1 block
+  FAST_CONFIRMS:         3,     // fast-finality threshold (Nakamoto)
+  SAFE_CONFIRMS:         6,     // fully safe threshold
+
+  // Block reorg tolerance
+  MAX_REORG_DEPTH:       3,     // micro-forks deeper than this are flagged
+
+  // Hiro API base URL
+  API_BASE: 'https://api.hiro.so',
+
+  // Stacks API transaction status values
+  API_STATUS: {
+    PENDING:   'pending',
+    MEMPOOL:   'pending',
+    BROADCAST: 'success',  // Hiro uses 'success' for confirmed
+    FAILED:    'abort_by_response',
+    DROPPED:   'dropped_from_mempool',
+  },
+};
+
 /**
  * WalletService handles all wallet-related functionality including connection,
  * disconnection, and state management for Stacks wallet integration.
@@ -693,6 +722,136 @@ class WalletService {
   setAddress(address) {
     this._address = address;
     this._emit();
+  }
+
+  // ── Nakamoto fast-finality API ────────────────────────────────────────────
+
+  /**
+   * Fetch the raw transaction status from the Hiro Stacks API.
+   * Uses Nakamoto fast polling intervals.
+   *
+   * @async
+   * @param {string} txId - Transaction ID (hex)
+   * @returns {Promise<Object>} Raw API response object
+   */
+  async fetchTxStatus(txId) {
+    if (!txId) throw new Error('txId is required');
+    const url = `${NAKAMOTO.API_BASE}/extended/v1/tx/${txId}`;
+    const res  = await fetch(url);
+    if (!res.ok) throw new Error(`Hiro API error: ${res.status}`);
+    return res.json();
+  }
+
+  /**
+   * Get the current block height from the Hiro API.
+   * Used to calculate confirmation depth after Nakamoto fast blocks.
+   *
+   * @async
+   * @returns {Promise<number>} Current block height
+   */
+  async getCurrentBlockHeight() {
+    const url = `${NAKAMOTO.API_BASE}/extended/v1/block?limit=1`;
+    const res  = await fetch(url);
+    if (!res.ok) throw new Error(`Block height fetch failed: ${res.status}`);
+    const data = await res.json();
+    return data.results?.[0]?.height ?? 0;
+  }
+
+  /**
+   * Compute how many confirmations a transaction has using the Nakamoto
+   * block model. Returns 0 if the tx is not yet confirmed.
+   *
+   * @async
+   * @param {string} txId  - Transaction ID
+   * @returns {Promise<number>} Confirmation count
+   */
+  async getConfirmationCount(txId) {
+    const [txData, currentHeight] = await Promise.all([
+      this.fetchTxStatus(txId),
+      this.getCurrentBlockHeight(),
+    ]);
+
+    const txHeight = txData.block_height;
+    if (!txHeight || txData.tx_status !== 'success') return 0;
+    return Math.max(0, currentHeight - txHeight + 1);
+  }
+
+  /**
+   * Classify the finality level of a transaction under Nakamoto rules.
+   *
+   * @param {number} confirmations
+   * @returns {'unconfirmed'|'optimistic'|'fast'|'safe'}
+   */
+  classifyFinality(confirmations) {
+    if (confirmations <= 0)                            return 'unconfirmed';
+    if (confirmations < NAKAMOTO.FAST_CONFIRMS)        return 'optimistic';
+    if (confirmations < NAKAMOTO.SAFE_CONFIRMS)        return 'fast';
+    return 'safe';
+  }
+
+  /**
+   * Register a broadcast transaction for Nakamoto status tracking.
+   * Stores the txId, timestamp, and optimistic confirmation state.
+   *
+   * @param {string} txId          - Transaction ID to track
+   * @param {Object} [meta={}]     - Optional metadata (functionName, description)
+   * @returns {Object} The tracked transaction entry
+   */
+  trackBroadcastTx(txId, meta = {}) {
+    if (!txId) throw new Error('txId is required');
+    if (!this._trackedTxs) this._trackedTxs = new Map();
+    const entry = {
+      txId,
+      broadcastAt:  Date.now(),
+      confirmations: 0,
+      finality:      'unconfirmed',
+      blockHash:     null,
+      status:        TX_STATUS.BROADCAST,
+      reorgDetected: false,
+      ...meta,
+    };
+    this._trackedTxs.set(txId, entry);
+    return entry;
+  }
+
+  /**
+   * Get a tracked transaction entry by txId.
+   * @param {string} txId
+   * @returns {Object|null}
+   */
+  getTrackedTx(txId) {
+    return this._trackedTxs?.get(txId) ?? null;
+  }
+
+  /**
+   * Remove a tracked transaction from the map.
+   * @param {string} txId
+   */
+  untrackTx(txId) {
+    this._trackedTxs?.delete(txId);
+  }
+
+  /**
+   * Detect whether a previously confirmed transaction has been reorganised
+   * (micro-fork). Compares the tx's recorded block_hash with the canonical
+   * chain. Returns true if the block is no longer canonical.
+   *
+   * @async
+   * @param {string} txId          - Transaction ID
+   * @param {string} knownBlockHash - Block hash recorded at first confirmation
+   * @returns {Promise<boolean>} true if a micro-fork is detected
+   */
+  async detectMicroFork(txId, knownBlockHash) {
+    if (!txId || !knownBlockHash) return false;
+    try {
+      const txData = await this.fetchTxStatus(txId);
+      // If block_hash changed or tx is no longer 'success', flag reorg
+      if (!txData.block_hash) return false;
+      return txData.block_hash !== knownBlockHash || txData.tx_status !== 'success';
+    } catch {
+      // Network error — conservatively report no fork
+      return false;
+    }
   }
 }
 
