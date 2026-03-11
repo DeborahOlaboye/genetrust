@@ -170,6 +170,37 @@ export function useTransactionStatus(txId, options = {}) {
   }, [txId, optimistic, clearPoll, stopElapsed, setPartial,
       onConfirmed, onFastFinality, onSafeFinality, onFailed]);
 
+  // ── Micro-fork (block reorg) detection ───────────────────────────────────
+  const reorgPollRef = useRef(null);
+
+  const startReorgWatch = useCallback(() => {
+    if (!txId || !blockHash.current) return;
+
+    const checkReorg = async () => {
+      const reorg = await walletService.detectMicroFork(txId, blockHash.current);
+      if (reorg) {
+        setPartial({
+          reorgDetected: true,
+          finality:      'unconfirmed',
+          confirmations: 0,
+          status:        TX_STATUS.BROADCAST,
+        });
+        if (onReorg) onReorg({ txId, blockHash: blockHash.current });
+        // Reset blockHash so we track new inclusion block
+        blockHash.current = null;
+        firedRef.current  = { confirmed: false, fast: false, safe: false };
+        // Resume fast polling
+        pollRef.current = setTimeout(poll, NAKAMOTO.FAST_POLL_MS);
+      }
+      // Re-schedule reorg check until safe finality
+      if (!firedRef.current.safe) {
+        reorgPollRef.current = setTimeout(checkReorg, NAKAMOTO.NORMAL_POLL_MS * 2);
+      }
+    };
+
+    reorgPollRef.current = setTimeout(checkReorg, NAKAMOTO.NORMAL_POLL_MS);
+  }, [txId, poll, setPartial, onReorg]);
+
   // ── Start / reset on txId change ─────────────────────────────────────────
   useEffect(() => {
     if (!txId) {
