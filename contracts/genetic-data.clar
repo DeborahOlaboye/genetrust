@@ -1000,6 +1000,52 @@
     )
 )
 
+;; Approve a pending multi-sig action.
+;; Each approver provides their compressed pubkey; principal-of? proves identity.
+(define-public (approve-multisig-action (action-id uint) (pubkey (buff 33)))
+    (begin
+        (try! (check-paused))
+
+        ;; Verify approver identity
+        (let ((derived (unwrap! (principal-of? pubkey) ERR-INVALID-PUBKEY)))
+            (asserts! (is-eq derived tx-sender) ERR-PUBKEY-MISMATCH)
+
+            (let ((action (unwrap! (map-get? multisig-actions { action-id: action-id }) ERR-ACTION-NOT-FOUND)))
+                ;; Action must not be expired or already executed
+                (asserts! (not (get executed action)) ERR-NOT-AUTHORIZED)
+                (asserts! (< stacks-block-height (get expires-at action)) ERR-DELEGATION-EXPIRED)
+
+                ;; Prevent double-approval
+                (asserts!
+                    (is-none (map-get? multisig-approvals { action-id: action-id, approver: tx-sender }))
+                    ERR-ALREADY-APPROVED
+                )
+
+                ;; Record this approval
+                (map-set multisig-approvals
+                    { action-id: action-id, approver: tx-sender }
+                    { approved-at: stacks-block-height, pubkey-hash: (hash160 pubkey) }
+                )
+
+                ;; Increment approval count
+                (let ((new-count (+ (get approval-count action) u1)))
+                    (map-set multisig-actions
+                        { action-id: action-id }
+                        (merge action { approval-count: new-count })
+                    )
+                    (ok (print {
+                        event:          "multisig-approved",
+                        action-id:      action-id,
+                        approver:       tx-sender,
+                        approval-count: new-count,
+                        threshold:      (get threshold action)
+                    }))
+                )
+            )
+        )
+    )
+)
+
 ;; Verify that an active, non-expired delegation exists for a data-id
 (define-read-only (verify-delegation (data-id uint) (delegator principal))
     (match (map-get? delegations { data-id: data-id, delegator: delegator })
