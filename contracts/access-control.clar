@@ -251,3 +251,42 @@
 (define-read-only (is-admin (user principal))
     (ok (contains? (var-get admins) user))
 )
+
+;; ── Enhanced RBAC: role + identity compound check ────────────────────────────
+
+;; Verify that a principal both holds a role AND has an active identity proof.
+;; This is the compound security gate for sensitive genetic data operations.
+(define-read-only (has-verified-role (user principal) (role uint))
+    (let (
+        (role-ok   (match (map-get? roles { user: user })
+                        r (not (is-eq (bitwise-and r role) u0))
+                        false))
+        (id-ok     (match (map-get? identity-proofs { user: user })
+                        p (get is-active p)
+                        false))
+    )
+        (ok (and role-ok id-ok))
+    )
+)
+
+;; Return a summary of a principal's access posture for off-chain consumers
+(define-read-only (get-access-posture (user principal))
+    {
+        user:             user,
+        roles:            (default-to u0 (map-get? roles { user: user })),
+        identity-active:  (match (map-get? identity-proofs { user: user })
+                              p (get is-active p)
+                              false),
+        is-admin:         (contains? (var-get admins) user),
+        block:            stacks-block-height
+    }
+)
+
+;; Require both a role and an active identity proof — use as a guard in
+;; calling contracts.
+(define-public (assert-verified-role (user principal) (role uint))
+    (let ((check (try! (has-verified-role user role))))
+        (asserts! check ERR-NOT-AUTHORIZED)
+        (ok true)
+    )
+)
