@@ -170,6 +170,30 @@ export function useTransactionStatus(txId, options = {}) {
   }, [txId, optimistic, clearPoll, stopElapsed, setPartial,
       onConfirmed, onFastFinality, onSafeFinality, onFailed]);
 
+  // ── Start / reset on txId change ─────────────────────────────────────────
+  useEffect(() => {
+    if (!txId) {
+      setState({ ...INITIAL_STATE, txId: null });
+      clearPoll();
+      stopElapsed();
+      return;
+    }
+
+    // Reset state for new txId
+    blockHash.current = null;
+    firedRef.current  = { confirmed: false, fast: false, safe: false };
+    setState({ ...INITIAL_STATE, txId, isLoading: true, status: TX_STATUS.BROADCAST });
+    startElapsed();
+
+    // Begin Nakamoto fast polling immediately
+    pollRef.current = setTimeout(poll, NAKAMOTO.FAST_POLL_MS);
+
+    return () => {
+      clearPoll();
+      stopElapsed();
+    };
+  }, [txId, poll, clearPoll, startElapsed, stopElapsed]);
+
   // Stop timers on unmount
   useEffect(() => {
     return () => {
