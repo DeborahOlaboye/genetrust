@@ -54,6 +54,52 @@ const FINALITY_META = {
  * @param {Function} [props.onFailed]
  * @param {boolean}  [props.compact=false] - Use compact single-line layout
  */
+// ── Sub-components ────────────────────────────────────────────────────────────
+
+/**
+ * Renders a segmented progress bar showing confirmation depth toward safe finality.
+ */
+function ConfirmationBar({ confirmations, finality }) {
+  const total  = NAKAMOTO.SAFE_CONFIRMS;
+  const filled = Math.min(confirmations, total);
+  const pct    = Math.round((filled / total) * 100);
+
+  return (
+    <div
+      role="progressbar"
+      aria-valuenow={filled}
+      aria-valuemin={0}
+      aria-valuemax={total}
+      aria-label={`${filled} of ${total} confirmations`}
+      style={{ width: '100%' }}
+    >
+      <div style={{
+        display:        'flex',
+        gap:            '3px',
+        marginBottom:   '4px',
+      }}>
+        {Array.from({ length: total }).map((_, i) => (
+          <div
+            key={i}
+            style={{
+              flex:         1,
+              height:       '6px',
+              borderRadius: '3px',
+              background:   i < filled
+                ? (FINALITY_META[finality]?.color ?? '#10b981')
+                : '#e5e7eb',
+              transition:   'background 0.3s ease',
+            }}
+          />
+        ))}
+      </div>
+      <div style={{ fontSize: '11px', color: '#6b7280', textAlign: 'right' }}>
+        {filled}/{total} confirmations ({pct}%)
+      </div>
+    </div>
+  );
+}
+
 export function TransactionTracker({
   txId,
   title = 'Transaction',
