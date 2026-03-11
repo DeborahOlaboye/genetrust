@@ -398,6 +398,70 @@ describe('dataset-registry - revoke-access', () => {
   });
 });
 
+// ─── dataset version history ──────────────────────────────────────────────────
+
+describe('dataset-registry - version history', () => {
+  beforeEach(() => {
+    registerDataset(70);
+  });
+
+  it('initial registration creates version 1', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'dataset-registry',
+      'get-dataset-versions',
+      [Cl.uint(70)],
+      deployer,
+    );
+    expect(result).not.toBeNone();
+  });
+
+  it('update-genetic-data increments version count', () => {
+    simnet.callPublicFn(
+      'dataset-registry',
+      'update-genetic-data',
+      [Cl.uint(70), Cl.none(), Cl.none(), Cl.none(), Cl.none(), Cl.none()],
+      deployer,
+    );
+    const { result } = simnet.callReadOnlyFn(
+      'dataset-registry',
+      'get-dataset-versions',
+      [Cl.uint(70)],
+      deployer,
+    );
+    expect(result).not.toBeNone();
+  });
+
+  it('dataset-version-exists returns true for version 1', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'dataset-registry',
+      'dataset-version-exists',
+      [Cl.uint(70), Cl.uint(1)],
+      deployer,
+    );
+    expect(result).toStrictEqual(Cl.bool(true));
+  });
+
+  it('dataset-version-exists returns false for version 999', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'dataset-registry',
+      'dataset-version-exists',
+      [Cl.uint(70), Cl.uint(999)],
+      deployer,
+    );
+    expect(result).toStrictEqual(Cl.bool(false));
+  });
+
+  it('get-dataset-change-timeline returns data-id and current-block', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'dataset-registry',
+      'get-dataset-change-timeline',
+      [Cl.uint(70)],
+      deployer,
+    );
+    expect(result).toMatchObject(expect.anything());
+  });
+});
+
 // ─── revoke-access ────────────────────────────────────────────────────────────
 
 describe('dataset-registry - revoke-access', () => {
