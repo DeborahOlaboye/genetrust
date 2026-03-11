@@ -161,6 +161,38 @@
 ;; Delegation expiration window: ~7 days at Nakamoto block times
 (define-constant DELEGATION-EXPIRY-BLOCKS u1008)
 
+;; ── Multi-signature support maps ─────────────────────────────────────────────
+;; Multi-sig actions require N-of-M approvals from verified principals
+
+;; Pending multisig actions (e.g. ownership transfer, bulk access grant)
+(define-map multisig-actions
+    { action-id: uint }
+    {
+        data-id:       uint,
+        action-type:   (string-utf8 50),    ;; "transfer-ownership" | "bulk-grant" | "deactivate"
+        proposer:      principal,
+        target:        principal,            ;; The beneficiary/new owner
+        access-level:  uint,
+        threshold:     uint,                 ;; Required number of approvals
+        approval-count:uint,
+        executed:      bool,
+        proposed-at:   uint,
+        expires-at:    uint
+    }
+)
+
+;; Track which principals have approved a given action
+(define-map multisig-approvals
+    { action-id: uint, approver: principal }
+    { approved-at: uint, pubkey-hash: (buff 20) }
+)
+
+;; Global action counter
+(define-data-var next-action-id uint u1)
+
+;; Multisig expiry: ~3 days
+(define-constant MULTISIG-EXPIRY-BLOCKS u432)
+
 ;; Events
 ;; Use more efficient event encoding
 (define-constant EVENT-DATA-REGISTERED 0x01)
