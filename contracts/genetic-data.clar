@@ -199,6 +199,10 @@
 (define-constant EVENT-DATA-UPDATED 0x02)
 (define-constant EVENT-ACCESS-GRANTED 0x03)
 (define-constant EVENT-ACCESS-REVOKED 0x04)
+(define-constant EVENT-DELEGATION-GRANTED 0x05)
+(define-constant EVENT-DELEGATION-REVOKED 0x06)
+(define-constant EVENT-MULTISIG-PROPOSED 0x07)
+(define-constant EVENT-MULTISIG-EXECUTED 0x08)
 
 ;; Security Helpers
 (define-read-only (is-contract-paused) (var-get is-paused))
