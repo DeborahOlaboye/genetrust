@@ -142,6 +142,25 @@
     { count: uint }
 )
 
+;; ── Clarity 4 principal-of? delegation maps ─────────────────────────────────
+
+;; Track active delegations: owner delegates read/write access to another principal
+;; using cryptographic proof via principal-of? on a compressed secp256k1 pubkey
+(define-map delegations
+    { data-id: uint, delegator: principal }
+    {
+        delegate:       principal,   ;; Who receives the delegated access
+        access-level:   uint,        ;; What level they can exercise
+        granted-at:     uint,        ;; Block height when delegation was made
+        expires-at:     uint,        ;; Block height when delegation expires
+        pubkey-hash:    (buff 20),   ;; hash160 of the delegator's pubkey used
+        is-active:      bool
+    }
+)
+
+;; Delegation expiration window: ~7 days at Nakamoto block times
+(define-constant DELEGATION-EXPIRY-BLOCKS u1008)
+
 ;; Events
 ;; Use more efficient event encoding
 (define-constant EVENT-DATA-REGISTERED 0x01)
