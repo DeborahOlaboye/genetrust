@@ -206,6 +206,76 @@
     { count: uint }
 )
 
+;; ── Clarity 4 principal-of? Governance API ───────────────────────────────────
+
+;; Register a signer proof in the governance contract.
+;; Callers provide their compressed pubkey; principal-of? proves they hold the
+;; corresponding private key without revealing it.
+(define-public (register-signer-proof (pubkey (buff 33)))
+    (let ((derived (unwrap! (principal-of? pubkey) ERR-INVALID-PUBKEY)))
+        (asserts! (is-eq derived tx-sender) ERR-PUBKEY-MISMATCH)
+        (map-set signer-proofs
+            { signer: tx-sender }
+            {
+                pubkey-hash:  (hash160 pubkey),
+                verified-at:  stacks-block-height,
+                is-active:    true
+            }
+        )
+        (ok (print {
+            event:       "signer-registered",
+            signer:      tx-sender,
+            pubkey-hash: (hash160 pubkey),
+            block:       stacks-block-height
+        }))
+    )
+)
+
+;; Read-only: check if a signer has an active proof
+(define-read-only (is-signer-verified (signer principal))
+    (match (map-get? signer-proofs { signer: signer })
+        proof (ok (get is-active proof))
+        ERR-SIGNER-NOT-VERIFIED
+    )
+)
+
+;; Consent operations gated by identity: the owner must prove key ownership
+;; via principal-of? before amending consent, strengthening GDPR accountability.
+(define-public (amend-consent-with-proof
+    (data-id         uint)
+    (research-consent  bool)
+    (commercial-consent bool)
+    (clinical-consent  bool)
+    (jurisdiction    uint)
+    (consent-duration uint)
+    (pubkey          (buff 33)))
+    (begin
+        ;; Cryptographic identity gate
+        (let ((derived (unwrap! (principal-of? pubkey) ERR-INVALID-PUBKEY)))
+            (asserts! (is-eq derived tx-sender) ERR-PUBKEY-MISMATCH)
+
+            ;; Caller must have a registered signer proof
+            (asserts!
+                (match (map-get? signer-proofs { signer: tx-sender })
+                    p (get is-active p)
+                    false
+                )
+                ERR-SIGNER-NOT-VERIFIED
+            )
+
+            ;; Delegate to the existing amend-consent-policy logic
+            (amend-consent-policy
+                data-id
+                research-consent
+                commercial-consent
+                clinical-consent
+                jurisdiction
+                consent-duration
+            )
+        )
+    )
+)
+
 ;; Set consent policy for genetic data
 (define-public (set-consent-policy
     (data-id uint)
