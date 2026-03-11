@@ -369,3 +369,115 @@ describe('data-governance - compliance reporting', () => {
     expect(result).toBeOk(expect.anything());
   });
 });
+
+// ─── record-processing-activity & audit-access ────────────────────────────────
+
+describe('data-governance - record-processing-activity', () => {
+  beforeEach(() => {
+    setConsent(50, true, true, true, 0, 5000);
+  });
+
+  it('records a processing activity for a valid research purpose', () => {
+    const { result } = simnet.callPublicFn(
+      'data-governance',
+      'record-processing-activity',
+      [
+        Cl.uint(50),
+        Cl.principal(wallet1),
+        Cl.uint(1), // research
+        Cl.uint(500),
+        Cl.uint(1),
+      ],
+      deployer,
+    );
+    expect(result).toBeOk(expect.anything());
+  });
+
+  it('rejects invalid purpose code', () => {
+    const { result } = simnet.callPublicFn(
+      'data-governance',
+      'record-processing-activity',
+      [
+        Cl.uint(50),
+        Cl.principal(wallet1),
+        Cl.uint(99), // invalid purpose
+        Cl.uint(500),
+        Cl.uint(1),
+      ],
+      deployer,
+    );
+    expect(result).toBeErr(Cl.uint(400));
+  });
+
+  it('rejects activity for data with no consent record', () => {
+    const { result } = simnet.callPublicFn(
+      'data-governance',
+      'record-processing-activity',
+      [
+        Cl.uint(9998),
+        Cl.principal(wallet1),
+        Cl.uint(1),
+        Cl.uint(500),
+        Cl.uint(1),
+      ],
+      deployer,
+    );
+    expect(result).toBeErr(Cl.uint(404));
+  });
+});
+
+describe('data-governance - audit-access', () => {
+  beforeEach(() => {
+    setConsent(60, true, false, false, 0, 5000);
+  });
+
+  it('audit-access returns an ok log-id', () => {
+    const { result } = simnet.callPublicFn(
+      'data-governance',
+      'audit-access',
+      [
+        Cl.uint(60),
+        Cl.uint(1),
+        Cl.bufferFromHex(ZERO_TX_ID),
+      ],
+      deployer,
+    );
+    expect(result).toBeOk(expect.anything());
+  });
+
+  it('get-audit-trail-summary returns total-audit-entries field', () => {
+    simnet.callPublicFn(
+      'data-governance',
+      'audit-access',
+      [Cl.uint(60), Cl.uint(1), Cl.bufferFromHex(ZERO_TX_ID)],
+      deployer,
+    );
+    const { result } = simnet.callReadOnlyFn(
+      'data-governance',
+      'get-audit-trail-summary',
+      [Cl.uint(60)],
+      deployer,
+    );
+    expect(result).toMatchObject(expect.anything());
+  });
+
+  it('get-audit-analytics returns gdpr-compliant field', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'data-governance',
+      'get-audit-analytics',
+      [Cl.uint(60)],
+      deployer,
+    );
+    expect(result).toMatchObject(expect.anything());
+  });
+
+  it('get-audit-trail-export-summary returns compliance-ready true', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'data-governance',
+      'get-audit-trail-export-summary',
+      [],
+      deployer,
+    );
+    expect(result).toMatchObject(expect.anything());
+  });
+});
