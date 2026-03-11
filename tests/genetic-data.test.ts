@@ -341,6 +341,67 @@ describe('dataset-registry - transfer-ownership', () => {
 
 describe('dataset-registry - revoke-access', () => {
   beforeEach(() => {
+    registerDataset(60);
+    // Grant access so we have something to revoke
+    simnet.callPublicFn(
+      'dataset-registry',
+      'grant-access',
+      [Cl.uint(60), Cl.principal(wallet1), Cl.uint(1)],
+      deployer,
+    );
+  });
+
+  it('owner can revoke a granted access right', () => {
+    const { result } = simnet.callPublicFn(
+      'dataset-registry',
+      'revoke-access',
+      [Cl.uint(60), Cl.principal(wallet1)],
+      deployer,
+    );
+    expect(result).toBeOk(expect.anything());
+  });
+
+  it('has-access returns false after revocation', () => {
+    simnet.callPublicFn(
+      'dataset-registry',
+      'revoke-access',
+      [Cl.uint(60), Cl.principal(wallet1)],
+      deployer,
+    );
+    const { result } = simnet.callReadOnlyFn(
+      'dataset-registry',
+      'has-access',
+      [Cl.uint(60), Cl.principal(wallet1), Cl.uint(1)],
+      deployer,
+    );
+    expect(result).toStrictEqual(Cl.bool(false));
+  });
+
+  it('non-owner cannot revoke access', () => {
+    const { result } = simnet.callPublicFn(
+      'dataset-registry',
+      'revoke-access',
+      [Cl.uint(60), Cl.principal(wallet1)],
+      wallet2, // not owner
+    );
+    expect(result).toBeErr(Cl.uint(401));
+  });
+
+  it('revoking non-existent access returns 404', () => {
+    const { result } = simnet.callPublicFn(
+      'dataset-registry',
+      'revoke-access',
+      [Cl.uint(60), Cl.principal(wallet2)], // wallet2 was never granted
+      deployer,
+    );
+    expect(result).toBeErr(Cl.uint(404));
+  });
+});
+
+// ─── revoke-access ────────────────────────────────────────────────────────────
+
+describe('dataset-registry - revoke-access', () => {
+  beforeEach(() => {
     registerDataset(50);
     simnet.callPublicFn(
       'dataset-registry',
