@@ -236,7 +236,27 @@ export function useTransactionStatus(txId, options = {}) {
     };
   }, [clearPoll, stopElapsed]);
 
-  return { ...state, clearPoll, startElapsed, stopElapsed };
+  /**
+   * Manually force a single status poll (useful for "check now" buttons).
+   */
+  const refresh = useCallback(() => {
+    clearPoll();
+    poll();
+  }, [clearPoll, poll]);
+
+  /**
+   * Reset the hook to its initial state and stop all polling.
+   */
+  const reset = useCallback(() => {
+    clearPoll();
+    stopElapsed();
+    if (reorgPollRef.current) clearTimeout(reorgPollRef.current);
+    blockHash.current = null;
+    firedRef.current  = { confirmed: false, fast: false, safe: false };
+    setState({ ...INITIAL_STATE, txId: null });
+  }, [clearPoll, stopElapsed]);
+
+  return { ...state, clearPoll, startElapsed, stopElapsed, refresh, reset };
 }
 
 export default useTransactionStatus;
