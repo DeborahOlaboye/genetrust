@@ -1046,6 +1046,60 @@
     )
 )
 
+;; Execute a multi-sig action once threshold is reached.
+;; Dispatches to the appropriate internal handler based on action-type.
+(define-public (execute-multisig-action (action-id uint) (pubkey (buff 33)))
+    (begin
+        (try! (check-paused))
+
+        ;; Executor identity verification
+        (let ((derived (unwrap! (principal-of? pubkey) ERR-INVALID-PUBKEY)))
+            (asserts! (is-eq derived tx-sender) ERR-PUBKEY-MISMATCH)
+
+            (let ((action (unwrap! (map-get? multisig-actions { action-id: action-id }) ERR-ACTION-NOT-FOUND)))
+                (asserts! (not (get executed action)) ERR-NOT-AUTHORIZED)
+                (asserts! (< stacks-block-height (get expires-at action)) ERR-DELEGATION-EXPIRED)
+
+                ;; Check threshold has been met
+                (asserts! (>= (get approval-count action) (get threshold action)) ERR-MULTISIG-THRESHOLD)
+
+                ;; Mark executed before dispatch (re-entrancy guard)
+                (map-set multisig-actions
+                    { action-id: action-id }
+                    (merge action { executed: true })
+                )
+
+                ;; Dispatch to action handler
+                (let ((result
+                    (if (is-eq (get action-type action) u"transfer-ownership")
+                        (transfer-ownership (get data-id action) (get target action))
+                        (if (is-eq (get action-type action) u"grant-access")
+                            (grant-access (get data-id action) (get target action) (get access-level action))
+                            (if (is-eq (get action-type action) u"revoke-access")
+                                (revoke-access (get data-id action) (get target action))
+                                ERR-INVALID-INPUT
+                            )
+                        )
+                    )
+                ))
+                    (try! result)
+                    (ok (print { event: "multisig-executed", action-id: action-id, by: tx-sender }))
+                )
+            )
+        )
+    )
+)
+
+;; Read-only: Get multisig action details
+(define-read-only (get-multisig-action (action-id uint))
+    (map-get? multisig-actions { action-id: action-id })
+)
+
+;; Read-only: Check if a principal has approved an action
+(define-read-only (has-approved-action (action-id uint) (approver principal))
+    (is-some (map-get? multisig-approvals { action-id: action-id, approver: approver }))
+)
+
 ;; Verify that an active, non-expired delegation exists for a data-id
 (define-read-only (verify-delegation (data-id uint) (delegator principal))
     (match (map-get? delegations { data-id: data-id, delegator: delegator })
