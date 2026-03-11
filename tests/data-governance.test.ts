@@ -102,3 +102,103 @@ describe('data-governance - set-consent-policy', () => {
     expect(gdpr.result).toBeNone();
   });
 });
+
+// ─── amend-consent-policy ─────────────────────────────────────────────────────
+
+describe('data-governance - amend-consent-policy', () => {
+  beforeEach(() => {
+    setConsent(10, true, false, false, 0, 2000);
+  });
+
+  it('owner can amend an existing consent policy', () => {
+    const { result } = simnet.callPublicFn(
+      'data-governance',
+      'amend-consent-policy',
+      [
+        Cl.uint(10),
+        Cl.bool(false),
+        Cl.bool(true),
+        Cl.bool(false),
+        Cl.uint(0),
+        Cl.uint(1000),
+      ],
+      deployer,
+    );
+    expect(result).toBeOk(Cl.bool(true));
+  });
+
+  it('non-owner cannot amend consent', () => {
+    const { result } = simnet.callPublicFn(
+      'data-governance',
+      'amend-consent-policy',
+      [
+        Cl.uint(10),
+        Cl.bool(true),
+        Cl.bool(false),
+        Cl.bool(false),
+        Cl.uint(0),
+        Cl.uint(1000),
+      ],
+      wallet1,
+    );
+    expect(result).toBeErr(Cl.uint(401));
+  });
+
+  it('amend on non-existent record returns 404', () => {
+    const { result } = simnet.callPublicFn(
+      'data-governance',
+      'amend-consent-policy',
+      [
+        Cl.uint(9999),
+        Cl.bool(true),
+        Cl.bool(false),
+        Cl.bool(false),
+        Cl.uint(0),
+        Cl.uint(1000),
+      ],
+      deployer,
+    );
+    expect(result).toBeErr(Cl.uint(404));
+  });
+
+  it('amend with invalid jurisdiction returns 400', () => {
+    const { result } = simnet.callPublicFn(
+      'data-governance',
+      'amend-consent-policy',
+      [
+        Cl.uint(10),
+        Cl.bool(true),
+        Cl.bool(false),
+        Cl.bool(false),
+        Cl.uint(99),
+        Cl.uint(1000),
+      ],
+      deployer,
+    );
+    expect(result).toBeErr(Cl.uint(400));
+  });
+
+  it('consent-change-count increments after amend', () => {
+    simnet.callPublicFn(
+      'data-governance',
+      'amend-consent-policy',
+      [
+        Cl.uint(10),
+        Cl.bool(false),
+        Cl.bool(true),
+        Cl.bool(false),
+        Cl.uint(0),
+        Cl.uint(1000),
+      ],
+      deployer,
+    );
+    const { result } = simnet.callReadOnlyFn(
+      'data-governance',
+      'get-consent-change-count',
+      [Cl.uint(10)],
+      deployer,
+    );
+    // Should be at least 1 after one amendment
+    expect(result).toStrictEqual(Cl.uint(1));
+  });
+});
