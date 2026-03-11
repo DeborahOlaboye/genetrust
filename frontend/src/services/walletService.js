@@ -788,6 +788,29 @@ class WalletService {
     if (confirmations < NAKAMOTO.SAFE_CONFIRMS)        return 'fast';
     return 'safe';
   }
+
+  /**
+   * Detect whether a previously confirmed transaction has been reorganised
+   * (micro-fork). Compares the tx's recorded block_hash with the canonical
+   * chain. Returns true if the block is no longer canonical.
+   *
+   * @async
+   * @param {string} txId          - Transaction ID
+   * @param {string} knownBlockHash - Block hash recorded at first confirmation
+   * @returns {Promise<boolean>} true if a micro-fork is detected
+   */
+  async detectMicroFork(txId, knownBlockHash) {
+    if (!txId || !knownBlockHash) return false;
+    try {
+      const txData = await this.fetchTxStatus(txId);
+      // If block_hash changed or tx is no longer 'success', flag reorg
+      if (!txData.block_hash) return false;
+      return txData.block_hash !== knownBlockHash || txData.tx_status !== 'success';
+    } catch {
+      // Network error — conservatively report no fork
+      return false;
+    }
+  }
 }
 
 /**
