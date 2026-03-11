@@ -101,6 +101,37 @@ function ConfirmationBar({ confirmations, finality }) {
 }
 
 /**
+ * Simple CSS spinner for pending/loading states.
+ */
+function Spinner({ color = '#3b82f6', size = 16 }) {
+  return (
+    <span
+      aria-hidden="true"
+      style={{
+        display:         'inline-block',
+        width:           size,
+        height:          size,
+        borderRadius:    '50%',
+        border:          `2px solid ${color}33`,
+        borderTopColor:  color,
+        animation:       'spin 0.7s linear infinite',
+      }}
+    />
+  );
+}
+
+// Inject keyframe once
+if (typeof document !== 'undefined') {
+  const id = 'nakamoto-spin-style';
+  if (!document.getElementById(id)) {
+    const s = document.createElement('style');
+    s.id = id;
+    s.textContent = '@keyframes spin { to { transform: rotate(360deg); } }';
+    document.head.appendChild(s);
+  }
+}
+
+/**
  * Small pill badge showing finality level.
  */
 function FinalityBadge({ meta }) {
@@ -182,7 +213,10 @@ function FullView({ txId, shortId, title, status, meta }) {
     >
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-        <span style={{ fontWeight: 600, fontSize: '14px' }}>{title}</span>
+        <span style={{ fontWeight: 600, fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          {status.isLoading && <Spinner color={meta.color} />}
+          {title}
+        </span>
         <FinalityBadge meta={meta} />
       </div>
 
