@@ -22,6 +22,15 @@
 (define-constant ERR-INVALID-PRICE (err u400))
 (define-constant ERR-INVALID-INPUT (err u400))
 
+;; Clarity 4 principal-of? / delegation error codes
+(define-constant ERR-INVALID-PUBKEY (err u422))
+(define-constant ERR-PUBKEY-MISMATCH (err u403))
+(define-constant ERR-DELEGATION-NOT-FOUND (err u404))
+(define-constant ERR-DELEGATION-EXPIRED (err u403))
+(define-constant ERR-MULTISIG-THRESHOLD (err u400))
+(define-constant ERR-ALREADY-APPROVED (err u409))
+(define-constant ERR-ACTION-NOT-FOUND (err u404))
+
 ;; Error context tracking
 (define-map error-context 
     { error-id: uint }
