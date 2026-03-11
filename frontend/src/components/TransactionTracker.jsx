@@ -101,6 +101,67 @@ function ConfirmationBar({ confirmations, finality }) {
 }
 
 /**
+ * Small pill badge showing finality level.
+ */
+function FinalityBadge({ meta }) {
+  return (
+    <span
+      aria-label={`Finality: ${meta.label}`}
+      style={{
+        background:   meta.color,
+        color:        '#fff',
+        borderRadius: '999px',
+        padding:      '2px 10px',
+        fontSize:     '12px',
+        fontWeight:   600,
+        letterSpacing:'0.02em',
+      }}
+    >
+      {meta.label}
+    </span>
+  );
+}
+
+/**
+ * Single-line compact variant for inline use (e.g. inside a trade row).
+ */
+function CompactView({ txId, shortId, status, meta }) {
+  return (
+    <div
+      role="status"
+      aria-label={`Transaction ${shortId}: ${meta.label}`}
+      style={{
+        display:      'inline-flex',
+        alignItems:   'center',
+        gap:          '8px',
+        background:   meta.bg,
+        border:       `1px solid ${meta.color}`,
+        borderRadius: '8px',
+        padding:      '4px 10px',
+        fontSize:     '12px',
+        fontFamily:   'system-ui, sans-serif',
+      }}
+    >
+      <FinalityBadge meta={meta} />
+      <a
+        href={`https://explorer.hiro.so/txid/${txId}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        style={{ color: meta.color, fontFamily: 'monospace' }}
+      >
+        {shortId}
+      </a>
+      <span style={{ color: '#6b7280' }}>
+        {status.confirmations}/{NAKAMOTO.SAFE_CONFIRMS} conf
+      </span>
+      {status.reorgDetected && (
+        <span role="alert" style={{ color: '#dc2626', fontWeight: 600 }}>⚠ Reorg</span>
+      )}
+    </div>
+  );
+}
+
+/**
  * Full-size transaction status card.
  */
 function FullView({ txId, shortId, title, status, meta }) {
