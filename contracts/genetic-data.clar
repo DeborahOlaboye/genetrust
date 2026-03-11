@@ -936,6 +936,42 @@
     (map-get? delegations { data-id: data-id, delegator: delegator })
 )
 
+;; Revoke an active delegation. The caller must be the original delegator.
+;; Also revokes the delegate's access right on the dataset.
+(define-public (revoke-delegation (data-id uint) (pubkey (buff 33)))
+    (begin
+        (try! (check-paused))
+
+        ;; Verify caller owns the pubkey via principal-of?
+        (let ((derived-principal (unwrap! (principal-of? pubkey) ERR-INVALID-PUBKEY)))
+            (asserts! (is-eq derived-principal tx-sender) ERR-PUBKEY-MISMATCH)
+
+            ;; Load the delegation
+            (let ((delegation (unwrap!
+                    (map-get? delegations { data-id: data-id, delegator: tx-sender })
+                    ERR-DELEGATION-NOT-FOUND)))
+
+                ;; Mark inactive instead of deleting, preserving audit trail
+                (map-set delegations
+                    { data-id: data-id, delegator: tx-sender }
+                    (merge delegation { is-active: false })
+                )
+
+                ;; Revoke the delegate's access right
+                (try! (revoke-access data-id (get delegate delegation)))
+
+                (ok (print {
+                    event:      "delegation-revoked",
+                    data-id:    data-id,
+                    delegator:  tx-sender,
+                    delegate:   (get delegate delegation),
+                    block:      stacks-block-height
+                }))
+            )
+        )
+    )
+)
+
 ;; ── Clarity 4 contract-of / Dynamic Contract Discovery ───────────────────────
 ;; The functions below integrate with the on-chain contract-registry to enable
 ;; dynamic contract resolution.  The canonical Clarity 4 pattern is:
