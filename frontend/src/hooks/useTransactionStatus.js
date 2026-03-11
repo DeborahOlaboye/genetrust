@@ -100,6 +100,76 @@ export function useTransactionStatus(txId, options = {}) {
     setState(prev => ({ ...prev, ...patch }));
   }, []);
 
+  // ── Nakamoto polling loop ─────────────────────────────────────────────────
+
+  const poll = useCallback(async () => {
+    if (!txId) return;
+
+    try {
+      const txData = await walletService.fetchTxStatus(txId);
+      const apiStatus = txData.tx_status;
+
+      // Map Hiro API status to our TX_STATUS
+      if (apiStatus === NAKAMOTO.API_STATUS.FAILED || apiStatus === NAKAMOTO.API_STATUS.DROPPED) {
+        setPartial({ status: TX_STATUS.FAILED, isLoading: false, error: `Transaction ${apiStatus}` });
+        clearPoll();
+        stopElapsed();
+        if (onFailed) onFailed(txData);
+        return;
+      }
+
+      if (apiStatus === 'success') {
+        const count = await walletService.getConfirmationCount(txId);
+        const level = walletService.classifyFinality(count);
+
+        // Store block hash for reorg detection
+        if (!blockHash.current && txData.block_hash) {
+          blockHash.current = txData.block_hash;
+        }
+
+        setPartial({
+          status:        TX_STATUS.CONFIRMED,
+          confirmations: count,
+          finality:      level,
+          blockHash:     blockHash.current,
+          isLoading:     false,
+          isOptimistic:  false,
+        });
+
+        // Fire callbacks exactly once per milestone
+        if (count >= 1 && !firedRef.current.confirmed) {
+          firedRef.current.confirmed = true;
+          if (onConfirmed) onConfirmed({ txId, confirmations: count, txData });
+        }
+        if (count >= NAKAMOTO.FAST_CONFIRMS && !firedRef.current.fast) {
+          firedRef.current.fast = true;
+          if (onFastFinality) onFastFinality({ txId, confirmations: count });
+        }
+        if (count >= NAKAMOTO.SAFE_CONFIRMS && !firedRef.current.safe) {
+          firedRef.current.safe = true;
+          stopElapsed();
+          clearPoll();
+          if (onSafeFinality) onSafeFinality({ txId, confirmations: count });
+          return;
+        }
+
+        // Continue slow polling until safe finality
+        pollRef.current = setTimeout(poll, NAKAMOTO.SLOW_POLL_MS);
+        return;
+      }
+
+      // Still pending — use fast Nakamoto interval
+      if (optimistic) {
+        setPartial({ isOptimistic: true, status: TX_STATUS.BROADCAST });
+      }
+      pollRef.current = setTimeout(poll, NAKAMOTO.FAST_POLL_MS);
+    } catch (err) {
+      // Transient network error — keep polling at normal rate
+      pollRef.current = setTimeout(poll, NAKAMOTO.NORMAL_POLL_MS);
+    }
+  }, [txId, optimistic, clearPoll, stopElapsed, setPartial,
+      onConfirmed, onFastFinality, onSafeFinality, onFailed]);
+
   // Stop timers on unmount
   useEffect(() => {
     return () => {
