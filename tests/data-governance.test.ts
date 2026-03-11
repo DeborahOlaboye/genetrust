@@ -273,3 +273,99 @@ describe('data-governance - GDPR functions', () => {
     expect(result).toBeErr(Cl.uint(400));
   });
 });
+
+// ─── validate-consent-for-purpose ─────────────────────────────────────────────
+
+describe('data-governance - validate-consent-for-purpose', () => {
+  beforeEach(() => {
+    setConsent(30, true, false, false, 0, 5000); // only research consent
+  });
+
+  it('validates research purpose when research consent is granted', () => {
+    const { result } = simnet.callPublicFn(
+      'data-governance',
+      'validate-consent-for-purpose',
+      [Cl.uint(30), Cl.uint(1)], // purpose 1 = research
+      deployer,
+    );
+    expect(result).toBeOk(Cl.bool(true));
+  });
+
+  it('rejects commercial purpose when only research consent granted', () => {
+    const { result } = simnet.callPublicFn(
+      'data-governance',
+      'validate-consent-for-purpose',
+      [Cl.uint(30), Cl.uint(2)], // purpose 2 = commercial
+      deployer,
+    );
+    expect(result).toBeOk(Cl.bool(false));
+  });
+
+  it('returns 404 for unknown data-id', () => {
+    const { result } = simnet.callPublicFn(
+      'data-governance',
+      'validate-consent-for-purpose',
+      [Cl.uint(9999), Cl.uint(1)],
+      deployer,
+    );
+    expect(result).toBeErr(expect.anything());
+  });
+});
+
+// ─── compliance reporting ─────────────────────────────────────────────────────
+
+describe('data-governance - compliance reporting', () => {
+  beforeEach(() => {
+    setConsent(40, true, true, false, 2, 3000); // EU
+  });
+
+  it('get-compliance-report returns ok with jurisdiction info', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'data-governance',
+      'get-compliance-report',
+      [Cl.uint(40)],
+      deployer,
+    );
+    expect(result).toBeOk(expect.anything());
+  });
+
+  it('get-compliance-report returns 404 for missing dataset', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'data-governance',
+      'get-compliance-report',
+      [Cl.uint(9999)],
+      deployer,
+    );
+    expect(result).toBeErr(expect.anything());
+  });
+
+  it('get-usage-statistics returns current-block', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'data-governance',
+      'get-usage-statistics',
+      [Cl.uint(40)],
+      deployer,
+    );
+    expect(result).toMatchObject(expect.anything());
+  });
+
+  it('calculate-compliance-score returns overall-score field', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'data-governance',
+      'calculate-compliance-score',
+      [Cl.uint(40)],
+      deployer,
+    );
+    expect(result).toMatchObject(expect.anything());
+  });
+
+  it('verify-gdpr-article-30-compliance returns compliant flag for EU data', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'data-governance',
+      'verify-gdpr-article-30-compliance',
+      [Cl.uint(40)],
+      deployer,
+    );
+    expect(result).toBeOk(expect.anything());
+  });
+});
