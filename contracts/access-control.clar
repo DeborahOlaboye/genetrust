@@ -1,5 +1,19 @@
 ;; access-control.clar
 ;; Role-based access control for GeneTrust smart contracts
+;; Enhanced with Clarity 4 principal-of? identity verification, secure delegation,
+;; and multi-signature role management for institutional genetic data governance.
+
+;; Define the access-control-trait so other contracts can use-trait to call us
+(define-trait access-control-trait
+    (
+        (has-role (principal uint) (response bool uint))
+        (grant-role (principal uint) (response bool uint))
+        (revoke-role (principal uint) (response bool uint))
+        (register-identity-proof ((buff 33)) (response bool uint))
+        (is-identity-verified (principal) (response bool uint))
+        (assert-verified-role (principal uint) (response bool uint))
+    )
+)
 
 ;; Error codes mapped to HTTP status
 (define-constant ERR-NOT-ADMIN (err u401))
