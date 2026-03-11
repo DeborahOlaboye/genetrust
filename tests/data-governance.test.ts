@@ -202,3 +202,74 @@ describe('data-governance - amend-consent-policy', () => {
     expect(result).toStrictEqual(Cl.uint(1));
   });
 });
+
+// ─── GDPR functions ───────────────────────────────────────────────────────────
+
+describe('data-governance - GDPR functions', () => {
+  beforeEach(() => {
+    // Set EU consent so GDPR record is initialised
+    setConsent(20, true, false, false, 2, 5000);
+  });
+
+  it('gdpr-request-erasure sets right-to-be-forgotten flag', () => {
+    const { result } = simnet.callPublicFn(
+      'data-governance',
+      'gdpr-request-erasure',
+      [Cl.uint(20)],
+      deployer,
+    );
+    expect(result).toBeOk(Cl.bool(true));
+  });
+
+  it('gdpr-request-portability sets portability flag', () => {
+    const { result } = simnet.callPublicFn(
+      'data-governance',
+      'gdpr-request-portability',
+      [Cl.uint(20)],
+      deployer,
+    );
+    expect(result).toBeOk(Cl.bool(true));
+  });
+
+  it('gdpr-restrict-processing sets processing-restricted flag', () => {
+    const { result } = simnet.callPublicFn(
+      'data-governance',
+      'gdpr-restrict-processing',
+      [Cl.uint(20)],
+      deployer,
+    );
+    expect(result).toBeOk(Cl.bool(true));
+  });
+
+  it('gdpr-restore-processing clears processing-restricted flag', () => {
+    simnet.callPublicFn('data-governance', 'gdpr-restrict-processing', [Cl.uint(20)], deployer);
+    const { result } = simnet.callPublicFn(
+      'data-governance',
+      'gdpr-restore-processing',
+      [Cl.uint(20)],
+      deployer,
+    );
+    expect(result).toBeOk(Cl.bool(true));
+  });
+
+  it('non-owner cannot invoke gdpr-request-erasure', () => {
+    const { result } = simnet.callPublicFn(
+      'data-governance',
+      'gdpr-request-erasure',
+      [Cl.uint(20)],
+      wallet1,
+    );
+    expect(result).toBeErr(Cl.uint(401));
+  });
+
+  it('gdpr functions reject non-EU datasets', () => {
+    setConsent(21, true, false, false, 1, 1000); // US jurisdiction
+    const { result } = simnet.callPublicFn(
+      'data-governance',
+      'gdpr-request-erasure',
+      [Cl.uint(21)],
+      deployer,
+    );
+    expect(result).toBeErr(Cl.uint(400));
+  });
+});
