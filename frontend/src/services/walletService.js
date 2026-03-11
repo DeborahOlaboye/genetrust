@@ -756,6 +756,38 @@ class WalletService {
     const data = await res.json();
     return data.results?.[0]?.height ?? 0;
   }
+
+  /**
+   * Compute how many confirmations a transaction has using the Nakamoto
+   * block model. Returns 0 if the tx is not yet confirmed.
+   *
+   * @async
+   * @param {string} txId  - Transaction ID
+   * @returns {Promise<number>} Confirmation count
+   */
+  async getConfirmationCount(txId) {
+    const [txData, currentHeight] = await Promise.all([
+      this.fetchTxStatus(txId),
+      this.getCurrentBlockHeight(),
+    ]);
+
+    const txHeight = txData.block_height;
+    if (!txHeight || txData.tx_status !== 'success') return 0;
+    return Math.max(0, currentHeight - txHeight + 1);
+  }
+
+  /**
+   * Classify the finality level of a transaction under Nakamoto rules.
+   *
+   * @param {number} confirmations
+   * @returns {'unconfirmed'|'optimistic'|'fast'|'safe'}
+   */
+  classifyFinality(confirmations) {
+    if (confirmations <= 0)                            return 'unconfirmed';
+    if (confirmations < NAKAMOTO.FAST_CONFIRMS)        return 'optimistic';
+    if (confirmations < NAKAMOTO.SAFE_CONFIRMS)        return 'fast';
+    return 'safe';
+  }
 }
 
 /**
