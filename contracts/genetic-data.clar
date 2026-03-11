@@ -946,6 +946,60 @@
     )
 )
 
+;; ── Multi-signature API ───────────────────────────────────────────────────────
+
+;; Propose a multi-sig action for a dataset.
+;; The proposer's identity is verified via principal-of? before the proposal
+;; is registered on-chain.
+(define-public (propose-multisig-action
+    (data-id      uint)
+    (action-type  (string-utf8 50))
+    (target       principal)
+    (access-level uint)
+    (threshold    uint)
+    (pubkey       (buff 33)))
+    (begin
+        (try! (check-paused))
+        (try! (check-rate-limit tx-sender))
+
+        ;; Identity verification — proposer must prove key ownership
+        (let ((derived (unwrap! (principal-of? pubkey) ERR-INVALID-PUBKEY)))
+            (asserts! (is-eq derived tx-sender) ERR-PUBKEY-MISMATCH)
+
+            ;; Proposer must own the dataset
+            (try! (only-owner data-id))
+
+            ;; Threshold must be at least 2 for multi-sig
+            (asserts! (>= threshold u2) ERR-MULTISIG-THRESHOLD)
+
+            (let ((action-id (var-get next-action-id)))
+                (map-set multisig-actions
+                    { action-id: action-id }
+                    {
+                        data-id:        data-id,
+                        action-type:    action-type,
+                        proposer:       tx-sender,
+                        target:         target,
+                        access-level:   access-level,
+                        threshold:      threshold,
+                        approval-count: u1,   ;; Proposer auto-approves
+                        executed:       false,
+                        proposed-at:    stacks-block-height,
+                        expires-at:     (+ stacks-block-height MULTISIG-EXPIRY-BLOCKS)
+                    }
+                )
+                ;; Record proposer's auto-approval
+                (map-set multisig-approvals
+                    { action-id: action-id, approver: tx-sender }
+                    { approved-at: stacks-block-height, pubkey-hash: (hash160 pubkey) }
+                )
+                (var-set next-action-id (+ action-id u1))
+                (ok (print { event: "multisig-proposed", action-id: action-id, data-id: data-id }))
+            )
+        )
+    )
+)
+
 ;; Verify that an active, non-expired delegation exists for a data-id
 (define-read-only (verify-delegation (data-id uint) (delegator principal))
     (match (map-get? delegations { data-id: data-id, delegator: delegator })
