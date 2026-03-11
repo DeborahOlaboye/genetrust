@@ -790,6 +790,48 @@ class WalletService {
   }
 
   /**
+   * Register a broadcast transaction for Nakamoto status tracking.
+   * Stores the txId, timestamp, and optimistic confirmation state.
+   *
+   * @param {string} txId          - Transaction ID to track
+   * @param {Object} [meta={}]     - Optional metadata (functionName, description)
+   * @returns {Object} The tracked transaction entry
+   */
+  trackBroadcastTx(txId, meta = {}) {
+    if (!txId) throw new Error('txId is required');
+    if (!this._trackedTxs) this._trackedTxs = new Map();
+    const entry = {
+      txId,
+      broadcastAt:  Date.now(),
+      confirmations: 0,
+      finality:      'unconfirmed',
+      blockHash:     null,
+      status:        TX_STATUS.BROADCAST,
+      reorgDetected: false,
+      ...meta,
+    };
+    this._trackedTxs.set(txId, entry);
+    return entry;
+  }
+
+  /**
+   * Get a tracked transaction entry by txId.
+   * @param {string} txId
+   * @returns {Object|null}
+   */
+  getTrackedTx(txId) {
+    return this._trackedTxs?.get(txId) ?? null;
+  }
+
+  /**
+   * Remove a tracked transaction from the map.
+   * @param {string} txId
+   */
+  untrackTx(txId) {
+    this._trackedTxs?.delete(txId);
+  }
+
+  /**
    * Detect whether a previously confirmed transaction has been reorganised
    * (micro-fork). Compares the tx's recorded block_hash with the canonical
    * chain. Returns true if the block is no longer canonical.
