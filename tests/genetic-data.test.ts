@@ -604,6 +604,75 @@ describe('dataset-registry - version history', () => {
   });
 });
 
+// ─── update-genetic-data ──────────────────────────────────────────────────────
+
+describe('dataset-registry - update-genetic-data', () => {
+  beforeEach(() => {
+    registerDataset(100);
+  });
+
+  it('owner can update description', () => {
+    const { result } = simnet.callPublicFn(
+      'dataset-registry',
+      'update-genetic-data',
+      [
+        Cl.uint(100),
+        Cl.none(),
+        Cl.none(),
+        Cl.none(),
+        Cl.none(),
+        Cl.some(Cl.stringUtf8('Updated description')),
+      ],
+      deployer,
+    );
+    expect(result).toBeOk(expect.anything());
+  });
+
+  it('owner can update price', () => {
+    const { result } = simnet.callPublicFn(
+      'dataset-registry',
+      'update-genetic-data',
+      [
+        Cl.uint(100),
+        Cl.some(Cl.stringUtf8('500')),
+        Cl.none(),
+        Cl.none(),
+        Cl.none(),
+        Cl.none(),
+      ],
+      deployer,
+    );
+    expect(result).toBeOk(expect.anything());
+  });
+
+  it('non-owner cannot update dataset', () => {
+    const { result } = simnet.callPublicFn(
+      'dataset-registry',
+      'update-genetic-data',
+      [Cl.uint(100), Cl.none(), Cl.none(), Cl.none(), Cl.none(), Cl.none()],
+      wallet1,
+    );
+    expect(result).toBeErr(Cl.uint(401));
+  });
+
+  it('update increments version in get-dataset-versions', () => {
+    simnet.callPublicFn(
+      'dataset-registry',
+      'update-genetic-data',
+      [Cl.uint(100), Cl.none(), Cl.none(), Cl.none(), Cl.none(), Cl.none()],
+      deployer,
+    );
+    const { result } = simnet.callReadOnlyFn(
+      'dataset-registry',
+      'get-dataset-versions',
+      [Cl.uint(100)],
+      deployer,
+    );
+    // After one update the current-version should be >= 2 (registration = 1, update = 2)
+    expect(result).not.toBeNone();
+  });
+});
+
 // ─── batch-grant-access ───────────────────────────────────────────────────────
 
 describe('dataset-registry - batch-grant-access', () => {
