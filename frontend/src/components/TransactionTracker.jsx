@@ -100,6 +100,93 @@ function ConfirmationBar({ confirmations, finality }) {
   );
 }
 
+/**
+ * Full-size transaction status card.
+ */
+function FullView({ txId, shortId, title, status, meta }) {
+  const elapsedSec = Math.round(status.elapsed / 1000);
+
+  return (
+    <div
+      role="region"
+      aria-label={`Transaction status for ${title}`}
+      style={{
+        background:   meta.bg,
+        border:       `1px solid ${meta.color}`,
+        borderRadius: '12px',
+        padding:      '16px',
+        maxWidth:     '480px',
+        fontFamily:   'system-ui, sans-serif',
+      }}
+    >
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+        <span style={{ fontWeight: 600, fontSize: '14px' }}>{title}</span>
+        <FinalityBadge meta={meta} />
+      </div>
+
+      {/* Reorg alert */}
+      {status.reorgDetected && (
+        <div role="alert" style={{
+          background: '#fef2f2', border: '1px solid #ef4444',
+          borderRadius: '8px', padding: '8px', marginBottom: '10px',
+          fontSize: '13px', color: '#b91c1c',
+        }}>
+          Block reorganization detected — re-confirming transaction
+        </div>
+      )}
+
+      {/* Optimistic note */}
+      {status.isOptimistic && !status.reorgDetected && (
+        <div style={{
+          background: '#eff6ff', borderRadius: '8px', padding: '8px',
+          marginBottom: '10px', fontSize: '13px', color: '#1d4ed8',
+        }}>
+          Optimistic: transaction likely included in the next block
+        </div>
+      )}
+
+      {/* Tx ID */}
+      <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '12px' }}>
+        <span>TX: </span>
+        <a
+          href={`https://explorer.hiro.so/txid/${txId}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ color: meta.color, fontFamily: 'monospace' }}
+        >
+          {shortId}
+        </a>
+      </div>
+
+      {/* Confirmation progress */}
+      <ConfirmationBar
+        confirmations={status.confirmations}
+        finality={status.finality}
+      />
+
+      {/* Elapsed */}
+      <div style={{ fontSize: '11px', color: '#9ca3af', marginTop: '8px' }}>
+        {status.finality === 'safe'
+          ? `Finalised in ${elapsedSec}s`
+          : `Elapsed: ${elapsedSec}s`}
+      </div>
+
+      {/* Description */}
+      <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '6px' }}>
+        {meta.desc}
+      </div>
+
+      {/* Error */}
+      {status.error && (
+        <div role="alert" style={{ color: '#dc2626', fontSize: '13px', marginTop: '8px' }}>
+          {status.error}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function TransactionTracker({
   txId,
   title = 'Transaction',
