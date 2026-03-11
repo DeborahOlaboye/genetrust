@@ -864,6 +864,56 @@
     )
 )
 
+;; ── Clarity 4 principal-of? Delegation API ───────────────────────────────────
+
+;; Secure delegation with cryptographic verification.
+;; The caller provides their compressed secp256k1 public key (33 bytes).
+;; principal-of? derives the Stacks principal from the pubkey and asserts it
+;; matches tx-sender — proving ownership of the private key without revealing it.
+;;
+;; This implements the pattern from issue #97:
+;;   (let ((derived-principal (unwrap! (principal-of? pubkey) ERR-INVALID-PUBKEY)))
+;;     (asserts! (is-eq derived-principal tx-sender) ERR-PUBKEY-MISMATCH)
+;;     (grant-access data-id delegate access-level))
+(define-public (delegate-access
+    (data-id      uint)
+    (delegate     principal)
+    (access-level uint)
+    (pubkey       (buff 33)))   ;; compressed secp256k1 public key (33 bytes)
+    (begin
+        (try! (check-paused))
+        (try! (check-rate-limit tx-sender))
+
+        ;; Cryptographic identity verification via Clarity 4 principal-of?
+        (let ((derived-principal (unwrap! (principal-of? pubkey) ERR-INVALID-PUBKEY)))
+            ;; Verify the pubkey belongs to the caller — no key exposure needed
+            (asserts! (is-eq derived-principal tx-sender) ERR-PUBKEY-MISMATCH)
+
+            ;; Caller must own the dataset to delegate access
+            (try! (only-owner data-id))
+
+            ;; Validate access level
+            (try! (validate-access-level access-level))
+
+            ;; Record the delegation
+            (map-set delegations
+                { data-id: data-id, delegator: tx-sender }
+                {
+                    delegate:       delegate,
+                    access-level:   access-level,
+                    granted-at:     stacks-block-height,
+                    expires-at:     (+ stacks-block-height DELEGATION-EXPIRY-BLOCKS),
+                    pubkey-hash:    (hash160 pubkey),
+                    is-active:      true
+                }
+            )
+
+            ;; Also write the actual access right so delegate can use it
+            (grant-access data-id delegate access-level)
+        )
+    )
+)
+
 ;; ── Clarity 4 contract-of / Dynamic Contract Discovery ───────────────────────
 ;; The functions below integrate with the on-chain contract-registry to enable
 ;; dynamic contract resolution.  The canonical Clarity 4 pattern is:
