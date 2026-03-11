@@ -283,6 +283,60 @@ describe('dataset-registry - verify-registered-contract', () => {
   });
 });
 
+// ─── transfer-ownership ───────────────────────────────────────────────────────
+
+describe('dataset-registry - transfer-ownership', () => {
+  beforeEach(() => {
+    registerDataset(50);
+  });
+
+  it('owner can transfer ownership to another principal', () => {
+    const { result } = simnet.callPublicFn(
+      'dataset-registry',
+      'transfer-ownership',
+      [Cl.uint(50), Cl.principal(wallet1)],
+      deployer,
+    );
+    expect(result).toBeOk(expect.anything());
+  });
+
+  it('new owner is reflected in get-dataset-details after transfer', () => {
+    simnet.callPublicFn(
+      'dataset-registry',
+      'transfer-ownership',
+      [Cl.uint(50), Cl.principal(wallet1)],
+      deployer,
+    );
+    const { result } = simnet.callReadOnlyFn(
+      'dataset-registry',
+      'get-dataset-details',
+      [Cl.uint(50)],
+      deployer,
+    );
+    expect(result).toBeSome(expect.anything());
+  });
+
+  it('non-owner cannot transfer ownership', () => {
+    const { result } = simnet.callPublicFn(
+      'dataset-registry',
+      'transfer-ownership',
+      [Cl.uint(50), Cl.principal(wallet2)],
+      wallet1, // not owner
+    );
+    expect(result).toBeErr(Cl.uint(401));
+  });
+
+  it('transfer to non-existent dataset returns 404', () => {
+    const { result } = simnet.callPublicFn(
+      'dataset-registry',
+      'transfer-ownership',
+      [Cl.uint(9999), Cl.principal(wallet1)],
+      deployer,
+    );
+    expect(result).toBeErr(Cl.uint(404));
+  });
+});
+
 // ─── revoke-access ────────────────────────────────────────────────────────────
 
 describe('dataset-registry - revoke-access', () => {
