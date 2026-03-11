@@ -160,6 +160,41 @@
     )
 )
 
+;; Grant a role to a principal whose identity has been verified via principal-of?.
+;; The admin provides their pubkey; verification happens before the role write.
+(define-public (grant-role-verified
+    (user    principal)
+    (role    uint)
+    (pubkey  (buff 33)))
+    (begin
+        ;; Admin identity verification
+        (let ((derived (unwrap! (principal-of? pubkey) ERR-INVALID-PUBKEY)))
+            (asserts! (is-eq derived tx-sender) ERR-PUBKEY-MISMATCH)
+            (try! (only-admin))
+
+            ;; Recipient must have registered an identity proof
+            (asserts!
+                (match (map-get? identity-proofs { user: user })
+                    proof (get is-active proof)
+                    false
+                )
+                ERR-IDENTITY-NOT-FOUND
+            )
+
+            (let ((current-roles (default-to u0 (map-get? roles { user: user }))))
+                (map-set roles { user: user } (bitwise-or current-roles role))
+                (ok (print {
+                    event:  "role-granted-verified",
+                    user:   user,
+                    role:   role,
+                    by:     tx-sender,
+                    block:  stacks-block-height
+                }))
+            )
+        )
+    )
+)
+
 ;; Grant a role to an address
 (define-public (grant-role (user principal) (role uint))
     (let (
