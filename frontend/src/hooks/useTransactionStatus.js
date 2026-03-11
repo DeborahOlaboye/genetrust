@@ -7,6 +7,7 @@
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import toast from 'react-hot-toast';
 import { walletService, NAKAMOTO, TX_STATUS } from '../services/walletService';
 
 // ── Status shape ─────────────────────────────────────────────────────────────
@@ -113,6 +114,7 @@ export function useTransactionStatus(txId, options = {}) {
       // Map Hiro API status to our TX_STATUS
       if (apiStatus === NAKAMOTO.API_STATUS.FAILED || apiStatus === NAKAMOTO.API_STATUS.DROPPED) {
         setPartial({ status: TX_STATUS.FAILED, isLoading: false, error: `Transaction ${apiStatus}` });
+        toast.error(`Transaction failed: ${apiStatus}`);
         clearPoll();
         stopElapsed();
         if (onFailed) onFailed(txData);
@@ -141,14 +143,17 @@ export function useTransactionStatus(txId, options = {}) {
         // Fire callbacks exactly once per milestone
         if (count >= 1 && !firedRef.current.confirmed) {
           firedRef.current.confirmed = true;
+          toast.success('Transaction confirmed on Stacks!');
           if (onConfirmed) onConfirmed({ txId, confirmations: count, txData });
         }
         if (count >= NAKAMOTO.FAST_CONFIRMS && !firedRef.current.fast) {
           firedRef.current.fast = true;
+          toast.success(`Fast finality reached (${count} confirmations)`);
           if (onFastFinality) onFastFinality({ txId, confirmations: count });
         }
         if (count >= NAKAMOTO.SAFE_CONFIRMS && !firedRef.current.safe) {
           firedRef.current.safe = true;
+          toast.success('Transaction is fully safe and final.');
           stopElapsed();
           clearPoll();
           if (onSafeFinality) onSafeFinality({ txId, confirmations: count });
@@ -187,6 +192,7 @@ export function useTransactionStatus(txId, options = {}) {
           confirmations: 0,
           status:        TX_STATUS.BROADCAST,
         });
+        toast('Block reorganization detected — re-confirming…', { icon: '⚠️' });
         if (onReorg) onReorg({ txId, blockHash: blockHash.current });
         // Reset blockHash so we track new inclusion block
         blockHash.current = null;
