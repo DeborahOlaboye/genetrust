@@ -196,7 +196,8 @@ function CompactView({ txId, shortId, status, meta }) {
  * Full-size transaction status card.
  */
 function FullView({ txId, shortId, title, status, meta }) {
-  const elapsedSec = Math.round(status.elapsed / 1000);
+  const elapsedSec  = Math.round(status.elapsed / 1000);
+  const { refresh } = status;
 
   return (
     <div
@@ -277,6 +278,26 @@ function FullView({ txId, shortId, title, status, meta }) {
         <div role="alert" style={{ color: '#dc2626', fontSize: '13px', marginTop: '8px' }}>
           {status.error}
         </div>
+      )}
+
+      {/* Manual refresh */}
+      {status.finality !== 'safe' && !status.error && (
+        <button
+          onClick={refresh}
+          aria-label="Refresh transaction status"
+          style={{
+            marginTop:    '10px',
+            background:   'transparent',
+            border:       `1px solid ${meta.color}`,
+            borderRadius: '6px',
+            color:         meta.color,
+            padding:       '4px 12px',
+            fontSize:      '12px',
+            cursor:        'pointer',
+          }}
+        >
+          Refresh status
+        </button>
       )}
     </div>
   );
