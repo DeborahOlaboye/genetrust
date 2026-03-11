@@ -68,6 +68,25 @@ export function useTransactionStatus(txId, options = {}) {
   const blockHash  = useRef(null);
   const firedRef   = useRef({ confirmed: false, fast: false, safe: false });
 
+  // ── Elapsed time ticker ───────────────────────────────────────────────────
+  const elapsedRef = useRef(null);
+
+  const startElapsed = useCallback(() => {
+    startRef.current = Date.now();
+    const tick = () => {
+      setPartial({ elapsed: Date.now() - (startRef.current ?? Date.now()) });
+      elapsedRef.current = requestAnimationFrame(tick);
+    };
+    elapsedRef.current = requestAnimationFrame(tick);
+  }, [setPartial]);
+
+  const stopElapsed = useCallback(() => {
+    if (elapsedRef.current) {
+      cancelAnimationFrame(elapsedRef.current);
+      elapsedRef.current = null;
+    }
+  }, []);
+
   // ── Helpers ───────────────────────────────────────────────────────────────
 
   const clearPoll = useCallback(() => {
@@ -81,7 +100,15 @@ export function useTransactionStatus(txId, options = {}) {
     setState(prev => ({ ...prev, ...patch }));
   }, []);
 
-  return { ...state, clearPoll };
+  // Stop timers on unmount
+  useEffect(() => {
+    return () => {
+      clearPoll();
+      stopElapsed();
+    };
+  }, [clearPoll, stopElapsed]);
+
+  return { ...state, clearPoll, startElapsed, stopElapsed };
 }
 
 export default useTransactionStatus;
