@@ -30,6 +30,35 @@ export const TX_STATUS = {
   FAILED:   'failed',
 };
 
+// ── Nakamoto upgrade constants ───────────────────────────────────────────────
+// Nakamoto sub-second block times (~0.5s per microblock, ~5s per block)
+export const NAKAMOTO = {
+  // Polling intervals (ms)
+  FAST_POLL_MS:          500,   // sub-second poll during pending phase
+  NORMAL_POLL_MS:        3000,  // normal polling once broadcast
+  SLOW_POLL_MS:          10000, // slow polling after initial confirmation
+
+  // Confirmation thresholds for genetic data trades
+  OPTIMISTIC_CONFIRMS:   1,     // show as likely-confirmed after 1 block
+  FAST_CONFIRMS:         3,     // fast-finality threshold (Nakamoto)
+  SAFE_CONFIRMS:         6,     // fully safe threshold
+
+  // Block reorg tolerance
+  MAX_REORG_DEPTH:       3,     // micro-forks deeper than this are flagged
+
+  // Hiro API base URL
+  API_BASE: 'https://api.hiro.so',
+
+  // Stacks API transaction status values
+  API_STATUS: {
+    PENDING:   'pending',
+    MEMPOOL:   'pending',
+    BROADCAST: 'success',  // Hiro uses 'success' for confirmed
+    FAILED:    'abort_by_response',
+    DROPPED:   'dropped_from_mempool',
+  },
+};
+
 /**
  * WalletService handles all wallet-related functionality including connection,
  * disconnection, and state management for Stacks wallet integration.
