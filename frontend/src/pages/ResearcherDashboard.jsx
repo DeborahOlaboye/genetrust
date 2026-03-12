@@ -117,7 +117,7 @@ export default function ResearcherDashboard() {
                   <button
                     onClick={() => purchase(l.listingId)}
                     disabled={isFetching || loadingId === l.listingId}
-                    className="px-5 py-2 bg-gradient-to-r from-[#34D399] to-[#8B5CF6] rounded-lg font-semibold disabled:opacity-60"
+                    className="px-5 py-2 bg-gradient-to-r from-[#34D399] to-[#8B5CF6] rounded-lg font-semibold disabled:opacity-60 disabled:cursor-not-allowed transition-opacity"
                   >
                     {loadingId === l.listingId ? 'Purchasing...' : 'Purchase'}
                   </button>
