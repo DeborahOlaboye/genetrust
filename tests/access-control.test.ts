@@ -234,3 +234,66 @@ describe('access-control - error context tracking', () => {
     expect(result).toBeSome(expect.anything());
   });
 });
+
+// ─── role bitmask composition ─────────────────────────────────────────────────
+
+describe('access-control - role bitmask semantics', () => {
+  it('has-role returns false for zero-value role query', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'access-control',
+      'has-role',
+      [Cl.principal(deployer), Cl.uint(0x0002)],
+      deployer,
+    );
+    // deployer has no roles set via grant-role (starts clean)
+    expect(result).toBeOk(Cl.bool(false));
+  });
+
+  it('sender-has-role returns false for VERIFIER role by default', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'access-control',
+      'sender-has-role',
+      [Cl.uint(ROLE_VERIFIER)],
+      deployer,
+    );
+    expect(result).toBeOk(Cl.bool(false));
+  });
+
+  it('sender-has-role returns false for DATA_PROVIDER role by default', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'access-control',
+      'sender-has-role',
+      [Cl.uint(ROLE_DATA_PROVIDER)],
+      deployer,
+    );
+    expect(result).toBeOk(Cl.bool(false));
+  });
+});
+
+// ─── admin chain ──────────────────────────────────────────────────────────────
+
+describe('access-control - admin chain integrity', () => {
+  it('newly promoted admin can call add-admin themselves', () => {
+    simnet.callPublicFn('access-control', 'add-admin', [Cl.principal(wallet1)], deployer);
+    // wallet1 is now admin — they can add wallet2
+    const { result } = simnet.callPublicFn(
+      'access-control',
+      'add-admin',
+      [Cl.principal(wallet2)],
+      wallet1,
+    );
+    expect(result).toBeOk(Cl.bool(true));
+  });
+
+  it('is-admin returns true for wallet2 after chained add-admin', () => {
+    simnet.callPublicFn('access-control', 'add-admin', [Cl.principal(wallet1)], deployer);
+    simnet.callPublicFn('access-control', 'add-admin', [Cl.principal(wallet2)], wallet1);
+    const { result } = simnet.callReadOnlyFn(
+      'access-control',
+      'is-admin',
+      [Cl.principal(wallet2)],
+      deployer,
+    );
+    expect(result).toBeOk(Cl.bool(true));
+  });
+});
