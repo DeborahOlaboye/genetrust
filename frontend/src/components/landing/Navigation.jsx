@@ -163,9 +163,10 @@ const Navigation = () => {
           <div className="md:hidden">
             <button
               type="button"
+              onClick={() => setMobileMenuOpen(open => !open)}
               className="bg-[#14102E] inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-white hover:bg-[#8B5CF6]/10 transition-colors duration-200"
               aria-controls="mobile-menu"
-              aria-expanded="false"
+              aria-expanded={mobileMenuOpen}
             >
               <span className="sr-only">Open main menu</span>
               {/* Hamburger icon */}
