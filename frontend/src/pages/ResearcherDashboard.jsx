@@ -70,7 +70,7 @@ export default function ResearcherDashboard() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0B0B1D] via-[#14102E] to-[#0B0B1D] text-white">
       <Navigation />
-      <div className="max-w-7xl mx-auto px-6 lg:px-8 py-10 space-y-8">
+      <main role="main" aria-label="Researcher marketplace" className="max-w-7xl mx-auto px-6 lg:px-8 py-10 space-y-8">
 
         {/* Controls */}
         <SectionCard title="Filters" border="#8B5CF6">
@@ -165,7 +165,7 @@ export default function ResearcherDashboard() {
             ))}
           </div>
         </div>
-      </div>
+      </main>
 
       {/* Screen reader live region for purchase status */}
       <div aria-live="polite" aria-atomic="true" className="sr-only">
