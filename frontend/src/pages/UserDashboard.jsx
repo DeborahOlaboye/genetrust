@@ -302,7 +302,7 @@ export default function UserDashboard() {
                       </select>
                     </div>
                     <div>
-                      <label className="text-sm text-[#9AA0B2]">Price (microSTX) *</label>
+                      <label htmlFor="listing-price" className="text-sm text-[#9AA0B2]">Price (microSTX) *</label>
                       <input
                         id="listing-price"
                         type="number"
