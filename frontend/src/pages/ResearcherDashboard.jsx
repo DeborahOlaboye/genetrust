@@ -54,6 +54,7 @@ export default function ResearcherDashboard() {
       const res = await contractService.purchaseListing({ listingId, desiredAccessLevel: Number(accessLevel) || 1 });
       const txShort = res?.txId ? `${res.txId.slice(0, 10)}...` : 'N/A';
       toast.success(`Purchase successful! Access Level ${res?.accessLevel ?? accessLevel}. TX: ${txShort}`);
+      await loadData();
     } catch (e) {
       toast.error(`Purchase failed: ${e.message}`);
     } finally {
