@@ -73,6 +73,11 @@ export default function ResearcherDashboard() {
           <p className="mt-1 text-sm text-[#9AA0B2]">Browse and purchase access to genetic datasets on the marketplace.</p>
         </div>
 
+        {/* Screen reader live region for loading state */}
+        <div role="status" className="sr-only">
+          {isFetching ? 'Loading marketplace listings…' : fetchError ? `Error: ${fetchError}` : `${listings.length} listing${listings.length !== 1 ? 's' : ''} loaded.`}
+        </div>
+
         {/* Controls */}
         <SectionCard title="Filters" border="#8B5CF6">
           <div className="grid md:grid-cols-3 gap-4">
