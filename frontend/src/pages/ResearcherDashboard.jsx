@@ -28,6 +28,7 @@ export default function ResearcherDashboard() {
   const [fetchLoading, setFetchLoading] = useState(false);
   const [fetchError, setFetchError] = useState(null);
   const [statusAnnouncement, setStatusAnnouncement] = useState('');
+  const [lastRefreshed, setLastRefreshed] = useState(null);
 
   const loadMarketplace = async () => {
     setFetchLoading(true);
@@ -38,6 +39,7 @@ export default function ResearcherDashboard() {
       setStatus(s);
       const ls = await contractService.listMarketplace();
       setListings(ls ?? []);
+      setLastRefreshed(new Date());
     } catch (e) {
       setFetchError(e.message ?? 'Failed to load marketplace listings');
     } finally {
@@ -95,13 +97,20 @@ export default function ResearcherDashboard() {
         <div className="rounded-2xl p-6 bg-[#0B0B1D]/80 backdrop-blur-xl shadow-2xl" style={{ border: '1px solid #34D39933' }}>
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-white font-semibold">Available Listings</h3>
-            <button
-              onClick={loadMarketplace}
-              disabled={fetchLoading}
-              className="text-xs px-3 py-1.5 border border-[#34D399]/30 text-[#34D399] rounded-lg hover:bg-[#34D399]/10 transition-colors disabled:opacity-40"
-            >
-              {fetchLoading ? 'Refreshing…' : 'Refresh'}
-            </button>
+            <div className="flex items-center gap-3">
+              {lastRefreshed && !fetchLoading && (
+                <span className="text-xs text-[#9AA0B2]">
+                  Updated {lastRefreshed.toLocaleTimeString()}
+                </span>
+              )}
+              <button
+                onClick={loadMarketplace}
+                disabled={fetchLoading}
+                className="text-xs px-3 py-1.5 border border-[#34D399]/30 text-[#34D399] rounded-lg hover:bg-[#34D399]/10 transition-colors disabled:opacity-40"
+              >
+                {fetchLoading ? 'Refreshing…' : 'Refresh'}
+              </button>
+            </div>
           </div>
           <div className="divide-y divide-[#34D399]/10">
             {fetchLoading && (
