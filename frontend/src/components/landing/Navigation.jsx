@@ -178,8 +178,9 @@ const Navigation = () => {
         </div>
       </div>
 
-      {/* Mobile menu - TODO: Add mobile menu state management */}
-      <div className="md:hidden" id="mobile-menu" style={{ display: 'none' }}>
+      {/* Mobile menu */}
+      {mobileMenuOpen && (
+      <div className="md:hidden" id="mobile-menu">
         <div className="px-2 pt-2 pb-3 space-y-1 bg-[#14102E]/95 backdrop-blur-lg">
           {menuItems.map((item) => (
             <a
@@ -192,6 +193,7 @@ const Navigation = () => {
           ))}
         </div>
       </div>
+      )}
     </nav>
   );
 };
