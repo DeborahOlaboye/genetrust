@@ -104,7 +104,7 @@ export default function ResearcherDashboard() {
               </div>
             )}
             {!isFetching && listings.length === 0 && !fetchError && <div className="text-[#9AA0B2] py-4">No listings available.</div>}
-            {listings.map(l => (
+            {!isFetching && listings.map(l => (
               <div key={l.listingId} className="py-4 flex items-center justify-between">
                 <div className="space-y-1">
                   <div className="font-medium">Listing #{l.listingId} • Dataset #{l.dataId}</div>
