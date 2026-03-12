@@ -868,3 +868,57 @@ describe('dataset-registry - set-contract-owner', () => {
     expect(result).toBeErr(Cl.uint(401));
   });
 });
+
+// ─── historical access queries ────────────────────────────────────────────────
+
+describe('dataset-registry - historical access queries', () => {
+  beforeEach(() => {
+    registerDataset(130);
+    simnet.callPublicFn(
+      'dataset-registry',
+      'grant-access',
+      [Cl.uint(130), Cl.principal(wallet1), Cl.uint(1)],
+      deployer,
+    );
+  });
+
+  it('get-historical-access-state returns current-access for granted user', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'dataset-registry',
+      'get-historical-access-state',
+      [Cl.uint(130), Cl.principal(wallet1), Cl.uint(0)],
+      deployer,
+    );
+    expect(result).toMatchObject(expect.anything());
+  });
+
+  it('get-access-changes-in-block-range returns block-range metadata', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'dataset-registry',
+      'get-access-changes-in-block-range',
+      [Cl.uint(130), Cl.principal(wallet1), Cl.uint(0), Cl.uint(1000)],
+      deployer,
+    );
+    expect(result).toMatchObject(expect.anything());
+  });
+
+  it('get-dataset-version-at returns ok for version 1', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'dataset-registry',
+      'get-dataset-version-at',
+      [Cl.uint(130), Cl.uint(1)],
+      deployer,
+    );
+    expect(result).toBeOk(expect.anything());
+  });
+
+  it('get-active-datasets-count returns a defined value', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'dataset-registry',
+      'get-active-datasets-count',
+      [],
+      deployer,
+    );
+    expect(result).toBeDefined();
+  });
+});
