@@ -51,6 +51,7 @@ export default function UserDashboard() {
   const [newPrice, setNewPrice] = useState('');
   const [newAccess, setNewAccess] = useState(3);
   const [selectedDataset, setSelectedDataset] = useState('');
+  const [isFetching, setIsFetching] = useState(false);
 
   // Connect wallet on mount if using real SDK
   useEffect(() => {
