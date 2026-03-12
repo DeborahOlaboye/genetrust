@@ -212,7 +212,7 @@ const Navigation = () => {
       {/* Mobile menu */}
       {mobileMenuOpen && (
       <div className="md:hidden" id="mobile-menu" role="navigation" aria-label="Mobile navigation menu">
-        <div className="px-2 pt-2 pb-3 space-y-1 bg-[#14102E]/95 backdrop-blur-lg">
+        <div className="px-2 pt-2 pb-3 space-y-1 bg-[#14102E]/95 backdrop-blur-lg border-t border-[#8B5CF6]/10 animate-[slideDown_0.15s_ease-out]">
           {menuItems.map((item) => (
             <a
               key={item.label}
