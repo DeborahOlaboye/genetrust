@@ -30,6 +30,18 @@ const Navigation = () => {
     { label: 'Dashboard', href: '#dashboard' }
   ];
 
+  // Lock body scroll when mobile menu is open
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      document.body.style.overflow = mobileMenuOpen ? 'hidden' : '';
+    }
+    return () => {
+      if (typeof document !== 'undefined') {
+        document.body.style.overflow = '';
+      }
+    };
+  }, [mobileMenuOpen]);
+
   // Close mobile menu when clicking outside the nav element
   useEffect(() => {
     const handleClickOutside = (e) => {
