@@ -922,3 +922,67 @@ describe('dataset-registry - historical access queries', () => {
     expect(result).toBeDefined();
   });
 });
+
+// ─── get-data-details and verify-access-rights ───────────────────────────────
+
+describe('dataset-registry - get-data-details and verify-access-rights', () => {
+  beforeEach(() => {
+    registerDataset(140);
+    simnet.callPublicFn(
+      'dataset-registry',
+      'grant-access',
+      [Cl.uint(140), Cl.principal(wallet1), Cl.uint(1)],
+      deployer,
+    );
+  });
+
+  it('get-data-details returns ok with owner and access-level', () => {
+    const { result } = simnet.callPublicFn(
+      'dataset-registry',
+      'get-data-details',
+      [Cl.uint(140)],
+      deployer,
+    );
+    expect(result).toBeOk(expect.anything());
+  });
+
+  it('get-data-details returns err 404 for unknown dataset', () => {
+    const { result } = simnet.callPublicFn(
+      'dataset-registry',
+      'get-data-details',
+      [Cl.uint(9999)],
+      deployer,
+    );
+    expect(result).toBeErr(Cl.uint(404));
+  });
+
+  it('verify-access-rights returns true for granted user', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'dataset-registry',
+      'verify-access-rights',
+      [Cl.uint(140), Cl.principal(wallet1)],
+      deployer,
+    );
+    expect(result).toStrictEqual(Cl.bool(true));
+  });
+
+  it('verify-access-rights returns false for user with no grant', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'dataset-registry',
+      'verify-access-rights',
+      [Cl.uint(140), Cl.principal(wallet2)],
+      deployer,
+    );
+    expect(result).toStrictEqual(Cl.bool(false));
+  });
+
+  it('get-dataset-owner returns the correct owner principal', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'dataset-registry',
+      'get-dataset-owner',
+      [Cl.uint(140)],
+      deployer,
+    );
+    expect(result).toBeSome(expect.anything());
+  });
+});
