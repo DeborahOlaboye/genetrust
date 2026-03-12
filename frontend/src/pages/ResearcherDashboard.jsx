@@ -28,17 +28,24 @@ export default function ResearcherDashboard() {
   const [isFetching, setIsFetching] = useState(false);
   const [fetchError, setFetchError] = useState(null);
 
-  useEffect(() => {
-    (async () => {
-      setIsFetching(true);
-      setFetchError(null);
+  const loadData = async () => {
+    setIsFetching(true);
+    setFetchError(null);
+    try {
       await contractService.initialize({});
       const s = await contractService.getStatus();
       setStatus(s);
       const ls = await contractService.listMarketplace();
       setListings(ls);
+    } catch (err) {
+      setFetchError(err?.message || 'Failed to load marketplace data. Please try again.');
+    } finally {
       setIsFetching(false);
-    })();
+    }
+  };
+
+  useEffect(() => {
+    loadData();
   }, []);
 
   const purchase = async (listingId) => {
