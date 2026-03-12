@@ -119,7 +119,7 @@ export default function ResearcherDashboard() {
                   <div className="font-medium">Listing #{l.listingId} • Dataset #{l.dataId}</div>
                   <div className="text-sm text-[#9AA0B2] flex items-center gap-2">
                     <Pill color="#8B5CF6">Access ≤ {l.accessLevel}</Pill>
-                    <Pill color="#F59E0B">{l.price} uSTX</Pill>
+                    <Pill color="#F59E0B">{(l.price / 1_000_000).toFixed(6)} STX</Pill>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
