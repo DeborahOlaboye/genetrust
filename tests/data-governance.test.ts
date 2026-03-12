@@ -551,3 +551,58 @@ describe('data-governance - get-tracked-purposes', () => {
     expect(result).toMatchObject(expect.anything());
   });
 });
+
+// ─── consent history ──────────────────────────────────────────────────────────
+
+describe('data-governance - consent history', () => {
+  beforeEach(() => {
+    setConsent(80, true, false, false, 0, 5000);
+    // Amend once to create a change record
+    simnet.callPublicFn(
+      'data-governance',
+      'amend-consent-policy',
+      [Cl.uint(80), Cl.bool(true), Cl.bool(true), Cl.bool(false), Cl.uint(0), Cl.uint(4000)],
+      deployer,
+    );
+  });
+
+  it('fetch-consent-change returns the first change record', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'data-governance',
+      'fetch-consent-change',
+      [Cl.uint(80), Cl.uint(1)],
+      deployer,
+    );
+    expect(result).toBeSome(expect.anything());
+  });
+
+  it('get-historical-consent-state delegates to fetch-consent-change', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'data-governance',
+      'get-historical-consent-state',
+      [Cl.uint(80), Cl.uint(1)],
+      deployer,
+    );
+    expect(result).toBeSome(expect.anything());
+  });
+
+  it('get-consent-change-count returns 1 after one amend', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'data-governance',
+      'get-consent-change-count',
+      [Cl.uint(80)],
+      deployer,
+    );
+    expect(result).toStrictEqual(Cl.uint(1));
+  });
+
+  it('fetch-consent-change returns none for non-existent change-id', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'data-governance',
+      'fetch-consent-change',
+      [Cl.uint(80), Cl.uint(999)],
+      deployer,
+    );
+    expect(result).toBeNone();
+  });
+});
