@@ -172,8 +172,8 @@ const Navigation = () => {
             </div>
           </div>
 
-          {/* Connect Wallet Button and Language Selector */}
-          <div className="flex items-center space-x-4">
+          {/* Connect Wallet Button and Language Selector — hidden on mobile (available in mobile menu) */}
+          <div className="hidden md:flex items-center space-x-4">
             {/* Language Selector */}
             <div className="hidden md:block">
               <LanguageSelector />
