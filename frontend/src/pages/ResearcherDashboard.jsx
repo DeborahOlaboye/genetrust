@@ -66,6 +66,12 @@ export default function ResearcherDashboard() {
       <Navigation />
       <div className="max-w-7xl mx-auto px-6 lg:px-8 py-10 space-y-8">
 
+        {/* Page Header */}
+        <div>
+          <h2 className="text-2xl font-bold text-white">Researcher Dashboard</h2>
+          <p className="mt-1 text-sm text-[#9AA0B2]">Browse and purchase access to genetic datasets on the marketplace.</p>
+        </div>
+
         {/* Controls */}
         <SectionCard title="Filters" border="#8B5CF6">
           <div className="grid md:grid-cols-3 gap-4">
