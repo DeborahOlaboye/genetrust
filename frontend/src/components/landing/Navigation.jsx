@@ -225,16 +225,23 @@ const Navigation = () => {
       {mobileMenuOpen && (
       <div className="md:hidden" id="mobile-menu" role="navigation" aria-label="Mobile navigation menu">
         <div className="px-2 pt-2 pb-3 space-y-1 bg-[#14102E]/95 backdrop-blur-lg border-t border-[#8B5CF6]/10 animate-[slideDown_0.15s_ease-out]">
-          {menuItems.map((item) => (
+          {menuItems.map((item) => {
+            const isActive = typeof window !== 'undefined' && window.location.pathname === item.href;
+            return (
             <a
               key={item.label}
               href={item.href}
               onClick={() => setMobileMenuOpen(false)}
-              className="text-gray-300 hover:text-[#8B5CF6] block px-3 py-2 text-base font-medium hover:bg-[#8B5CF6]/5 rounded-lg transition-colors duration-200"
+              className={`block px-3 py-2 text-base font-medium rounded-lg transition-colors duration-200 ${
+                isActive
+                  ? 'text-[#8B5CF6] bg-[#8B5CF6]/10'
+                  : 'text-gray-300 hover:text-[#8B5CF6] hover:bg-[#8B5CF6]/5'
+              }`}
             >
               {item.label}
             </a>
-          ))}
+            );
+          })}
           <div className="px-3 py-2">
             <LanguageSelector />
           </div>
