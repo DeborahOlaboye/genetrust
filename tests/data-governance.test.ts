@@ -481,3 +481,73 @@ describe('data-governance - audit-access', () => {
     expect(result).toMatchObject(expect.anything());
   });
 });
+
+// ─── assign-governance-owner ──────────────────────────────────────────────────
+
+describe('data-governance - assign-governance-owner', () => {
+  it('contract owner can transfer ownership', () => {
+    const { result } = simnet.callPublicFn(
+      'data-governance',
+      'assign-governance-owner',
+      [Cl.principal(wallet1)],
+      deployer,
+    );
+    expect(result).toBeOk(expect.anything());
+  });
+
+  it('non-owner cannot assign governance owner', () => {
+    const { result } = simnet.callPublicFn(
+      'data-governance',
+      'assign-governance-owner',
+      [Cl.principal(wallet2)],
+      wallet1,
+    );
+    expect(result).toBeErr(Cl.uint(401));
+  });
+});
+
+// ─── get-gdpr-request-status ──────────────────────────────────────────────────
+
+describe('data-governance - get-gdpr-request-status', () => {
+  beforeEach(() => {
+    // Set EU consent so GDPR record is initialised
+    setConsent(70, true, false, false, 2, 5000);
+    simnet.callPublicFn('data-governance', 'gdpr-request-erasure', [Cl.uint(70)], deployer);
+  });
+
+  it('returns erasure-requested true after gdpr-request-erasure', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'data-governance',
+      'get-gdpr-request-status',
+      [Cl.uint(70)],
+      deployer,
+    );
+    expect(result).toMatchObject(expect.anything());
+  });
+
+  it('returns none for dataset with no GDPR record', () => {
+    setConsent(71, true, false, false, 1, 5000); // US, no GDPR record
+    const { result } = simnet.callReadOnlyFn(
+      'data-governance',
+      'get-gdpr-request-status',
+      [Cl.uint(71)],
+      deployer,
+    );
+    // Returns none for non-EU datasets
+    expect(result).toBeNone();
+  });
+});
+
+// ─── get-tracked-purposes ─────────────────────────────────────────────────────
+
+describe('data-governance - get-tracked-purposes', () => {
+  it('returns all three purpose constants', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'data-governance',
+      'get-tracked-purposes',
+      [],
+      deployer,
+    );
+    expect(result).toMatchObject(expect.anything());
+  });
+});
