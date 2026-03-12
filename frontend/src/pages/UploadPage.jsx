@@ -11,11 +11,13 @@ import { contractService } from '../services/contractService.js';
 import { walletService } from '../services/walletService.js';
 import { APP_CONFIG } from '../config/app.js';
 import toast, { Toaster } from 'react-hot-toast';
+import { useDatasetList } from '../hooks/useDatasetList.js';
 
 export default function UploadPage() {
   const [walletConnected, setWalletConnected] = useState(false);
   const [connecting, setConnecting] = useState(false);
   const [lastTxId, setLastTxId] = useState(null);
+  const { datasets, refresh: refreshDatasets } = useDatasetList(contractService, false);
 
   useEffect(() => {
     contractService.initialize({ walletAddress: walletService.getAddress() }).catch(() => {});
@@ -73,15 +75,31 @@ export default function UploadPage() {
             onComplete={(txId) => {
               setLastTxId(txId);
               toast.success(`Dataset registered! TX: ${String(txId).slice(0, 12)}…`);
+              refreshDatasets();
             }}
           />
         </WalletGate>
 
-        {/* Recent registration notice */}
-        {lastTxId && (
-          <p style={{ textAlign: 'center', color: '#6B7280', fontSize: '0.78rem', marginTop: '1.5rem' }}>
-            Last TX: <span style={{ color: '#8B5CF6', fontFamily: 'monospace' }}>{lastTxId}</span>
-          </p>
+        {/* Summary strip */}
+        {(lastTxId || datasets.length > 0) && (
+          <div style={{
+            marginTop: '1.5rem', padding: '0.75rem 1rem',
+            borderRadius: '0.75rem', background: 'rgba(139,92,246,0.06)',
+            border: '1px solid rgba(139,92,246,0.15)',
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            flexWrap: 'wrap', gap: '0.5rem',
+          }}>
+            {datasets.length > 0 && (
+              <span style={{ color: '#9AA0B2', fontSize: '0.8rem' }}>
+                You have <strong style={{ color: '#8B5CF6' }}>{datasets.length}</strong> registered dataset{datasets.length !== 1 ? 's' : ''}
+              </span>
+            )}
+            {lastTxId && (
+              <span style={{ color: '#6B7280', fontSize: '0.75rem', fontFamily: 'monospace' }}>
+                Last TX: {lastTxId}
+              </span>
+            )}
+          </div>
         )}
       </main>
     </div>
