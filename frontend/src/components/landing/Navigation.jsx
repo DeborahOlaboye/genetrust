@@ -249,8 +249,18 @@ const Navigation = () => {
             </a>
             );
           })}
-          <div className="px-3 py-2">
+          <div className="px-3 py-2 border-t border-[#8B5CF6]/10 mt-1 space-y-2">
             <LanguageSelector />
+            <button
+              onClick={() => { handleConnectWallet(); setMobileMenuOpen(false); }}
+              className={`w-full px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                isWalletConnected
+                  ? 'bg-[#F59E0B] text-white border border-[#F59E0B]'
+                  : 'bg-[#8B5CF6] text-white border border-[#8B5CF6]'
+              }`}
+            >
+              {isWalletConnected ? formatAddress(walletAddress) : 'Connect Wallet'}
+            </button>
           </div>
         </div>
       </div>
