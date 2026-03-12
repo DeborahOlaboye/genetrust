@@ -71,6 +71,10 @@ export default function ResearcherDashboard() {
     <div className="min-h-screen bg-gradient-to-br from-[#0B0B1D] via-[#14102E] to-[#0B0B1D] text-white">
       <Navigation />
       <main role="main" aria-label="Researcher marketplace" className="max-w-7xl mx-auto px-6 lg:px-8 py-10 space-y-8">
+        <div>
+          <h2 className="text-2xl font-bold text-white">Researcher Marketplace</h2>
+          <p className="text-sm text-[#9AA0B2] mt-1">Browse and purchase access to genomic datasets listed on-chain.</p>
+        </div>
 
         {/* Controls */}
         <SectionCard title="Filters" border="#8B5CF6">
