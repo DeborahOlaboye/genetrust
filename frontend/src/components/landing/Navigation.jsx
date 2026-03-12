@@ -26,8 +26,9 @@ const Navigation = () => {
   const menuItems = [
     { label: 'About', href: '#about' },
     { label: 'How it works', href: '#how-it-works' },
-    { label: 'Researchers Dashboard', href: '#researchers-dashboard' },
-    { label: 'Dashboard', href: '#dashboard' }
+    { label: 'Researchers Dashboard', href: '/researcher' },
+    { label: 'Upload Dataset', href: '/upload' },
+    { label: 'Dashboard', href: '/' }
   ];
 
   // Lock body scroll when mobile menu is open
