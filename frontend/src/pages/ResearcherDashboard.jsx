@@ -30,11 +30,14 @@ export default function ResearcherDashboard() {
 
   useEffect(() => {
     (async () => {
+      setIsFetching(true);
+      setFetchError(null);
       await contractService.initialize({});
       const s = await contractService.getStatus();
       setStatus(s);
       const ls = await contractService.listMarketplace();
       setListings(ls);
+      setIsFetching(false);
     })();
   }, []);
 
