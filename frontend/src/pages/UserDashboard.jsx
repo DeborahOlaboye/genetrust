@@ -176,6 +176,7 @@ export default function UserDashboard() {
       // Clear form
       setNewPrice('');
       setSelectedDataset('');
+      setNewAccess(3);
     } catch (e) {
       console.error(e);
       toast.error(e.message || 'Failed to create listing', { id: toastId });
