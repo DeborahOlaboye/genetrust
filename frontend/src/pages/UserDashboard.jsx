@@ -254,7 +254,7 @@ export default function UserDashboard() {
             <div className="space-y-4">
               <div className="grid md:grid-cols-3 gap-3">
                 <div className="md:col-span-3">
-                  <label className="text-sm text-[#9AA0B2]">Description *</label>
+                  <label htmlFor="dataset-desc" className="text-sm text-[#9AA0B2]">Description *</label>
                   <input
                     id="dataset-desc"
                     value={newDesc}
