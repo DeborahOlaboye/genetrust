@@ -26,6 +26,7 @@ export default function ResearcherDashboard() {
   const [loadingId, setLoadingId] = useState(null);
   const [accessLevel, setAccessLevel] = useState(1);
   const [isFetching, setIsFetching] = useState(false);
+  const [fetchError, setFetchError] = useState(null);
 
   useEffect(() => {
     (async () => {
