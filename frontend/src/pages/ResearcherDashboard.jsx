@@ -82,8 +82,17 @@ export default function ResearcherDashboard() {
         {/* Listings */}
         <SectionCard title="Available Listings" border="#34D399">
           <div className="divide-y divide-[#34D399]/10">
-            {listings.length === 0 && <div className="text-[#9AA0B2]">No listings available.</div>}
-            {listings.map(l => (
+            {fetchLoading && (
+              <div className="flex items-center justify-center py-10 text-[#9AA0B2]">
+                <svg className="animate-spin h-6 w-6 mr-3 text-[#34D399]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                </svg>
+                Loading listings...
+              </div>
+            )}
+            {!fetchLoading && listings.length === 0 && <div className="text-[#9AA0B2]">No listings available.</div>}
+            {!fetchLoading && listings.map(l => (
               <div key={l.listingId} className="py-4 flex items-center justify-between">
                 <div className="space-y-1">
                   <div className="font-medium">Listing #{l.listingId} • Dataset #{l.dataId}</div>
