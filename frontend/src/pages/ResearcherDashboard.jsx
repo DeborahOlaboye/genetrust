@@ -74,12 +74,19 @@ export default function ResearcherDashboard() {
         <SectionCard title="Filters" border="#8B5CF6">
           <div className="grid md:grid-cols-3 gap-4">
             <div>
-              <label className="text-sm text-[#9AA0B2]">Desired Access Level</label>
-              <select value={accessLevel} onChange={e => setAccessLevel(e.target.value)} className="mt-1 w-full bg-[#14102E] border border-[#8B5CF6]/20 rounded-lg px-3 py-2">
+              <label htmlFor="access-level-select" className="text-sm text-[#9AA0B2]">Desired Access Level</label>
+              <select
+                id="access-level-select"
+                value={accessLevel}
+                onChange={e => setAccessLevel(e.target.value)}
+                aria-describedby="access-level-hint"
+                className="mt-1 w-full bg-[#14102E] border border-[#8B5CF6]/20 rounded-lg px-3 py-2 text-white"
+              >
                 <option value={1}>1 - Basic</option>
                 <option value={2}>2 - Detailed</option>
                 <option value={3}>3 - Full</option>
               </select>
+              <p id="access-level-hint" className="mt-1 text-xs text-[#9AA0B2]">Only listings at or above this level will grant the selected access.</p>
             </div>
           </div>
         </SectionCard>
