@@ -315,7 +315,7 @@ export default function UserDashboard() {
                       />
                     </div>
                     <div>
-                      <label className="text-sm text-[#9AA0B2]">Access Level</label>
+                      <label htmlFor="listing-access" className="text-sm text-[#9AA0B2]">Access Level</label>
                       <select
                         id="listing-access"
                         value={newAccess}
