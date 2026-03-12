@@ -100,7 +100,14 @@ export default function ResearcherDashboard() {
         {/* Listings */}
         <div className="rounded-2xl p-6 bg-[#0B0B1D]/80 backdrop-blur-xl shadow-2xl" style={{ border: '1px solid #34D39933' }}>
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-white font-semibold">Available Listings</h3>
+            <div>
+              <h3 className="text-white font-semibold">Available Listings</h3>
+              {!fetchLoading && !fetchError && (
+                <p className="text-xs text-[#9AA0B2] mt-0.5">
+                  {listings.length === 0 ? 'No listings' : `${listings.length} listing${listings.length !== 1 ? 's' : ''} found`}
+                </p>
+              )}
+            </div>
             <div className="flex items-center gap-3">
               {lastRefreshed && !fetchLoading && (
                 <span className="text-xs text-[#9AA0B2]">
