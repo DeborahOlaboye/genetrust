@@ -606,3 +606,64 @@ describe('data-governance - consent history', () => {
     expect(result).toBeNone();
   });
 });
+
+// ─── fetch-usage-record and fetch-access-log ──────────────────────────────────
+
+describe('data-governance - fetch-usage-record and fetch-access-log', () => {
+  beforeEach(() => {
+    setConsent(90, true, true, true, 0, 5000);
+  });
+
+  it('fetch-usage-record returns none before any activity is recorded', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'data-governance',
+      'fetch-usage-record',
+      [Cl.uint(9999)],
+      deployer,
+    );
+    expect(result).toBeNone();
+  });
+
+  it('fetch-usage-record returns some after record-processing-activity', () => {
+    const { result: actResult } = simnet.callPublicFn(
+      'data-governance',
+      'record-processing-activity',
+      [Cl.uint(90), Cl.principal(wallet1), Cl.uint(1), Cl.uint(500), Cl.uint(1)],
+      deployer,
+    );
+    const usageId = actResult.value as unknown as { value: bigint };
+    const { result } = simnet.callReadOnlyFn(
+      'data-governance',
+      'fetch-usage-record',
+      [Cl.uint(1)], // first usage id
+      deployer,
+    );
+    expect(result).toBeSome(expect.anything());
+  });
+
+  it('fetch-access-log returns none before any audit-access call', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'data-governance',
+      'fetch-access-log',
+      [Cl.uint(9999)],
+      deployer,
+    );
+    expect(result).toBeNone();
+  });
+
+  it('fetch-access-log returns some after audit-access', () => {
+    simnet.callPublicFn(
+      'data-governance',
+      'audit-access',
+      [Cl.uint(90), Cl.uint(1), Cl.bufferFromHex(ZERO_TX_ID)],
+      deployer,
+    );
+    const { result } = simnet.callReadOnlyFn(
+      'data-governance',
+      'fetch-access-log',
+      [Cl.uint(1)], // first log id
+      deployer,
+    );
+    expect(result).toBeSome(expect.anything());
+  });
+});
