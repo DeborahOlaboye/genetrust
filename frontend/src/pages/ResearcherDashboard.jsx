@@ -27,6 +27,7 @@ export default function ResearcherDashboard() {
   const [accessLevel, setAccessLevel] = useState(1);
   const [fetchLoading, setFetchLoading] = useState(false);
   const [fetchError, setFetchError] = useState(null);
+  const [statusAnnouncement, setStatusAnnouncement] = useState('');
 
   const loadMarketplace = async () => {
     setFetchLoading(true);
@@ -52,9 +53,13 @@ export default function ResearcherDashboard() {
     setLoadingId(listingId);
     try {
       const res = await contractService.purchaseListing({ listingId, desiredAccessLevel: Number(accessLevel) || 1 });
-      toast.success(`Purchase successful! Access Level ${res.accessLevel}. TX: ${res.txId.slice(0,10)}...`);
+      const msg = `Purchase successful! Access Level ${res.accessLevel}. TX: ${res.txId.slice(0,10)}...`;
+      toast.success(msg);
+      setStatusAnnouncement(msg);
     } catch (e) {
-      toast.error(`Purchase failed: ${e.message}`);
+      const errMsg = `Purchase failed: ${e.message}`;
+      toast.error(errMsg);
+      setStatusAnnouncement(errMsg);
     } finally {
       setLoadingId(null);
     }
@@ -136,6 +141,11 @@ export default function ResearcherDashboard() {
             ))}
           </div>
         </div>
+      </div>
+
+      {/* Screen reader live region for purchase status */}
+      <div aria-live="polite" aria-atomic="true" className="sr-only">
+        {statusAnnouncement}
       </div>
 
       {/* Background Glow */}
