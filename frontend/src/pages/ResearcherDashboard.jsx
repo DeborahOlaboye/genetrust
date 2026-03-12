@@ -25,6 +25,7 @@ export default function ResearcherDashboard() {
   const [listings, setListings] = useState([]);
   const [loadingId, setLoadingId] = useState(null);
   const [accessLevel, setAccessLevel] = useState(1);
+  const [isFetching, setIsFetching] = useState(false);
 
   useEffect(() => {
     (async () => {
