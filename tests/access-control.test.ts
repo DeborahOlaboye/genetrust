@@ -117,3 +117,75 @@ describe('access-control - has-role and sender-has-role', () => {
     expect(result).toBeOk(Cl.bool(false));
   });
 });
+
+// ─── admin management ─────────────────────────────────────────────────────────
+
+describe('access-control - add-admin', () => {
+  it('admin can add a new admin', () => {
+    const { result } = simnet.callPublicFn(
+      'access-control',
+      'add-admin',
+      [Cl.principal(wallet1)],
+      deployer,
+    );
+    expect(result).toBeOk(Cl.bool(true));
+  });
+
+  it('newly added admin is reflected by is-admin', () => {
+    simnet.callPublicFn('access-control', 'add-admin', [Cl.principal(wallet1)], deployer);
+    const { result } = simnet.callReadOnlyFn(
+      'access-control',
+      'is-admin',
+      [Cl.principal(wallet1)],
+      deployer,
+    );
+    expect(result).toBeOk(Cl.bool(true));
+  });
+
+  it('non-admin cannot add an admin', () => {
+    const { result } = simnet.callPublicFn(
+      'access-control',
+      'add-admin',
+      [Cl.principal(wallet2)],
+      wallet1,
+    );
+    expect(result).toBeErr(Cl.uint(401));
+  });
+});
+
+describe('access-control - remove-admin', () => {
+  beforeEach(() => {
+    simnet.callPublicFn('access-control', 'add-admin', [Cl.principal(wallet1)], deployer);
+  });
+
+  it('admin can remove another admin', () => {
+    const { result } = simnet.callPublicFn(
+      'access-control',
+      'remove-admin',
+      [Cl.principal(wallet1)],
+      deployer,
+    );
+    expect(result).toBeOk(Cl.bool(true));
+  });
+
+  it('is-admin returns false after removal', () => {
+    simnet.callPublicFn('access-control', 'remove-admin', [Cl.principal(wallet1)], deployer);
+    const { result } = simnet.callReadOnlyFn(
+      'access-control',
+      'is-admin',
+      [Cl.principal(wallet1)],
+      deployer,
+    );
+    expect(result).toBeOk(Cl.bool(false));
+  });
+
+  it('non-admin cannot remove an admin', () => {
+    const { result } = simnet.callPublicFn(
+      'access-control',
+      'remove-admin',
+      [Cl.principal(deployer)],
+      wallet2,
+    );
+    expect(result).toBeErr(Cl.uint(401));
+  });
+});
