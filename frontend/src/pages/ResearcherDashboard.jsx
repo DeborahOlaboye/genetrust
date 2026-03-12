@@ -93,7 +93,13 @@ export default function ResearcherDashboard() {
             )}
             {!fetchLoading && fetchError && (
               <div className="py-6 text-center">
-                <p className="text-red-400 text-sm mb-2">{fetchError}</p>
+                <p className="text-red-400 text-sm mb-3">{fetchError}</p>
+                <button
+                  onClick={loadMarketplace}
+                  className="px-4 py-2 text-sm bg-[#34D399]/10 border border-[#34D399]/30 text-[#34D399] rounded-lg hover:bg-[#34D399]/20 transition-colors"
+                >
+                  Retry
+                </button>
               </div>
             )}
             {!fetchLoading && !fetchError && listings.length === 0 && <div className="text-[#9AA0B2]">No listings available.</div>}
