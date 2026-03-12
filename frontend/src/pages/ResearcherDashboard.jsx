@@ -126,6 +126,7 @@ export default function ResearcherDashboard() {
                   <button
                     onClick={() => purchase(l.listingId)}
                     disabled={loadingId !== null || fetchLoading}
+                    aria-label={`Purchase listing ${l.listingId} for dataset ${l.dataId} at access level ${l.accessLevel}`}
                     className="px-5 py-2 bg-gradient-to-r from-[#34D399] to-[#8B5CF6] rounded-lg font-semibold disabled:opacity-60 disabled:cursor-not-allowed"
                   >
                     {loadingId === l.listingId ? 'Purchasing...' : 'Purchase'}
