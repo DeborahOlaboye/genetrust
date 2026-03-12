@@ -6,6 +6,8 @@ import { walletService } from '../services/walletService.js';
 import Navigation from '../components/landing/Navigation.jsx';
 import { APP_CONFIG } from '../config/app.js';
 import toast, { Toaster } from 'react-hot-toast';
+import { DatasetUploadWizard } from '../components/upload/DatasetUploadWizard.jsx';
+import { WalletGate } from '../components/upload/WalletGate.jsx';
 
 const StatCard = ({ title, value, accent = 'purple' }) => (
   <div 
@@ -51,6 +53,7 @@ export default function UserDashboard() {
   const [newPrice, setNewPrice] = useState('');
   const [newAccess, setNewAccess] = useState(3);
   const [selectedDataset, setSelectedDataset] = useState('');
+  const [showUploadWizard, setShowUploadWizard] = useState(false);
 
   // Connect wallet on mount if using real SDK
   useEffect(() => {
@@ -248,9 +251,48 @@ export default function UserDashboard() {
           <StatCard title="Network" value={APP_CONFIG.NETWORK} />
         </section>
 
+        {/* Dataset Upload Wizard */}
+        <section aria-labelledby="upload-wizard-heading">
+          <div className="flex items-center justify-between mb-3">
+            <h2 id="upload-wizard-heading" className="text-white font-semibold text-base">
+              Register New Dataset
+            </h2>
+            <button
+              type="button"
+              onClick={() => setShowUploadWizard(v => !v)}
+              className="text-sm px-4 py-1.5 rounded-lg font-medium"
+              style={{
+                background: showUploadWizard ? 'rgba(139,92,246,0.15)' : 'linear-gradient(135deg,#8B5CF6,#6D28D9)',
+                border: showUploadWizard ? '1px solid rgba(139,92,246,0.4)' : 'none',
+                color: '#fff',
+                cursor: 'pointer',
+              }}
+            >
+              {showUploadWizard ? '✕ Close' : '+ Upload & Register'}
+            </button>
+          </div>
+          {showUploadWizard && (
+            <WalletGate
+              isConnected={walletConnected || !APP_CONFIG.USE_REAL_SDK}
+              onConnect={handleConnectWallet}
+              connecting={loading}
+            >
+              <DatasetUploadWizard
+                contractService={contractService}
+                walletService={walletService}
+                onComplete={(txId) => {
+                  toast.success(`Dataset registered! TX: ${String(txId).slice(0, 10)}…`);
+                  setShowUploadWizard(false);
+                  contractService.listMyDatasets().then(setDatasets).catch(() => {});
+                }}
+              />
+            </WalletGate>
+          )}
+        </section>
+
         {/* Create / Manage */}
         <div className="grid md:grid-cols-2 gap-6">
-          <SectionCard title="Create Vault Dataset">
+          <SectionCard title="Quick Create Dataset">
             <div className="space-y-4">
               <div className="grid md:grid-cols-3 gap-3">
                 <div className="md:col-span-3">

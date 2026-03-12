@@ -56,7 +56,9 @@ export default function ResearcherDashboard() {
       toast.success(`Purchase successful! Access Level ${res?.accessLevel ?? accessLevel}. TX: ${txShort}`);
       await loadData();
     } catch (e) {
-      toast.error(`Purchase failed: ${e.message}`);
+      const errMsg = `Purchase failed: ${e.message}`;
+      toast.error(errMsg);
+      setStatusAnnouncement(errMsg);
     } finally {
       setLoadingId(null);
     }
@@ -65,7 +67,11 @@ export default function ResearcherDashboard() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0B0B1D] via-[#14102E] to-[#0B0B1D] text-white">
       <Navigation />
-      <div className="max-w-7xl mx-auto px-6 lg:px-8 py-10 space-y-8">
+      <main role="main" aria-label="Researcher marketplace" className="max-w-7xl mx-auto px-6 lg:px-8 py-10 space-y-8">
+        <div>
+          <h2 className="text-2xl font-bold text-white">Researcher Marketplace</h2>
+          <p className="text-sm text-[#9AA0B2] mt-1">Browse and purchase access to genomic datasets listed on-chain.</p>
+        </div>
 
         {/* Page Header */}
         <div>
@@ -88,6 +94,7 @@ export default function ResearcherDashboard() {
                 <option value={2}>2 - Detailed</option>
                 <option value={3}>3 - Full</option>
               </select>
+              <p id="access-level-hint" className="mt-1 text-xs text-[#9AA0B2]">Only listings at or above this level will grant the selected access.</p>
             </div>
           </div>
         </SectionCard>
@@ -124,9 +131,12 @@ export default function ResearcherDashboard() {
               <div key={l.listingId} className="py-4 flex items-center justify-between">
                 <div className="space-y-1">
                   <div className="font-medium">Listing #{l.listingId} • Dataset #{l.dataId}</div>
-                  <div className="text-sm text-[#9AA0B2] flex items-center gap-2">
+                  <div className="text-sm text-[#9AA0B2] flex items-center gap-2 flex-wrap">
                     <Pill color="#8B5CF6">Access ≤ {l.accessLevel}</Pill>
-                    <Pill color="#F59E0B">{l.price} uSTX</Pill>
+                    <Pill color="#F59E0B">{(l.price / 1_000_000).toFixed(6)} STX</Pill>
+                    {l.owner && (
+                      <Pill color="#9AA0B2">Owner: {l.owner.slice(0, 6)}…{l.owner.slice(-4)}</Pill>
+                    )}
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
@@ -141,7 +151,12 @@ export default function ResearcherDashboard() {
               </div>
             ))}
           </div>
-        </SectionCard>
+        </div>
+      </main>
+
+      {/* Screen reader live region for purchase status */}
+      <div aria-live="polite" aria-atomic="true" className="sr-only">
+        {statusAnnouncement}
       </div>
 
       {/* Background Glow */}
