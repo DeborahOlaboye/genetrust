@@ -93,7 +93,15 @@ export default function ResearcherDashboard() {
               </div>
             )}
             {!isFetching && fetchError && (
-              <div className="py-4 text-red-400">{fetchError}</div>
+              <div className="py-4 space-y-2">
+                <p className="text-red-400">{fetchError}</p>
+                <button
+                  onClick={loadData}
+                  className="px-4 py-2 text-sm rounded-lg bg-[#8B5CF6]/20 text-[#8B5CF6] hover:bg-[#8B5CF6]/30 transition-colors"
+                >
+                  Retry
+                </button>
+              </div>
             )}
             {!isFetching && listings.length === 0 && !fetchError && <div className="text-[#9AA0B2] py-4">No listings available.</div>}
             {listings.map(l => (
