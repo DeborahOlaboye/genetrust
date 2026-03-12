@@ -29,6 +29,17 @@ const Navigation = () => {
     { label: 'Dashboard', href: '#dashboard' }
   ];
 
+  // Close mobile menu on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && mobileMenuOpen) {
+        setMobileMenuOpen(false);
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [mobileMenuOpen]);
+
   // On mount, initialize userSession and restore session if signed in
   useEffect(() => {
     try {
