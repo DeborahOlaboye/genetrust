@@ -124,7 +124,15 @@ export default function ResearcherDashboard() {
                 </button>
               </div>
             )}
-            {!fetchLoading && !fetchError && listings.length === 0 && <div className="text-[#9AA0B2]">No listings available.</div>}
+            {!fetchLoading && !fetchError && listings.length === 0 && (
+              <div className="py-12 text-center">
+                <svg className="mx-auto mb-3 h-10 w-10 text-[#34D399]/30" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 7h18M3 12h18M3 17h18" />
+                </svg>
+                <p className="text-[#9AA0B2] text-sm">No listings available at the moment.</p>
+                <p className="text-[#9AA0B2]/60 text-xs mt-1">Check back later or ask a data owner to list their dataset.</p>
+              </div>
+            )}
             {!fetchLoading && listings.map(l => (
               <div key={l.listingId} className="py-4 flex items-center justify-between">
                 <div className="space-y-1">
