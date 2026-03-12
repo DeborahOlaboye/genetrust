@@ -7,6 +7,14 @@ import React, { useCallback, useRef, useState } from 'react';
 
 const ACCEPTED_EXTENSIONS = '.vcf,.vcf.gz,.fastq,.fastq.gz,.bam,.csv,.txt,.gz';
 
+const FORMAT_BADGES = [
+  { label: 'VCF',   color: '#8B5CF6' },
+  { label: 'FASTQ', color: '#06B6D4' },
+  { label: 'BAM',   color: '#F59E0B' },
+  { label: 'CSV',   color: '#34D399' },
+  { label: 'GZ',    color: '#9AA0B2' },
+];
+
 const formatBytes = (bytes) => {
   if (bytes === 0) return '0 B';
   const k = 1024;
@@ -83,9 +91,20 @@ export function FileDropZone({ onFile, fileError, disabled = false }) {
         <p style={{ color: '#6B7280', fontSize: '0.85rem' }}>
           or <span style={{ color: '#8B5CF6' }}>click to browse</span>
         </p>
-        <p style={{ color: '#4B5563', fontSize: '0.75rem', marginTop: '0.75rem' }}>
-          Accepted: VCF, FASTQ, BAM, CSV, TXT, GZ · Max 500 MB
-        </p>
+        <div style={{ display: 'flex', gap: '0.4rem', justifyContent: 'center', flexWrap: 'wrap', marginTop: '0.75rem' }}>
+          {FORMAT_BADGES.map(({ label, color }) => (
+            <span key={label} style={{
+              fontSize: '0.65rem', fontWeight: 600, fontFamily: 'monospace',
+              padding: '0.15rem 0.5rem', borderRadius: '0.25rem',
+              background: `${color}18`, color, border: `1px solid ${color}40`,
+            }}>
+              {label}
+            </span>
+          ))}
+          <span style={{ color: '#4B5563', fontSize: '0.72rem', alignSelf: 'center', marginLeft: '0.25rem' }}>
+            · Max 500 MB
+          </span>
+        </div>
 
         <input
           ref={inputRef}
