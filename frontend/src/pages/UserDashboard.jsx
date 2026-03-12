@@ -149,8 +149,9 @@ export default function UserDashboard() {
       return;
     }
 
-    if (!newPrice || Number(newPrice) <= 0) {
-      toast.error('Please enter a valid price');
+    const parsedPrice = Number(newPrice);
+    if (!newPrice || isNaN(parsedPrice) || parsedPrice <= 0) {
+      toast.error('Please enter a valid price greater than 0');
       return;
     }
 
