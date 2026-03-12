@@ -20,6 +20,7 @@ const Navigation = () => {
   const [walletAddress, setWalletAddress] = useState('');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const userSessionRef = useRef(null);
+  const navRef = useRef(null);
 
   // Navigation menu items from design
   const menuItems = [
@@ -28,6 +29,17 @@ const Navigation = () => {
     { label: 'Researchers Dashboard', href: '#researchers-dashboard' },
     { label: 'Dashboard', href: '#dashboard' }
   ];
+
+  // Close mobile menu when clicking outside the nav element
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (mobileMenuOpen && navRef.current && !navRef.current.contains(e.target)) {
+        setMobileMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [mobileMenuOpen]);
 
   // Close mobile menu on Escape key
   useEffect(() => {
@@ -111,7 +123,7 @@ const Navigation = () => {
   };
 
   return (
-    <nav className="relative z-50 bg-[#0B0B1D]/90 backdrop-blur-lg border-b border-[#8B5CF6]/15">
+    <nav ref={navRef} className="relative z-50 bg-[#0B0B1D]/90 backdrop-blur-lg border-b border-[#8B5CF6]/15">
       <div className="max-w-7xl mx-auto px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
