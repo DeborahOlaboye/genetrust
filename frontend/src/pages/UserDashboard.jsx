@@ -56,6 +56,7 @@ export default function UserDashboard() {
   // Connect wallet on mount if using real SDK
   useEffect(() => {
     const initializeDashboard = async () => {
+      setIsFetching(true);
       try {
         // Connect wallet if using real SDK
         if (APP_CONFIG.USE_REAL_SDK) {
@@ -83,6 +84,8 @@ export default function UserDashboard() {
       } catch (err) {
         console.error('Dashboard initialization error:', err);
         setError(err.message);
+      } finally {
+        setIsFetching(false);
       }
     };
 
