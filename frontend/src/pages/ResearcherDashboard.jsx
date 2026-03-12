@@ -80,7 +80,17 @@ export default function ResearcherDashboard() {
         </SectionCard>
 
         {/* Listings */}
-        <SectionCard title="Available Listings" border="#34D399">
+        <div className="rounded-2xl p-6 bg-[#0B0B1D]/80 backdrop-blur-xl shadow-2xl" style={{ border: '1px solid #34D39933' }}>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-white font-semibold">Available Listings</h3>
+            <button
+              onClick={loadMarketplace}
+              disabled={fetchLoading}
+              className="text-xs px-3 py-1.5 border border-[#34D399]/30 text-[#34D399] rounded-lg hover:bg-[#34D399]/10 transition-colors disabled:opacity-40"
+            >
+              {fetchLoading ? 'Refreshing…' : 'Refresh'}
+            </button>
+          </div>
           <div className="divide-y divide-[#34D399]/10">
             {fetchLoading && (
               <div className="flex items-center justify-center py-10 text-[#9AA0B2]">
@@ -124,7 +134,7 @@ export default function ResearcherDashboard() {
               </div>
             ))}
           </div>
-        </SectionCard>
+        </div>
       </div>
 
       {/* Background Glow */}
