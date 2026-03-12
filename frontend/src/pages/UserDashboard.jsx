@@ -285,7 +285,7 @@ export default function UserDashboard() {
                 <>
                   <div className="grid md:grid-cols-2 gap-3">
                     <div>
-                      <label className="text-sm text-[#9AA0B2]">Select Dataset *</label>
+                      <label htmlFor="select-dataset" className="text-sm text-[#9AA0B2]">Select Dataset *</label>
                       <select
                         id="select-dataset"
                         value={selectedDataset}
