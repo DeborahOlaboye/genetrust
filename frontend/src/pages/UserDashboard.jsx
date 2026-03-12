@@ -7,6 +7,7 @@ import Navigation from '../components/landing/Navigation.jsx';
 import { APP_CONFIG } from '../config/app.js';
 import toast, { Toaster } from 'react-hot-toast';
 import { DatasetUploadWizard } from '../components/upload/DatasetUploadWizard.jsx';
+import { WalletGate } from '../components/upload/WalletGate.jsx';
 
 const StatCard = ({ title, value, accent = 'purple' }) => (
   <div 
@@ -271,15 +272,21 @@ export default function UserDashboard() {
             </button>
           </div>
           {showUploadWizard && (
-            <DatasetUploadWizard
-              contractService={contractService}
-              walletService={walletService}
-              onComplete={(txId) => {
-                toast.success(`Dataset registered! TX: ${String(txId).slice(0, 10)}…`);
-                setShowUploadWizard(false);
-                contractService.listMyDatasets().then(setDatasets).catch(() => {});
-              }}
-            />
+            <WalletGate
+              isConnected={walletConnected || !APP_CONFIG.USE_REAL_SDK}
+              onConnect={handleConnectWallet}
+              connecting={loading}
+            >
+              <DatasetUploadWizard
+                contractService={contractService}
+                walletService={walletService}
+                onComplete={(txId) => {
+                  toast.success(`Dataset registered! TX: ${String(txId).slice(0, 10)}…`);
+                  setShowUploadWizard(false);
+                  contractService.listMyDatasets().then(setDatasets).catch(() => {});
+                }}
+              />
+            </WalletGate>
           )}
         </section>
 
