@@ -91,7 +91,12 @@ export default function ResearcherDashboard() {
                 Loading listings...
               </div>
             )}
-            {!fetchLoading && listings.length === 0 && <div className="text-[#9AA0B2]">No listings available.</div>}
+            {!fetchLoading && fetchError && (
+              <div className="py-6 text-center">
+                <p className="text-red-400 text-sm mb-2">{fetchError}</p>
+              </div>
+            )}
+            {!fetchLoading && !fetchError && listings.length === 0 && <div className="text-[#9AA0B2]">No listings available.</div>}
             {!fetchLoading && listings.map(l => (
               <div key={l.listingId} className="py-4 flex items-center justify-between">
                 <div className="space-y-1">
