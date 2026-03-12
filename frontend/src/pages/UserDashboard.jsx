@@ -304,6 +304,7 @@ export default function UserDashboard() {
                     <div>
                       <label className="text-sm text-[#9AA0B2]">Price (microSTX) *</label>
                       <input
+                        id="listing-price"
                         type="number"
                         value={newPrice}
                         onChange={e => setNewPrice(e.target.value)}
