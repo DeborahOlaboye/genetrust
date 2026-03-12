@@ -17,7 +17,7 @@
  *   />
  */
 
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useDatasetUpload, STEPS } from '../../hooks/useDatasetUpload.js';
 import { WizardStepBar }    from './WizardStepBar.jsx';
 import { FileDropZone }     from './FileDropZone.jsx';
@@ -39,6 +39,7 @@ const cardStyle = {
 };
 
 export function DatasetUploadWizard({ contractService, walletService, onComplete }) {
+  const headingRef = useRef(null);
   const {
     state,
     selectFile,
@@ -48,6 +49,11 @@ export function DatasetUploadWizard({ contractService, walletService, onComplete
     goBack,
   } = useDatasetUpload({ contractService, walletService, onComplete });
 
+  // Move focus to the card heading whenever the active step changes
+  useEffect(() => {
+    headingRef.current?.focus();
+  }, [state.step]);
+
   const { step, file, fileError } = state;
   const isProcessing = step === STEPS.HASHING || step === STEPS.SUBMITTING;
 
@@ -55,7 +61,11 @@ export function DatasetUploadWizard({ contractService, walletService, onComplete
     <div style={cardStyle}>
       {/* Title */}
       <div style={{ marginBottom: '0.25rem' }}>
-        <h2 style={{ color: '#E5E7EB', fontWeight: 700, fontSize: '1.15rem', margin: '0 0 0.15rem' }}>
+        <h2
+          ref={headingRef}
+          tabIndex={-1}
+          style={{ color: '#E5E7EB', fontWeight: 700, fontSize: '1.15rem', margin: '0 0 0.15rem', outline: 'none' }}
+        >
           Register Genomic Dataset
         </h2>
         <p style={{ color: '#6B7280', fontSize: '0.8rem', margin: 0 }}>

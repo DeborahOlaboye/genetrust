@@ -39,10 +39,15 @@ export function HashProgress({ step, hashProgress, hexHash }) {
   }, []);
 
   return (
-    <div style={{
-      display: 'flex', flexDirection: 'column', alignItems: 'center',
-      gap: '1.5rem', padding: '2rem 1rem', textAlign: 'center',
-    }}>
+    <div
+      role="status"
+      aria-live="polite"
+      aria-label={isHashing ? `Computing hash: ${hashProgress}%` : 'Broadcasting transaction'}
+      style={{
+        display: 'flex', flexDirection: 'column', alignItems: 'center',
+        gap: '1.5rem', padding: '2rem 1rem', textAlign: 'center',
+      }}
+    >
       <Spinner />
 
       <div>
