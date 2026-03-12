@@ -164,7 +164,7 @@ export default function UserDashboard() {
 
       await contractService.createListing({
         dataId: Number(selectedDataset),
-        price: Number(newPrice),
+        price: parsedPrice,
         accessLevel: Number(newAccess),
         description
       });
