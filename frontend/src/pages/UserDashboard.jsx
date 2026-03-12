@@ -352,8 +352,17 @@ export default function UserDashboard() {
         <div className="grid md:grid-cols-2 gap-6">
           <SectionCard title="Your Datasets">
             <div className="divide-y divide-[#8B5CF6]/10">
-              {datasets.length === 0 && <div className="text-[#9AA0B2]">No datasets yet.</div>}
-              {datasets.map(ds => (
+              {isFetching && [1, 2].map(n => (
+                <div key={n} className="py-3 flex items-center justify-between animate-pulse">
+                  <div className="space-y-2">
+                    <div className="h-4 w-28 bg-[#8B5CF6]/20 rounded" />
+                    <div className="h-3 w-40 bg-[#8B5CF6]/10 rounded" />
+                  </div>
+                  <div className="h-3 w-20 bg-[#8B5CF6]/10 rounded" />
+                </div>
+              ))}
+              {!isFetching && datasets.length === 0 && <div className="text-[#9AA0B2]">No datasets yet.</div>}
+              {!isFetching && datasets.map(ds => (
                 <div key={ds.id} className="py-3 flex items-center justify-between">
                   <div>
                     <div className="font-medium">Dataset #{ds.id}</div>
