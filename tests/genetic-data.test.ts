@@ -807,3 +807,64 @@ describe('dataset-registry - access history analytics', () => {
     expect(result).toBeSome(expect.anything());
   });
 });
+
+// ─── bulk-grant-access-map ────────────────────────────────────────────────────
+
+describe('dataset-registry - bulk-grant-access-map', () => {
+  beforeEach(() => {
+    registerDataset(120);
+    registerDataset(121);
+  });
+
+  it('bulk-grant-access-map returns a list of booleans', () => {
+    const { result } = simnet.callPublicFn(
+      'dataset-registry',
+      'bulk-grant-access-map',
+      [
+        Cl.list([Cl.uint(120), Cl.uint(121)]),
+        Cl.list([Cl.principal(wallet1), Cl.principal(wallet1)]),
+        Cl.list([Cl.uint(1), Cl.uint(1)]),
+      ],
+      deployer,
+    );
+    expect(result).toBeOk(expect.anything());
+  });
+
+  it('bulk-grant-access-map fails on list length mismatch', () => {
+    const { result } = simnet.callPublicFn(
+      'dataset-registry',
+      'bulk-grant-access-map',
+      [
+        Cl.list([Cl.uint(120)]),
+        Cl.list([Cl.principal(wallet1), Cl.principal(wallet2)]),
+        Cl.list([Cl.uint(1)]),
+      ],
+      deployer,
+    );
+    expect(result).toBeErr(Cl.uint(400));
+  });
+});
+
+// ─── set-contract-owner ───────────────────────────────────────────────────────
+
+describe('dataset-registry - set-contract-owner', () => {
+  it('contract owner can transfer contract ownership', () => {
+    const { result } = simnet.callPublicFn(
+      'dataset-registry',
+      'set-contract-owner',
+      [Cl.principal(wallet1)],
+      deployer,
+    );
+    expect(result).toBeOk(expect.anything());
+  });
+
+  it('non-owner cannot set contract owner', () => {
+    const { result } = simnet.callPublicFn(
+      'dataset-registry',
+      'set-contract-owner',
+      [Cl.principal(wallet2)],
+      wallet1,
+    );
+    expect(result).toBeErr(Cl.uint(401));
+  });
+});
