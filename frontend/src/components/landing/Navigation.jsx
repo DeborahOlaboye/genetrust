@@ -152,15 +152,22 @@ const Navigation = () => {
           {/* Desktop Navigation Menu */}
           <div className="hidden md:block">
             <div className="ml-10 flex items-baseline space-x-8">
-              {menuItems.map((item) => (
-                <a
-                  key={item.label}
-                  href={item.href}
-                  className="text-gray-300 hover:text-[#8B5CF6] px-3 py-2 text-sm font-medium transition-colors duration-200 hover:bg-[#8B5CF6]/5 rounded-lg"
-                >
-                  {item.label}
-                </a>
-              ))}
+              {menuItems.map((item) => {
+                const isActive = typeof window !== 'undefined' && window.location.pathname === item.href;
+                return (
+                  <a
+                    key={item.label}
+                    href={item.href}
+                    className={`px-3 py-2 text-sm font-medium transition-colors duration-200 rounded-lg ${
+                      isActive
+                        ? 'text-[#8B5CF6] bg-[#8B5CF6]/10'
+                        : 'text-gray-300 hover:text-[#8B5CF6] hover:bg-[#8B5CF6]/5'
+                    }`}
+                  >
+                    {item.label}
+                  </a>
+                );
+              })}
             </div>
           </div>
 
