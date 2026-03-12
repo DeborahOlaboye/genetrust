@@ -306,6 +306,7 @@ export default function UserDashboard() {
                         value={selectedDataset}
                         onChange={e => setSelectedDataset(e.target.value)}
                         className="mt-1 w-full bg-[#14102E] border border-[#8B5CF6]/20 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]/40"
+                        aria-required="true"
                         disabled={loading}
                       >
                         <option value="">Choose a dataset...</option>
