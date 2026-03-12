@@ -189,3 +189,48 @@ describe('access-control - remove-admin', () => {
     expect(result).toBeErr(Cl.uint(401));
   });
 });
+
+// ─── error context ────────────────────────────────────────────────────────────
+
+describe('access-control - error context tracking', () => {
+  it('get-error-context returns none for unseen error-id', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'access-control',
+      'get-error-context',
+      [Cl.uint(9999)],
+      deployer,
+    );
+    expect(result).toBeNone();
+  });
+
+  it('error context is recorded after a non-admin grant-role attempt', () => {
+    // Trigger a non-admin call to generate an error context entry
+    simnet.callPublicFn(
+      'access-control',
+      'grant-role',
+      [Cl.principal(wallet2), Cl.uint(0x0002)],
+      wallet1,
+    );
+    // error-id 0 should now be populated
+    const { result } = simnet.callReadOnlyFn(
+      'access-control',
+      'get-error-context',
+      [Cl.uint(0)],
+      deployer,
+    );
+    expect(result).toBeSome(expect.anything());
+  });
+
+  it('successive auth failures increment error-counter', () => {
+    simnet.callPublicFn('access-control', 'grant-role', [Cl.principal(wallet2), Cl.uint(0x0002)], wallet1);
+    simnet.callPublicFn('access-control', 'grant-role', [Cl.principal(wallet2), Cl.uint(0x0004)], wallet1);
+    // error-id 1 should exist
+    const { result } = simnet.callReadOnlyFn(
+      'access-control',
+      'get-error-context',
+      [Cl.uint(1)],
+      deployer,
+    );
+    expect(result).toBeSome(expect.anything());
+  });
+});
