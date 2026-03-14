@@ -1,6 +1,7 @@
 // Researcher Dashboard: browse marketplace listings and purchase access
 
 import React, { useEffect, useState } from 'react';
+import toast, { Toaster } from 'react-hot-toast';
 import { contractService } from '../services/contractService.js';
 import Navigation from '../components/landing/Navigation.jsx';
 
