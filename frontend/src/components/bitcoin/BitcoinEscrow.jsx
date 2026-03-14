@@ -235,7 +235,7 @@ export default function BitcoinEscrow({ listingId, accessLevel, userAddress, onC
 
         {/* Step 3: Done */}
         {step === 3 && (
-          <div className="text-center py-4 space-y-3">
+          <div className="text-center py-4 space-y-3" role="status" aria-live="polite">
             <div className="text-4xl">✓</div>
             <p className="font-semibold text-green-700">Payment confirmed!</p>
             <p className="text-sm text-gray-600">
