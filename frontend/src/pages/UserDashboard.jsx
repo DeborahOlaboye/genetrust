@@ -1,6 +1,4 @@
-// User Dashboard: manage personal genomic vault, datasets, and listings
-
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { contractService } from '../services/contractService.js';
 import { walletService } from '../services/walletService.js';
 import Navigation from '../components/landing/Navigation.jsx';
