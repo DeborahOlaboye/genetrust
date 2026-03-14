@@ -153,7 +153,8 @@ export default function UserDashboard() {
       setDatasets(next);
 
       toast.success('Dataset created successfully!', { id: toastId });
-      setNewDesc(''); // Clear the input
+      setNewDesc('');
+      setDescError('');
     } catch (e) {
       console.error(e);
       toast.error(e.message || 'Failed to create dataset', { id: toastId });
