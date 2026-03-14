@@ -69,7 +69,7 @@ export default function BitcoinEscrow({ listingId, accessLevel, userAddress, onC
       setEscrowId(id);
       setStep(1);
     } catch (err) {
-      setError(err.message);
+      setError(err?.message || 'Failed to create escrow. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -90,7 +90,7 @@ export default function BitcoinEscrow({ listingId, accessLevel, userAddress, onC
       setStep(3);
       onComplete?.({ escrowId, btcTxid });
     } catch (err) {
-      setError(err.message);
+      setError(err?.message || 'Failed to confirm payment. Please try again.');
     } finally {
       setLoading(false);
     }
