@@ -89,6 +89,7 @@ const Navigation = () => {
         setIsWalletConnected(false);
         setWalletAddress('');
         walletService.setAddress(null);
+        toast.success('Wallet disconnected');
       }
     } catch (error) {
       console.error('Wallet connection error:', error);
