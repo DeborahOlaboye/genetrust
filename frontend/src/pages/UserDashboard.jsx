@@ -287,6 +287,15 @@ export default function UserDashboard() {
                     maxLength={DESC_MAX}
                     disabled={loading}
                   />
+                  <div className="flex justify-between mt-1">
+                    {descError
+                      ? <p id="desc-error" role="alert" className="text-xs text-red-400">{descError}</p>
+                      : <span />
+                    }
+                    <span id="desc-counter" className={`text-xs ${newDesc.length > DESC_MAX - 20 ? 'text-red-400' : 'text-[#9AA0B2]'}`}>
+                      {newDesc.length}/{DESC_MAX}
+                    </span>
+                  </div>
                 </div>
               </div>
               <button
