@@ -111,11 +111,24 @@ export default function UserDashboard() {
     }
   };
 
+  const DESC_MIN = 5;
+  const DESC_MAX = 200;
+
   const handleCreateVault = async () => {
-    if (!newDesc.trim()) {
-      toast.error('Please enter a description for your dataset');
+    const trimmedDesc = newDesc.trim();
+    if (!trimmedDesc) {
+      setDescError('Description is required.');
       return;
     }
+    if (trimmedDesc.length < DESC_MIN) {
+      setDescError(`Description must be at least ${DESC_MIN} characters.`);
+      return;
+    }
+    if (trimmedDesc.length > DESC_MAX) {
+      setDescError(`Description must be ${DESC_MAX} characters or fewer.`);
+      return;
+    }
+    setDescError('');
 
     setLoading(true);
     const toastId = toast.loading('Creating dataset...');
