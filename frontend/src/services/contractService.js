@@ -142,7 +142,6 @@ export class ContractService {
           txId: result.txId,
         };
       } catch (error) {
-        console.error('Failed to create listing on-chain:', error);
         throw error;
       }
     } else {
