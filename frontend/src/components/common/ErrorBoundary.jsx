@@ -84,12 +84,14 @@ class ErrorBoundary extends Component {
             )}
 
             <div className="flex gap-3 justify-center">
-              <button
-                onClick={this.handleReset}
-                className="px-6 py-3 bg-[#8B5CF6] hover:bg-[#7C3AED] text-white rounded-xl transition-all duration-200 font-semibold shadow-lg shadow-[#8B5CF6]/20"
-              >
-                Try Again
-              </button>
+              {showReset && (
+                <button
+                  onClick={this.handleReset}
+                  className="px-6 py-3 bg-[#8B5CF6] hover:bg-[#7C3AED] text-white rounded-xl transition-all duration-200 font-semibold shadow-lg shadow-[#8B5CF6]/20"
+                >
+                  Try Again
+                </button>
+              )}
 
               <button
                 onClick={() => {
