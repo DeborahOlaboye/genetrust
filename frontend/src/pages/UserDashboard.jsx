@@ -169,8 +169,9 @@ export default function UserDashboard() {
       return;
     }
 
-    if (!newPrice || Number(newPrice) <= 0) {
-      toast.error('Please enter a valid price');
+    const parsedPrice = Number(newPrice);
+    if (!newPrice || isNaN(parsedPrice) || !Number.isInteger(parsedPrice) || parsedPrice < 1 || parsedPrice > 9_999_999_999) {
+      toast.error('Price must be a whole number between 1 and 9,999,999,999 microSTX');
       return;
     }
 
@@ -191,7 +192,7 @@ export default function UserDashboard() {
 
       await contractService.createListing({
         dataId: Number(selectedDataset),
-        price: Number(newPrice),
+        price: parsedPrice,
         accessLevel: Number(newAccess),
         description
       });
