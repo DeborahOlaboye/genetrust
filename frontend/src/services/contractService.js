@@ -101,7 +101,6 @@ export class ContractService {
             description: description || 'Private genomic dataset',
           });
 
-          console.log('Dataset registered on-chain:', result);
           return result;
         },
         { datasetId: id, operation: 'registerDataset' }
