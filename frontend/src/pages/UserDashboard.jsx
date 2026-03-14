@@ -274,12 +274,17 @@ export default function UserDashboard() {
             <div className="space-y-4">
               <div className="grid md:grid-cols-3 gap-3">
                 <div className="md:col-span-3">
-                  <label className="text-sm text-[#9AA0B2]">Description *</label>
+                  <label htmlFor="dataset-description" className="text-sm text-[#9AA0B2]">Description *</label>
                   <input
+                    id="dataset-description"
                     value={newDesc}
-                    onChange={e => setNewDesc(e.target.value)}
-                    className="mt-1 w-full bg-[#14102E] border border-[#8B5CF6]/20 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]/40 text-white"
+                    onChange={e => { setNewDesc(e.target.value); if (descError) setDescError(''); }}
+                    className={`mt-1 w-full bg-[#14102E] border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]/40 text-white ${descError ? 'border-red-500/60' : 'border-[#8B5CF6]/20'}`}
                     placeholder="Enter dataset description..."
+                    aria-required="true"
+                    aria-invalid={!!descError}
+                    aria-describedby={descError ? 'desc-error desc-counter' : 'desc-counter'}
+                    maxLength={DESC_MAX}
                     disabled={loading}
                   />
                 </div>
