@@ -1,4 +1,7 @@
 import React, { useEffect, useState } from 'react';
+
+const DESC_MIN = 5;
+const DESC_MAX = 200;
 import { contractService } from '../services/contractService.js';
 import { walletService } from '../services/walletService.js';
 import Navigation from '../components/landing/Navigation.jsx';
@@ -110,9 +113,6 @@ export default function UserDashboard() {
       setLoading(false);
     }
   };
-
-  const DESC_MIN = 5;
-  const DESC_MAX = 200;
 
   const handleCreateVault = async () => {
     const trimmedDesc = newDesc.trim();
