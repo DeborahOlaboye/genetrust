@@ -22,7 +22,6 @@ export function isValidUrl(url) {
     // Only allow same-origin URLs or trusted domains
     const allowedDomains = [
       window.location.hostname,
-      'trusted-domain.com', // Add your trusted domains here
     ];
     
     return allowedDomains.some(domain => 
