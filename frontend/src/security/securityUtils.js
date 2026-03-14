@@ -1,15 +1,19 @@
 import { securityConfig } from './securityConfig';
 
 /**
- * Sanitizes input to prevent XSS attacks
- * @param {string} str - The string to sanitize
- * @returns {string} Sanitized string
+ * Escapes special HTML characters in a string to prevent XSS when rendering as text.
+ * Uses textContent assignment so the browser handles all encoding — does NOT strip tags.
+ * @param {string} str - The plain-text string to escape
+ * @returns {string} HTML-entity-escaped string safe to insert as innerHTML
  */
-export function sanitizeInput(str) {
+export function escapeHtml(str) {
   const div = document.createElement('div');
   div.textContent = str;
   return div.innerHTML;
 }
+
+/** @deprecated Use escapeHtml instead */
+export const sanitizeInput = escapeHtml;
 
 /**
  * Validates URL to prevent open redirects
@@ -22,7 +26,6 @@ export function isValidUrl(url) {
     // Only allow same-origin URLs or trusted domains
     const allowedDomains = [
       window.location.hostname,
-      'trusted-domain.com', // Add your trusted domains here
     ];
     
     return allowedDomains.some(domain => 

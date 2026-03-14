@@ -1,4 +1,7 @@
 import React, { useEffect, useState } from 'react';
+
+const DESC_MIN = 5;
+const DESC_MAX = 200;
 import { contractService } from '../services/contractService.js';
 import { walletService } from '../services/walletService.js';
 import Navigation from '../components/landing/Navigation.jsx';
@@ -49,6 +52,7 @@ export default function UserDashboard() {
   const [error, setError] = useState(null);
 
   const [newDesc, setNewDesc] = useState('');
+  const [descError, setDescError] = useState('');
   const [newPrice, setNewPrice] = useState('');
   const [newAccess, setNewAccess] = useState(3);
   const [selectedDataset, setSelectedDataset] = useState('');
@@ -122,10 +126,27 @@ export default function UserDashboard() {
   };
 
   const handleCreateVault = async () => {
-    if (!newDesc.trim()) {
-      toast.error('Please enter a description for your dataset');
+    const trimmedDesc = newDesc.trim();
+    if (!trimmedDesc) {
+      setDescError('Description is required.');
       return;
     }
+    if (trimmedDesc.length < DESC_MIN) {
+      setDescError(`Description must be at least ${DESC_MIN} characters.`);
+      return;
+    }
+    if (trimmedDesc.length > DESC_MAX) {
+      setDescError(`Description must be ${DESC_MAX} characters or fewer.`);
+      return;
+    }
+    const isDuplicate = datasets.some(
+      ds => ds.description?.trim().toLowerCase() === trimmedDesc.toLowerCase()
+    );
+    if (isDuplicate) {
+      setDescError('A dataset with this description already exists. Please use a unique description.');
+      return;
+    }
+    setDescError('');
 
     setLoading(true);
     const toastId = toast.loading('Creating dataset...');
@@ -138,12 +159,13 @@ export default function UserDashboard() {
         genes: [{ symbol: 'BRCA1', name: 'BRCA1 DNA Repair Associated', chromosome: '17', start: 43044295, end: 43125364 }],
       };
 
-      const result = await contractService.createVaultDataset({ sampleData: sample, description: newDesc });
+      const result = await contractService.createVaultDataset({ sampleData: sample, description: trimmedDesc });
       const next = await contractService.listMyDatasets();
       setDatasets(next);
 
       toast.success('Dataset created successfully!', { id: toastId });
-      setNewDesc(''); // Clear the input
+      setNewDesc('');
+      setDescError('');
     } catch (e) {
       console.error(e);
       toast.error(e?.message || 'Failed to create dataset', { id: toastId });
@@ -161,6 +183,14 @@ export default function UserDashboard() {
     const parsedPrice = Number(newPrice);
     if (!newPrice || isNaN(parsedPrice) || !Number.isInteger(parsedPrice) || parsedPrice < 1 || parsedPrice > 9_999_999_999) {
       toast.error('Price must be a whole number between 1 and 9,999,999,999 microSTX');
+      return;
+    }
+
+    const duplicateListing = myListings.find(
+      l => l.dataId === Number(selectedDataset) && l.accessLevel === Number(newAccess)
+    );
+    if (duplicateListing) {
+      toast.error(`Listing #${duplicateListing.listingId} already exists for this dataset and access level.`);
       return;
     }
 
@@ -320,17 +350,29 @@ export default function UserDashboard() {
                   <input
                     id="dataset-description"
                     value={newDesc}
-                    onChange={e => setNewDesc(e.target.value)}
-                    className="mt-1 w-full bg-[#14102E] border border-[#8B5CF6]/20 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]/40 text-white"
+                    onChange={e => { setNewDesc(e.target.value); if (descError) setDescError(''); }}
+                    className={`mt-1 w-full bg-[#14102E] border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]/40 text-white ${descError ? 'border-red-500/60' : 'border-[#8B5CF6]/20'}`}
                     placeholder="Enter dataset description..."
                     aria-required="true"
+                    aria-invalid={!!descError}
+                    aria-describedby={descError ? 'desc-error desc-counter' : 'desc-counter'}
+                    maxLength={DESC_MAX}
                     disabled={loading}
                   />
+                  <div className="flex justify-between mt-1">
+                    {descError
+                      ? <p id="desc-error" role="alert" className="text-xs text-red-400">{descError}</p>
+                      : <span />
+                    }
+                    <span id="desc-counter" className={`text-xs ${newDesc.length > DESC_MAX - 20 ? 'text-red-400' : 'text-[#9AA0B2]'}`}>
+                      {newDesc.length}/{DESC_MAX}
+                    </span>
+                  </div>
                 </div>
               </div>
               <button
                 onClick={handleCreateVault}
-                disabled={loading || !newDesc.trim()}
+                disabled={loading || !newDesc.trim() || !!descError}
                 className="px-6 py-3 bg-gradient-to-r from-[#8B5CF6] to-[#F472B6] rounded-lg font-semibold disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 {loading ? 'Processing...' : 'Create Dataset'}
@@ -411,19 +453,10 @@ export default function UserDashboard() {
         {/* Tables */}
         <div className="grid md:grid-cols-2 gap-6">
           <SectionCard title="Your Datasets">
-            <div className="divide-y divide-[#8B5CF6]/10">
-              {isFetching && Array.from({ length: 2 }).map((_, i) => (
-                <div key={i} className="py-3 flex items-center justify-between animate-pulse">
-                  <div className="space-y-2">
-                    <div className="h-4 w-28 bg-[#8B5CF6]/20 rounded" />
-                    <div className="h-3 w-44 bg-[#8B5CF6]/10 rounded" />
-                  </div>
-                  <div className="h-3 w-24 bg-[#8B5CF6]/10 rounded" />
-                </div>
-              ))}
-              {!isFetching && datasets.length === 0 && <div className="text-[#9AA0B2]">No datasets yet.</div>}
-              {!isFetching && datasets.map(ds => (
-                <div key={ds.id} className="py-3 flex items-center justify-between">
+            <div className="divide-y divide-[#8B5CF6]/10" role="list">
+              {datasets.length === 0 && <div className="text-[#9AA0B2]">No datasets yet.</div>}
+              {datasets.map(ds => (
+                <div key={ds.id} role="listitem" className="py-3 flex items-center justify-between">
                   <div>
                     <div className="font-medium">Dataset #{ds.id}</div>
                     <div className="text-sm text-[#9AA0B2]">{ds.description}</div>
@@ -437,19 +470,10 @@ export default function UserDashboard() {
           </SectionCard>
 
           <SectionCard title="Your Listings" border="#F59E0B">
-            <div className="divide-y divide-[#F59E0B]/10">
-              {isFetching && Array.from({ length: 2 }).map((_, i) => (
-                <div key={i} className="py-3 flex items-center justify-between animate-pulse">
-                  <div className="space-y-2">
-                    <div className="h-4 w-24 bg-[#F59E0B]/20 rounded" />
-                    <div className="h-3 w-36 bg-[#F59E0B]/10 rounded" />
-                  </div>
-                  <div className="h-4 w-16 bg-[#F59E0B]/20 rounded" />
-                </div>
-              ))}
-              {!isFetching && myListings.length === 0 && <div className="text-[#9AA0B2]">No listings yet.</div>}
-              {!isFetching && myListings.map(l => (
-                <div key={l.listingId} className="py-3 flex items-center justify-between">
+            <div className="divide-y divide-[#F59E0B]/10" role="list">
+              {myListings.length === 0 && <div className="text-[#9AA0B2]">No listings yet.</div>}
+              {myListings.map(l => (
+                <div key={l.listingId} role="listitem" className="py-3 flex items-center justify-between">
                   <div>
                     <div className="font-medium">Listing #{l.listingId}</div>
                     <div className="text-sm text-[#9AA0B2]">Dataset #{l.dataId} • Access ≤ {l.accessLevel}</div>
