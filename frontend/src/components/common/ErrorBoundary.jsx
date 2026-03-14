@@ -19,10 +19,11 @@ class ErrorBoundary extends Component {
       errorBoundary: true
     });
 
-    this.setState({
-      error,
-      errorInfo
-    });
+    this.setState({ error, errorInfo });
+
+    if (this.props.onError) {
+      this.props.onError(error, errorInfo);
+    }
   }
 
   handleReset = () => {
