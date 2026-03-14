@@ -50,6 +50,7 @@ export default function ResearcherDashboard() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0B0B1D] via-[#14102E] to-[#0B0B1D] text-white">
+      <Toaster position="top-right" toastOptions={{ style: { background: '#14102E', color: '#fff', border: '1px solid #8B5CF633' } }} />
       <Navigation />
       <div className="max-w-7xl mx-auto px-6 lg:px-8 py-10 space-y-8">
 
