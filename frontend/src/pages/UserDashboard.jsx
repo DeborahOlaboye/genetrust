@@ -223,6 +223,11 @@ export default function UserDashboard() {
       <Navigation />
       <main id="main-content" className="max-w-7xl mx-auto px-6 lg:px-8 py-10 space-y-8">
 
+        {/* Screen reader live region */}
+        <div aria-live="polite" aria-atomic="true" className="sr-only">
+          {isFetching ? 'Loading dashboard data…' : `Dashboard loaded: ${datasets.length} dataset${datasets.length !== 1 ? 's' : ''}, ${myListings.length} listing${myListings.length !== 1 ? 's' : ''}`}
+        </div>
+
         {/* Initialization error banner */}
         {error && (
           <div role="alert" className="rounded-xl px-5 py-4 bg-red-900/30 border border-red-500/40 text-red-300 text-sm">
