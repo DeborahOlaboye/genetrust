@@ -56,14 +56,15 @@ export default function BitcoinAddressInput({
   return (
     <div className="space-y-1">
       {label && (
-        <label className="block text-sm font-medium text-gray-700">
+        <label htmlFor="bitcoin-address-input" className="block text-sm font-medium text-gray-700">
           {label}
-          {required && <span className="ml-1 text-red-500">*</span>}
+          {required && <span className="ml-1 text-red-500" aria-hidden="true">*</span>}
         </label>
       )}
 
       <div className="relative">
         <input
+          id="bitcoin-address-input"
           type="text"
           value={value}
           onChange={handleChange}
@@ -71,6 +72,9 @@ export default function BitcoinAddressInput({
           placeholder={placeholder}
           disabled={disabled}
           required={required}
+          aria-required={required}
+          aria-invalid={showError ? true : undefined}
+          aria-describedby={showError ? 'btc-addr-error' : undefined}
           spellCheck={false}
           autoComplete="off"
           className={`w-full rounded-lg border px-3 py-2 font-mono text-sm focus:outline-none focus:ring-2 transition-colors
@@ -83,7 +87,10 @@ export default function BitcoinAddressInput({
 
         {/* Validation icon */}
         {value && (
-          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-lg select-none">
+          <span
+            aria-label={meta.valid ? 'Valid address' : 'Invalid address'}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-lg select-none"
+          >
             {meta.valid ? '✓' : '✗'}
           </span>
         )}
@@ -115,7 +122,7 @@ export default function BitcoinAddressInput({
 
       {/* Error message */}
       {showError && (
-        <p className="text-xs text-red-600">
+        <p id="btc-addr-error" role="alert" className="text-xs text-red-600">
           Invalid segwit address. Only native SegWit addresses (bc1q… / tb1q…) are accepted.
         </p>
       )}

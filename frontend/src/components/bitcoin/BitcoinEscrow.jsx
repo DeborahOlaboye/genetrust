@@ -6,10 +6,15 @@ import {
   createBtcEscrow,
   confirmBtcPayment,
   isBtcTxSpendable,
-  hexToBytes,
 } from '../../services/bitcoinService';
 
 const STEPS = ['Create Escrow', 'Send Bitcoin', 'Confirm Payment', 'Done'];
+
+// Validates a Bitcoin txid: must be exactly 64 lowercase hex characters
+const HEX_TXID_RE = /^[a-f0-9]{64}$/;
+function isValidBtcTxid(txid) {
+  return HEX_TXID_RE.test(txid);
+}
 
 /**
  * BitcoinEscrow
@@ -37,7 +42,10 @@ export default function BitcoinEscrow({ listingId, accessLevel, userAddress, onC
     if (listingId && accessLevel) {
       getListingBtcPrice(listingId, accessLevel)
         .then(setPriceSats)
-        .catch(() => setPriceSats(null));
+        .catch((err) => {
+          setPriceSats(null);
+          setError(err?.message || 'Could not load Bitcoin price for this listing.');
+        });
     }
   }, [listingId, accessLevel]);
 
@@ -64,15 +72,15 @@ export default function BitcoinEscrow({ listingId, accessLevel, userAddress, onC
       setEscrowId(id);
       setStep(1);
     } catch (err) {
-      setError(err.message);
+      setError(err?.message || 'Failed to create escrow. Please try again.');
     } finally {
       setLoading(false);
     }
   }
 
   async function handleConfirmPayment() {
-    if (!btcTxid || btcTxid.length !== 64) {
-      setError('Enter the full 64-character Bitcoin transaction ID.');
+    if (!isValidBtcTxid(btcTxid)) {
+      setError('Enter a valid 64-character hex Bitcoin transaction ID (e.g. a1b2c3…).');
       return;
     }
 
@@ -85,7 +93,7 @@ export default function BitcoinEscrow({ listingId, accessLevel, userAddress, onC
       setStep(3);
       onComplete?.({ escrowId, btcTxid });
     } catch (err) {
-      setError(err.message);
+      setError(err?.message || 'Failed to confirm payment. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -94,10 +102,13 @@ export default function BitcoinEscrow({ listingId, accessLevel, userAddress, onC
   return (
     <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
       {/* Step indicator */}
-      <div className="flex border-b border-gray-100">
+      <div className="flex border-b border-gray-100" role="list" aria-label="Progress steps">
         {STEPS.map((label, i) => (
           <div
             key={label}
+            role="listitem"
+            aria-current={i === step ? 'step' : undefined}
+            aria-label={`Step ${i + 1}: ${label}${i < step ? ' (completed)' : i === step ? ' (current)' : ''}`}
             className={`flex-1 py-2.5 text-center text-xs font-medium border-b-2 transition-colors ${
               i === step
                 ? 'border-orange-500 text-orange-600'
@@ -106,7 +117,7 @@ export default function BitcoinEscrow({ listingId, accessLevel, userAddress, onC
                 : 'border-transparent text-gray-400'
             }`}
           >
-            <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-xs mr-1 ${
+            <span aria-hidden="true" className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-xs mr-1 ${
               i < step ? 'bg-green-100' : i === step ? 'bg-orange-100' : 'bg-gray-100'
             }`}>
               {i < step ? '✓' : i + 1}
@@ -119,7 +130,7 @@ export default function BitcoinEscrow({ listingId, accessLevel, userAddress, onC
       <div className="p-6 space-y-4">
         {/* Price summary */}
         {priceSats && (
-          <div className="rounded-lg bg-orange-50 border border-orange-100 px-4 py-3 text-sm">
+          <div role="status" aria-label={`Listing price: ${satsToBtc(priceSats)} BTC (${priceSats.toLocaleString()} satoshis)`} className="rounded-lg bg-orange-50 border border-orange-100 px-4 py-3 text-sm">
             <span className="text-gray-600">Price: </span>
             <span className="font-semibold text-orange-700">
               {satsToBtc(priceSats)} BTC
@@ -129,7 +140,7 @@ export default function BitcoinEscrow({ listingId, accessLevel, userAddress, onC
         )}
 
         {error && (
-          <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          <div role="alert" aria-live="assertive" className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
             {error}
           </div>
         )}
@@ -153,6 +164,8 @@ export default function BitcoinEscrow({ listingId, accessLevel, userAddress, onC
             <button
               onClick={handleCreateEscrow}
               disabled={loading || !buyerAddressMeta.valid}
+              aria-busy={loading}
+              aria-label="Create Bitcoin escrow for this listing"
               className="w-full rounded-lg bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-orange-600 disabled:opacity-50 transition-colors"
             >
               {loading ? 'Creating escrow…' : 'Create Bitcoin Escrow'}
@@ -175,6 +188,7 @@ export default function BitcoinEscrow({ listingId, accessLevel, userAddress, onC
 
             <button
               onClick={() => setStep(2)}
+              aria-label="Confirm I have sent the Bitcoin and proceed to payment confirmation"
               className="w-full rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 transition-colors"
             >
               I've sent the Bitcoin →
@@ -190,27 +204,32 @@ export default function BitcoinEscrow({ listingId, accessLevel, userAddress, onC
             </p>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="btc-txid" className="block text-sm font-medium text-gray-700 mb-1">
                 Bitcoin Transaction ID
               </label>
               <input
+                id="btc-txid"
                 type="text"
                 value={btcTxid}
-                onChange={(e) => setBtcTxid(e.target.value.trim())}
+                onChange={(e) => setBtcTxid(e.target.value.trim().toLowerCase())}
                 placeholder="64-character hex txid"
                 spellCheck={false}
+                aria-required="true"
+                aria-invalid={btcTxid.length > 0 && !isValidBtcTxid(btcTxid)}
+                aria-describedby={btcTxid && !isValidBtcTxid(btcTxid) ? 'txid-error' : undefined}
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 font-mono text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
-              {btcTxid && btcTxid.length !== 64 && (
-                <p className="mt-1 text-xs text-red-500">
-                  Transaction ID must be exactly 64 hex characters.
+              {btcTxid && !isValidBtcTxid(btcTxid) && (
+                <p id="txid-error" className="mt-1 text-xs text-red-500" role="alert">
+                  Transaction ID must be exactly 64 lowercase hex characters (0–9, a–f).
                 </p>
               )}
             </div>
 
             <button
               onClick={handleConfirmPayment}
-              disabled={loading || btcTxid.length !== 64}
+              disabled={loading || !isValidBtcTxid(btcTxid)}
+              aria-busy={loading}
               className="w-full rounded-lg bg-green-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-50 transition-colors"
             >
               {loading ? 'Confirming…' : 'Confirm Payment'}
@@ -220,7 +239,7 @@ export default function BitcoinEscrow({ listingId, accessLevel, userAddress, onC
 
         {/* Step 3: Done */}
         {step === 3 && (
-          <div className="text-center py-4 space-y-3">
+          <div className="text-center py-4 space-y-3" role="status" aria-live="polite">
             <div className="text-4xl">✓</div>
             <p className="font-semibold text-green-700">Payment confirmed!</p>
             <p className="text-sm text-gray-600">
