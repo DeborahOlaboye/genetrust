@@ -155,6 +155,7 @@ export function btcToSats(btc) {
  * @returns {Promise<boolean>}
  */
 export async function validateP2WPKHOnChain(witnessProgram) {
+  if (!witnessProgram || typeof witnessProgram !== 'string') throw new Error('validateP2WPKHOnChain: witnessProgram must be a non-empty hex string');
   const result = await callReadOnlyFunction({
     contractAddress: CONTRACT_ADDRESS,
     contractName: 'segwit-validator',
