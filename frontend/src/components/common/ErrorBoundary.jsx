@@ -1,50 +1,68 @@
-import React, { Component } from 'react';
+import React, { Component, createRef } from 'react';
 import PropTypes from 'prop-types';
 import analyticsService from '../../services/analytics/analyticsService';
+
 
 class ErrorBoundary extends Component {
   constructor(props) {
     super(props);
     this.state = { hasError: false, error: null, errorInfo: null };
+    this.resetBtnRef = createRef();
   }
 
-  static getDerivedStateFromError(error) {
+  componentDidUpdate(_, prevState) {
+    if (!prevState.hasError && this.state.hasError && this.resetBtnRef.current) {
+      this.resetBtnRef.current.focus();
+    }
+  }
+
+  static getDerivedStateFromError() {
+    // Trigger error UI on next render; full error object is set in componentDidCatch
     return { hasError: true };
   }
 
   componentDidCatch(error, errorInfo) {
-    // Log the error to our analytics service
-    analyticsService.trackError(error, {
-      componentStack: errorInfo?.componentStack,
-      errorBoundary: true
-    });
+    // Log the error to our analytics service; wrap so a failing tracker never masks the original error
+    try {
+      analyticsService.trackError(error, {
+        componentStack: errorInfo?.componentStack,
+        errorBoundary: true,
+      });
+    } catch (trackingErr) {
+      console.warn('ErrorBoundary: analytics.trackError failed', trackingErr);
+    }
 
-    this.setState({
-      error,
-      errorInfo
-    });
+    this.setState({ error, errorInfo });
+
+    if (this.props.onError) {
+      this.props.onError(error, errorInfo);
+    }
   }
 
   handleReset = () => {
     this.setState({ hasError: false, error: null, errorInfo: null });
+    if (this.props.onReset) {
+      this.props.onReset();
+    }
   };
 
   render() {
     const { hasError, error, errorInfo } = this.state;
-    const { fallback: Fallback, children } = this.props;
+    const { fallback: Fallback, children, errorMessage = 'Something went wrong', showReset = true } = this.props;
 
     if (hasError) {
       // Render fallback UI if provided
       if (Fallback) {
-        return <Fallback error={error} errorInfo={errorInfo} reset={this.handleReset} />;
+        return <Fallback error={error} errorInfo={errorInfo} reset={this.handleReset} onReset={this.handleReset} />;
       }
 
       // Enhanced GeneTrust-themed error UI
       return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#0B0B1D] via-[#14102E] to-[#0B0B1D] p-4">
-          <div className="max-w-md w-full bg-[#14102E]/80 backdrop-blur-xl rounded-2xl border border-[#8B5CF6]/20 p-8 text-center shadow-2xl">
-            <div className="w-20 h-20 mx-auto mb-6 bg-red-500/10 rounded-full flex items-center justify-center border border-red-500/20">
+        <div role="alert" aria-live="assertive" aria-atomic="true" className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#0B0B1D] via-[#14102E] to-[#0B0B1D] p-4">
+          <div className="max-w-md w-full bg-[#14102E]/80 backdrop-blur-xl rounded-2xl border border-[#8B5CF6]/20 p-8 text-center shadow-2xl" aria-labelledby="error-boundary-heading" tabIndex={-1}>
+            <div role="img" aria-label="Error icon" className="w-20 h-20 mx-auto mb-6 bg-red-500/10 rounded-full flex items-center justify-center border border-red-500/20">
               <svg
+                aria-hidden="true"
                 className="w-10 h-10 text-red-400"
                 fill="none"
                 stroke="currentColor"
@@ -59,39 +77,42 @@ class ErrorBoundary extends Component {
               </svg>
             </div>
 
-            <h2 className="text-2xl font-bold text-white mb-3">
-              Something went wrong
+            <h2 id="error-boundary-heading" aria-describedby="error-boundary-desc" className="text-2xl font-bold text-white mb-3">
+              {errorMessage}
             </h2>
 
-            <p className="text-[#9AA0B2] mb-6 leading-relaxed">
+            <p id="error-boundary-desc" className="text-[#9AA0B2] mb-6 leading-relaxed">
               We encountered an unexpected error. Your data is safe. Please try refreshing the page or contact support if the problem persists.
             </p>
 
             {process.env.NODE_ENV === 'development' && error && (
               <details className="mb-6 text-left bg-black/30 rounded-lg p-4 border border-red-500/20">
-                <summary className="text-sm text-[#9AA0B2] cursor-pointer mb-2 hover:text-white transition-colors">
+                <summary className="text-sm text-[#9AA0B2] cursor-pointer mb-2 hover:text-white transition-colors" aria-label="Toggle error details for debugging">
                   Error details (dev mode)
                 </summary>
-                <pre className="text-xs text-red-300 overflow-auto max-h-40 mt-2 font-mono">
-                  {error && error.toString()}
-                  {errorInfo?.componentStack}
+                <pre className="text-xs text-red-300 overflow-auto max-h-40 mt-2 font-mono whitespace-pre-wrap">
+                  {error?.toString()}
+                  {error?.stack ? `\n\nStack:\n${error.stack}` : ''}
+                  {errorInfo?.componentStack ? `\n\nComponent Stack:${errorInfo.componentStack}` : ''}
                 </pre>
               </details>
             )}
 
-            <div className="flex gap-3 justify-center">
-              <button
-                onClick={this.handleReset}
-                className="px-6 py-3 bg-[#8B5CF6] hover:bg-[#7C3AED] text-white rounded-xl transition-all duration-200 font-semibold shadow-lg shadow-[#8B5CF6]/20"
-              >
-                Try Again
-              </button>
+            <div role="group" aria-label="Error recovery actions" className="flex gap-3 justify-center">
+              {showReset && (
+                <button
+                  ref={this.resetBtnRef}
+                  onClick={this.handleReset}
+                  aria-label="Try again and dismiss this error"
+                  className="px-6 py-3 bg-[#8B5CF6] hover:bg-[#7C3AED] text-white rounded-xl transition-all duration-200 font-semibold shadow-lg shadow-[#8B5CF6]/20"
+                >
+                  Try Again
+                </button>
+              )}
 
               <button
-                onClick={() => {
-                  window.location.hash = '';
-                  window.location.reload();
-                }}
+                onClick={() => { window.location.href = '/'; }}
+                aria-label="Go to homepage"
                 className="px-6 py-3 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-xl transition-all duration-200 font-semibold"
               >
                 Go Home
@@ -108,7 +129,11 @@ class ErrorBoundary extends Component {
 
 ErrorBoundary.propTypes = {
   children: PropTypes.node.isRequired,
-  fallback: PropTypes.oneOfType([PropTypes.node, PropTypes.func])
+  fallback: PropTypes.oneOfType([PropTypes.node, PropTypes.func]),
+  onError: PropTypes.func,
+  onReset: PropTypes.func,
+  errorMessage: PropTypes.string,
+  showReset: PropTypes.bool,
 };
 
 export default ErrorBoundary;

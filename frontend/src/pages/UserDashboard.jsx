@@ -7,6 +7,8 @@ import { walletService } from '../services/walletService.js';
 import Navigation from '../components/landing/Navigation.jsx';
 import { APP_CONFIG } from '../config/app.js';
 import toast, { Toaster } from 'react-hot-toast';
+import { DatasetUploadWizard } from '../components/upload/DatasetUploadWizard.jsx';
+import { WalletGate } from '../components/upload/WalletGate.jsx';
 
 const StatCard = ({ title, value, accent = 'purple' }) => (
   <div 
@@ -44,6 +46,7 @@ export default function UserDashboard() {
   const [datasets, setDatasets] = useState([]);
   const [myListings, setMyListings] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [isFetching, setIsFetching] = useState(true);
   const [walletConnected, setWalletConnected] = useState(false);
   const [walletAddress, setWalletAddress] = useState(null);
   const [error, setError] = useState(null);
@@ -53,41 +56,49 @@ export default function UserDashboard() {
   const [newPrice, setNewPrice] = useState('');
   const [newAccess, setNewAccess] = useState(3);
   const [selectedDataset, setSelectedDataset] = useState('');
+  const [isFetching, setIsFetching] = useState(false);
 
   // Connect wallet on mount if using real SDK
   useEffect(() => {
+    let mounted = true;
     const initializeDashboard = async () => {
+      setIsFetching(true);
       try {
         // Connect wallet if using real SDK
         if (APP_CONFIG.USE_REAL_SDK) {
           const connected = await walletService.isConnected();
           if (connected) {
             const address = walletService.getAddress();
-            setWalletConnected(true);
-            setWalletAddress(address);
+            if (mounted) {
+              setWalletConnected(true);
+              setWalletAddress(address);
+            }
           }
         }
 
         // Initialize contract service
-        const initResult = await contractService.initialize({
+        await contractService.initialize({
           walletAddress: walletService.getAddress()
         });
 
         const s = await contractService.getStatus();
-        setStatus(s);
-
         const ds = await contractService.listMyDatasets();
-        setDatasets(ds);
-
         const ls = await contractService.listMarketplace({ ownerOnly: true });
+
+        if (!mounted) return;
+        setStatus(s);
+        setDatasets(ds);
         setMyListings(ls);
       } catch (err) {
         console.error('Dashboard initialization error:', err);
-        setError(err.message);
+        if (mounted) setError(err?.message || 'Failed to initialize dashboard');
+      } finally {
+        if (mounted) setIsFetching(false);
       }
     };
 
     initializeDashboard();
+    return () => { mounted = false; };
   }, []);
 
   // Handle wallet connection
@@ -204,6 +215,7 @@ export default function UserDashboard() {
       // Clear form
       setNewPrice('');
       setSelectedDataset('');
+      setNewAccess(3);
     } catch (e) {
       console.error(e);
       toast.error(e?.message || 'Failed to create listing', { id: toastId });
@@ -246,6 +258,18 @@ export default function UserDashboard() {
       <Navigation />
       <main id="main-content" className="max-w-7xl mx-auto px-6 lg:px-8 py-10 space-y-8">
 
+        {/* Screen reader live region */}
+        <div aria-live="polite" aria-atomic="true" className="sr-only">
+          {isFetching ? 'Loading dashboard data…' : `Dashboard loaded: ${datasets.length} dataset${datasets.length !== 1 ? 's' : ''}, ${myListings.length} listing${myListings.length !== 1 ? 's' : ''}`}
+        </div>
+
+        {/* Initialization error banner */}
+        {error && (
+          <div role="alert" className="rounded-xl px-5 py-4 bg-red-900/30 border border-red-500/40 text-red-300 text-sm">
+            {error}
+          </div>
+        )}
+
         {/* Wallet Connection Status */}
         {APP_CONFIG.USE_REAL_SDK && !walletConnected && (
           <div className="p-6 rounded-xl bg-[#8B5CF6]/10 border border-[#8B5CF6]/20">
@@ -271,15 +295,54 @@ export default function UserDashboard() {
         {/* Stats */}
         <section aria-labelledby="dashboard-stats" className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <h2 id="dashboard-stats" className="sr-only">Dashboard Statistics</h2>
-          <StatCard title="Datasets" value={datasets.length} />
-          <StatCard title="Listings" value={myListings.length} />
+          <StatCard title="Datasets" value={isFetching ? '—' : datasets.length} />
+          <StatCard title="Listings" value={isFetching ? '—' : myListings.length} />
           <StatCard title="Mode" value={status?.mode || (APP_CONFIG.USE_REAL_SDK ? 'Real' : 'Mock')} accent="amber" />
           <StatCard title="Network" value={APP_CONFIG.NETWORK} />
         </section>
 
+        {/* Dataset Upload Wizard */}
+        <section aria-labelledby="upload-wizard-heading">
+          <div className="flex items-center justify-between mb-3">
+            <h2 id="upload-wizard-heading" className="text-white font-semibold text-base">
+              Register New Dataset
+            </h2>
+            <button
+              type="button"
+              onClick={() => setShowUploadWizard(v => !v)}
+              className="text-sm px-4 py-1.5 rounded-lg font-medium"
+              style={{
+                background: showUploadWizard ? 'rgba(139,92,246,0.15)' : 'linear-gradient(135deg,#8B5CF6,#6D28D9)',
+                border: showUploadWizard ? '1px solid rgba(139,92,246,0.4)' : 'none',
+                color: '#fff',
+                cursor: 'pointer',
+              }}
+            >
+              {showUploadWizard ? '✕ Close' : '+ Upload & Register'}
+            </button>
+          </div>
+          {showUploadWizard && (
+            <WalletGate
+              isConnected={walletConnected || !APP_CONFIG.USE_REAL_SDK}
+              onConnect={handleConnectWallet}
+              connecting={loading}
+            >
+              <DatasetUploadWizard
+                contractService={contractService}
+                walletService={walletService}
+                onComplete={(txId) => {
+                  toast.success(`Dataset registered! TX: ${String(txId).slice(0, 10)}…`);
+                  setShowUploadWizard(false);
+                  contractService.listMyDatasets().then(setDatasets).catch(() => {});
+                }}
+              />
+            </WalletGate>
+          )}
+        </section>
+
         {/* Create / Manage */}
         <div className="grid md:grid-cols-2 gap-6">
-          <SectionCard title="Create Vault Dataset">
+          <SectionCard title="Quick Create Dataset">
             <div className="space-y-4">
               <div className="grid md:grid-cols-3 gap-3">
                 <div className="md:col-span-3">
