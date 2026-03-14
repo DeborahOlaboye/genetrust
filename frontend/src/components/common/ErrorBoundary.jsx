@@ -22,11 +22,15 @@ class ErrorBoundary extends Component {
   }
 
   componentDidCatch(error, errorInfo) {
-    // Log the error to our analytics service
-    analyticsService.trackError(error, {
-      componentStack: errorInfo?.componentStack,
-      errorBoundary: true
-    });
+    // Log the error to our analytics service; wrap so a failing tracker never masks the original error
+    try {
+      analyticsService.trackError(error, {
+        componentStack: errorInfo?.componentStack,
+        errorBoundary: true,
+      });
+    } catch (trackingErr) {
+      console.warn('ErrorBoundary: analytics.trackError failed', trackingErr);
+    }
 
     this.setState({ error, errorInfo });
 
