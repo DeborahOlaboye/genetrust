@@ -195,6 +195,7 @@ export async function getVerifiedBtcTx(txid) {
  */
 export async function isBtcTxSpendable(txid, currentBurnHeight) {
   if (!txid || typeof txid !== 'string') throw new Error('isBtcTxSpendable: txid must be a non-empty string');
+  if (typeof currentBurnHeight !== 'number' || !Number.isFinite(currentBurnHeight) || currentBurnHeight < 0) throw new Error('isBtcTxSpendable: currentBurnHeight must be a non-negative finite number');
   const result = await callReadOnlyFunction({
     contractAddress: CONTRACT_ADDRESS,
     contractName: 'segwit-tx-parser',
