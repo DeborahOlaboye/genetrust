@@ -98,7 +98,7 @@ class ErrorBoundary extends Component {
               </details>
             )}
 
-            <div className="flex gap-3 justify-center">
+            <div role="group" aria-label="Error recovery actions" className="flex gap-3 justify-center">
               {showReset && (
                 <button
                   ref={this.resetBtnRef}
