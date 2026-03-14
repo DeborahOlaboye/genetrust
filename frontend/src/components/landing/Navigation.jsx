@@ -93,6 +93,12 @@ const Navigation = () => {
     }
   };
 
+  // Toggle mobile menu open/closed
+  const toggleMobileMenu = () => setIsMobileMenuOpen((prev) => !prev);
+
+  // Close mobile menu explicitly (used by link clicks and outside-click handler)
+  const closeMobileMenu = () => setIsMobileMenuOpen(false);
+
   // Format wallet address for display
   const formatAddress = (address) => {
     if (!address) return '';
