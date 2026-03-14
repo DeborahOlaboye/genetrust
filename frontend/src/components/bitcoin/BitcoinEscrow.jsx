@@ -102,10 +102,13 @@ export default function BitcoinEscrow({ listingId, accessLevel, userAddress, onC
   return (
     <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
       {/* Step indicator */}
-      <div className="flex border-b border-gray-100">
+      <div className="flex border-b border-gray-100" role="list" aria-label="Progress steps">
         {STEPS.map((label, i) => (
           <div
             key={label}
+            role="listitem"
+            aria-current={i === step ? 'step' : undefined}
+            aria-label={`Step ${i + 1}: ${label}${i < step ? ' (completed)' : i === step ? ' (current)' : ''}`}
             className={`flex-1 py-2.5 text-center text-xs font-medium border-b-2 transition-colors ${
               i === step
                 ? 'border-orange-500 text-orange-600'
