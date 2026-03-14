@@ -16,7 +16,8 @@ class ErrorBoundary extends Component {
     }
   }
 
-  static getDerivedStateFromError(error) {
+  static getDerivedStateFromError() {
+    // Trigger error UI on next render; full error object is set in componentDidCatch
     return { hasError: true };
   }
 
