@@ -231,6 +231,9 @@ const Navigation = () => {
               {item.label}
             </a>
           ))}
+          <div className="px-3 py-2">
+            <LanguageSelector />
+          </div>
         </div>
       </div>
     </nav>
