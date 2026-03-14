@@ -219,6 +219,8 @@ const Navigation = () => {
         id="mobile-menu"
         ref={mobileMenuRef}
         hidden={!isMobileMenuOpen}
+        role="region"
+        aria-label="Mobile navigation menu"
       >
         <div className="px-2 pt-2 pb-3 space-y-1 bg-[#14102E]/95 backdrop-blur-lg">
           {menuItems.map((item) => (
