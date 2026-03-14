@@ -130,7 +130,6 @@ export class ContractService {
           metadataHash: new Uint8Array(32), // Mock hash
           requiresVerification: false, // Set to true if proofs are available
         });
-        console.log('Listing created on-chain:', result);
         return {
           listingId: result.listingId,
           dataId,
