@@ -274,6 +274,7 @@ export default function UserDashboard() {
                     onChange={e => setNewDesc(e.target.value)}
                     className="mt-1 w-full bg-[#14102E] border border-[#8B5CF6]/20 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]/40 text-white"
                     placeholder="Enter dataset description..."
+                    aria-required="true"
                     disabled={loading}
                   />
                 </div>
