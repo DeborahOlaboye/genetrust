@@ -171,15 +171,10 @@ export class ContractService {
 
   async purchaseListing({ listingId, desiredAccessLevel = 1 }) {
     if (this.useRealSDK) {
-      try {
-        const result = await this.sdk.purchaseGeneticData({
-          listingId: Number(listingId),
-          accessLevel: Number(desiredAccessLevel),
-        });
-        return result;
-      } catch (error) {
-        throw error;
-      }
+      return this.sdk.purchaseGeneticData({
+        listingId: Number(listingId),
+        accessLevel: Number(desiredAccessLevel),
+      });
     } else {
       // Mock mode
       const l = this._listings.find(x => x.listingId === listingId);
