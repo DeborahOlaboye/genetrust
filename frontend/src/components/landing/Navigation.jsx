@@ -5,6 +5,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { showConnect } from '@stacks/connect';
 import { AppConfig, UserSession } from '@stacks/auth';
+import toast from 'react-hot-toast';
 import { walletService } from '../../services/walletService.js';
 import LanguageSelector from '../LanguageSelector/LanguageSelector';
 
