@@ -18,6 +18,7 @@ import LanguageSelector from '../LanguageSelector/LanguageSelector';
 const Navigation = () => {
   const [isWalletConnected, setIsWalletConnected] = useState(false);
   const [walletAddress, setWalletAddress] = useState('');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const userSessionRef = useRef(null);
 
   // Navigation menu items from design
