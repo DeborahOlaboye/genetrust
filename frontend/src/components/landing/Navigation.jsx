@@ -94,6 +94,18 @@ const Navigation = () => {
     }
   };
 
+  // Close mobile menu when user clicks outside the nav
+  useEffect(() => {
+    if (!isMobileMenuOpen) return;
+    const handleOutsideClick = (e) => {
+      if (mobileMenuRef.current && !mobileMenuRef.current.contains(e.target)) {
+        closeMobileMenu();
+      }
+    };
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, [isMobileMenuOpen]);
+
   // Toggle mobile menu open/closed
   const toggleMobileMenu = () => setIsMobileMenuOpen((prev) => !prev);
 
