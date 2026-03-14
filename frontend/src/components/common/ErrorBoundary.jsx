@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { Component, createRef } from 'react';
 import PropTypes from 'prop-types';
 import analyticsService from '../../services/analytics/analyticsService';
 
@@ -7,6 +7,13 @@ class ErrorBoundary extends Component {
   constructor(props) {
     super(props);
     this.state = { hasError: false, error: null, errorInfo: null };
+    this.resetBtnRef = createRef();
+  }
+
+  componentDidUpdate(_, prevState) {
+    if (!prevState.hasError && this.state.hasError && this.resetBtnRef.current) {
+      this.resetBtnRef.current.focus();
+    }
   }
 
   static getDerivedStateFromError(error) {
@@ -88,6 +95,7 @@ class ErrorBoundary extends Component {
             <div className="flex gap-3 justify-center">
               {showReset && (
                 <button
+                  ref={this.resetBtnRef}
                   onClick={this.handleReset}
                   aria-label="Try again and dismiss this error"
                   className="px-6 py-3 bg-[#8B5CF6] hover:bg-[#7C3AED] text-white rounded-xl transition-all duration-200 font-semibold shadow-lg shadow-[#8B5CF6]/20"
