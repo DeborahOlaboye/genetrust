@@ -53,6 +53,7 @@ export default function UserDashboard() {
 
   // Connect wallet on mount if using real SDK
   useEffect(() => {
+    let mounted = true;
     const initializeDashboard = async () => {
       try {
         // Connect wallet if using real SDK
@@ -60,31 +61,36 @@ export default function UserDashboard() {
           const connected = await walletService.isConnected();
           if (connected) {
             const address = walletService.getAddress();
-            setWalletConnected(true);
-            setWalletAddress(address);
+            if (mounted) {
+              setWalletConnected(true);
+              setWalletAddress(address);
+            }
           }
         }
 
         // Initialize contract service
-        const initResult = await contractService.initialize({
+        await contractService.initialize({
           walletAddress: walletService.getAddress()
         });
 
         const s = await contractService.getStatus();
-        setStatus(s);
-
         const ds = await contractService.listMyDatasets();
-        setDatasets(ds);
-
         const ls = await contractService.listMarketplace({ ownerOnly: true });
+
+        if (!mounted) return;
+        setStatus(s);
+        setDatasets(ds);
         setMyListings(ls);
       } catch (err) {
         console.error('Dashboard initialization error:', err);
-        setError(err.message);
+        if (mounted) setError(err?.message || 'Failed to initialize dashboard');
+      } finally {
+        if (mounted) setIsFetching(false);
       }
     };
 
     initializeDashboard();
+    return () => { mounted = false; };
   }, []);
 
   // Handle wallet connection
