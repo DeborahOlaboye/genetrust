@@ -194,6 +194,7 @@ export async function getVerifiedBtcTx(txid) {
  * @returns {Promise<boolean>}
  */
 export async function isBtcTxSpendable(txid, currentBurnHeight) {
+  if (!txid || typeof txid !== 'string') throw new Error('isBtcTxSpendable: txid must be a non-empty string');
   const result = await callReadOnlyFunction({
     contractAddress: CONTRACT_ADDRESS,
     contractName: 'segwit-tx-parser',
