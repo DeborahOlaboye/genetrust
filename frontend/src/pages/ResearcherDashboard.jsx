@@ -66,6 +66,13 @@ export default function ResearcherDashboard() {
       <Navigation />
       <div className="max-w-7xl mx-auto px-6 lg:px-8 py-10 space-y-8">
 
+        {/* Initialization error banner */}
+        {initError && (
+          <div role="alert" className="rounded-xl px-5 py-4 bg-red-900/30 border border-red-500/40 text-red-300 text-sm">
+            {initError}
+          </div>
+        )}
+
         {/* Controls */}
         <SectionCard title="Filters" border="#8B5CF6">
           <div className="grid md:grid-cols-3 gap-4">
