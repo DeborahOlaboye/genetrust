@@ -128,6 +128,13 @@ export default function UserDashboard() {
       setDescError(`Description must be ${DESC_MAX} characters or fewer.`);
       return;
     }
+    const isDuplicate = datasets.some(
+      ds => ds.description?.trim().toLowerCase() === trimmedDesc.toLowerCase()
+    );
+    if (isDuplicate) {
+      setDescError('A dataset with this description already exists. Please use a unique description.');
+      return;
+    }
     setDescError('');
 
     setLoading(true);
