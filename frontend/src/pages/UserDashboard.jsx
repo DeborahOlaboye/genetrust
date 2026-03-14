@@ -390,10 +390,10 @@ export default function UserDashboard() {
         {/* Tables */}
         <div className="grid md:grid-cols-2 gap-6">
           <SectionCard title="Your Datasets">
-            <div className="divide-y divide-[#8B5CF6]/10">
+            <div className="divide-y divide-[#8B5CF6]/10" role="list">
               {datasets.length === 0 && <div className="text-[#9AA0B2]">No datasets yet.</div>}
               {datasets.map(ds => (
-                <div key={ds.id} className="py-3 flex items-center justify-between">
+                <div key={ds.id} role="listitem" className="py-3 flex items-center justify-between">
                   <div>
                     <div className="font-medium">Dataset #{ds.id}</div>
                     <div className="text-sm text-[#9AA0B2]">{ds.description}</div>
@@ -407,10 +407,10 @@ export default function UserDashboard() {
           </SectionCard>
 
           <SectionCard title="Your Listings" border="#F59E0B">
-            <div className="divide-y divide-[#F59E0B]/10">
+            <div className="divide-y divide-[#F59E0B]/10" role="list">
               {myListings.length === 0 && <div className="text-[#9AA0B2]">No listings yet.</div>}
               {myListings.map(l => (
-                <div key={l.listingId} className="py-3 flex items-center justify-between">
+                <div key={l.listingId} role="listitem" className="py-3 flex items-center justify-between">
                   <div>
                     <div className="font-medium">Listing #{l.listingId}</div>
                     <div className="text-sm text-[#9AA0B2]">Dataset #{l.dataId} • Access ≤ {l.accessLevel}</div>
