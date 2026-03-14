@@ -92,7 +92,7 @@ export default function ResearcherDashboard() {
 
         {/* Listings */}
         <SectionCard title={`Available Listings${!isFetching ? ` (${listings.length})` : ''}`} border="#34D399">
-          <div className="divide-y divide-[#34D399]/10">
+          <div className="divide-y divide-[#34D399]/10" role="list">
             {isFetching && Array.from({ length: 3 }).map((_, i) => (
               <div key={i} className="py-4 flex items-center justify-between animate-pulse">
                 <div className="space-y-2">
@@ -111,7 +111,7 @@ export default function ResearcherDashboard() {
               </div>
             )}
             {!isFetching && listings.map(l => (
-              <div key={l.listingId} className="py-4 flex items-center justify-between">
+              <div key={l.listingId} className="py-4 flex items-center justify-between" role="listitem">
                 <div className="space-y-1">
                   <div className="font-medium">Listing #{l.listingId} • Dataset #{l.dataId}</div>
                   <div className="text-sm text-[#9AA0B2] flex items-center gap-2">
