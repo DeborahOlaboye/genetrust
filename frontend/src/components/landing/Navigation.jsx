@@ -1,10 +1,9 @@
-// Main navigation component for GeneTrust landing page
-
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
 import { showConnect } from '@stacks/connect';
 import { AppConfig, UserSession } from '@stacks/auth';
+import toast from 'react-hot-toast';
 import { walletService } from '../../services/walletService.js';
 import LanguageSelector from '../LanguageSelector/LanguageSelector';
 
@@ -18,9 +17,9 @@ import LanguageSelector from '../LanguageSelector/LanguageSelector';
 const Navigation = () => {
   const [isWalletConnected, setIsWalletConnected] = useState(false);
   const [walletAddress, setWalletAddress] = useState('');
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const userSessionRef = useRef(null);
-  const navRef = useRef(null);
+  const mobileMenuRef = useRef(null);
 
   // Navigation menu items from design
   const menuItems = [
@@ -115,7 +114,7 @@ const Navigation = () => {
             walletService.setAddress(addr);
           },
           onCancel: () => {
-            console.log('User cancelled wallet connect');
+            toast('Wallet connection cancelled', { icon: 'ℹ️' });
           },
         });
       } else {
@@ -123,11 +122,41 @@ const Navigation = () => {
         setIsWalletConnected(false);
         setWalletAddress('');
         walletService.setAddress(null);
+        toast.success('Wallet disconnected');
       }
     } catch (error) {
       console.error('Wallet connection error:', error);
+      toast.error(error?.message || 'Failed to connect wallet. Please try again.');
     }
   };
+
+  // Close mobile menu when user clicks outside the nav
+  useEffect(() => {
+    if (!isMobileMenuOpen) return;
+    const handleOutsideClick = (e) => {
+      if (mobileMenuRef.current && !mobileMenuRef.current.contains(e.target)) {
+        closeMobileMenu();
+      }
+    };
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, [isMobileMenuOpen]);
+
+  // Close mobile menu on Escape key press
+  useEffect(() => {
+    if (!isMobileMenuOpen) return;
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') closeMobileMenu();
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isMobileMenuOpen]);
+
+  // Toggle mobile menu open/closed
+  const toggleMobileMenu = () => setIsMobileMenuOpen((prev) => !prev);
+
+  // Close mobile menu explicitly (used by link clicks and outside-click handler)
+  const closeMobileMenu = () => setIsMobileMenuOpen(false);
 
   // Format wallet address for display
   const formatAddress = (address) => {
@@ -136,7 +165,7 @@ const Navigation = () => {
   };
 
   return (
-    <nav ref={navRef} aria-label="Main navigation" className="relative z-50 bg-[#0B0B1D]/90 backdrop-blur-lg border-b border-[#8B5CF6]/15">
+    <nav aria-label="Main navigation" className="relative z-50 bg-[#0B0B1D]/90 backdrop-blur-lg border-b border-[#8B5CF6]/15">
       <div className="max-w-7xl mx-auto px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
@@ -209,18 +238,18 @@ const Navigation = () => {
               onClick={() => setMobileMenuOpen(open => !open)}
               className="bg-[#14102E] inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-white hover:bg-[#8B5CF6]/10 transition-colors duration-200"
               aria-controls="mobile-menu"
-              aria-expanded={mobileMenuOpen}
-              aria-label={mobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
+              aria-expanded={isMobileMenuOpen}
+              aria-haspopup="true"
+              onClick={toggleMobileMenu}
             >
-              <span className="sr-only">{mobileMenuOpen ? 'Close main menu' : 'Open main menu'}</span>
-              {mobileMenuOpen ? (
-                /* X icon */
-                <svg className="block h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <span className="sr-only">{isMobileMenuOpen ? 'Close main menu' : 'Open main menu'}</span>
+              {/* Hamburger / X icon toggles with menu state */}
+              {isMobileMenuOpen ? (
+                <svg className="block h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               ) : (
-                /* Hamburger icon */
-                <svg className="block h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="block h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
               )}
@@ -229,36 +258,38 @@ const Navigation = () => {
         </div>
       </div>
 
-      {/* Mobile menu */}
-      {mobileMenuOpen && (
-      <div className="md:hidden" id="mobile-menu" role="navigation" aria-label="Mobile navigation menu">
-        <div className="px-2 pt-2 pb-3 space-y-1 bg-[#14102E]/95 backdrop-blur-lg border-t border-[#8B5CF6]/10 animate-slide-down">
-          {menuItems.map((item) => {
-            const isActive = typeof window !== 'undefined' && window.location.pathname === item.href;
-            return (
+      {/* Mobile menu - controlled by isMobileMenuOpen state */}
+      <div
+        className="md:hidden"
+        id="mobile-menu"
+        ref={mobileMenuRef}
+        hidden={!isMobileMenuOpen}
+        role="region"
+        aria-label="Mobile navigation menu"
+      >
+        <div className="px-2 pt-2 pb-3 space-y-1 bg-[#14102E]/95 backdrop-blur-lg border-t border-[#8B5CF6]/15 animate-[fadeIn_0.15s_ease-out]">
+          {menuItems.map((item) => (
             <a
               key={item.label}
               href={item.href}
-              onClick={() => setMobileMenuOpen(false)}
-              className={`block px-3 py-2 text-base font-medium rounded-lg transition-colors duration-200 ${
-                isActive
-                  ? 'text-[#8B5CF6] bg-[#8B5CF6]/10'
-                  : 'text-gray-300 hover:text-[#8B5CF6] hover:bg-[#8B5CF6]/5'
-              }`}
+              onClick={closeMobileMenu}
+              className="text-gray-300 hover:text-[#8B5CF6] block px-3 py-2 text-base font-medium hover:bg-[#8B5CF6]/5 rounded-lg transition-colors duration-200"
             >
               {item.label}
             </a>
-            );
-          })}
-          <div className="px-3 py-2 border-t border-[#8B5CF6]/10 mt-1 space-y-2">
+          ))}
+          <div className="px-3 py-2">
             <LanguageSelector />
+          </div>
+          <hr className="border-[#8B5CF6]/15 my-1" />
+          <div className="px-3 py-2">
             <button
-              onClick={() => { handleConnectWallet(); setMobileMenuOpen(false); }}
-              className={`w-full px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                isWalletConnected
-                  ? 'bg-[#F59E0B] text-white border border-[#F59E0B]'
-                  : 'bg-[#8B5CF6] text-white border border-[#8B5CF6]'
-              }`}
+              onClick={() => { closeMobileMenu(); setTimeout(handleConnectWallet, 150); }}
+              className={`w-full px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200
+                ${isWalletConnected
+                  ? 'bg-[#F59E0B] hover:bg-[#F59E0B]/80 text-white border border-[#F59E0B]'
+                  : 'bg-[#8B5CF6] hover:bg-[#8B5CF6]/80 text-white border border-[#8B5CF6]'
+                }`}
             >
               {isWalletConnected ? formatAddress(walletAddress) : 'Connect Wallet'}
             </button>
