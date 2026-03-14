@@ -174,6 +174,14 @@ export default function UserDashboard() {
       return;
     }
 
+    const duplicateListing = myListings.find(
+      l => l.dataId === Number(selectedDataset) && l.accessLevel === Number(newAccess)
+    );
+    if (duplicateListing) {
+      toast.error(`Listing #${duplicateListing.listingId} already exists for this dataset and access level.`);
+      return;
+    }
+
     setLoading(true);
     const toastId = toast.loading('Creating listing...');
 
