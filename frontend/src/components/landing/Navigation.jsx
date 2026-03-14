@@ -93,6 +93,7 @@ const Navigation = () => {
       }
     } catch (error) {
       console.error('Wallet connection error:', error);
+      toast.error(error?.message || 'Failed to connect wallet. Please try again.');
     }
   };
 
