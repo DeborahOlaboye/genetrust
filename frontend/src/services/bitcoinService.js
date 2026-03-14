@@ -174,6 +174,7 @@ export async function validateP2WPKHOnChain(witnessProgram) {
  * @returns {Promise<object|null>}
  */
 export async function getVerifiedBtcTx(txid) {
+  if (!txid || typeof txid !== 'string') throw new Error('getVerifiedBtcTx: txid must be a non-empty string');
   const result = await callReadOnlyFunction({
     contractAddress: CONTRACT_ADDRESS,
     contractName: 'segwit-tx-parser',
