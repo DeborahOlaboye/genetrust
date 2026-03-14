@@ -317,15 +317,18 @@ export default function UserDashboard() {
                       </select>
                     </div>
                     <div>
-                      <label className="text-sm text-[#9AA0B2]">Price (microSTX) *</label>
+                      <label htmlFor="listing-price" className="text-sm text-[#9AA0B2]">Price (microSTX) *</label>
                       <input
+                        id="listing-price"
                         type="number"
                         value={newPrice}
                         onChange={e => setNewPrice(e.target.value)}
                         className="mt-1 w-full bg-[#14102E] border border-[#8B5CF6]/20 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]/40"
                         placeholder="e.g., 1000000 (1 STX)"
+                        aria-required="true"
                         disabled={loading}
                         min="1"
+                        step="1"
                       />
                     </div>
                     <div>
