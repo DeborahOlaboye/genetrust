@@ -126,6 +126,7 @@ export function getAddressType(address) {
  */
 export function satsToBtc(sats) {
   if (sats === null || sats === undefined) throw new Error('satsToBtc: sats must not be null or undefined');
+  if (typeof sats === 'string' && sats.trim() === '') throw new Error('satsToBtc: sats must not be an empty string');
   const n = BigInt(sats);
   const whole = n / BigInt(SATS_PER_BTC);
   const frac = n % BigInt(SATS_PER_BTC);
