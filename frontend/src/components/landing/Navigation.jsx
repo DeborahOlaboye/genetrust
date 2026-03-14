@@ -198,6 +198,7 @@ const Navigation = () => {
               className="bg-[#14102E] inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-white hover:bg-[#8B5CF6]/10 transition-colors duration-200"
               aria-controls="mobile-menu"
               aria-expanded={isMobileMenuOpen}
+              aria-haspopup="true"
               onClick={toggleMobileMenu}
             >
               <span className="sr-only">{isMobileMenuOpen ? 'Close main menu' : 'Open main menu'}</span>
@@ -239,6 +240,7 @@ const Navigation = () => {
           <div className="px-3 py-2">
             <LanguageSelector />
           </div>
+          <hr className="border-[#8B5CF6]/15 my-1" />
           <div className="px-3 py-2">
             <button
               onClick={() => { closeMobileMenu(); setTimeout(handleConnectWallet, 150); }}
