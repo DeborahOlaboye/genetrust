@@ -66,6 +66,11 @@ export default function ResearcherDashboard() {
       <Navigation />
       <div className="max-w-7xl mx-auto px-6 lg:px-8 py-10 space-y-8">
 
+        {/* Screen reader live region for status announcements */}
+        <div aria-live="polite" aria-atomic="true" className="sr-only">
+          {isFetching ? 'Loading marketplace listings…' : `${listings.length} listing${listings.length !== 1 ? 's' : ''} available`}
+        </div>
+
         {/* Initialization error banner */}
         {initError && (
           <div role="alert" className="rounded-xl px-5 py-4 bg-red-900/30 border border-red-500/40 text-red-300 text-sm">
