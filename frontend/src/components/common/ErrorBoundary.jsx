@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import analyticsService from '../../services/analytics/analyticsService';
 
+
 class ErrorBoundary extends Component {
   constructor(props) {
     super(props);
@@ -114,7 +115,11 @@ class ErrorBoundary extends Component {
 
 ErrorBoundary.propTypes = {
   children: PropTypes.node.isRequired,
-  fallback: PropTypes.oneOfType([PropTypes.node, PropTypes.func])
+  fallback: PropTypes.oneOfType([PropTypes.node, PropTypes.func]),
+  onError: PropTypes.func,
+  onReset: PropTypes.func,
+  errorMessage: PropTypes.string,
+  showReset: PropTypes.bool,
 };
 
 export default ErrorBoundary;
