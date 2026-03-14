@@ -164,6 +164,7 @@ export default function BitcoinEscrow({ listingId, accessLevel, userAddress, onC
             <button
               onClick={handleCreateEscrow}
               disabled={loading || !buyerAddressMeta.valid}
+              aria-busy={loading}
               aria-label="Create Bitcoin escrow for this listing"
               className="w-full rounded-lg bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-orange-600 disabled:opacity-50 transition-colors"
             >
@@ -227,6 +228,7 @@ export default function BitcoinEscrow({ listingId, accessLevel, userAddress, onC
             <button
               onClick={handleConfirmPayment}
               disabled={loading || !isValidBtcTxid(btcTxid)}
+              aria-busy={loading}
               className="w-full rounded-lg bg-green-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-50 transition-colors"
             >
               {loading ? 'Confirming…' : 'Confirm Payment'}
