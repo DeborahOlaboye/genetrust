@@ -85,9 +85,10 @@ class ErrorBoundary extends Component {
                 <summary className="text-sm text-[#9AA0B2] cursor-pointer mb-2 hover:text-white transition-colors" aria-label="Toggle error details for debugging">
                   Error details (dev mode)
                 </summary>
-                <pre className="text-xs text-red-300 overflow-auto max-h-40 mt-2 font-mono">
-                  {error && error.toString()}
-                  {errorInfo?.componentStack}
+                <pre className="text-xs text-red-300 overflow-auto max-h-40 mt-2 font-mono whitespace-pre-wrap">
+                  {error?.toString()}
+                  {error?.stack ? `\n\nStack:\n${error.stack}` : ''}
+                  {errorInfo?.componentStack ? `\n\nComponent Stack:${errorInfo.componentStack}` : ''}
                 </pre>
               </details>
             )}
