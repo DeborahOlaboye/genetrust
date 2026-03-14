@@ -89,6 +89,7 @@ class ErrorBoundary extends Component {
               {showReset && (
                 <button
                   onClick={this.handleReset}
+                  aria-label="Try again and dismiss this error"
                   className="px-6 py-3 bg-[#8B5CF6] hover:bg-[#7C3AED] text-white rounded-xl transition-all duration-200 font-semibold shadow-lg shadow-[#8B5CF6]/20"
                 >
                   Try Again
@@ -96,10 +97,8 @@ class ErrorBoundary extends Component {
               )}
 
               <button
-                onClick={() => {
-                  window.location.hash = '';
-                  window.location.reload();
-                }}
+                onClick={() => { window.location.href = '/'; }}
+                aria-label="Go to homepage"
                 className="px-6 py-3 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-xl transition-all duration-200 font-semibold"
               >
                 Go Home
