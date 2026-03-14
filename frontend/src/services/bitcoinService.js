@@ -381,5 +381,6 @@ export function hexToBytes(hex) {
 }
 
 export function bytesToHex(bytes) {
+  if (!bytes || !(bytes instanceof Uint8Array)) throw new Error('bytesToHex: input must be a Uint8Array');
   return Array.from(bytes).map((b) => b.toString(16).padStart(2, '0')).join('');
 }
