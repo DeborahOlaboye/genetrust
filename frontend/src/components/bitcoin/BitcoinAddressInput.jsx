@@ -74,6 +74,7 @@ export default function BitcoinAddressInput({
           required={required}
           aria-required={required}
           aria-invalid={showError ? true : undefined}
+          aria-describedby={showError ? 'btc-addr-error' : undefined}
           spellCheck={false}
           autoComplete="off"
           className={`w-full rounded-lg border px-3 py-2 font-mono text-sm focus:outline-none focus:ring-2 transition-colors
@@ -118,7 +119,7 @@ export default function BitcoinAddressInput({
 
       {/* Error message */}
       {showError && (
-        <p className="text-xs text-red-600">
+        <p id="btc-addr-error" role="alert" className="text-xs text-red-600">
           Invalid segwit address. Only native SegWit addresses (bc1q… / tb1q…) are accepted.
         </p>
       )}
