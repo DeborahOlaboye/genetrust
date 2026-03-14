@@ -142,7 +142,7 @@ export default function UserDashboard() {
       setNewDesc(''); // Clear the input
     } catch (e) {
       console.error(e);
-      toast.error(e.message || 'Failed to create dataset', { id: toastId });
+      toast.error(e?.message || 'Failed to create dataset', { id: toastId });
     } finally {
       setLoading(false);
     }
@@ -183,7 +183,7 @@ export default function UserDashboard() {
       setSelectedDataset('');
     } catch (e) {
       console.error(e);
-      toast.error(e.message || 'Failed to create listing', { id: toastId });
+      toast.error(e?.message || 'Failed to create listing', { id: toastId });
     } finally {
       setLoading(false);
     }
