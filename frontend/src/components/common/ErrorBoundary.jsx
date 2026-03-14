@@ -82,7 +82,7 @@ class ErrorBoundary extends Component {
 
             {process.env.NODE_ENV === 'development' && error && (
               <details className="mb-6 text-left bg-black/30 rounded-lg p-4 border border-red-500/20">
-                <summary className="text-sm text-[#9AA0B2] cursor-pointer mb-2 hover:text-white transition-colors">
+                <summary className="text-sm text-[#9AA0B2] cursor-pointer mb-2 hover:text-white transition-colors" aria-label="Toggle error details for debugging">
                   Error details (dev mode)
                 </summary>
                 <pre className="text-xs text-red-300 overflow-auto max-h-40 mt-2 font-mono">
