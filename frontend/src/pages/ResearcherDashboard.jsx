@@ -77,7 +77,7 @@ export default function ResearcherDashboard() {
         )}
 
         {/* Controls */}
-        <SectionCard title="Filters" border="#8B5CF6">
+        <SectionCard title="Filters" border="#8B5CF6" aria-label="Marketplace filters">
           <div className="grid md:grid-cols-3 gap-4">
             <div>
               <label htmlFor="access-level-select" className="text-sm text-[#9AA0B2]">Desired Access Level</label>
