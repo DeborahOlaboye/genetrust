@@ -65,11 +65,11 @@ class ErrorBoundary extends Component {
               </svg>
             </div>
 
-            <h2 id="error-boundary-heading" className="text-2xl font-bold text-white mb-3">
+            <h2 id="error-boundary-heading" aria-describedby="error-boundary-desc" className="text-2xl font-bold text-white mb-3">
               {errorMessage}
             </h2>
 
-            <p className="text-[#9AA0B2] mb-6 leading-relaxed">
+            <p id="error-boundary-desc" className="text-[#9AA0B2] mb-6 leading-relaxed">
               We encountered an unexpected error. Your data is safe. Please try refreshing the page or contact support if the problem persists.
             </p>
 
