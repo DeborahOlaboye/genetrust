@@ -56,14 +56,15 @@ export default function BitcoinAddressInput({
   return (
     <div className="space-y-1">
       {label && (
-        <label className="block text-sm font-medium text-gray-700">
+        <label htmlFor="bitcoin-address-input" className="block text-sm font-medium text-gray-700">
           {label}
-          {required && <span className="ml-1 text-red-500">*</span>}
+          {required && <span className="ml-1 text-red-500" aria-hidden="true">*</span>}
         </label>
       )}
 
       <div className="relative">
         <input
+          id="bitcoin-address-input"
           type="text"
           value={value}
           onChange={handleChange}
