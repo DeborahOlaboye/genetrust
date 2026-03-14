@@ -380,8 +380,17 @@ export default function UserDashboard() {
 
           <SectionCard title="Your Listings" border="#F59E0B">
             <div className="divide-y divide-[#F59E0B]/10">
-              {myListings.length === 0 && <div className="text-[#9AA0B2]">No listings yet.</div>}
-              {myListings.map(l => (
+              {isFetching && Array.from({ length: 2 }).map((_, i) => (
+                <div key={i} className="py-3 flex items-center justify-between animate-pulse">
+                  <div className="space-y-2">
+                    <div className="h-4 w-24 bg-[#F59E0B]/20 rounded" />
+                    <div className="h-3 w-36 bg-[#F59E0B]/10 rounded" />
+                  </div>
+                  <div className="h-4 w-16 bg-[#F59E0B]/20 rounded" />
+                </div>
+              ))}
+              {!isFetching && myListings.length === 0 && <div className="text-[#9AA0B2]">No listings yet.</div>}
+              {!isFetching && myListings.map(l => (
                 <div key={l.listingId} className="py-3 flex items-center justify-between">
                   <div>
                     <div className="font-medium">Listing #{l.listingId}</div>
