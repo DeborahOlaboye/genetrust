@@ -41,6 +41,7 @@ export default function UserDashboard() {
   const [datasets, setDatasets] = useState([]);
   const [myListings, setMyListings] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [isFetching, setIsFetching] = useState(true);
   const [walletConnected, setWalletConnected] = useState(false);
   const [walletAddress, setWalletAddress] = useState(null);
   const [error, setError] = useState(null);
