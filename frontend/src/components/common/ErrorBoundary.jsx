@@ -40,7 +40,7 @@ class ErrorBoundary extends Component {
     if (hasError) {
       // Render fallback UI if provided
       if (Fallback) {
-        return <Fallback error={error} errorInfo={errorInfo} reset={this.handleReset} />;
+        return <Fallback error={error} errorInfo={errorInfo} reset={this.handleReset} onReset={this.handleReset} />;
       }
 
       // Enhanced GeneTrust-themed error UI
