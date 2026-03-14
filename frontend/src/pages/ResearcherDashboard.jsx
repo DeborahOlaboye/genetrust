@@ -51,7 +51,7 @@ export default function ResearcherDashboard() {
   const purchase = async (listingId) => {
     setLoadingId(listingId);
     try {
-      const res = await contractService.purchaseListing({ listingId, desiredAccessLevel: Number(accessLevel) || 1 });
+      const res = await contractService.purchaseListing({ listingId, desiredAccessLevel: accessLevel });
       toast.success(`Purchase successful! Access Level ${res.accessLevel}. TX: ${res.txId.slice(0,10)}...`);
     } catch (e) {
       toast.error(`Purchase failed: ${e?.message || 'Unknown error'}`);
