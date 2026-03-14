@@ -255,8 +255,8 @@ export default function UserDashboard() {
         {/* Stats */}
         <section aria-labelledby="dashboard-stats" className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <h2 id="dashboard-stats" className="sr-only">Dashboard Statistics</h2>
-          <StatCard title="Datasets" value={datasets.length} />
-          <StatCard title="Listings" value={myListings.length} />
+          <StatCard title="Datasets" value={isFetching ? '—' : datasets.length} />
+          <StatCard title="Listings" value={isFetching ? '—' : myListings.length} />
           <StatCard title="Mode" value={status?.mode || (APP_CONFIG.USE_REAL_SDK ? 'Real' : 'Mock')} accent="amber" />
           <StatCard title="Network" value={APP_CONFIG.NETWORK} />
         </section>
