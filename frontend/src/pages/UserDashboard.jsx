@@ -46,6 +46,7 @@ export default function UserDashboard() {
   const [error, setError] = useState(null);
 
   const [newDesc, setNewDesc] = useState('');
+  const [descError, setDescError] = useState('');
   const [newPrice, setNewPrice] = useState('');
   const [newAccess, setNewAccess] = useState(3);
   const [selectedDataset, setSelectedDataset] = useState('');
