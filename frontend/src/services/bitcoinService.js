@@ -250,6 +250,8 @@ export async function createBtcEscrow({
   buyerWitnessProgram,
   multisigPolicyId = 0,
 }) {
+  if (!buyerWitnessProgram || !(buyerWitnessProgram instanceof Uint8Array)) throw new Error('createBtcEscrow: buyerWitnessProgram must be a Uint8Array');
+  if (!Number.isFinite(Number(amountSats)) || Number(amountSats) <= 0) throw new Error('createBtcEscrow: amountSats must be a positive number');
   return new Promise((resolve, reject) => {
     openContractCall({
       contractAddress: CONTRACT_ADDRESS,
