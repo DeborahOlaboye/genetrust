@@ -78,7 +78,7 @@ export default function ResearcherDashboard() {
           <div className="grid md:grid-cols-3 gap-4">
             <div>
               <label className="text-sm text-[#9AA0B2]">Desired Access Level</label>
-              <select value={accessLevel} onChange={e => setAccessLevel(e.target.value)} aria-label="Desired access level" className="mt-1 w-full bg-[#14102E] border border-[#8B5CF6]/20 rounded-lg px-3 py-2">
+              <select value={accessLevel} onChange={e => setAccessLevel(parseInt(e.target.value, 10))} aria-label="Desired access level" className="mt-1 w-full bg-[#14102E] border border-[#8B5CF6]/20 rounded-lg px-3 py-2">
                 <option value={1}>1 - Basic</option>
                 <option value={2}>2 - Detailed</option>
                 <option value={3}>3 - Full</option>
