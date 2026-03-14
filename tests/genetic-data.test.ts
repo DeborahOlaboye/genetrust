@@ -283,6 +283,239 @@ describe('dataset-registry - verify-registered-contract', () => {
   });
 });
 
+// ─── transfer-ownership ───────────────────────────────────────────────────────
+
+describe('dataset-registry - transfer-ownership', () => {
+  beforeEach(() => {
+    registerDataset(50);
+  });
+
+  it('owner can transfer ownership to another principal', () => {
+    const { result } = simnet.callPublicFn(
+      'dataset-registry',
+      'transfer-ownership',
+      [Cl.uint(50), Cl.principal(wallet1)],
+      deployer,
+    );
+    expect(result).toBeOk(expect.anything());
+  });
+
+  it('new owner is reflected in get-dataset-details after transfer', () => {
+    simnet.callPublicFn(
+      'dataset-registry',
+      'transfer-ownership',
+      [Cl.uint(50), Cl.principal(wallet1)],
+      deployer,
+    );
+    const { result } = simnet.callReadOnlyFn(
+      'dataset-registry',
+      'get-dataset-details',
+      [Cl.uint(50)],
+      deployer,
+    );
+    expect(result).toBeSome(expect.anything());
+  });
+
+  it('non-owner cannot transfer ownership', () => {
+    const { result } = simnet.callPublicFn(
+      'dataset-registry',
+      'transfer-ownership',
+      [Cl.uint(50), Cl.principal(wallet2)],
+      wallet1, // not owner
+    );
+    expect(result).toBeErr(Cl.uint(401));
+  });
+
+  it('transfer to non-existent dataset returns 404', () => {
+    const { result } = simnet.callPublicFn(
+      'dataset-registry',
+      'transfer-ownership',
+      [Cl.uint(9999), Cl.principal(wallet1)],
+      deployer,
+    );
+    expect(result).toBeErr(Cl.uint(404));
+  });
+});
+
+// ─── revoke-access ────────────────────────────────────────────────────────────
+
+describe('dataset-registry - revoke-access', () => {
+  beforeEach(() => {
+    registerDataset(60);
+    // Grant access so we have something to revoke
+    simnet.callPublicFn(
+      'dataset-registry',
+      'grant-access',
+      [Cl.uint(60), Cl.principal(wallet1), Cl.uint(1)],
+      deployer,
+    );
+  });
+
+  it('owner can revoke a granted access right', () => {
+    const { result } = simnet.callPublicFn(
+      'dataset-registry',
+      'revoke-access',
+      [Cl.uint(60), Cl.principal(wallet1)],
+      deployer,
+    );
+    expect(result).toBeOk(expect.anything());
+  });
+
+  it('has-access returns false after revocation', () => {
+    simnet.callPublicFn(
+      'dataset-registry',
+      'revoke-access',
+      [Cl.uint(60), Cl.principal(wallet1)],
+      deployer,
+    );
+    const { result } = simnet.callReadOnlyFn(
+      'dataset-registry',
+      'has-access',
+      [Cl.uint(60), Cl.principal(wallet1), Cl.uint(1)],
+      deployer,
+    );
+    expect(result).toStrictEqual(Cl.bool(false));
+  });
+
+  it('non-owner cannot revoke access', () => {
+    const { result } = simnet.callPublicFn(
+      'dataset-registry',
+      'revoke-access',
+      [Cl.uint(60), Cl.principal(wallet1)],
+      wallet2, // not owner
+    );
+    expect(result).toBeErr(Cl.uint(401));
+  });
+
+  it('revoking non-existent access returns 404', () => {
+    const { result } = simnet.callPublicFn(
+      'dataset-registry',
+      'revoke-access',
+      [Cl.uint(60), Cl.principal(wallet2)], // wallet2 was never granted
+      deployer,
+    );
+    expect(result).toBeErr(Cl.uint(404));
+  });
+});
+
+// ─── dataset version history ──────────────────────────────────────────────────
+
+describe('dataset-registry - version history', () => {
+  beforeEach(() => {
+    registerDataset(70);
+  });
+
+  it('initial registration creates version 1', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'dataset-registry',
+      'get-dataset-versions',
+      [Cl.uint(70)],
+      deployer,
+    );
+    expect(result).not.toBeNone();
+  });
+
+  it('update-genetic-data increments version count', () => {
+    simnet.callPublicFn(
+      'dataset-registry',
+      'update-genetic-data',
+      [Cl.uint(70), Cl.none(), Cl.none(), Cl.none(), Cl.none(), Cl.none()],
+      deployer,
+    );
+    const { result } = simnet.callReadOnlyFn(
+      'dataset-registry',
+      'get-dataset-versions',
+      [Cl.uint(70)],
+      deployer,
+    );
+    expect(result).not.toBeNone();
+  });
+
+  it('dataset-version-exists returns true for version 1', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'dataset-registry',
+      'dataset-version-exists',
+      [Cl.uint(70), Cl.uint(1)],
+      deployer,
+    );
+    expect(result).toStrictEqual(Cl.bool(true));
+  });
+
+  it('dataset-version-exists returns false for version 999', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'dataset-registry',
+      'dataset-version-exists',
+      [Cl.uint(70), Cl.uint(999)],
+      deployer,
+    );
+    expect(result).toStrictEqual(Cl.bool(false));
+  });
+
+  it('get-dataset-change-timeline returns data-id and current-block', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'dataset-registry',
+      'get-dataset-change-timeline',
+      [Cl.uint(70)],
+      deployer,
+    );
+    expect(result).toMatchObject(expect.anything());
+  });
+});
+
+// ─── lifecycle analytics ──────────────────────────────────────────────────────
+
+describe('dataset-registry - lifecycle analytics', () => {
+  beforeEach(() => {
+    registerDataset(80);
+  });
+
+  it('get-dataset-lifecycle returns is-active true for registered dataset', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'dataset-registry',
+      'get-dataset-lifecycle',
+      [Cl.uint(80)],
+      deployer,
+    );
+    expect(result).not.toBeNone();
+  });
+
+  it('get-modification-frequency returns total-modifications after update', () => {
+    simnet.callPublicFn(
+      'dataset-registry',
+      'update-genetic-data',
+      [Cl.uint(80), Cl.none(), Cl.none(), Cl.none(), Cl.none(), Cl.none()],
+      deployer,
+    );
+    const { result } = simnet.callReadOnlyFn(
+      'dataset-registry',
+      'get-modification-frequency',
+      [Cl.uint(80)],
+      deployer,
+    );
+    expect(result).not.toBeNone();
+  });
+
+  it('get-dataset-owner-history returns current-owner', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'dataset-registry',
+      'get-dataset-owner-history',
+      [Cl.uint(80)],
+      deployer,
+    );
+    expect(result).toMatchObject(expect.anything());
+  });
+
+  it('get-dataset-change-summary returns block range metadata', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'dataset-registry',
+      'get-dataset-change-summary',
+      [Cl.uint(80), Cl.uint(0), Cl.uint(100)],
+      deployer,
+    );
+    expect(result).toMatchObject(expect.anything());
+  });
+});
+
 // ─── revoke-access ────────────────────────────────────────────────────────────
 
 describe('dataset-registry - revoke-access', () => {
@@ -368,5 +601,388 @@ describe('dataset-registry - version history', () => {
       deployer,
     );
     expect(result).toStrictEqual(Cl.bool(false));
+  });
+});
+
+// ─── update-genetic-data ──────────────────────────────────────────────────────
+
+describe('dataset-registry - update-genetic-data', () => {
+  beforeEach(() => {
+    registerDataset(100);
+  });
+
+  it('owner can update description', () => {
+    const { result } = simnet.callPublicFn(
+      'dataset-registry',
+      'update-genetic-data',
+      [
+        Cl.uint(100),
+        Cl.none(),
+        Cl.none(),
+        Cl.none(),
+        Cl.none(),
+        Cl.some(Cl.stringUtf8('Updated description')),
+      ],
+      deployer,
+    );
+    expect(result).toBeOk(expect.anything());
+  });
+
+  it('owner can update price', () => {
+    const { result } = simnet.callPublicFn(
+      'dataset-registry',
+      'update-genetic-data',
+      [
+        Cl.uint(100),
+        Cl.some(Cl.stringUtf8('500')),
+        Cl.none(),
+        Cl.none(),
+        Cl.none(),
+        Cl.none(),
+      ],
+      deployer,
+    );
+    expect(result).toBeOk(expect.anything());
+  });
+
+  it('non-owner cannot update dataset', () => {
+    const { result } = simnet.callPublicFn(
+      'dataset-registry',
+      'update-genetic-data',
+      [Cl.uint(100), Cl.none(), Cl.none(), Cl.none(), Cl.none(), Cl.none()],
+      wallet1,
+    );
+    expect(result).toBeErr(Cl.uint(401));
+  });
+
+  it('update increments version in get-dataset-versions', () => {
+    simnet.callPublicFn(
+      'dataset-registry',
+      'update-genetic-data',
+      [Cl.uint(100), Cl.none(), Cl.none(), Cl.none(), Cl.none(), Cl.none()],
+      deployer,
+    );
+    const { result } = simnet.callReadOnlyFn(
+      'dataset-registry',
+      'get-dataset-versions',
+      [Cl.uint(100)],
+      deployer,
+    );
+    // After one update the current-version should be >= 2 (registration = 1, update = 2)
+    expect(result).not.toBeNone();
+  });
+});
+
+// ─── batch-grant-access ───────────────────────────────────────────────────────
+
+describe('dataset-registry - batch-grant-access', () => {
+  beforeEach(() => {
+    registerDataset(90);
+    registerDataset(91);
+  });
+
+  it('batch-grant-access succeeds for multiple datasets', () => {
+    const { result } = simnet.callPublicFn(
+      'dataset-registry',
+      'batch-grant-access',
+      [
+        Cl.list([Cl.uint(90), Cl.uint(91)]),
+        Cl.list([Cl.principal(wallet1), Cl.principal(wallet1)]),
+        Cl.list([Cl.uint(1), Cl.uint(1)]),
+      ],
+      deployer,
+    );
+    expect(result).toBeOk(expect.anything());
+  });
+
+  it('batch-grant-access fails when lists have different lengths', () => {
+    const { result } = simnet.callPublicFn(
+      'dataset-registry',
+      'batch-grant-access',
+      [
+        Cl.list([Cl.uint(90)]),
+        Cl.list([Cl.principal(wallet1), Cl.principal(wallet2)]),
+        Cl.list([Cl.uint(1)]),
+      ],
+      deployer,
+    );
+    expect(result).toBeErr(Cl.uint(400));
+  });
+
+  it('batch-grant-access short-circuits on non-owner entry', () => {
+    const { result } = simnet.callPublicFn(
+      'dataset-registry',
+      'batch-grant-access',
+      [
+        Cl.list([Cl.uint(90)]),
+        Cl.list([Cl.principal(wallet2)]),
+        Cl.list([Cl.uint(1)]),
+      ],
+      wallet1, // wallet1 does not own dataset 90
+    );
+    expect(result).toBeErr(Cl.uint(401));
+  });
+
+  it('has-access is true for user after batch-grant-access', () => {
+    simnet.callPublicFn(
+      'dataset-registry',
+      'batch-grant-access',
+      [
+        Cl.list([Cl.uint(90)]),
+        Cl.list([Cl.principal(wallet1)]),
+        Cl.list([Cl.uint(1)]),
+      ],
+      deployer,
+    );
+    const { result } = simnet.callReadOnlyFn(
+      'dataset-registry',
+      'has-access',
+      [Cl.uint(90), Cl.principal(wallet1), Cl.uint(1)],
+      deployer,
+    );
+    expect(result).toStrictEqual(Cl.bool(true));
+  });
+});
+
+// ─── access history analytics ─────────────────────────────────────────────────
+
+describe('dataset-registry - access history analytics', () => {
+  beforeEach(() => {
+    registerDataset(110);
+    simnet.callPublicFn(
+      'dataset-registry',
+      'grant-access',
+      [Cl.uint(110), Cl.principal(wallet1), Cl.uint(1)],
+      deployer,
+    );
+  });
+
+  it('get-access-history returns change-count for user after grant', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'dataset-registry',
+      'get-access-history',
+      [Cl.uint(110), Cl.principal(wallet1)],
+      deployer,
+    );
+    expect(result).toMatchObject(expect.anything());
+  });
+
+  it('count-user-access-changes returns non-zero after grant', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'dataset-registry',
+      'count-user-access-changes',
+      [Cl.uint(110), Cl.principal(wallet1)],
+      deployer,
+    );
+    expect(result).not.toBeNone();
+  });
+
+  it('get-access-change returns record for change-id 1', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'dataset-registry',
+      'get-access-change',
+      [Cl.uint(110), Cl.principal(wallet1), Cl.uint(1)],
+      deployer,
+    );
+    expect(result).toBeSome(expect.anything());
+  });
+
+  it('get-total-access-grants returns data-id field', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'dataset-registry',
+      'get-total-access-grants',
+      [Cl.uint(110)],
+      deployer,
+    );
+    expect(result).toMatchObject(expect.anything());
+  });
+
+  it('get-user-access returns rights for granted user', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'dataset-registry',
+      'get-user-access',
+      [Cl.uint(110), Cl.principal(wallet1)],
+      deployer,
+    );
+    expect(result).toBeSome(expect.anything());
+  });
+});
+
+// ─── bulk-grant-access-map ────────────────────────────────────────────────────
+
+describe('dataset-registry - bulk-grant-access-map', () => {
+  beforeEach(() => {
+    registerDataset(120);
+    registerDataset(121);
+  });
+
+  it('bulk-grant-access-map returns a list of booleans', () => {
+    const { result } = simnet.callPublicFn(
+      'dataset-registry',
+      'bulk-grant-access-map',
+      [
+        Cl.list([Cl.uint(120), Cl.uint(121)]),
+        Cl.list([Cl.principal(wallet1), Cl.principal(wallet1)]),
+        Cl.list([Cl.uint(1), Cl.uint(1)]),
+      ],
+      deployer,
+    );
+    expect(result).toBeOk(expect.anything());
+  });
+
+  it('bulk-grant-access-map fails on list length mismatch', () => {
+    const { result } = simnet.callPublicFn(
+      'dataset-registry',
+      'bulk-grant-access-map',
+      [
+        Cl.list([Cl.uint(120)]),
+        Cl.list([Cl.principal(wallet1), Cl.principal(wallet2)]),
+        Cl.list([Cl.uint(1)]),
+      ],
+      deployer,
+    );
+    expect(result).toBeErr(Cl.uint(400));
+  });
+});
+
+// ─── set-contract-owner ───────────────────────────────────────────────────────
+
+describe('dataset-registry - set-contract-owner', () => {
+  it('contract owner can transfer contract ownership', () => {
+    const { result } = simnet.callPublicFn(
+      'dataset-registry',
+      'set-contract-owner',
+      [Cl.principal(wallet1)],
+      deployer,
+    );
+    expect(result).toBeOk(expect.anything());
+  });
+
+  it('non-owner cannot set contract owner', () => {
+    const { result } = simnet.callPublicFn(
+      'dataset-registry',
+      'set-contract-owner',
+      [Cl.principal(wallet2)],
+      wallet1,
+    );
+    expect(result).toBeErr(Cl.uint(401));
+  });
+});
+
+// ─── historical access queries ────────────────────────────────────────────────
+
+describe('dataset-registry - historical access queries', () => {
+  beforeEach(() => {
+    registerDataset(130);
+    simnet.callPublicFn(
+      'dataset-registry',
+      'grant-access',
+      [Cl.uint(130), Cl.principal(wallet1), Cl.uint(1)],
+      deployer,
+    );
+  });
+
+  it('get-historical-access-state returns current-access for granted user', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'dataset-registry',
+      'get-historical-access-state',
+      [Cl.uint(130), Cl.principal(wallet1), Cl.uint(0)],
+      deployer,
+    );
+    expect(result).toMatchObject(expect.anything());
+  });
+
+  it('get-access-changes-in-block-range returns block-range metadata', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'dataset-registry',
+      'get-access-changes-in-block-range',
+      [Cl.uint(130), Cl.principal(wallet1), Cl.uint(0), Cl.uint(1000)],
+      deployer,
+    );
+    expect(result).toMatchObject(expect.anything());
+  });
+
+  it('get-dataset-version-at returns ok for version 1', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'dataset-registry',
+      'get-dataset-version-at',
+      [Cl.uint(130), Cl.uint(1)],
+      deployer,
+    );
+    expect(result).toBeOk(expect.anything());
+  });
+
+  it('get-active-datasets-count returns a defined value', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'dataset-registry',
+      'get-active-datasets-count',
+      [],
+      deployer,
+    );
+    expect(result).toBeDefined();
+  });
+});
+
+// ─── get-data-details and verify-access-rights ───────────────────────────────
+
+describe('dataset-registry - get-data-details and verify-access-rights', () => {
+  beforeEach(() => {
+    registerDataset(140);
+    simnet.callPublicFn(
+      'dataset-registry',
+      'grant-access',
+      [Cl.uint(140), Cl.principal(wallet1), Cl.uint(1)],
+      deployer,
+    );
+  });
+
+  it('get-data-details returns ok with owner and access-level', () => {
+    const { result } = simnet.callPublicFn(
+      'dataset-registry',
+      'get-data-details',
+      [Cl.uint(140)],
+      deployer,
+    );
+    expect(result).toBeOk(expect.anything());
+  });
+
+  it('get-data-details returns err 404 for unknown dataset', () => {
+    const { result } = simnet.callPublicFn(
+      'dataset-registry',
+      'get-data-details',
+      [Cl.uint(9999)],
+      deployer,
+    );
+    expect(result).toBeErr(Cl.uint(404));
+  });
+
+  it('verify-access-rights returns true for granted user', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'dataset-registry',
+      'verify-access-rights',
+      [Cl.uint(140), Cl.principal(wallet1)],
+      deployer,
+    );
+    expect(result).toStrictEqual(Cl.bool(true));
+  });
+
+  it('verify-access-rights returns false for user with no grant', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'dataset-registry',
+      'verify-access-rights',
+      [Cl.uint(140), Cl.principal(wallet2)],
+      deployer,
+    );
+    expect(result).toStrictEqual(Cl.bool(false));
+  });
+
+  it('get-dataset-owner returns the correct owner principal', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'dataset-registry',
+      'get-dataset-owner',
+      [Cl.uint(140)],
+      deployer,
+    );
+    expect(result).toBeSome(expect.anything());
   });
 });

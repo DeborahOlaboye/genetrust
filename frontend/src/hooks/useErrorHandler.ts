@@ -1,4 +1,5 @@
 import { useCallback, useRef } from 'react';
+import toast from 'react-hot-toast';
 import AppError from '../utils/error/AppError';
 
 /**
@@ -78,9 +79,8 @@ export function useErrorHandler() {
     // Show user message if enabled
     const shouldShowUserMessage = options.showUserMessage ?? true;
     if (shouldShowUserMessage && typeof window !== 'undefined') {
-      // Here you could integrate with a toast/notification system
       const message = options.userMessage || appError.message || 'An unexpected error occurred';
-      alert(message); // Replace with your preferred notification system
+      toast.error(message);
     }
     
     // Rethrow if needed
