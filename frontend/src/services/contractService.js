@@ -170,6 +170,7 @@ export class ContractService {
   }
 
   async purchaseListing({ listingId, desiredAccessLevel = 1 }) {
+    if (listingId === null || listingId === undefined) throw new Error('purchaseListing: listingId is required');
     if (this.useRealSDK) {
       return this.sdk.purchaseGeneticData({
         listingId: Number(listingId),
