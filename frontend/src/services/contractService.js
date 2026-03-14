@@ -121,29 +121,25 @@ export class ContractService {
 
   async createListing({ dataId, price, accessLevel, description }) {
     if (this.useRealSDK) {
-      try {
-        const result = await this.sdk.createMarketplaceListing({
-          dataId: Number(dataId),
-          price: Number(price || 1000000),
-          accessLevel: Number(accessLevel || 3),
-          description: description || 'Genetic data listing',
-          metadataHash: new Uint8Array(32), // Mock hash
-          requiresVerification: false, // Set to true if proofs are available
-        });
-        return {
-          listingId: result.listingId,
-          dataId,
-          owner: this.walletAddress,
-          price: price || 1000000,
-          accessLevel: accessLevel || 3,
-          description,
-          active: true,
-          createdAt: Date.now(),
-          txId: result.txId,
-        };
-      } catch (error) {
-        throw error;
-      }
+      const result = await this.sdk.createMarketplaceListing({
+        dataId: Number(dataId),
+        price: Number(price || 1000000),
+        accessLevel: Number(accessLevel || 3),
+        description: description || 'Genetic data listing',
+        metadataHash: new Uint8Array(32), // Mock hash
+        requiresVerification: false, // Set to true if proofs are available
+      });
+      return {
+        listingId: result.listingId,
+        dataId,
+        owner: this.walletAddress,
+        price: price || 1000000,
+        accessLevel: accessLevel || 3,
+        description,
+        active: true,
+        createdAt: Date.now(),
+        txId: result.txId,
+      };
     } else {
       // Mock mode
       const id = Math.floor(Math.random() * 1_000_000);
