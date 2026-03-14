@@ -360,6 +360,7 @@ function bech32Decode(bechString) {
 // ─── General hex utility ─────────────────────────────────────────────────────
 
 export function hexToBytes(hex) {
+  if (!hex || typeof hex !== 'string') throw new Error('hexToBytes: input must be a non-empty string');
   const clean = hex.startsWith('0x') ? hex.slice(2) : hex;
   const bytes = new Uint8Array(clean.length / 2);
   for (let i = 0; i < bytes.length; i++) {
