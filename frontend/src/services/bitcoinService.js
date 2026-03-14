@@ -125,6 +125,8 @@ export function getAddressType(address) {
  * @returns {string}
  */
 export function satsToBtc(sats) {
+  if (sats === null || sats === undefined) throw new Error('satsToBtc: sats must not be null or undefined');
+  if (typeof sats === 'string' && sats.trim() === '') throw new Error('satsToBtc: sats must not be an empty string');
   const n = BigInt(sats);
   const whole = n / BigInt(SATS_PER_BTC);
   const frac = n % BigInt(SATS_PER_BTC);
@@ -137,7 +139,10 @@ export function satsToBtc(sats) {
  * @returns {bigint}
  */
 export function btcToSats(btc) {
-  const [whole, frac = ''] = String(btc).split('.');
+  if (btc === null || btc === undefined) throw new Error('btcToSats: btc must not be null or undefined');
+  const str = String(btc);
+  if (!/^\d+(\.\d+)?$/.test(str)) throw new Error(`btcToSats: invalid BTC amount format: "${str}"`);
+  const [whole, frac = ''] = str.split('.');
   const fracPadded = frac.padEnd(8, '0').slice(0, 8);
   return BigInt(whole) * BigInt(SATS_PER_BTC) + BigInt(fracPadded);
 }
@@ -150,6 +155,7 @@ export function btcToSats(btc) {
  * @returns {Promise<boolean>}
  */
 export async function validateP2WPKHOnChain(witnessProgram) {
+  if (!witnessProgram || typeof witnessProgram !== 'string') throw new Error('validateP2WPKHOnChain: witnessProgram must be a non-empty hex string');
   const result = await callReadOnlyFunction({
     contractAddress: CONTRACT_ADDRESS,
     contractName: 'segwit-validator',
@@ -168,6 +174,7 @@ export async function validateP2WPKHOnChain(witnessProgram) {
  * @returns {Promise<object|null>}
  */
 export async function getVerifiedBtcTx(txid) {
+  if (!txid || typeof txid !== 'string') throw new Error('getVerifiedBtcTx: txid must be a non-empty string');
   const result = await callReadOnlyFunction({
     contractAddress: CONTRACT_ADDRESS,
     contractName: 'segwit-tx-parser',
@@ -187,6 +194,8 @@ export async function getVerifiedBtcTx(txid) {
  * @returns {Promise<boolean>}
  */
 export async function isBtcTxSpendable(txid, currentBurnHeight) {
+  if (!txid || typeof txid !== 'string') throw new Error('isBtcTxSpendable: txid must be a non-empty string');
+  if (typeof currentBurnHeight !== 'number' || !Number.isFinite(currentBurnHeight) || currentBurnHeight < 0) throw new Error('isBtcTxSpendable: currentBurnHeight must be a non-negative finite number');
   const result = await callReadOnlyFunction({
     contractAddress: CONTRACT_ADDRESS,
     contractName: 'segwit-tx-parser',
@@ -205,6 +214,8 @@ export async function isBtcTxSpendable(txid, currentBurnHeight) {
  * @returns {Promise<number|null>}
  */
 export async function getListingBtcPrice(listingId, accessLevel) {
+  if (listingId === null || listingId === undefined || !Number.isFinite(Number(listingId))) throw new Error('getListingBtcPrice: listingId must be a finite number');
+  if (accessLevel === null || accessLevel === undefined || !Number.isFinite(Number(accessLevel))) throw new Error('getListingBtcPrice: accessLevel must be a finite number');
   const result = await callReadOnlyFunction({
     contractAddress: CONTRACT_ADDRESS,
     contractName: 'exchange',
@@ -239,6 +250,8 @@ export async function createBtcEscrow({
   buyerWitnessProgram,
   multisigPolicyId = 0,
 }) {
+  if (!buyerWitnessProgram || !(buyerWitnessProgram instanceof Uint8Array)) throw new Error('createBtcEscrow: buyerWitnessProgram must be a Uint8Array');
+  if (!Number.isFinite(Number(amountSats)) || Number(amountSats) <= 0) throw new Error('createBtcEscrow: amountSats must be a positive number');
   return new Promise((resolve, reject) => {
     openContractCall({
       contractAddress: CONTRACT_ADDRESS,
@@ -269,6 +282,9 @@ export async function createBtcEscrow({
  * @returns {Promise<string>} Stacks txid
  */
 export async function confirmBtcPayment(escrowId, btcTxid, currentBurnHeight) {
+  if (escrowId === null || escrowId === undefined) throw new Error('confirmBtcPayment: escrowId is required');
+  if (!btcTxid || typeof btcTxid !== 'string') throw new Error('confirmBtcPayment: btcTxid must be a non-empty string');
+  if (typeof currentBurnHeight !== 'number' || !Number.isFinite(currentBurnHeight) || currentBurnHeight < 0) throw new Error('confirmBtcPayment: currentBurnHeight must be a non-negative finite number');
   return new Promise((resolve, reject) => {
     openContractCall({
       contractAddress: CONTRACT_ADDRESS,
@@ -360,7 +376,10 @@ function bech32Decode(bechString) {
 // ─── General hex utility ─────────────────────────────────────────────────────
 
 export function hexToBytes(hex) {
+  if (!hex || typeof hex !== 'string') throw new Error('hexToBytes: input must be a non-empty string');
   const clean = hex.startsWith('0x') ? hex.slice(2) : hex;
+  if (clean.length % 2 !== 0) throw new Error(`hexToBytes: hex string must have even length, got ${clean.length}`);
+  if (!/^[a-f0-9]*$/i.test(clean)) throw new Error('hexToBytes: input contains non-hex characters');
   const bytes = new Uint8Array(clean.length / 2);
   for (let i = 0; i < bytes.length; i++) {
     bytes[i] = parseInt(clean.slice(i * 2, i * 2 + 2), 16);
@@ -369,5 +388,6 @@ export function hexToBytes(hex) {
 }
 
 export function bytesToHex(bytes) {
+  if (!bytes || !(bytes instanceof Uint8Array)) throw new Error('bytesToHex: input must be a Uint8Array');
   return Array.from(bytes).map((b) => b.toString(16).padStart(2, '0')).join('');
 }

@@ -106,7 +106,6 @@ export class ContractService {
             description: resolvedDesc,
           });
 
-          console.log('Dataset registered on-chain:', result);
           return result;
         },
         { datasetId: id, operation: 'registerDataset' }
@@ -128,31 +127,25 @@ export class ContractService {
 
   async createListing({ dataId, price, accessLevel, description }) {
     if (this.useRealSDK) {
-      try {
-        const result = await this.sdk.createMarketplaceListing({
-          dataId: Number(dataId),
-          price: Number(price || 1000000),
-          accessLevel: Number(accessLevel || 3),
-          description: description || 'Genetic data listing',
-          metadataHash: new Uint8Array(32), // Mock hash
-          requiresVerification: false, // Set to true if proofs are available
-        });
-        console.log('Listing created on-chain:', result);
-        return {
-          listingId: result.listingId,
-          dataId,
-          owner: this.walletAddress,
-          price: price || 1000000,
-          accessLevel: accessLevel || 3,
-          description,
-          active: true,
-          createdAt: Date.now(),
-          txId: result.txId,
-        };
-      } catch (error) {
-        console.error('Failed to create listing on-chain:', error);
-        throw error;
-      }
+      const result = await this.sdk.createMarketplaceListing({
+        dataId: Number(dataId),
+        price: Number(price || 1000000),
+        accessLevel: Number(accessLevel || 3),
+        description: description || 'Genetic data listing',
+        metadataHash: new Uint8Array(32), // Mock hash
+        requiresVerification: false, // Set to true if proofs are available
+      });
+      return {
+        listingId: result.listingId,
+        dataId,
+        owner: this.walletAddress,
+        price: price || 1000000,
+        accessLevel: accessLevel || 3,
+        description,
+        active: true,
+        createdAt: Date.now(),
+        txId: result.txId,
+      };
     } else {
       // Mock mode
       const id = Math.floor(Math.random() * 1_000_000);
@@ -183,18 +176,12 @@ export class ContractService {
   }
 
   async purchaseListing({ listingId, desiredAccessLevel = 1 }) {
+    if (listingId === null || listingId === undefined) throw new Error('purchaseListing: listingId is required');
     if (this.useRealSDK) {
-      try {
-        const result = await this.sdk.purchaseGeneticData({
-          listingId: Number(listingId),
-          accessLevel: Number(desiredAccessLevel),
-        });
-        console.log('Purchase completed on-chain:', result);
-        return result;
-      } catch (error) {
-        console.error('Failed to purchase listing:', error);
-        throw error;
-      }
+      return this.sdk.purchaseGeneticData({
+        listingId: Number(listingId),
+        accessLevel: Number(desiredAccessLevel),
+      });
     } else {
       // Mock mode
       const l = this._listings.find(x => x.listingId === listingId);
