@@ -1,5 +1,3 @@
-// Main navigation component for GeneTrust landing page
-
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
