@@ -72,6 +72,8 @@ export default function BitcoinAddressInput({
           placeholder={placeholder}
           disabled={disabled}
           required={required}
+          aria-required={required}
+          aria-invalid={showError ? true : undefined}
           spellCheck={false}
           autoComplete="off"
           className={`w-full rounded-lg border px-3 py-2 font-mono text-sm focus:outline-none focus:ring-2 transition-colors
