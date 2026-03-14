@@ -52,7 +52,7 @@ export default function ResearcherDashboard() {
     setLoadingId(listingId);
     try {
       const res = await contractService.purchaseListing({ listingId, desiredAccessLevel: accessLevel });
-      toast.success(`Purchase successful! Access Level ${res.accessLevel}. TX: ${res.txId.slice(0,10)}...`);
+      toast.success(`Access Level ${res.accessLevel} granted. TX: ${res.txId.slice(0, 10)}…`, { duration: 6000 });
     } catch (e) {
       toast.error(`Purchase failed: ${e?.message || 'Unknown error'}`);
     } finally {
