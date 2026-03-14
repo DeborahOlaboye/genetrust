@@ -206,16 +206,16 @@ export default function BitcoinEscrow({ listingId, accessLevel, userAddress, onC
                 spellCheck={false}
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 font-mono text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
-              {btcTxid && btcTxid.length !== 64 && (
-                <p className="mt-1 text-xs text-red-500">
-                  Transaction ID must be exactly 64 hex characters.
+              {btcTxid && !isValidBtcTxid(btcTxid) && (
+                <p id="txid-error" className="mt-1 text-xs text-red-500" role="alert">
+                  Transaction ID must be exactly 64 lowercase hex characters (0–9, a–f).
                 </p>
               )}
             </div>
 
             <button
               onClick={handleConfirmPayment}
-              disabled={loading || btcTxid.length !== 64}
+              disabled={loading || !isValidBtcTxid(btcTxid)}
               className="w-full rounded-lg bg-green-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-50 transition-colors"
             >
               {loading ? 'Confirming…' : 'Confirm Payment'}
