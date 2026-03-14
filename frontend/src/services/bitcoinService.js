@@ -282,6 +282,9 @@ export async function createBtcEscrow({
  * @returns {Promise<string>} Stacks txid
  */
 export async function confirmBtcPayment(escrowId, btcTxid, currentBurnHeight) {
+  if (escrowId === null || escrowId === undefined) throw new Error('confirmBtcPayment: escrowId is required');
+  if (!btcTxid || typeof btcTxid !== 'string') throw new Error('confirmBtcPayment: btcTxid must be a non-empty string');
+  if (typeof currentBurnHeight !== 'number' || !Number.isFinite(currentBurnHeight) || currentBurnHeight < 0) throw new Error('confirmBtcPayment: currentBurnHeight must be a non-negative finite number');
   return new Promise((resolve, reject) => {
     openContractCall({
       contractAddress: CONTRACT_ADDRESS,
