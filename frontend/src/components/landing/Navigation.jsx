@@ -106,6 +106,16 @@ const Navigation = () => {
     return () => document.removeEventListener('mousedown', handleOutsideClick);
   }, [isMobileMenuOpen]);
 
+  // Close mobile menu on Escape key press
+  useEffect(() => {
+    if (!isMobileMenuOpen) return;
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') closeMobileMenu();
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isMobileMenuOpen]);
+
   // Toggle mobile menu open/closed
   const toggleMobileMenu = () => setIsMobileMenuOpen((prev) => !prev);
 
