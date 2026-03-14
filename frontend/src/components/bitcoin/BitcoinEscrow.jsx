@@ -10,6 +10,12 @@ import {
 
 const STEPS = ['Create Escrow', 'Send Bitcoin', 'Confirm Payment', 'Done'];
 
+// Validates a Bitcoin txid: must be exactly 64 lowercase hex characters
+const HEX_TXID_RE = /^[a-f0-9]{64}$/;
+function isValidBtcTxid(txid) {
+  return HEX_TXID_RE.test(txid);
+}
+
 /**
  * BitcoinEscrow
  * Multi-step flow for purchasing a genetic dataset with Bitcoin.
