@@ -193,7 +193,7 @@ export default function UserDashboard() {
       await contractService.createListing({
         dataId: Number(selectedDataset),
         price: parsedPrice,
-        accessLevel: Number(newAccess),
+        accessLevel: newAccess,
         description
       });
 
@@ -359,7 +359,7 @@ export default function UserDashboard() {
                       <label className="text-sm text-[#9AA0B2]">Access Level</label>
                       <select
                         value={newAccess}
-                        onChange={e => setNewAccess(e.target.value)}
+                        onChange={e => setNewAccess(parseInt(e.target.value, 10))}
                         className="mt-1 w-full bg-[#14102E] border border-[#8B5CF6]/20 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]/40"
                         disabled={loading}
                       >
