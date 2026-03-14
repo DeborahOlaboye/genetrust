@@ -130,7 +130,7 @@ export default function BitcoinEscrow({ listingId, accessLevel, userAddress, onC
       <div className="p-6 space-y-4">
         {/* Price summary */}
         {priceSats && (
-          <div className="rounded-lg bg-orange-50 border border-orange-100 px-4 py-3 text-sm">
+          <div role="status" aria-label={`Listing price: ${satsToBtc(priceSats)} BTC (${priceSats.toLocaleString()} satoshis)`} className="rounded-lg bg-orange-50 border border-orange-100 px-4 py-3 text-sm">
             <span className="text-gray-600">Price: </span>
             <span className="font-semibold text-orange-700">
               {satsToBtc(priceSats)} BTC
