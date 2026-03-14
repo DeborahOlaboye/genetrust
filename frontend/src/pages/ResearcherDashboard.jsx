@@ -93,7 +93,7 @@ export default function ResearcherDashboard() {
         </SectionCard>
 
         {/* Listings */}
-        <SectionCard title="Available Listings" border="#34D399">
+        <SectionCard title={`Available Listings${!isFetching ? ` (${listings.length})` : ''}`} border="#34D399">
           <div className="divide-y divide-[#34D399]/10">
             {isFetching && Array.from({ length: 3 }).map((_, i) => (
               <div key={i} className="py-4 flex items-center justify-between animate-pulse">
