@@ -87,7 +87,10 @@ export default function BitcoinAddressInput({
 
         {/* Validation icon */}
         {value && (
-          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-lg select-none">
+          <span
+            aria-label={meta.valid ? 'Valid address' : 'Invalid address'}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-lg select-none"
+          >
             {meta.valid ? '✓' : '✗'}
           </span>
         )}
