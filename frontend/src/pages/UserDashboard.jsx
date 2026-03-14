@@ -299,11 +299,13 @@ export default function UserDashboard() {
                 <>
                   <div className="grid md:grid-cols-2 gap-3">
                     <div>
-                      <label className="text-sm text-[#9AA0B2]">Select Dataset *</label>
+                      <label htmlFor="select-dataset" className="text-sm text-[#9AA0B2]">Select Dataset *</label>
                       <select
+                        id="select-dataset"
                         value={selectedDataset}
                         onChange={e => setSelectedDataset(e.target.value)}
                         className="mt-1 w-full bg-[#14102E] border border-[#8B5CF6]/20 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]/40"
+                        aria-required="true"
                         disabled={loading}
                       >
                         <option value="">Choose a dataset...</option>
