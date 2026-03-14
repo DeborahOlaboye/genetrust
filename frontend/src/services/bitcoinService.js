@@ -214,6 +214,8 @@ export async function isBtcTxSpendable(txid, currentBurnHeight) {
  * @returns {Promise<number|null>}
  */
 export async function getListingBtcPrice(listingId, accessLevel) {
+  if (listingId === null || listingId === undefined || !Number.isFinite(Number(listingId))) throw new Error('getListingBtcPrice: listingId must be a finite number');
+  if (accessLevel === null || accessLevel === undefined || !Number.isFinite(Number(accessLevel))) throw new Error('getListingBtcPrice: accessLevel must be a finite number');
   const result = await callReadOnlyFunction({
     contractAddress: CONTRACT_ADDRESS,
     contractName: 'exchange',
