@@ -199,11 +199,15 @@ export default function BitcoinEscrow({ listingId, accessLevel, userAddress, onC
                 Bitcoin Transaction ID
               </label>
               <input
+                id="btc-txid"
                 type="text"
                 value={btcTxid}
                 onChange={(e) => setBtcTxid(e.target.value.trim().toLowerCase())}
                 placeholder="64-character hex txid"
                 spellCheck={false}
+                aria-required="true"
+                aria-invalid={btcTxid.length > 0 && !isValidBtcTxid(btcTxid)}
+                aria-describedby={btcTxid && !isValidBtcTxid(btcTxid) ? 'txid-error' : undefined}
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 font-mono text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
               {btcTxid && !isValidBtcTxid(btcTxid) && (
