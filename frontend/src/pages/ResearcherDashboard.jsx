@@ -29,13 +29,23 @@ export default function ResearcherDashboard() {
   const [initError, setInitError] = useState(null);
 
   useEffect(() => {
+    let mounted = true;
     (async () => {
-      await contractService.initialize({});
-      const s = await contractService.getStatus();
-      setStatus(s);
-      const ls = await contractService.listMarketplace();
-      setListings(ls);
+      try {
+        await contractService.initialize({});
+        const s = await contractService.getStatus();
+        const ls = await contractService.listMarketplace();
+        if (!mounted) return;
+        setStatus(s);
+        setListings(ls);
+      } catch (err) {
+        if (!mounted) return;
+        setInitError(err?.message || 'Failed to load marketplace data');
+      } finally {
+        if (mounted) setIsFetching(false);
+      }
     })();
+    return () => { mounted = false; };
   }, []);
 
   const purchase = async (listingId) => {
