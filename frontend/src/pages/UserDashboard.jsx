@@ -6,6 +6,8 @@ import { walletService } from '../services/walletService.js';
 import Navigation from '../components/landing/Navigation.jsx';
 import { APP_CONFIG } from '../config/app.js';
 import toast, { Toaster } from 'react-hot-toast';
+import { DatasetUploadWizard } from '../components/upload/DatasetUploadWizard.jsx';
+import { WalletGate } from '../components/upload/WalletGate.jsx';
 
 const StatCard = ({ title, value, accent = 'purple' }) => (
   <div 
@@ -51,10 +53,12 @@ export default function UserDashboard() {
   const [newPrice, setNewPrice] = useState('');
   const [newAccess, setNewAccess] = useState(3);
   const [selectedDataset, setSelectedDataset] = useState('');
+  const [isFetching, setIsFetching] = useState(false);
 
   // Connect wallet on mount if using real SDK
   useEffect(() => {
     const initializeDashboard = async () => {
+      setIsFetching(true);
       try {
         // Connect wallet if using real SDK
         if (APP_CONFIG.USE_REAL_SDK) {
@@ -82,6 +86,8 @@ export default function UserDashboard() {
       } catch (err) {
         console.error('Dashboard initialization error:', err);
         setError(err.message);
+      } finally {
+        setIsFetching(false);
       }
     };
 
@@ -149,8 +155,9 @@ export default function UserDashboard() {
       return;
     }
 
-    if (!newPrice || Number(newPrice) <= 0) {
-      toast.error('Please enter a valid price');
+    const parsedPrice = Number(newPrice);
+    if (!newPrice || isNaN(parsedPrice) || parsedPrice <= 0) {
+      toast.error('Please enter a valid price greater than 0');
       return;
     }
 
@@ -163,7 +170,7 @@ export default function UserDashboard() {
 
       await contractService.createListing({
         dataId: Number(selectedDataset),
-        price: Number(newPrice),
+        price: parsedPrice,
         accessLevel: Number(newAccess),
         description
       });
@@ -175,6 +182,7 @@ export default function UserDashboard() {
       // Clear form
       setNewPrice('');
       setSelectedDataset('');
+      setNewAccess(3);
     } catch (e) {
       console.error(e);
       toast.error(e.message || 'Failed to create listing', { id: toastId });
@@ -217,6 +225,14 @@ export default function UserDashboard() {
       <Navigation />
       <main id="main-content" className="max-w-7xl mx-auto px-6 lg:px-8 py-10 space-y-8">
 
+        {/* Initialization error banner */}
+        {error && (
+          <div role="alert" className="p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 flex items-start justify-between gap-4">
+            <p><strong>Error:</strong> {error}</p>
+            <button onClick={() => setError(null)} aria-label="Dismiss error" className="text-red-400 hover:text-red-300 shrink-0">✕</button>
+          </div>
+        )}
+
         {/* Wallet Connection Status */}
         {APP_CONFIG.USE_REAL_SDK && !walletConnected && (
           <div className="p-6 rounded-xl bg-[#8B5CF6]/10 border border-[#8B5CF6]/20">
@@ -242,24 +258,65 @@ export default function UserDashboard() {
         {/* Stats */}
         <section aria-labelledby="dashboard-stats" className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <h2 id="dashboard-stats" className="sr-only">Dashboard Statistics</h2>
-          <StatCard title="Datasets" value={datasets.length} />
-          <StatCard title="Listings" value={myListings.length} />
+          <StatCard title="Datasets" value={isFetching ? '—' : datasets.length} />
+          <StatCard title="Listings" value={isFetching ? '—' : myListings.length} />
           <StatCard title="Mode" value={status?.mode || (APP_CONFIG.USE_REAL_SDK ? 'Real' : 'Mock')} accent="amber" />
           <StatCard title="Network" value={APP_CONFIG.NETWORK} />
         </section>
 
+        {/* Dataset Upload Wizard */}
+        <section aria-labelledby="upload-wizard-heading">
+          <div className="flex items-center justify-between mb-3">
+            <h2 id="upload-wizard-heading" className="text-white font-semibold text-base">
+              Register New Dataset
+            </h2>
+            <button
+              type="button"
+              onClick={() => setShowUploadWizard(v => !v)}
+              className="text-sm px-4 py-1.5 rounded-lg font-medium"
+              style={{
+                background: showUploadWizard ? 'rgba(139,92,246,0.15)' : 'linear-gradient(135deg,#8B5CF6,#6D28D9)',
+                border: showUploadWizard ? '1px solid rgba(139,92,246,0.4)' : 'none',
+                color: '#fff',
+                cursor: 'pointer',
+              }}
+            >
+              {showUploadWizard ? '✕ Close' : '+ Upload & Register'}
+            </button>
+          </div>
+          {showUploadWizard && (
+            <WalletGate
+              isConnected={walletConnected || !APP_CONFIG.USE_REAL_SDK}
+              onConnect={handleConnectWallet}
+              connecting={loading}
+            >
+              <DatasetUploadWizard
+                contractService={contractService}
+                walletService={walletService}
+                onComplete={(txId) => {
+                  toast.success(`Dataset registered! TX: ${String(txId).slice(0, 10)}…`);
+                  setShowUploadWizard(false);
+                  contractService.listMyDatasets().then(setDatasets).catch(() => {});
+                }}
+              />
+            </WalletGate>
+          )}
+        </section>
+
         {/* Create / Manage */}
         <div className="grid md:grid-cols-2 gap-6">
-          <SectionCard title="Create Vault Dataset">
+          <SectionCard title="Quick Create Dataset">
             <div className="space-y-4">
               <div className="grid md:grid-cols-3 gap-3">
                 <div className="md:col-span-3">
-                  <label className="text-sm text-[#9AA0B2]">Description *</label>
+                  <label htmlFor="dataset-desc" className="text-sm text-[#9AA0B2]">Description *</label>
                   <input
+                    id="dataset-desc"
                     value={newDesc}
                     onChange={e => setNewDesc(e.target.value)}
                     className="mt-1 w-full bg-[#14102E] border border-[#8B5CF6]/20 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]/40 text-white"
                     placeholder="Enter dataset description..."
+                    aria-required="true"
                     disabled={loading}
                   />
                 </div>
@@ -284,11 +341,13 @@ export default function UserDashboard() {
                 <>
                   <div className="grid md:grid-cols-2 gap-3">
                     <div>
-                      <label className="text-sm text-[#9AA0B2]">Select Dataset *</label>
+                      <label htmlFor="select-dataset" className="text-sm text-[#9AA0B2]">Select Dataset *</label>
                       <select
+                        id="select-dataset"
                         value={selectedDataset}
                         onChange={e => setSelectedDataset(e.target.value)}
                         className="mt-1 w-full bg-[#14102E] border border-[#8B5CF6]/20 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]/40"
+                        aria-required="true"
                         disabled={loading}
                       >
                         <option value="">Choose a dataset...</option>
@@ -300,20 +359,23 @@ export default function UserDashboard() {
                       </select>
                     </div>
                     <div>
-                      <label className="text-sm text-[#9AA0B2]">Price (microSTX) *</label>
+                      <label htmlFor="listing-price" className="text-sm text-[#9AA0B2]">Price (microSTX) *</label>
                       <input
+                        id="listing-price"
                         type="number"
                         value={newPrice}
                         onChange={e => setNewPrice(e.target.value)}
                         className="mt-1 w-full bg-[#14102E] border border-[#8B5CF6]/20 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]/40"
                         placeholder="e.g., 1000000 (1 STX)"
+                        aria-required="true"
                         disabled={loading}
-                        min="0"
+                        min="1"
                       />
                     </div>
                     <div>
-                      <label className="text-sm text-[#9AA0B2]">Access Level</label>
+                      <label htmlFor="listing-access" className="text-sm text-[#9AA0B2]">Access Level</label>
                       <select
+                        id="listing-access"
                         value={newAccess}
                         onChange={e => setNewAccess(e.target.value)}
                         className="mt-1 w-full bg-[#14102E] border border-[#8B5CF6]/20 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]/40"
@@ -342,8 +404,17 @@ export default function UserDashboard() {
         <div className="grid md:grid-cols-2 gap-6">
           <SectionCard title="Your Datasets">
             <div className="divide-y divide-[#8B5CF6]/10">
-              {datasets.length === 0 && <div className="text-[#9AA0B2]">No datasets yet.</div>}
-              {datasets.map(ds => (
+              {isFetching && [1, 2].map(n => (
+                <div key={n} className="py-3 flex items-center justify-between animate-pulse">
+                  <div className="space-y-2">
+                    <div className="h-4 w-28 bg-[#8B5CF6]/20 rounded" />
+                    <div className="h-3 w-40 bg-[#8B5CF6]/10 rounded" />
+                  </div>
+                  <div className="h-3 w-20 bg-[#8B5CF6]/10 rounded" />
+                </div>
+              ))}
+              {!isFetching && datasets.length === 0 && <div className="text-[#9AA0B2]">No datasets yet.</div>}
+              {!isFetching && datasets.map(ds => (
                 <div key={ds.id} className="py-3 flex items-center justify-between">
                   <div>
                     <div className="font-medium">Dataset #{ds.id}</div>
@@ -359,8 +430,17 @@ export default function UserDashboard() {
 
           <SectionCard title="Your Listings" border="#F59E0B">
             <div className="divide-y divide-[#F59E0B]/10">
-              {myListings.length === 0 && <div className="text-[#9AA0B2]">No listings yet.</div>}
-              {myListings.map(l => (
+              {isFetching && [1, 2].map(n => (
+                <div key={n} className="py-3 flex items-center justify-between animate-pulse">
+                  <div className="space-y-2">
+                    <div className="h-4 w-24 bg-[#F59E0B]/20 rounded" />
+                    <div className="h-3 w-36 bg-[#F59E0B]/10 rounded" />
+                  </div>
+                  <div className="h-4 w-16 bg-[#F59E0B]/20 rounded" />
+                </div>
+              ))}
+              {!isFetching && myListings.length === 0 && <div className="text-[#9AA0B2]">No listings yet.</div>}
+              {!isFetching && myListings.map(l => (
                 <div key={l.listingId} className="py-3 flex items-center justify-between">
                   <div>
                     <div className="font-medium">Listing #{l.listingId}</div>

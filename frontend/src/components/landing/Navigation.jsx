@@ -25,9 +25,44 @@ const Navigation = () => {
   const menuItems = [
     { label: 'About', href: '#about' },
     { label: 'How it works', href: '#how-it-works' },
-    { label: 'Researchers Dashboard', href: '#researchers-dashboard' },
-    { label: 'Dashboard', href: '#dashboard' }
+    { label: 'Researchers Dashboard', href: '/researcher' },
+    { label: 'Upload Dataset', href: '/upload' },
+    { label: 'Dashboard', href: '/' }
   ];
+
+  // Lock body scroll when mobile menu is open
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      document.body.style.overflow = mobileMenuOpen ? 'hidden' : '';
+    }
+    return () => {
+      if (typeof document !== 'undefined') {
+        document.body.style.overflow = '';
+      }
+    };
+  }, [mobileMenuOpen]);
+
+  // Close mobile menu when clicking outside the nav element
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (mobileMenuOpen && navRef.current && !navRef.current.contains(e.target)) {
+        setMobileMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [mobileMenuOpen]);
+
+  // Close mobile menu on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && mobileMenuOpen) {
+        setMobileMenuOpen(false);
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [mobileMenuOpen]);
 
   // On mount, initialize userSession and restore session if signed in
   useEffect(() => {
@@ -147,20 +182,27 @@ const Navigation = () => {
           {/* Desktop Navigation Menu */}
           <div className="hidden md:block">
             <div className="ml-10 flex items-baseline space-x-8">
-              {menuItems.map((item) => (
-                <a
-                  key={item.label}
-                  href={item.href}
-                  className="text-gray-300 hover:text-[#8B5CF6] px-3 py-2 text-sm font-medium transition-colors duration-200 hover:bg-[#8B5CF6]/5 rounded-lg"
-                >
-                  {item.label}
-                </a>
-              ))}
+              {menuItems.map((item) => {
+                const isActive = typeof window !== 'undefined' && window.location.pathname === item.href;
+                return (
+                  <a
+                    key={item.label}
+                    href={item.href}
+                    className={`px-3 py-2 text-sm font-medium transition-colors duration-200 rounded-lg ${
+                      isActive
+                        ? 'text-[#8B5CF6] bg-[#8B5CF6]/10'
+                        : 'text-gray-300 hover:text-[#8B5CF6] hover:bg-[#8B5CF6]/5'
+                    }`}
+                  >
+                    {item.label}
+                  </a>
+                );
+              })}
             </div>
           </div>
 
-          {/* Connect Wallet Button and Language Selector */}
-          <div className="flex items-center space-x-4">
+          {/* Connect Wallet Button and Language Selector — hidden on mobile (available in mobile menu) */}
+          <div className="hidden md:flex items-center space-x-4">
             {/* Language Selector */}
             <div className="hidden md:block">
               <LanguageSelector />
@@ -193,6 +235,7 @@ const Navigation = () => {
           <div className="md:hidden">
             <button
               type="button"
+              onClick={() => setMobileMenuOpen(open => !open)}
               className="bg-[#14102E] inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-white hover:bg-[#8B5CF6]/10 transition-colors duration-200"
               aria-controls="mobile-menu"
               aria-expanded={isMobileMenuOpen}
@@ -253,6 +296,7 @@ const Navigation = () => {
           </div>
         </div>
       </div>
+      )}
     </nav>
   );
 };

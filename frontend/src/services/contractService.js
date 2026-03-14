@@ -68,24 +68,29 @@ export class ContractService {
   }
 
   // Create a vault dataset and register on-chain
-  async createVaultDataset({ sampleData, description = '' }) {
+  async createVaultDataset({ sampleData, description = '', price, storageUrl: providedUrl, metadataHash, accessLevel: providedLevel } = {}) {
     const id = Math.floor(Math.random() * 1_000_000);
     const now = Date.now();
 
-    // Simulate storage result
-    const storageUrl = `ipfs://mock-${id}/genetic-data-${id}.enc`;
+    const resolvedLevel = providedLevel ?? sampleData?.accessLevel ?? 3;
+    const resolvedPrice = price ? Number(price) : 0;
+    const resolvedUrl = providedUrl || `ipfs://mock-${id}/genetic-data-${id}.enc`;
+    const resolvedHash = metadataHash || new Uint8Array(32);
+    const resolvedDesc = description || 'Private genomic dataset';
 
     const dataset = {
       id,
       owner: this.walletAddress || 'ST1MOCKOWNER',
-      description: description || 'Private genomic dataset',
+      description: resolvedDesc,
       accessLevels: [1, 2, 3],
+      accessLevel: resolvedLevel,
+      price: resolvedPrice,
       storedAt: now,
       stats: {
         variants: sampleData?.variants?.length || 0,
         genes: sampleData?.genes?.length || 0,
       },
-      storageUrl,
+      storageUrl: resolvedUrl,
     };
 
     // If using real SDK, register on-chain
@@ -94,11 +99,11 @@ export class ContractService {
         async () => {
           const result = await this.sdk.registerDataset({
             dataId: id,
-            price: 0,
-            accessLevel: 3,
-            metadataHash: new Uint8Array(32),
-            storageUrl,
-            description: description || 'Private genomic dataset',
+            price: resolvedPrice,
+            accessLevel: resolvedLevel,
+            metadataHash: resolvedHash,
+            storageUrl: resolvedUrl,
+            description: resolvedDesc,
           });
 
           console.log('Dataset registered on-chain:', result);
@@ -107,9 +112,10 @@ export class ContractService {
         { datasetId: id, operation: 'registerDataset' }
       );
     } else {
-      // Mock mode
+      // Mock mode — simulate a short delay and return a mock txId
+      await new Promise(r => setTimeout(r, 600));
       this._datasets.unshift(dataset);
-      return dataset;
+      return { ...dataset, txId: `mock-tx-${id}` };
     }
   }
 

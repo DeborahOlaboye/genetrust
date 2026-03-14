@@ -56,7 +56,7 @@ const CTASection = () => {
 
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-6">
-            <a href="#dashboard">
+            <a href="/upload">
               <button className="group px-10 py-4 bg-gradient-to-r from-[#8B5CF6] to-[#F472B6] text-white font-semibold rounded-lg hover:shadow-2xl hover:shadow-[#8B5CF6]/25 transform hover:scale-105 transition-all duration-300 min-w-[200px]">
                 <span className="flex items-center justify-center space-x-2">
                   <span>Create Your Vault</span>
