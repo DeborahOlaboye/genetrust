@@ -148,7 +148,7 @@ export default function UserDashboard() {
         genes: [{ symbol: 'BRCA1', name: 'BRCA1 DNA Repair Associated', chromosome: '17', start: 43044295, end: 43125364 }],
       };
 
-      const result = await contractService.createVaultDataset({ sampleData: sample, description: newDesc });
+      const result = await contractService.createVaultDataset({ sampleData: sample, description: trimmedDesc });
       const next = await contractService.listMyDatasets();
       setDatasets(next);
 
