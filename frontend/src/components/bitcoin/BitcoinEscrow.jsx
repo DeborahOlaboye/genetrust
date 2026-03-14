@@ -188,6 +188,7 @@ export default function BitcoinEscrow({ listingId, accessLevel, userAddress, onC
 
             <button
               onClick={() => setStep(2)}
+              aria-label="Confirm I have sent the Bitcoin and proceed to payment confirmation"
               className="w-full rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 transition-colors"
             >
               I've sent the Bitcoin →
