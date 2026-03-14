@@ -76,8 +76,8 @@ export default function BitcoinEscrow({ listingId, accessLevel, userAddress, onC
   }
 
   async function handleConfirmPayment() {
-    if (!btcTxid || btcTxid.length !== 64) {
-      setError('Enter the full 64-character Bitcoin transaction ID.');
+    if (!isValidBtcTxid(btcTxid)) {
+      setError('Enter a valid 64-character hex Bitcoin transaction ID (e.g. a1b2c3…).');
       return;
     }
 
