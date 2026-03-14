@@ -139,6 +139,7 @@ export function satsToBtc(sats) {
  * @returns {bigint}
  */
 export function btcToSats(btc) {
+  if (btc === null || btc === undefined) throw new Error('btcToSats: btc must not be null or undefined');
   const [whole, frac = ''] = String(btc).split('.');
   const fracPadded = frac.padEnd(8, '0').slice(0, 8);
   return BigInt(whole) * BigInt(SATS_PER_BTC) + BigInt(fracPadded);
