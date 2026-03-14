@@ -1,6 +1,4 @@
-// User Dashboard: manage personal genomic vault, datasets, and listings
-
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { contractService } from '../services/contractService.js';
 import { walletService } from '../services/walletService.js';
 import Navigation from '../components/landing/Navigation.jsx';
@@ -45,6 +43,7 @@ export default function UserDashboard() {
   const [datasets, setDatasets] = useState([]);
   const [myListings, setMyListings] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [isFetching, setIsFetching] = useState(true);
   const [walletConnected, setWalletConnected] = useState(false);
   const [walletAddress, setWalletAddress] = useState(null);
   const [error, setError] = useState(null);
@@ -57,6 +56,7 @@ export default function UserDashboard() {
 
   // Connect wallet on mount if using real SDK
   useEffect(() => {
+    let mounted = true;
     const initializeDashboard = async () => {
       setIsFetching(true);
       try {
@@ -65,33 +65,36 @@ export default function UserDashboard() {
           const connected = await walletService.isConnected();
           if (connected) {
             const address = walletService.getAddress();
-            setWalletConnected(true);
-            setWalletAddress(address);
+            if (mounted) {
+              setWalletConnected(true);
+              setWalletAddress(address);
+            }
           }
         }
 
         // Initialize contract service
-        const initResult = await contractService.initialize({
+        await contractService.initialize({
           walletAddress: walletService.getAddress()
         });
 
         const s = await contractService.getStatus();
-        setStatus(s);
-
         const ds = await contractService.listMyDatasets();
-        setDatasets(ds);
-
         const ls = await contractService.listMarketplace({ ownerOnly: true });
+
+        if (!mounted) return;
+        setStatus(s);
+        setDatasets(ds);
         setMyListings(ls);
       } catch (err) {
         console.error('Dashboard initialization error:', err);
-        setError(err.message);
+        if (mounted) setError(err?.message || 'Failed to initialize dashboard');
       } finally {
-        setIsFetching(false);
+        if (mounted) setIsFetching(false);
       }
     };
 
     initializeDashboard();
+    return () => { mounted = false; };
   }, []);
 
   // Handle wallet connection
@@ -143,7 +146,7 @@ export default function UserDashboard() {
       setNewDesc(''); // Clear the input
     } catch (e) {
       console.error(e);
-      toast.error(e.message || 'Failed to create dataset', { id: toastId });
+      toast.error(e?.message || 'Failed to create dataset', { id: toastId });
     } finally {
       setLoading(false);
     }
@@ -156,8 +159,8 @@ export default function UserDashboard() {
     }
 
     const parsedPrice = Number(newPrice);
-    if (!newPrice || isNaN(parsedPrice) || parsedPrice <= 0) {
-      toast.error('Please enter a valid price greater than 0');
+    if (!newPrice || isNaN(parsedPrice) || !Number.isInteger(parsedPrice) || parsedPrice < 1 || parsedPrice > 9_999_999_999) {
+      toast.error('Price must be a whole number between 1 and 9,999,999,999 microSTX');
       return;
     }
 
@@ -171,7 +174,7 @@ export default function UserDashboard() {
       await contractService.createListing({
         dataId: Number(selectedDataset),
         price: parsedPrice,
-        accessLevel: Number(newAccess),
+        accessLevel: newAccess,
         description
       });
 
@@ -185,7 +188,7 @@ export default function UserDashboard() {
       setNewAccess(3);
     } catch (e) {
       console.error(e);
-      toast.error(e.message || 'Failed to create listing', { id: toastId });
+      toast.error(e?.message || 'Failed to create listing', { id: toastId });
     } finally {
       setLoading(false);
     }
@@ -225,11 +228,15 @@ export default function UserDashboard() {
       <Navigation />
       <main id="main-content" className="max-w-7xl mx-auto px-6 lg:px-8 py-10 space-y-8">
 
+        {/* Screen reader live region */}
+        <div aria-live="polite" aria-atomic="true" className="sr-only">
+          {isFetching ? 'Loading dashboard data…' : `Dashboard loaded: ${datasets.length} dataset${datasets.length !== 1 ? 's' : ''}, ${myListings.length} listing${myListings.length !== 1 ? 's' : ''}`}
+        </div>
+
         {/* Initialization error banner */}
         {error && (
-          <div role="alert" className="p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 flex items-start justify-between gap-4">
-            <p><strong>Error:</strong> {error}</p>
-            <button onClick={() => setError(null)} aria-label="Dismiss error" className="text-red-400 hover:text-red-300 shrink-0">✕</button>
+          <div role="alert" className="rounded-xl px-5 py-4 bg-red-900/30 border border-red-500/40 text-red-300 text-sm">
+            {error}
           </div>
         )}
 
@@ -309,9 +316,9 @@ export default function UserDashboard() {
             <div className="space-y-4">
               <div className="grid md:grid-cols-3 gap-3">
                 <div className="md:col-span-3">
-                  <label htmlFor="dataset-desc" className="text-sm text-[#9AA0B2]">Description *</label>
+                  <label htmlFor="dataset-description" className="text-sm text-[#9AA0B2]">Description *</label>
                   <input
-                    id="dataset-desc"
+                    id="dataset-description"
                     value={newDesc}
                     onChange={e => setNewDesc(e.target.value)}
                     className="mt-1 w-full bg-[#14102E] border border-[#8B5CF6]/20 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]/40 text-white"
@@ -370,14 +377,15 @@ export default function UserDashboard() {
                         aria-required="true"
                         disabled={loading}
                         min="1"
+                        step="1"
                       />
                     </div>
                     <div>
-                      <label htmlFor="listing-access" className="text-sm text-[#9AA0B2]">Access Level</label>
+                      <label htmlFor="listing-access-level" className="text-sm text-[#9AA0B2]">Access Level</label>
                       <select
-                        id="listing-access"
+                        id="listing-access-level"
                         value={newAccess}
-                        onChange={e => setNewAccess(e.target.value)}
+                        onChange={e => setNewAccess(parseInt(e.target.value, 10))}
                         className="mt-1 w-full bg-[#14102E] border border-[#8B5CF6]/20 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]/40"
                         disabled={loading}
                       >
@@ -404,13 +412,13 @@ export default function UserDashboard() {
         <div className="grid md:grid-cols-2 gap-6">
           <SectionCard title="Your Datasets">
             <div className="divide-y divide-[#8B5CF6]/10">
-              {isFetching && [1, 2].map(n => (
-                <div key={n} className="py-3 flex items-center justify-between animate-pulse">
+              {isFetching && Array.from({ length: 2 }).map((_, i) => (
+                <div key={i} className="py-3 flex items-center justify-between animate-pulse">
                   <div className="space-y-2">
                     <div className="h-4 w-28 bg-[#8B5CF6]/20 rounded" />
-                    <div className="h-3 w-40 bg-[#8B5CF6]/10 rounded" />
+                    <div className="h-3 w-44 bg-[#8B5CF6]/10 rounded" />
                   </div>
-                  <div className="h-3 w-20 bg-[#8B5CF6]/10 rounded" />
+                  <div className="h-3 w-24 bg-[#8B5CF6]/10 rounded" />
                 </div>
               ))}
               {!isFetching && datasets.length === 0 && <div className="text-[#9AA0B2]">No datasets yet.</div>}
@@ -430,8 +438,8 @@ export default function UserDashboard() {
 
           <SectionCard title="Your Listings" border="#F59E0B">
             <div className="divide-y divide-[#F59E0B]/10">
-              {isFetching && [1, 2].map(n => (
-                <div key={n} className="py-3 flex items-center justify-between animate-pulse">
+              {isFetching && Array.from({ length: 2 }).map((_, i) => (
+                <div key={i} className="py-3 flex items-center justify-between animate-pulse">
                   <div className="space-y-2">
                     <div className="h-4 w-24 bg-[#F59E0B]/20 rounded" />
                     <div className="h-3 w-36 bg-[#F59E0B]/10 rounded" />
@@ -447,7 +455,7 @@ export default function UserDashboard() {
                     <div className="text-sm text-[#9AA0B2]">Dataset #{l.dataId} • Access ≤ {l.accessLevel}</div>
                   </div>
                   <div className="text-right text-sm">
-                    <span className="text-[#F59E0B] font-semibold">{l.price}</span>
+                    <span className="text-[#F59E0B] font-semibold">{l.price} uSTX</span>
                   </div>
                 </div>
               ))}
