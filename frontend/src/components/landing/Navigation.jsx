@@ -225,6 +225,7 @@ const Navigation = () => {
             <a
               key={item.label}
               href={item.href}
+              onClick={closeMobileMenu}
               className="text-gray-300 hover:text-[#8B5CF6] block px-3 py-2 text-base font-medium hover:bg-[#8B5CF6]/5 rounded-lg transition-colors duration-200"
             >
               {item.label}
