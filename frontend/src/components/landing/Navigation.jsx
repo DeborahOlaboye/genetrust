@@ -20,6 +20,7 @@ const Navigation = () => {
   const [walletAddress, setWalletAddress] = useState('');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const userSessionRef = useRef(null);
+  const mobileMenuRef = useRef(null);
 
   // Navigation menu items from design
   const menuItems = [
