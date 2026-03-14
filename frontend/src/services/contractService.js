@@ -180,7 +180,6 @@ export class ContractService {
           listingId: Number(listingId),
           accessLevel: Number(desiredAccessLevel),
         });
-        console.log('Purchase completed on-chain:', result);
         return result;
       } catch (error) {
         console.error('Failed to purchase listing:', error);
