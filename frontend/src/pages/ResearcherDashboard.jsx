@@ -90,8 +90,19 @@ export default function ResearcherDashboard() {
         {/* Listings */}
         <SectionCard title="Available Listings" border="#34D399">
           <div className="divide-y divide-[#34D399]/10">
-            {listings.length === 0 && <div className="text-[#9AA0B2]">No listings available.</div>}
-            {listings.map(l => (
+            {isFetching && Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="py-4 flex items-center justify-between animate-pulse">
+                <div className="space-y-2">
+                  <div className="h-4 w-40 bg-[#8B5CF6]/20 rounded" />
+                  <div className="h-3 w-28 bg-[#8B5CF6]/10 rounded" />
+                </div>
+                <div className="h-9 w-24 bg-[#8B5CF6]/20 rounded-lg" />
+              </div>
+            ))}
+            {!isFetching && listings.length === 0 && !initError && (
+              <div className="text-[#9AA0B2]">No listings available.</div>
+            )}
+            {!isFetching && listings.map(l => (
               <div key={l.listingId} className="py-4 flex items-center justify-between">
                 <div className="space-y-1">
                   <div className="font-medium">Listing #{l.listingId} • Dataset #{l.dataId}</div>
