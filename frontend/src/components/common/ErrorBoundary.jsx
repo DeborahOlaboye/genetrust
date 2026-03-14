@@ -35,7 +35,7 @@ class ErrorBoundary extends Component {
 
   render() {
     const { hasError, error, errorInfo } = this.state;
-    const { fallback: Fallback, children } = this.props;
+    const { fallback: Fallback, children, errorMessage = 'Something went wrong', showReset = true } = this.props;
 
     if (hasError) {
       // Render fallback UI if provided
@@ -63,8 +63,8 @@ class ErrorBoundary extends Component {
               </svg>
             </div>
 
-            <h2 className="text-2xl font-bold text-white mb-3">
-              Something went wrong
+            <h2 id="error-boundary-heading" className="text-2xl font-bold text-white mb-3">
+              {errorMessage}
             </h2>
 
             <p className="text-[#9AA0B2] mb-6 leading-relaxed">
