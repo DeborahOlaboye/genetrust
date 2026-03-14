@@ -362,6 +362,7 @@ function bech32Decode(bechString) {
 export function hexToBytes(hex) {
   if (!hex || typeof hex !== 'string') throw new Error('hexToBytes: input must be a non-empty string');
   const clean = hex.startsWith('0x') ? hex.slice(2) : hex;
+  if (clean.length % 2 !== 0) throw new Error(`hexToBytes: hex string must have even length, got ${clean.length}`);
   const bytes = new Uint8Array(clean.length / 2);
   for (let i = 0; i < bytes.length; i++) {
     bytes[i] = parseInt(clean.slice(i * 2, i * 2 + 2), 16);
