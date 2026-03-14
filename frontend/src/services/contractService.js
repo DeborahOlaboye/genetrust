@@ -182,7 +182,6 @@ export class ContractService {
         });
         return result;
       } catch (error) {
-        console.error('Failed to purchase listing:', error);
         throw error;
       }
     } else {
