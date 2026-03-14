@@ -241,7 +241,7 @@ const Navigation = () => {
           </div>
           <div className="px-3 py-2">
             <button
-              onClick={() => { closeMobileMenu(); handleConnectWallet(); }}
+              onClick={() => { closeMobileMenu(); setTimeout(handleConnectWallet, 150); }}
               className={`w-full px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200
                 ${isWalletConnected
                   ? 'bg-[#F59E0B] hover:bg-[#F59E0B]/80 text-white border border-[#F59E0B]'
