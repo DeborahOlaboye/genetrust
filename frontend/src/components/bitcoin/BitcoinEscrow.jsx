@@ -42,7 +42,10 @@ export default function BitcoinEscrow({ listingId, accessLevel, userAddress, onC
     if (listingId && accessLevel) {
       getListingBtcPrice(listingId, accessLevel)
         .then(setPriceSats)
-        .catch(() => setPriceSats(null));
+        .catch((err) => {
+          setPriceSats(null);
+          setError(err?.message || 'Could not load Bitcoin price for this listing.');
+        });
     }
   }, [listingId, accessLevel]);
 
