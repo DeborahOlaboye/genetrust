@@ -416,7 +416,7 @@ export default function UserDashboard() {
                     <div className="text-sm text-[#9AA0B2]">Dataset #{l.dataId} • Access ≤ {l.accessLevel}</div>
                   </div>
                   <div className="text-right text-sm">
-                    <span className="text-[#F59E0B] font-semibold">{l.price}</span>
+                    <span className="text-[#F59E0B] font-semibold">{l.price} uSTX</span>
                   </div>
                 </div>
               ))}
