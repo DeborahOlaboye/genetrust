@@ -105,7 +105,12 @@ export default function ResearcherDashboard() {
               </div>
             ))}
             {!isFetching && listings.length === 0 && !initError && (
-              <div className="text-[#9AA0B2]">No listings available.</div>
+              <div className="py-10 text-center space-y-2">
+                <svg className="mx-auto h-10 w-10 text-[#8B5CF6]/40" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 13V7a2 2 0 00-2-2H6a2 2 0 00-2 2v6m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0H4" />
+                </svg>
+                <p className="text-[#9AA0B2] text-sm">No listings available yet. Check back later.</p>
+              </div>
             )}
             {!isFetching && listings.map(l => (
               <div key={l.listingId} className="py-4 flex items-center justify-between">
