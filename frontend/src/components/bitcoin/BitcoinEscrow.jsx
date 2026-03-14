@@ -117,7 +117,7 @@ export default function BitcoinEscrow({ listingId, accessLevel, userAddress, onC
                 : 'border-transparent text-gray-400'
             }`}
           >
-            <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-xs mr-1 ${
+            <span aria-hidden="true" className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-xs mr-1 ${
               i < step ? 'bg-green-100' : i === step ? 'bg-orange-100' : 'bg-gray-100'
             }`}>
               {i < step ? '✓' : i + 1}
