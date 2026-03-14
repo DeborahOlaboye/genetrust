@@ -195,7 +195,7 @@ export default function BitcoinEscrow({ listingId, accessLevel, userAddress, onC
             </p>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="btc-txid" className="block text-sm font-medium text-gray-700 mb-1">
                 Bitcoin Transaction ID
               </label>
               <input
