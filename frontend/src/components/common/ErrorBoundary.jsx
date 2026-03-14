@@ -50,6 +50,7 @@ class ErrorBoundary extends Component {
           <div className="max-w-md w-full bg-[#14102E]/80 backdrop-blur-xl rounded-2xl border border-[#8B5CF6]/20 p-8 text-center shadow-2xl">
             <div className="w-20 h-20 mx-auto mb-6 bg-red-500/10 rounded-full flex items-center justify-center border border-red-500/20">
               <svg
+                aria-hidden="true"
                 className="w-10 h-10 text-red-400"
                 fill="none"
                 stroke="currentColor"
