@@ -81,7 +81,7 @@ const Navigation = () => {
             walletService.setAddress(addr);
           },
           onCancel: () => {
-            console.log('User cancelled wallet connect');
+            toast('Wallet connection cancelled', { icon: 'ℹ️' });
           },
         });
       } else {
