@@ -88,8 +88,7 @@ export default function BitcoinEscrow({ listingId, accessLevel, userAddress, onC
     setLoading(true);
     setError(null);
     try {
-      // Use current burn block height (approximate via Date; real apps use API)
-      const burnHeight = Math.floor(Date.now() / 600000); // rough estimate
+      const burnHeight = await fetchCurrentBurnHeight();
       await confirmBtcPayment(escrowId, btcTxid, burnHeight);
       setStep(3);
       onComplete?.({ escrowId, btcTxid });
