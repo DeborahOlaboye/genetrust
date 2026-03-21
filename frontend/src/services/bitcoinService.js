@@ -31,6 +31,12 @@ export const NETWORK =
 export const CONTRACT_ADDRESS =
   import.meta.env.VITE_CONTRACT_ADDRESS || 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM';
 
+// Hiro Stacks API base URL — used to fetch current burn block height
+export const HIRO_API_URL =
+  NETWORK_NAME === 'mainnet'
+    ? 'https://api.hiro.so'
+    : 'https://api.testnet.hiro.so';
+
 // Satoshis per BTC
 const SATS_PER_BTC = 100_000_000;
 
