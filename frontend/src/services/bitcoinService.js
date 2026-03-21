@@ -153,6 +153,27 @@ export function btcToSats(btc) {
   return BigInt(whole) * BigInt(SATS_PER_BTC) + BigInt(fracPadded);
 }
 
+// ─── Burn block height ───────────────────────────────────────────────────────
+
+/**
+ * Fetch the current Bitcoin burn block height from the Hiro Stacks API.
+ * Returns the `burn_block_height` field from GET /v2/info.
+ *
+ * @returns {Promise<number>}
+ */
+export async function fetchCurrentBurnHeight() {
+  const response = await fetch(`${HIRO_API_URL}/v2/info`);
+  if (!response.ok) {
+    throw new Error(`fetchCurrentBurnHeight: API responded with ${response.status}`);
+  }
+  const data = await response.json();
+  const height = data?.burn_block_height;
+  if (typeof height !== 'number' || !Number.isFinite(height) || height <= 0) {
+    throw new Error('fetchCurrentBurnHeight: invalid burn_block_height in API response');
+  }
+  return height;
+}
+
 // ─── On-chain query helpers ──────────────────────────────────────────────────
 
 /**
