@@ -87,8 +87,15 @@ export default function BitcoinEscrow({ listingId, accessLevel, userAddress, onC
 
     setLoading(true);
     setError(null);
+    let burnHeight;
     try {
-      const burnHeight = await fetchCurrentBurnHeight();
+      burnHeight = await fetchCurrentBurnHeight();
+    } catch (err) {
+      setError('Could not fetch the current Bitcoin block height. Check your connection and try again.');
+      setLoading(false);
+      return;
+    }
+    try {
       await confirmBtcPayment(escrowId, btcTxid, burnHeight);
       setStep(3);
       onComplete?.({ escrowId, btcTxid });
