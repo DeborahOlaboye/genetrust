@@ -6,6 +6,7 @@ import {
   createBtcEscrow,
   confirmBtcPayment,
   isBtcTxSpendable,
+  fetchCurrentBurnHeight,
 } from '../../services/bitcoinService';
 
 const STEPS = ['Create Escrow', 'Send Bitcoin', 'Confirm Payment', 'Done'];
@@ -86,9 +87,15 @@ export default function BitcoinEscrow({ listingId, accessLevel, userAddress, onC
 
     setLoading(true);
     setError(null);
+    let burnHeight;
     try {
-      // Use current burn block height (approximate via Date; real apps use API)
-      const burnHeight = Math.floor(Date.now() / 600000); // rough estimate
+      burnHeight = await fetchCurrentBurnHeight();
+    } catch (err) {
+      setError('Could not fetch the current Bitcoin block height. Check your connection and try again.');
+      setLoading(false);
+      return;
+    }
+    try {
       await confirmBtcPayment(escrowId, btcTxid, burnHeight);
       setStep(3);
       onComplete?.({ escrowId, btcTxid });

@@ -31,6 +31,12 @@ export const NETWORK =
 export const CONTRACT_ADDRESS =
   import.meta.env.VITE_CONTRACT_ADDRESS || 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM';
 
+// Hiro Stacks API base URL — used to fetch current burn block height
+export const HIRO_API_URL =
+  NETWORK_NAME === 'mainnet'
+    ? 'https://api.hiro.so'
+    : 'https://api.testnet.hiro.so';
+
 // Satoshis per BTC
 const SATS_PER_BTC = 100_000_000;
 
@@ -145,6 +151,40 @@ export function btcToSats(btc) {
   const [whole, frac = ''] = str.split('.');
   const fracPadded = frac.padEnd(8, '0').slice(0, 8);
   return BigInt(whole) * BigInt(SATS_PER_BTC) + BigInt(fracPadded);
+}
+
+// ─── Burn block height ───────────────────────────────────────────────────────
+
+/**
+ * Fetch the current Bitcoin burn block height from the Hiro Stacks API.
+ * Returns the `burn_block_height` field from GET /v2/info.
+ *
+ * @returns {Promise<number>}
+ */
+export async function fetchCurrentBurnHeight() {
+  let response;
+  try {
+    response = await fetch(`${HIRO_API_URL}/v2/info`);
+  } catch (err) {
+    throw new Error(`fetchCurrentBurnHeight: network request failed — ${err.message}`);
+  }
+  if (!response.ok) {
+    throw new Error(`fetchCurrentBurnHeight: API responded with ${response.status} ${response.statusText}`);
+  }
+  let data;
+  try {
+    data = await response.json();
+  } catch {
+    throw new Error('fetchCurrentBurnHeight: API response was not valid JSON');
+  }
+  if (!data || typeof data !== 'object') {
+    throw new Error('fetchCurrentBurnHeight: unexpected API response shape');
+  }
+  const height = data.burn_block_height;
+  if (typeof height !== 'number' || !Number.isFinite(height) || height <= 0) {
+    throw new Error('fetchCurrentBurnHeight: invalid burn_block_height in API response');
+  }
+  return height;
 }
 
 // ─── On-chain query helpers ──────────────────────────────────────────────────
