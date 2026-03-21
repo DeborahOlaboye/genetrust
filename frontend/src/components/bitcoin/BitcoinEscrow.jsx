@@ -6,6 +6,7 @@ import {
   createBtcEscrow,
   confirmBtcPayment,
   isBtcTxSpendable,
+  fetchCurrentBurnHeight,
 } from '../../services/bitcoinService';
 
 const STEPS = ['Create Escrow', 'Send Bitcoin', 'Confirm Payment', 'Done'];
