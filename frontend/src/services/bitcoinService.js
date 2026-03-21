@@ -162,12 +162,25 @@ export function btcToSats(btc) {
  * @returns {Promise<number>}
  */
 export async function fetchCurrentBurnHeight() {
-  const response = await fetch(`${HIRO_API_URL}/v2/info`);
-  if (!response.ok) {
-    throw new Error(`fetchCurrentBurnHeight: API responded with ${response.status}`);
+  let response;
+  try {
+    response = await fetch(`${HIRO_API_URL}/v2/info`);
+  } catch (err) {
+    throw new Error(`fetchCurrentBurnHeight: network request failed — ${err.message}`);
   }
-  const data = await response.json();
-  const height = data?.burn_block_height;
+  if (!response.ok) {
+    throw new Error(`fetchCurrentBurnHeight: API responded with ${response.status} ${response.statusText}`);
+  }
+  let data;
+  try {
+    data = await response.json();
+  } catch {
+    throw new Error('fetchCurrentBurnHeight: API response was not valid JSON');
+  }
+  if (!data || typeof data !== 'object') {
+    throw new Error('fetchCurrentBurnHeight: unexpected API response shape');
+  }
+  const height = data.burn_block_height;
   if (typeof height !== 'number' || !Number.isFinite(height) || height <= 0) {
     throw new Error('fetchCurrentBurnHeight: invalid burn_block_height in API response');
   }
