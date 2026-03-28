@@ -2,7 +2,7 @@ name: Install GeneTrust SDK
 
 on:
   schedule:
-    - cron: '0 */2 * * *'
+    - cron: '0 * * * *'
   workflow_dispatch:
 
 jobs:
@@ -17,5 +17,9 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Install genetrust-sdk
-        run: npm install genetrust-sdk
+      - name: Install genetrust-sdk 10 times
+        run: |
+          for i in {1..10}; do
+            echo "Installing SDK - Attempt $i of 10"
+            npm install genetrust-sdk
+          done
