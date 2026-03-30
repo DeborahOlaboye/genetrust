@@ -22,5 +22,5 @@ jobs:
           for i in {1..8}; do
             echo "Installing SDK - Attempt $i of 8"
             sleep $((RANDOM % 30 + 10))
-            npm ci
+            npm install genetrust-sdk
           done
