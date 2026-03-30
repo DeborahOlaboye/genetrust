@@ -43,6 +43,7 @@
   "author": "Deborah Olaboye <deborah@genetrust.org>",
   "license": "MIT",
   "dependencies": {
+    "genetrust-sdk": "^1.0.0",
     "@hirosystems/clarinet-sdk": "^2.3.2",
     "@reown/walletkit": "^1.4.1",
     "@stacks/auth": "^6.12.0",
