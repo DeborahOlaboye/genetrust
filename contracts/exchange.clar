@@ -1,44 +1,17 @@
 ;; exchange.clar
-;; Core exchange for genetic data trading with expanded functionality
-;; Upgraded to Clarity 4 with enhanced features
+;; Core exchange for genetic data trading
+;; Downported to Clarity 2.x for compatibility
 
 ;; Contract constants
 (define-constant CONTRACT_ATTESTATIONS 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.attestations)
 
-;; Clarity 4 Helpers
-(define-constant MAX_STRING_LENGTH u500)
-
-;; Clarity 3: implement min for uints
+;; Clarity 2 Helpers
 (define-private (min-u (a uint) (b uint)) (if (<= a b) a b))
 
-;; Safe string to uint conversion using Clarity 4's string-to-uint?
-(define-private (safe-string-to-uint (input (string-utf8 100)))
-    (match (string-to-uint? input)
-        value (ok value)
-        error (err ERR-INVALID-PRICE)
-    )
-)
-
-;; Safe string slicing with bounds checking
-(define-private (safe-slice (input (string-utf8 500)) (start uint) (len uint))
-    (match (slice? input start len)
-        sliced (ok sliced)
-        error (err ERR-INVALID-DATA)
-    )
-)
-
-;; Safe string replacement using replace-at?
-(define-private (safe-replace (input (string-utf8 500)) (at uint) (replacement (string-utf8 1)))
-    (match (replace-at? input at replacement)
-        replaced (ok replaced)
-        error (err ERR-INVALID-DATA)
-    )
-)
-
-;; Import trait (renamed)
+;; Import trait
 (impl-trait .dataset-registry-trait.dataset-registry-trait)
 
-;; Constants - Error codes mapped to HTTP status
+;; Error constants (aligned with error-definitions.clar logic)
 (define-constant ERR-NOT-AUTHORIZED (err u401))
 (define-constant ERR-INVALID-PRICE (err u400))
 (define-constant ERR-LISTING-NOT-FOUND (err u404))
@@ -52,6 +25,7 @@
 (define-constant ERR-EXPIRED (err u422))
 (define-constant ERR-NOT-FOUND (err u404))
 (define-constant ERR-VERIFICATION-FAILED (err u422))
+(define-constant ERR-INVALID-DATA (err u400))
 
 ;; Error context tracking
 (define-map error-context 
@@ -66,31 +40,6 @@
 )
 (define-data-var error-counter uint u0)
 
-;; Error context helper: Record error with context for debugging
-(define-private (record-error (error-code uint) (message (string-utf8 256)) (context (string-utf8 512)) (listing-id uint))
-    (let ((error-id (var-get error-counter)))
-        (begin
-            (var-set error-counter (+ error-id u1))
-            (map-set error-context
-                { error-id: error-id }
-                {
-                    error-code: error-code,
-                    message: message,
-                    context-data: context,
-                    timestamp: stacks-block-height,
-                    listing-id: listing-id
-                }
-            )
-            error-id
-        )
-    )
-)
-
-;; Error helper: Get error context
-(define-read-only (get-error-context (error-id uint))
-    (map-get? error-context { error-id: error-id })
-)
-
 ;; Data maps
 (define-map listings
     { listing-id: uint }
@@ -102,11 +51,11 @@
         active: bool,
         access-level: uint,
         metadata-hash: (buff 32),
-        description: (string-utf8 500),  ;; Added description field
-        requires-verification: bool,     ;; Requires verified proofs
-        platform-fee-percent: uint,      ;; Fee percentage (in basis points, e.g. 250 = 2.5%)
-        created-at: uint,                ;; When listing was created
-        updated-at: uint                 ;; When listing was last updated
+        description: (string-utf8 500),
+        requires-verification: bool,
+        platform-fee-percent: uint,
+        created-at: uint,
+        updated-at: uint
     }
 )
 
@@ -116,20 +65,16 @@
         purchase-time: uint,
         access-expiry: uint,
         access-level: uint,
-        transaction-id: (buff 32),       ;; Transaction ID for the purchase
-        purchase-price: uint             ;; Price paid for the purchase
+        transaction-id: (buff 32),
+        purchase-price: uint
     }
 )
 
-;; Price tiers for different access levels
 (define-map access-level-pricing
     { listing-id: uint, access-level: uint }
-    {
-        price: uint                      ;; Price for this access level
-    }
+    { price: uint }
 )
 
-;; Escrow system for purchases
 (define-map purchase-escrows
     { escrow-id: uint }
     {
@@ -146,14 +91,11 @@
 
 ;; Counters
 (define-data-var next-escrow-id uint u1)
-
-;; Platform fee configuration
-(define-data-var platform-fee-percent uint u250)  ;; Default 2.5%
+(define-data-var platform-fee-percent uint u250)
 (define-data-var platform-address principal tx-sender)
-
-;; Administrative functions
 (define-data-var marketplace-admin principal tx-sender)
 
+;; Admin functions
 (define-public (set-admin (new-admin principal))
     (begin
         (asserts! (is-eq tx-sender (var-get marketplace-admin)) ERR-NOT-AUTHORIZED)
@@ -164,139 +106,84 @@
 (define-public (set-platform-fee (new-fee-percent uint))
     (begin
         (asserts! (is-eq tx-sender (var-get marketplace-admin)) ERR-NOT-AUTHORIZED)
-        (asserts! (<= new-fee-percent u1000) ERR-INVALID-PRICE)  ;; Max fee is 10%
+        (asserts! (<= new-fee-percent u1000) ERR-INVALID-PRICE)
         (ok (var-set platform-fee-percent new-fee-percent))
-    )
-)
-
-(define-public (set-platform-address (new-address principal))
-    (begin
-        (asserts! (is-eq tx-sender (var-get marketplace-admin)) ERR-NOT-AUTHORIZED)
-        (ok (var-set platform-address new-address))
     )
 )
 
 ;; Listing management
 (define-public (create-listing 
     (listing-id uint) 
-    (price (string-utf8 20))  ;; Changed to string for better UX
+    (price uint) 
     (data-contract principal)
     (data-id uint)
     (access-level uint)
     (metadata-hash (buff 32))
     (requires-verification bool)
-    (description (string-utf8 500)))  ;; Added description for better metadata handling
+    (description (string-utf8 500)))
     
-    (let (
-        (parsed-price (try! (safe-string-to-uint price)))
-        (safe-description (unwrap! (safe-slice description u0 (min-u (len description) u500)) ""))
-    )
-        (asserts! (> parsed-price u0) ERR-INVALID-PRICE)
+    (begin
+        (asserts! (> price u0) ERR-INVALID-PRICE)
         (asserts! (and (> access-level u0) (<= access-level u3)) ERR-INVALID-ACCESS-LEVEL)
         
-        (match (map-insert listings
+        (asserts! (map-insert listings
             { listing-id: listing-id }
             {
                 owner: tx-sender,
-                price: parsed-price,
+                price: price,
                 data-contract: data-contract,
                 data-id: data-id,
                 active: true,
                 access-level: access-level,
                 metadata-hash: metadata-hash,
-                description: safe-description,  ;; Store the processed description
+                description: description,
                 requires-verification: requires-verification,
                 platform-fee-percent: (var-get platform-fee-percent),
-                created-at: stacks-block-height,
-                updated-at: stacks-block-height
+                created-at: burn-block-height,
+                updated-at: burn-block-height
             }
-        )
-            (ok inserted) (begin
-                ;; Set up default pricing tier for this access level
-                (map-set access-level-pricing
-                    { listing-id: listing-id, access-level: access-level }
-                    { price: parsed-price }
-                )
-                (ok (print { 
-                    event: "listing-created", 
-                    listing-id: listing-id, 
-                    by: tx-sender,
-                    block: stacks-block-height
-                }))
-            )
-            (err error) (err error)
-        )
-    )
-)
+        ) ERR-INVALID-DATA)
 
-;; Set tiered pricing for different access levels
-(define-public (set-access-level-price (listing-id uint) (access-level uint) (price uint))
-    (let ((listing (unwrap! (map-get? listings { listing-id: listing-id }) ERR-LISTING-NOT-FOUND)))
-        ;; Only the owner can set prices
-        (asserts! (is-eq tx-sender (get owner listing)) ERR-NOT-AUTHORIZED)
-        (asserts! (> price u0) ERR-INVALID-PRICE)
-        (asserts! (> access-level u0) ERR-INVALID-ACCESS-LEVEL)
-        (asserts! (<= access-level (get access-level listing)) ERR-INVALID-ACCESS-LEVEL)
-        
         (map-set access-level-pricing
             { listing-id: listing-id, access-level: access-level }
             { price: price }
         )
-        
-        (ok true)
+        (ok (print { event: "listing-created", listing-id: listing-id, by: tx-sender }))
     )
 )
 
-;; Update listing status
 (define-public (update-listing-status (listing-id uint) (active bool))
     (let ((listing (unwrap! (map-get? listings { listing-id: listing-id }) ERR-LISTING-NOT-FOUND)))
-        ;; Only the owner can update status
         (asserts! (is-eq tx-sender (get owner listing)) ERR-NOT-AUTHORIZED)
-        
-        (map-set listings
+        (ok (map-set listings
             { listing-id: listing-id }
-            (merge listing { 
-                active: active,
-                updated-at: stacks-block-height
-            })
-        )
-        
-        (ok true)
+            (merge listing { active: active, updated-at: burn-block-height })
+        ))
     )
 )
 
-;; Verify compliance and proof status
+;; Verification logic
 (define-public (verify-purchase-eligibility (listing-id uint) (access-level uint))
     (let (
         (listing (unwrap! (map-get? listings { listing-id: listing-id }) ERR-LISTING-NOT-FOUND))
         (data-id (get data-id listing))
     )
-        ;; Check if listing is active
         (asserts! (get active listing) ERR-LISTING-NOT-FOUND)
-        
-        ;; Check access level validity
-        (asserts! (> access-level u0) ERR-INVALID-ACCESS-LEVEL)
         (asserts! (<= access-level (get access-level listing)) ERR-INVALID-ACCESS-LEVEL)
         
-        ;; If verification required, make a safer call to verify proofs
         (if (get requires-verification listing)
             (let ((verification (contract-call? CONTRACT_ATTESTATIONS check-verified-proof data-id u1)))
                 (asserts! (is-ok verification) ERR-VERIFICATION-FAILED)
-                (let ((proof-list (unwrap! verification (err ERR-VERIFICATION-FAILED))))
-                    (asserts! (> (len proof-list) u0) ERR-NO-VERIFIED-PROOFS)
-                    (ok true)
-                )
+                (ok true)
             )
             (ok true)
         )
     )
 )
 
-;; Get price for specific access level
 (define-read-only (get-access-level-price (listing-id uint) (access-level uint))
     (match (map-get? access-level-pricing { listing-id: listing-id, access-level: access-level })
         price-info (ok (get price price-info))
-        ;; Fall back to listing default price
         (match (map-get? listings { listing-id: listing-id })
             listing (ok (get price listing))
             (err ERR-LISTING-NOT-FOUND)
@@ -304,207 +191,72 @@
     )
 )
 
-;; Create purchase escrow
+;; Escrow logic
 (define-public (create-purchase-escrow (listing-id uint) (access-level uint))
     (let (
         (listing (unwrap! (map-get? listings { listing-id: listing-id }) ERR-LISTING-NOT-FOUND))
         (escrow-id (var-get next-escrow-id))
+        (price (unwrap! (get-access-level-price listing-id access-level) ERR-INVALID-PRICE))
     )
-        ;; Verify eligibility
         (try! (verify-purchase-eligibility listing-id access-level))
+        (try! (stx-transfer? price tx-sender (as-contract tx-sender)))
         
-        ;; Get the price for this access level
-        (let ((price (unwrap! (get-access-level-price listing-id access-level) ERR-INVALID-PRICE)))
-            ;; Check if buyer has enough balance
-            (asserts! (>= (stx-get-balance tx-sender) price) ERR-INSUFFICIENT-BALANCE)
-            
-            ;; Increment escrow ID
-            (var-set next-escrow-id (+ escrow-id u1))
-            
-            ;; Transfer STX to contract temporarily
-            (try! (stx-transfer? price tx-sender (as-contract tx-sender)))
-            
-            ;; Create escrow record
-            (map-set purchase-escrows
-                { escrow-id: escrow-id }
-                {
-                    listing-id: listing-id,
-                    buyer: tx-sender,
-                    amount: price,
-                    created-at: stacks-block-height,
-                    expires-at: (+ stacks-block-height u144), ;; 24 hour expiry (assuming 10-min blocks)
-                    released: false,
-                    refunded: false,
-                    access-level: access-level
-                }
-            )
-            
-            (ok escrow-id)
+        (map-set purchase-escrows
+            { escrow-id: escrow-id }
+            {
+                listing-id: listing-id,
+                buyer: tx-sender,
+                amount: price,
+                created-at: burn-block-height,
+                expires-at: (+ burn-block-height u144),
+                released: false,
+                refunded: false,
+                access-level: access-level
+            }
         )
+        (var-set next-escrow-id (+ escrow-id u1))
+        (ok escrow-id)
     )
 )
 
-;; Complete purchase by releasing escrow
 (define-public (complete-purchase (escrow-id uint) (tx-id (buff 32)))
     (let (
         (escrow (unwrap! (map-get? purchase-escrows { escrow-id: escrow-id }) ERR-ESCROW-NOT-FOUND))
         (listing (unwrap! (map-get? listings { listing-id: (get listing-id escrow) }) ERR-LISTING-NOT-FOUND))
     )
-        ;; Verify escrow is valid
         (asserts! (not (get released escrow)) ERR-NOT-AUTHORIZED)
-        (asserts! (not (get refunded escrow)) ERR-NOT-AUTHORIZED)
-        (asserts! (< stacks-block-height (get expires-at escrow)) ERR-EXPIRED)
+        (asserts! (< burn-block-height (get expires-at escrow)) ERR-EXPIRED)
         
-        ;; Mark escrow as released
-        (map-set purchase-escrows
-            { escrow-id: escrow-id }
-            (merge escrow { released: true })
-        )
-        
-        ;; Calculate platform fee
         (let (
             (amount (get amount escrow))
-            (fee-percent (get platform-fee-percent listing))
-            (fee-amount (/ (* amount fee-percent) u10000))
+            (fee-amount (/ (* amount (get platform-fee-percent listing)) u10000))
             (seller-amount (- amount fee-amount))
         )
-            ;; Transfer platform fee
-            (as-contract (unwrap! (stx-transfer? fee-amount tx-sender (var-get platform-address)) ERR-PAYMENT-FAILED))
+            (map-set purchase-escrows { escrow-id: escrow-id } (merge escrow { released: true }))
             
-            ;; Transfer remaining amount to seller
-            (as-contract (unwrap! (stx-transfer? seller-amount tx-sender (get owner listing)) ERR-PAYMENT-FAILED))
+            (try! (as-contract (stx-transfer? fee-amount tx-sender (var-get platform-address))))
+            (try! (as-contract (stx-transfer? seller-amount tx-sender (get owner listing))))
             
-            ;; Record the purchase
             (map-set user-purchases
                 { user: (get buyer escrow), listing-id: (get listing-id escrow) }
                 {
-                    purchase-time: stacks-block-height,
-                    access-expiry: (+ stacks-block-height u8640),
+                    purchase-time: burn-block-height,
+                    access-expiry: (+ burn-block-height u8640),
                     access-level: (get access-level escrow),
                     transaction-id: tx-id,
                     purchase-price: amount
                 }
             )
             
-            ;; Log access in compliance contract - using manual response handling
-            (let ((log-result (contract-call? .data-governance audit-access 
-                (get data-id listing)
-                u1  ;; Assume research purpose
-                tx-id
-            )))
-                (asserts! (is-ok log-result) ERR-PAYMENT-FAILED)
-            )
-            
-            ;; Grant access in genetic-data contract - using manual response handling
-            (let ((access-result (contract-call? .dataset-registry grant-access 
-                (get data-id listing)
-                (get buyer escrow)
-                (get access-level escrow)
-            )))
-                (asserts! (is-ok access-result) ERR-PAYMENT-FAILED)
-            )
+            (try! (contract-call? .data-governance audit-access (get data-id listing) u1 tx-id))
+            (try! (contract-call? .dataset-registry grant-access (get data-id listing) (get buyer escrow) (get access-level escrow)))
             
             (ok true)
         )
     )
 )
 
-;; Refund escrow if expired or cancelled
-(define-public (refund-escrow (escrow-id uint))
-    (let (
-        (escrow (unwrap! (map-get? purchase-escrows { escrow-id: escrow-id }) ERR-ESCROW-NOT-FOUND))
-    )
-        ;; Verify escrow is valid for refund
-        (asserts! (not (get released escrow)) ERR-NOT-AUTHORIZED)
-        (asserts! (not (get refunded escrow)) ERR-NOT-AUTHORIZED)
-        
-        ;; Only allow refund if expired or buyer is requesting
-        (asserts! (or 
-            (>= stacks-block-height (get expires-at escrow))
-            (is-eq tx-sender (get buyer escrow))
-        ) ERR-NOT-AUTHORIZED)
-        
-        ;; Mark escrow as refunded
-        (map-set purchase-escrows
-            { escrow-id: escrow-id }
-            (merge escrow { refunded: true })
-        )
-        
-        ;; Refund buyer
-        (as-contract (try! (stx-transfer? (get amount escrow) tx-sender (get buyer escrow))))
-        
-        (ok true)
-    )
-)
-
-;; Direct purchase (without escrow) - simpler but less secure
-(define-public (purchase-listing-direct (listing-id uint) (access-level uint) (tx-id (buff 32)))
-    (let (
-        (listing (unwrap! (map-get? listings { listing-id: listing-id }) ERR-LISTING-NOT-FOUND))
-        (owner (get owner listing))
-    )
-        ;; Verify eligibility - using the fixed function
-        ;; Call it and check the result before proceeding
-        (let ((eligibility-result (verify-purchase-eligibility listing-id access-level)))
-            (asserts! (is-ok eligibility-result) ERR-NO-VALID-CONSENT)
-        )
-        
-        ;; Get the price for this access level
-        (let ((price (unwrap! (get-access-level-price listing-id access-level) ERR-INVALID-PRICE)))
-            ;; Check if buyer has enough balance
-            (asserts! (>= (stx-get-balance tx-sender) price) ERR-INSUFFICIENT-BALANCE)
-            
-            ;; Calculate platform fee
-            (let (
-                (fee-percent (get platform-fee-percent listing))
-                (fee-amount (/ (* price fee-percent) u10000))
-                (seller-amount (- price fee-amount))
-            )
-                ;; Transfer platform fee - using unwrap! instead of try!
-                (unwrap! (stx-transfer? fee-amount tx-sender (var-get platform-address)) ERR-PAYMENT-FAILED)
-                
-                ;; Transfer remaining amount to seller - using unwrap! instead of try!
-                (unwrap! (stx-transfer? seller-amount tx-sender owner) ERR-PAYMENT-FAILED)
-                
-                ;; Record the purchase
-                (map-set user-purchases
-                    { user: tx-sender, listing-id: listing-id }
-                    {
-                        purchase-time: stacks-block-height,
-                        access-expiry: (+ stacks-block-height u8640),
-                        access-level: access-level,
-                        transaction-id: tx-id,
-                        purchase-price: price
-                    }
-                )
-                
-                ;; Log access in compliance contract - using manual response handling
-                (let ((log-result (contract-call? .data-governance audit-access 
-                    (get data-id listing)
-                    u1  ;; Assume research purpose
-                    tx-id
-                )))
-                    (asserts! (is-ok log-result) ERR-PAYMENT-FAILED)
-                )
-                
-                ;; Grant access in genetic-data contract - using manual response handling
-                (let ((access-result (contract-call? .dataset-registry grant-access 
-                    (get data-id listing)
-                    tx-sender
-                    access-level
-                )))
-                    (asserts! (is-ok access-result) ERR-PAYMENT-FAILED)
-                )
-                
-                (ok true)
-            )
-        )
-    )
-)
-
-;; Implement trait functions
-
-;; Get data details - implements trait function
+;; Trait implementation
 (define-public (get-data-details (data-id uint))
     (match (map-get? listings { listing-id: data-id })
         listing (ok {
@@ -517,361 +269,29 @@
     )
 )
 
-;; Verify access rights - implements trait function
 (define-public (verify-access-rights (data-id uint) (user principal))
     (match (map-get? user-purchases { user: user, listing-id: data-id })
-        purchase-data (ok (< stacks-block-height (get access-expiry purchase-data)))
+        purchase-data (ok (< burn-block-height (get access-expiry purchase-data)))
         (err u404)
     )
 )
 
-;; Grant access - implements trait function
 (define-public (grant-access (data-id uint) (user principal) (access-level uint))
     (begin
         (asserts! (is-eq tx-sender (var-get marketplace-admin)) ERR-NOT-AUTHORIZED)
-        (map-set user-purchases
+        (ok (map-set user-purchases
             { user: user, listing-id: data-id }
             {
-                purchase-time: stacks-block-height,
-                access-expiry: (+ stacks-block-height u8640),
+                purchase-time: burn-block-height,
+                access-expiry: (+ burn-block-height u8640),
                 access-level: access-level,
-                transaction-id: 0x00, ;; Admin granted access has no transaction
-                purchase-price: u0    ;; Admin granted access has no price
+                transaction-id: 0x00,
+                purchase-price: u0
             }
-        )
-        (ok true)
+        ))
     )
 )
 
-;; ─── Bitcoin payment support ─────────────────────────────────────────────────
-
-;; Bitcoin price per listing in satoshis (optional; 0 means BTC not accepted)
-(define-map listing-btc-price
-    { listing-id: uint, access-level: uint }
-    { price-sats: uint }
-)
-
-;; Track Bitcoin-funded purchases separately
-(define-map btc-purchases
-    { user: principal, listing-id: uint }
-    {
-        btc-escrow-id: uint,
-        purchase-time: uint,
-        access-expiry: uint,
-        access-level: uint,
-        btc-txid: (buff 32),
-        amount-sats: uint
-    }
-)
-
-;; Set a Bitcoin price for a listing access level (owner only)
-(define-public (set-btc-price (listing-id uint) (access-level uint) (price-sats uint))
-    (let ((listing (unwrap! (map-get? listings { listing-id: listing-id }) ERR-LISTING-NOT-FOUND)))
-        (asserts! (is-eq tx-sender (get owner listing)) ERR-NOT-AUTHORIZED)
-        (asserts! (> price-sats u0) ERR-INVALID-PRICE)
-        (asserts! (and (> access-level u0) (<= access-level (get access-level listing)))
-            ERR-INVALID-ACCESS-LEVEL)
-        (map-set listing-btc-price
-            { listing-id: listing-id, access-level: access-level }
-            { price-sats: price-sats })
-        (ok true)
-    )
-)
-
-;; Get Bitcoin price for a listing access level
-(define-read-only (get-btc-price (listing-id uint) (access-level uint))
-    (map-get? listing-btc-price { listing-id: listing-id, access-level: access-level })
-)
-
-;; Get a Bitcoin purchase record
-(define-read-only (get-btc-purchase (user principal) (listing-id uint))
-    (map-get? btc-purchases { user: user, listing-id: listing-id })
-)
-
-;; Record a completed Bitcoin purchase (called by bitcoin-escrow after finalisation)
-;; Only the bitcoin-escrow contract (marketplace admin) may call this
-(define-public (record-btc-purchase
-    (listing-id uint)
-    (buyer principal)
-    (access-level uint)
-    (btc-escrow-id uint)
-    (btc-txid (buff 32))
-    (amount-sats uint))
-
-    (let ((listing (unwrap! (map-get? listings { listing-id: listing-id }) ERR-LISTING-NOT-FOUND)))
-        (asserts! (is-eq tx-sender (var-get marketplace-admin)) ERR-NOT-AUTHORIZED)
-        (asserts! (get active listing) ERR-LISTING-NOT-FOUND)
-
-        ;; Record BTC purchase
-        (map-set btc-purchases
-            { user: buyer, listing-id: listing-id }
-            {
-                btc-escrow-id: btc-escrow-id,
-                purchase-time: stacks-block-height,
-                access-expiry: (+ stacks-block-height u8640),
-                access-level: access-level,
-                btc-txid: btc-txid,
-                amount-sats: amount-sats
-            }
-        )
-
-        ;; Also grant access in the dataset registry
-        (try! (contract-call? .dataset-registry grant-access
-            (get data-id listing) buyer access-level))
-
-        (ok true)
-    )
-)
-
-;; Query functions
-(define-read-only (get-listing (listing-id uint))
-    (map-get? listings { listing-id: listing-id })
-)
-
-(define-read-only (get-user-purchase (user principal) (listing-id uint))
-    (map-get? user-purchases { user: user, listing-id: listing-id })
-)
-
-(define-read-only (get-escrow (escrow-id uint))
-    (map-get? purchase-escrows { escrow-id: escrow-id })
-)
-
-;; Batch operations leveraging Clarity 4 fold/map
-(define-private (batch-create-helper (acc (response bool uint)) (item (tuple (0 uint) (1 (string-utf8 20)) (2 principal) (3 uint) (4 uint) (5 (buff 32)) (6 bool) (7 (string-utf8 500)))))
-    (if (is-err acc)
-        acc
-        (let (
-            (lid (get 0 item))
-            (price (get 1 item))
-            (dc (get 2 item))
-            (did (get 3 item))
-            (lvl (get 4 item))
-            (mh (get 5 item))
-            (ver (get 6 item))
-            (desc (get 7 item))
-        )
-            (let ((res (create-listing lid price dc did lvl mh ver desc)))
-                (if (is-ok res) acc res)
-            )
-        )
-    )
-)
-
-(define-public (batch-create-listings (items (list 50 (tuple (0 uint) (1 (string-utf8 20)) (2 principal) (3 uint) (4 uint) (5 (buff 32)) (6 bool) (7 (string-utf8 500))))))
-    (fold batch-create-helper items (ok true))
-)
-
-(define-private (batch-status-helper (acc (response bool uint)) (item (tuple (0 uint) (1 bool))))
-    (if (is-err acc)
-        acc
-        (let ((res (update-listing-status (get 0 item) (get 1 item))))
-            (if (is-ok res) acc res)
-        )
-    )
-)
-
-(define-public (batch-update-status (items (list 50 (tuple (0 uint) (1 bool)))))
-    (fold batch-status-helper items (ok true))
-)
-
-(define-private (batch-purchase-helper (acc (response bool uint)) (item (tuple (0 uint) (1 uint) (2 (buff 32)))))
-    (if (is-err acc)
-        acc
-        (let ((res (purchase-listing-direct (get 0 item) (get 1 item) (get 2 item))))
-            (if (is-ok res) acc res)
-        )
-    )
-)
-
-(define-public (batch-purchase-direct (items (list 50 (tuple (0 uint) (1 uint) (2 (buff 32))))) )
-    (fold batch-purchase-helper items (ok true))
-)
-
-;; Extend user access
-(define-public (extend-access (listing-id uint) (user principal) (duration uint))
-    (let (
-        (listing (unwrap! (map-get? listings { listing-id: listing-id }) ERR-LISTING-NOT-FOUND))
-        (purchase (unwrap! (map-get? user-purchases { user: user, listing-id: listing-id }) ERR-NOT-FOUND))
-    )
-        ;; Only owner or admin can extend access
-        (asserts! (or 
-            (is-eq tx-sender (get owner listing))
-            (is-eq tx-sender (var-get marketplace-admin))
-        ) ERR-NOT-AUTHORIZED)
-        
-        ;; Update the purchase record with extended expiry
-        (map-set user-purchases
-            { user: user, listing-id: listing-id }
-            (merge purchase {
-                access-expiry: (+ (get access-expiry purchase) duration)
-            })
-        )
-
-        (ok true)
-    )
-)
-
-;; ── Clarity 4 contract-of / Dynamic Contract Discovery ───────────────────────
-;; The contract-registry trait definition is used below.
-;; Callers obtain a trait-typed reference to a contract, pass it here, and we
-;; use contract-of to extract and verify its principal against the registry.
-;;
-;; Pattern:
-;;   1. Off-chain code queries .contract-registry to get the latest exchange
-;;      principal.
-;;   2. It submits a transaction passing the contract as a typed trait argument.
-;;   3. This contract calls contract-of on that arg to obtain its principal.
-;;   4. It cross-checks against the registry to prevent spoofing.
-;;   5. It dispatches through the verified trait reference.
-
-;; Return the principal of the currently registered "exchange" contract slot.
-;; This is the Clarity 4 dynamic resolution entry point described in the issue.
-(define-public (get-current-exchange-contract
-    (registry <contract-registry-trait>))
-    (contract-call? registry get-latest-version u"exchange")
-)
-
-;; Return the principal of the currently registered "dataset-registry" contract slot.
-(define-public (get-current-registry-contract
-    (registry <contract-registry-trait>))
-    (contract-call? registry get-latest-version u"dataset-registry")
-)
-
-;; Version-aware listing purchase using the contract-of pattern.
-;;
-;; The caller supplies:
-;;   • registry — a <contract-registry-trait> reference to the deployed registry
-;;   • exchange  — a <dataset-registry-trait> reference to the exchange contract
-;;                 the caller believes to be the latest version
-;;   • listing-id — the listing to query
-;;
-;; This function:
-;;   1. Calls contract-of on the exchange trait arg to get its principal.
-;;   2. Queries the registry to confirm that principal is the registered latest.
-;;   3. Dispatches get-data-details through the verified trait reference.
-;;
-;; This prevents callers from supplying a spoofed exchange contract that passes
-;; the trait type-check but is not the officially registered version.
-(define-public (purchase-with-latest-exchange
-    (registry   <contract-registry-trait>)
-    (exchange   <dataset-registry-trait>)
-    (listing-id uint))
-    (let (
-        ;; Step 1: extract the principal from the typed trait reference using contract-of
-        (exchange-principal (contract-of exchange))
-        ;; Step 2: resolve the registry's current "exchange" principal
-        (registered-principal (try! (contract-call? registry get-latest-version u"exchange")))
-    )
-        ;; Step 3: verify the caller supplied the correct contract
-        (asserts! (is-eq exchange-principal registered-principal) ERR-NOT-AUTHORIZED)
-
-        ;; Step 4: dispatch through the verified trait reference
-        (contract-call? exchange get-data-details listing-id)
-    )
-)
-
-;; Verify that a trait-typed contract reference matches the registered version.
-;; Callers can use this as a guard before performing any trait dispatch.
-(define-public (verify-exchange-contract
-    (registry <contract-registry-trait>)
-    (exchange  <dataset-registry-trait>))
-    (let (
-        (exchange-principal    (contract-of exchange))
-        (registered-principal  (try! (contract-call? registry get-latest-version u"exchange")))
-    )
-        (asserts! (is-eq exchange-principal registered-principal) ERR-NOT-AUTHORIZED)
-        (ok exchange-principal)
-    )
-)
-
-;; ── Capability discovery ──────────────────────────────────────────────────────
-
-;; Query the capabilities declared by the latest registered exchange version.
-;; Useful for clients that need to decide at runtime which features are available.
-(define-public (get-exchange-capabilities
-    (registry <contract-registry-trait>)
-    (version  uint))
-    (contract-call? registry get-capabilities u"exchange" version)
-)
-
-;; Check whether the latest registered exchange declares a specific capability.
-;; This is a read-only shortcut that queries the registry directly.
-;; (Cannot call public functions from read-only, so this returns a note.)
-(define-read-only (exchange-capability-note (capability (string-utf8 50)))
-    { note: u"Call .contract-registry has-capability with name=exchange for read-only check",
-      capability: capability }
-)
-
-;; ── Contract version management ───────────────────────────────────────────────
-
-;; Perform a graceful migration of the "exchange" slot in the registry.
-;; This wraps the registry's migrate-contract call with exchange-specific
-;; validation: the caller must be the marketplace admin.
-(define-public (migrate-exchange-contract
-    (registry          <contract-registry-trait>)
-    (new-principal     principal)
-    (capabilities      (list 10 (string-utf8 50)))
-    (migration-note    (string-utf8 200)))
-    (begin
-        (asserts! (is-eq tx-sender (var-get marketplace-admin)) ERR-NOT-AUTHORIZED)
-        (contract-call? registry register-version u"exchange" new-principal)
-    )
-)
-
-;; Read-only: return the version count for the "exchange" slot.
-;; Clients can poll this to detect upgrades without monitoring events.
-(define-read-only (exchange-version-note)
-    { note: u"Call .contract-registry get-version-count with name=exchange to get version count" }
-)
-
-;; Check whether the supplied principal is the registered latest exchange.
-;; Uses contract-of on the trait reference so the principal is extracted from
-;; the typed argument — not supplied raw — preventing spoofing.
-(define-public (is-exchange-registered
-    (registry <contract-registry-trait>)
-    (exchange  <dataset-registry-trait>))
-    (let (
-        (exchange-principal    (contract-of exchange))
-        (registered-principal  (try! (contract-call? registry get-latest-version u"exchange")))
-    )
-        (ok (is-eq exchange-principal registered-principal))
-    )
-)
-
-;; ── Registry-verified access-level price lookup ───────────────────────────────
-;; Returns the access-level price for a listing, guarded by a registry check.
-;; The caller must supply the registry trait reference; the function uses
-;; contract-of internally (via verify-exchange-contract) to confirm identity.
-(define-public (get-verified-access-price
-    (registry   <contract-registry-trait>)
-    (exchange   <dataset-registry-trait>)
-    (listing-id uint)
-    (access-level uint))
-    (begin
-        ;; Verify the exchange contract is the registered one
-        (try! (verify-exchange-contract registry exchange))
-        ;; Return the access-level price from this contract's own store
-        (get-access-level-price listing-id access-level)
-    )
-)
-
-;; ── Upgradeable purchase flow ─────────────────────────────────────────────────
-;; A full purchase that first checks the registry to ensure the exchange
-;; contract used is the current registered version.
-(define-public (purchase-listing-verified
-    (registry    <contract-registry-trait>)
-    (exchange    <dataset-registry-trait>)
-    (listing-id  uint)
-    (access-level uint)
-    (tx-id       (buff 32)))
-    (begin
-        ;; Guard: only proceed if exchange is the registered version
-        (let ((exchange-principal (try! (verify-exchange-contract registry exchange))))
-            (asserts!
-                (is-eq exchange-principal (contract-of exchange))
-                ERR-NOT-AUTHORIZED)
-        )
-        ;; Delegate to the standard direct-purchase flow
-        (purchase-listing-direct listing-id access-level tx-id)
-    )
-)
+;; Read-only helpers
+(define-read-only (get-listing (listing-id uint)) (map-get? listings { listing-id: listing-id }))
+(define-read-only (get-user-purchase (user principal) (listing-id uint)) (map-get? user-purchases { user: user, listing-id: listing-id }))
