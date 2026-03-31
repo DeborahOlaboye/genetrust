@@ -7,8 +7,8 @@
 (define-trait access-control-trait
     (
         (has-role (principal uint) (response bool uint))
-        (grant-role (principal uint) (response bool uint))
-        (revoke-role (principal uint) (response bool uint))
+        (grant-role (principal uint) (role uint) (response bool uint))
+        (revoke-role (principal uint) (role uint) (response bool uint))
         (register-identity-proof ((buff 33)) (response bool uint))
         (is-identity-verified (principal) (response bool uint))
         (assert-verified-role (principal uint) (response bool uint))
@@ -34,7 +34,7 @@
 (define-constant ROLE-VERIFIER 0x0008)
 
 ;; Role management
-(define-map roles principal uint)
+(define-map roles { user: principal } uint)
 
 ;; ── Identity verification via principal-of? ──────────────────────────────────
 ;; On-chain proof that a principal controls the corresponding private key.
@@ -43,7 +43,7 @@
     { user: principal }
     {
         pubkey-hash:     (buff 20),   ;; hash160 of the compressed secp256k1 pubkey
-        verified-at:     uint,         ;; Block height of verification
+        verified-at:     uint,          ;; Block height of verification
         is-active:       bool,
         verification-count: uint       ;; How many times the proof was renewed
     }
@@ -98,9 +98,6 @@
 ;; ── Identity Verification API ────────────────────────────────────────────────
 
 ;; Register an on-chain identity proof for tx-sender.
-;; The caller provides their compressed secp256k1 pubkey (33 bytes).
-;; principal-of? derives the Stacks principal and asserts it matches tx-sender,
-;; cryptographically proving key ownership. Only the hash160 of the pubkey is stored.
 (define-public (register-identity-proof (pubkey (buff 33)))
     (let ((derived (unwrap! (principal-of? pubkey) ERR-INVALID-PUBKEY)))
         (asserts! (is-eq derived tx-sender) ERR-PUBKEY-MISMATCH)
@@ -132,8 +129,13 @@
 (define-read-only (is-identity-verified (user principal))
     (match (map-get? identity-proofs { user: user })
         proof (ok (get is-active proof))
-        ERR-IDENTITY-NOT-FOUND
+        (err (get-error-code ERR-IDENTITY-NOT-FOUND))
     )
+)
+
+;; Helper to extract uint from response for trait compatibility
+(define-private (get-error-code (err-val (response bool uint)))
+    (unwrap-err-as-uint err-val)
 )
 
 ;; Read-only: get full identity proof record
@@ -174,19 +176,16 @@
     )
 )
 
-;; Grant a role to a principal whose identity has been verified via principal-of?.
-;; The admin provides their pubkey; verification happens before the role write.
+;; Grant a role to a principal whose identity has been verified
 (define-public (grant-role-verified
     (user    principal)
     (role    uint)
     (pubkey  (buff 33)))
     (begin
-        ;; Admin identity verification
         (let ((derived (unwrap! (principal-of? pubkey) ERR-INVALID-PUBKEY)))
             (asserts! (is-eq derived tx-sender) ERR-PUBKEY-MISMATCH)
             (try! (only-admin))
 
-            ;; Recipient must have registered an identity proof
             (asserts!
                 (match (map-get? identity-proofs { user: user })
                     proof (get is-active proof)
@@ -215,7 +214,7 @@
         (is-admin (try! (only-admin)))
         (current-roles (default-to u0 (map-get? roles { user: user })))
     )
-        (asserts! (not (is-eq (bitwise-and current-roles role) u0)) ERR-ALREADY-ROLE)
+        (asserts! (is-eq (bitwise-and current-roles role) u0) ERR-ALREADY-ROLE)
         (map-set roles { user: user } (bitwise-or current-roles role))
         (ok true)
     )
@@ -240,24 +239,24 @@
     )
 )
 
-;; Check if the sender has a specific role
-(define-read-only (sender-has-role (role uint))
-    (has-role tx-sender role)
-)
-
 ;; Add a new admin
 (define-public (add-admin (admin principal))
     (let ((is-admin (try! (only-admin))))
-        (var-set admins (append (var-get admins) admin))
-        (ok true)
+        (ok (var-set admins (unwrap! (as-max-len? (append (var-get admins) admin) u10) (err u500))))
     )
 )
 
 ;; Remove an admin
+(define-private (is-not-admin (to-remove principal) (current principal))
+    (not (is-eq to-remove current))
+)
+
 (define-public (remove-admin (admin principal))
     (let ((is-admin (try! (only-admin))))
-        (var-set admins (filter (var-get admins) (lambda (x) (not (is-eq x admin)))))
-        (ok true)
+        (begin
+            (var-set admins (filter is-not-admin (var-get admins)))
+            (ok true)
+        )
     )
 )
 
@@ -266,10 +265,7 @@
     (ok (contains? (var-get admins) user))
 )
 
-;; ── Enhanced RBAC: role + identity compound check ────────────────────────────
-
-;; Verify that a principal both holds a role AND has an active identity proof.
-;; This is the compound security gate for sensitive genetic data operations.
+;; Verify that a principal both holds a role AND has an active identity proof
 (define-read-only (has-verified-role (user principal) (role uint))
     (let (
         (role-ok   (match (map-get? roles { user: user })
@@ -283,7 +279,7 @@
     )
 )
 
-;; Return a summary of a principal's access posture for off-chain consumers
+;; Return a summary of a principal's access posture
 (define-read-only (get-access-posture (user principal))
     {
         user:             user,
@@ -296,10 +292,9 @@
     }
 )
 
-;; Require both a role and an active identity proof — use as a guard in
-;; calling contracts.
+;; Require both a role and an active identity proof
 (define-public (assert-verified-role (user principal) (role uint))
-    (let ((check (try! (has-verified-role user role))))
+    (let ((check (unwrap! (has-verified-role user role) ERR-NOT-AUTHORIZED)))
         (asserts! check ERR-NOT-AUTHORIZED)
         (ok true)
     )
