@@ -1,7 +1,5 @@
 ;; cross-subnet-bridge.clar
 ;; Main chain bridge contract implementing the subnet-bridge-trait.
-;; Handles bidirectional message passing between the main chain and subnets,
-;; stores verified state roots, and verifies Merkle inclusion proofs.
 
 (impl-trait .subnet-bridge-trait.subnet-bridge-trait)
 
@@ -19,7 +17,6 @@
 ;; Message status constants
 (define-constant MSG-STATUS-PENDING u0)
 (define-constant MSG-STATUS-DELIVERED u1)
-(define-constant MSG-STATUS-FAILED u2)
 
 ;; Admin
 (define-data-var bridge-admin principal tx-sender)
@@ -39,12 +36,11 @@
     }
 )
 
-;; Inbound messages (subnet → main chain), keyed by hash to prevent replays
+;; Inbound messages (subnet → main chain)
 (define-map inbound-messages
     { message-hash: (buff 32) }
     {
         subnet-id: uint,
-        message-hash: (buff 32),
         payload: (buff 512),
         nonce: uint,
         received-at: uint,
@@ -62,7 +58,7 @@
     }
 )
 
-;; Nonce tracking per subnet to enforce ordering
+;; Nonce tracking per subnet
 (define-map subnet-nonces
     { subnet-id: uint }
     { inbound: uint, outbound: uint }
@@ -85,7 +81,6 @@
 
 ;; ─── Trait implementation ────────────────────────────────────────────────────
 
-;; Submit a message to a subnet
 (define-public (submit-to-subnet
     (subnet-id uint)
     (message-hash (buff 32))
@@ -96,13 +91,12 @@
         (message-id (var-get next-message-id))
         (nonces (get-subnet-nonces subnet-id))
     )
-        ;; Verify subnet is registered and active
+        ;; Verify subnet is active via registry
         (asserts! (contract-call? .subnet-registry is-subnet-active subnet-id) ERR-SUBNET-INACTIVE)
 
-        ;; Enforce outbound nonce ordering
+        ;; Enforce strict outbound nonce ordering
         (asserts! (is-eq nonce (+ (get outbound nonces) u1)) ERR-NONCE-MISMATCH)
 
-        ;; Store outbound message
         (map-set outbound-messages
             { message-id: message-id }
             {
@@ -116,7 +110,6 @@
             }
         )
 
-        ;; Update nonce
         (map-set subnet-nonces { subnet-id: subnet-id }
             (merge nonces { outbound: nonce }))
 
@@ -125,33 +118,30 @@
     )
 )
 
-;; Receive a message from a subnet (called by an authorised relayer)
 (define-public (receive-from-subnet
     (subnet-id uint)
     (message-hash (buff 32))
     (payload (buff 512))
-    (signature (buff 80))
+    (signature (buff 80)) ;; Note: Should be verified against subnet validator pubkeys
     (nonce uint))
 
     (let ((nonces (get-subnet-nonces subnet-id)))
-        ;; Only authorised relayers may submit inbound messages
         (asserts!
             (contract-call? .subnet-registry is-authorized-relayer subnet-id tx-sender)
             ERR-NOT-AUTHORIZED)
 
-        ;; Prevent replay attacks
+        ;; Signature verification logic would go here (e.g., secp256k1-verify)
+        ;; For now, we rely on the relayer authorization check.
+
         (asserts! (is-none (map-get? inbound-messages { message-hash: message-hash }))
             ERR-DUPLICATE-MESSAGE)
 
-        ;; Enforce inbound nonce ordering
         (asserts! (is-eq nonce (+ (get inbound nonces) u1)) ERR-NONCE-MISMATCH)
 
-        ;; Store inbound message
         (map-set inbound-messages
             { message-hash: message-hash }
             {
                 subnet-id: subnet-id,
-                message-hash: message-hash,
                 payload: payload,
                 nonce: nonce,
                 received-at: stacks-block-height,
@@ -159,7 +149,6 @@
             }
         )
 
-        ;; Update nonce
         (map-set subnet-nonces { subnet-id: subnet-id }
             (merge nonces { inbound: nonce }))
 
@@ -167,7 +156,6 @@
     )
 )
 
-;; Verify a Merkle inclusion proof against a stored state root
 (define-public (verify-subnet-proof
     (subnet-id uint)
     (state-root (buff 32))
@@ -175,10 +163,8 @@
     (proof-path (list 20 (buff 32))))
 
     (let ((stored (unwrap! (map-get? subnet-state-roots { subnet-id: subnet-id }) ERR-STATE-ROOT-NOT-FOUND)))
-        ;; Ensure state root matches the stored one
         (asserts! (is-eq state-root (get state-root stored)) ERR-INVALID-PROOF)
 
-        ;; Walk the Merkle path
         (let ((computed-root (fold merkle-combine proof-path leaf)))
             (asserts! (is-eq computed-root state-root) ERR-INVALID-PROOF)
             (ok true)
@@ -186,15 +172,7 @@
     )
 )
 
-;; Get the latest verified state root for a subnet
-(define-public (get-subnet-state-root (subnet-id uint))
-    (match (map-get? subnet-state-roots { subnet-id: subnet-id })
-        root-info (ok (get state-root root-info))
-        ERR-STATE-ROOT-NOT-FOUND
-    )
-)
-
-;; ─── State root management (called by relayers) ──────────────────────────────
+;; ─── State root management ───────────────────────────────────────────────────
 
 (define-public (update-state-root
     (subnet-id uint)
@@ -219,12 +197,12 @@
 
 ;; ─── Private helpers ─────────────────────────────────────────────────────────
 
-;; Combine two 32-byte hashes in Merkle path order using sha256
 (define-private (merkle-combine (sibling (buff 32)) (current (buff 32)))
-    (sha256 (concat current sibling))
+    (if (< current sibling)
+        (sha256 (concat current sibling))
+        (sha256 (concat sibling current)))
 )
 
-;; Admin: update bridge admin
 (define-public (set-bridge-admin (new-admin principal))
     (begin
         (asserts! (is-eq tx-sender (var-get bridge-admin)) ERR-NOT-AUTHORIZED)
