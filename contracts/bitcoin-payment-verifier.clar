@@ -39,7 +39,8 @@
                 ;; Check output is a P2WPKH matching the expected recipient
                 (asserts! (is-eq (get recipient-hash tx-record) expected-recipient-program) ERR-WRONG-RECIPIENT)
 
-                ;; Check the proof is not stale
+                ;; Check the proof is not stale (using >= to prevent underflow)
+                (asserts! (>= current-burn-height (get block-height tx-record)) ERR-STALE-PROOF)
                 (asserts!
                     (<= (- current-burn-height (get block-height tx-record)) MAX-PROOF-AGE-BLOCKS)
                     ERR-STALE-PROOF)
@@ -66,6 +67,8 @@
                 (asserts!
                     (is-eq (get recipient-hash tx-record) expected-script-hash-prefix)
                     ERR-WRONG-RECIPIENT)
+                
+                (asserts! (>= current-burn-height (get block-height tx-record)) ERR-STALE-PROOF)
                 (asserts!
                     (<= (- current-burn-height (get block-height tx-record)) MAX-PROOF-AGE-BLOCKS)
                     ERR-STALE-PROOF)
@@ -102,17 +105,14 @@
 (define-read-only (verify-merkle-inclusion
     (txid (buff 32))
     (proof-path (list 20 (buff 32)))
-    (tx-index uint)
     (block-height uint))
 
-    (match (get-burn-block-info? pox-addrs block-height)
+    (match (get-burn-block-info? header-hash block-height)
         _info
-            ;; Real Merkle verification requires block-header Merkle root.
             ;; For Stacks 2.1 we rely on the submitted tx having been validated
             ;; by the segwit-tx-parser which checks get-burn-block-info? header-hash.
             ;; This function provides the structural proof walk.
             (let ((computed (fold merkle-step proof-path txid)))
-                ;; Caller must compare computed root against block header Merkle root
                 (ok computed)
             )
         ERR-INVALID-PROOF
@@ -120,6 +120,7 @@
 )
 
 ;; Private: one step of the Merkle tree walk
+;; Bitcoin uses little-endian double-SHA256 for Merkle paths.
 (define-private (merkle-step (sibling (buff 32)) (current (buff 32)))
     (sha256 (sha256 (concat current sibling)))
 )
