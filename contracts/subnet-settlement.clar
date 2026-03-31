@@ -1,7 +1,6 @@
 ;; subnet-settlement.clar
 ;; Handles final settlements from subnets onto the main chain.
-;; When a subnet completes a batch of operations (analysis jobs, storage
-;; updates) the results are settled here, updating authoritative state.
+;; Refactored for Clarity 2.x compatibility
 
 ;; Error codes
 (define-constant ERR-NOT-AUTHORIZED (err u500))
@@ -12,10 +11,6 @@
 (define-constant ERR-INSUFFICIENT-STAKE (err u505))
 (define-constant ERR-CHALLENGE-PERIOD-ACTIVE (err u506))
 (define-constant ERR-CHALLENGE-PERIOD-EXPIRED (err u507))
-
-;; Settlement type constants
-(define-constant SETTLEMENT-TYPE-PROCESSING u1)   ;; Analysis results from processing subnet
-(define-constant SETTLEMENT-TYPE-STORAGE u2)      ;; Storage confirmations from storage subnet
 
 ;; Settlement status constants
 (define-constant STATUS-PENDING u0)
@@ -38,9 +33,9 @@
         subnet-id: uint,
         settlement-type: uint,
         data-id: uint,
-        proof-id: uint,              ;; Verified proof backing this settlement
-        result-hash: (buff 32),      ;; Hash of the result data
-        result-summary: (buff 256),  ;; Summary / metadata of the result
+        proof-id: uint,
+        result-hash: (buff 32),
+        result-summary: (buff 256),
         submitter: principal,
         status: uint,
         submitted-at: uint,
@@ -71,7 +66,7 @@
     }
 )
 
-;; ─── Read-only helpers ───────────────────────────────────────────────────────
+;; --- Read-only helpers ---
 
 (define-read-only (get-settlement (settlement-id uint))
     (map-get? settlements { settlement-id: settlement-id })
@@ -81,11 +76,7 @@
     (map-get? settlement-results { data-id: data-id })
 )
 
-(define-read-only (get-challenge (settlement-id uint) (challenger principal))
-    (map-get? challenges { settlement-id: settlement-id, challenger: challenger })
-)
-
-;; ─── Settlement submission ───────────────────────────────────────────────────
+;; --- Settlement submission ---
 
 (define-public (submit-settlement
     (subnet-id uint)
@@ -117,8 +108,8 @@
                     result-summary: result-summary,
                     submitter: tx-sender,
                     status: STATUS-CHALLENGE-PERIOD,
-                    submitted-at: stacks-block-height,
-                    challenge-deadline: (+ stacks-block-height CHALLENGE-PERIOD-BLOCKS),
+                    submitted-at: burn-block-height,
+                    challenge-deadline: (+ burn-block-height CHALLENGE-PERIOD-BLOCKS),
                     finalized-at: u0
                 }
             )
@@ -128,7 +119,7 @@
     )
 )
 
-;; ─── Challenge mechanism ─────────────────────────────────────────────────────
+;; --- Challenge mechanism ---
 
 (define-public (challenge-settlement
     (settlement-id uint)
@@ -137,58 +128,52 @@
 
     (let ((s (unwrap! (map-get? settlements { settlement-id: settlement-id }) ERR-SETTLEMENT-NOT-FOUND)))
         (asserts! (is-eq (get status s) STATUS-CHALLENGE-PERIOD) ERR-SETTLEMENT-ALREADY-FINALIZED)
-        (asserts! (< stacks-block-height (get challenge-deadline s)) ERR-CHALLENGE-PERIOD-EXPIRED)
+        (asserts! (< burn-block-height (get challenge-deadline s)) ERR-CHALLENGE-PERIOD-EXPIRED)
 
         (map-set challenges
             { settlement-id: settlement-id, challenger: tx-sender }
             {
                 reason: reason,
                 evidence-hash: evidence-hash,
-                challenged-at: stacks-block-height,
+                challenged-at: burn-block-height,
                 resolved: false
             }
         )
 
-        (map-set settlements { settlement-id: settlement-id }
-            (merge s { status: STATUS-CHALLENGED }))
-        (ok true)
+        (ok (map-set settlements { settlement-id: settlement-id }
+            (merge s { status: STATUS-CHALLENGED })))
     )
 )
 
-;; ─── Finalization ────────────────────────────────────────────────────────────
+;; --- Finalization ---
 
-;; Finalize a settlement after challenge period expires with no challenges
 (define-public (finalize-settlement (settlement-id uint))
     (let ((s (unwrap! (map-get? settlements { settlement-id: settlement-id }) ERR-SETTLEMENT-NOT-FOUND)))
         (asserts! (is-eq (get status s) STATUS-CHALLENGE-PERIOD) ERR-SETTLEMENT-ALREADY-FINALIZED)
-        (asserts! (>= stacks-block-height (get challenge-deadline s)) ERR-CHALLENGE-PERIOD-ACTIVE)
+        (asserts! (>= burn-block-height (get challenge-deadline s)) ERR-CHALLENGE-PERIOD-ACTIVE)
 
         (map-set settlements { settlement-id: settlement-id }
             (merge s {
                 status: STATUS-FINALIZED,
-                finalized-at: stacks-block-height
+                finalized-at: burn-block-height
             })
         )
 
-        ;; Write result to settlement-results
-        (map-set settlement-results
+        (ok (map-set settlement-results
             { data-id: (get data-id s) }
             {
                 latest-settlement-id: settlement-id,
                 analysis-result-hash: (get result-hash s),
                 storage-cid: 0x,
-                last-updated: stacks-block-height
+                last-updated: burn-block-height
             }
-        )
-
-        (ok true)
+        ))
     )
 )
 
-;; Admin resolves a challenged settlement
 (define-public (resolve-challenge
     (settlement-id uint)
-    (accept bool))  ;; true = accept settlement despite challenge, false = reject
+    (accept bool))
 
     (let ((s (unwrap! (map-get? settlements { settlement-id: settlement-id }) ERR-SETTLEMENT-NOT-FOUND)))
         (asserts! (is-eq tx-sender (var-get settlement-admin)) ERR-NOT-AUTHORIZED)
@@ -197,27 +182,19 @@
         (if accept
             (begin
                 (map-set settlements { settlement-id: settlement-id }
-                    (merge s { status: STATUS-FINALIZED, finalized-at: stacks-block-height }))
-                (map-set settlement-results
+                    (merge s { status: STATUS-FINALIZED, finalized-at: burn-block-height }))
+                (ok (map-set settlement-results
                     { data-id: (get data-id s) }
                     {
                         latest-settlement-id: settlement-id,
                         analysis-result-hash: (get result-hash s),
                         storage-cid: 0x,
-                        last-updated: stacks-block-height
+                        last-updated: burn-block-height
                     }
-                )
+                ))
             )
-            (map-set settlements { settlement-id: settlement-id }
-                (merge s { status: STATUS-REJECTED }))
+            (ok (map-set settlements { settlement-id: settlement-id }
+                (merge s { status: STATUS-REJECTED })))
         )
-        (ok true)
-    )
-)
-
-(define-public (set-settlement-admin (new-admin principal))
-    (begin
-        (asserts! (is-eq tx-sender (var-get settlement-admin)) ERR-NOT-AUTHORIZED)
-        (ok (var-set settlement-admin new-admin))
     )
 )
