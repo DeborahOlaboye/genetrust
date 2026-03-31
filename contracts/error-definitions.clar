@@ -1,93 +1,75 @@
 ;; error-definitions.clar
 ;; Standardized error types and handling for all contracts
-;; Clarity 4 enhanced error handling with context
+;; Refactored for Clarity 2 compatibility
 
-;; Standard HTTP-style error codes
-(define-constant HTTP-400-BAD-REQUEST u400)
-(define-constant HTTP-401-UNAUTHORIZED u401)
-(define-constant HTTP-403-FORBIDDEN u403)
-(define-constant HTTP-404-NOT-FOUND u404)
-(define-constant HTTP-409-CONFLICT u409)
-(define-constant HTTP-422-UNPROCESSABLE-ENTITY u422)
-(define-constant HTTP-500-INTERNAL-SERVER-ERROR u500)
+;; Standard HTTP-style error codes as uints
+(define-constant ERR-BAD-REQUEST (err u400))
+(define-constant ERR-UNAUTHORIZED (err u401))
+(define-constant ERR-FORBIDDEN (err u403))
+(define-constant ERR-NOT-FOUND (err u404))
+(define-constant ERR-CONFLICT (err u409))
+(define-constant ERR-GONE (err u410))
+(define-constant ERR-UNPROCESSABLE-ENTITY (err u422))
+(define-constant ERR-TOO-MANY-REQUESTS (err u429))
+(define-constant ERR-INTERNAL-SERVER-ERROR (err u500))
+(define-constant ERR-SERVICE-UNAVAILABLE (err u503))
 
-;; Error type definitions with standardized codes
-(define-constant ERR-INVALID-INPUT { code: u400, message: "Invalid input provided", context: none })
-(define-constant ERR-NOT-AUTHORIZED { code: u401, message: "Authorization required", context: none })
-(define-constant ERR-ACCESS-DENIED { code: u403, message: "Access denied", context: none })
-(define-constant ERR-NOT-FOUND { code: u404, message: "Resource not found", context: none })
-(define-constant ERR-ALREADY-EXISTS { code: u409, message: "Resource already exists", context: none })
-(define-constant ERR-INVALID-STATE { code: u422, message: "Invalid state for operation", context: none })
-(define-constant ERR-INTERNAL-ERROR { code: u500, message: "Internal server error", context: none })
+;; Dataset-specific errors (Standardized to u1000 range)
+(define-constant ERR-DATASET-NOT-FOUND (err u1001))
+(define-constant ERR-DATASET-EXISTS (err u1002))
+(define-constant ERR-DATASET-INACTIVE (err u1003))
+(define-constant ERR-INVALID-DATASET-ID (err u1004))
 
-;; Dataset-specific errors
-(define-constant ERR-DATASET-NOT-FOUND { code: u404, message: "Dataset not found", context: none })
-(define-constant ERR-DATASET-EXISTS { code: u409, message: "Dataset already exists", context: none })
-(define-constant ERR-DATASET-INACTIVE { code: u422, message: "Dataset is inactive", context: none })
-(define-constant ERR-INVALID-DATASET-ID { code: u400, message: "Invalid dataset ID", context: none })
+;; Access control errors (Standardized to u2000 range)
+(define-constant ERR-ACCESS-EXPIRED (err u2001))
+(define-constant ERR-INSUFFICIENT-ACCESS-LEVEL (err u2002))
+(define-constant ERR-INVALID-ACCESS-LEVEL (err u2003))
 
-;; Access control errors
-(define-constant ERR-ACCESS-EXPIRED { code: u403, message: "Access has expired", context: none })
-(define-constant ERR-INSUFFICIENT-ACCESS-LEVEL { code: u403, message: "Insufficient access level", context: none })
-(define-constant ERR-INVALID-ACCESS-LEVEL { code: u400, message: "Invalid access level", context: none })
+;; Consent errors (Standardized to u3000 range)
+(define-constant ERR-NO-CONSENT (err u3001))
+(define-constant ERR-CONSENT-EXPIRED (err u3002))
+(define-constant ERR-INVALID-CONSENT (err u3003))
 
-;; Consent errors
-(define-constant ERR-NO-CONSENT { code: u403, message: "No consent for operation", context: none })
-(define-constant ERR-CONSENT-EXPIRED { code: u403, message: "Consent has expired", context: none })
-(define-constant ERR-INVALID-CONSENT { code: u400, message: "Invalid consent", context: none })
+;; Governance and GDPR errors (Standardized to u4000 range)
+(define-constant ERR-INVALID-JURISDICTION (err u4001))
+(define-constant ERR-GDPR-VIOLATION (err u4002))
+(define-constant ERR-GDPR-RECORD-MISSING (err u4003))
 
-;; Governance and GDPR errors
-(define-constant ERR-INVALID-JURISDICTION { code: u400, message: "Invalid jurisdiction", context: none })
-(define-constant ERR-GDPR-VIOLATION { code: u422, message: "GDPR compliance violation", context: none })
-(define-constant ERR-GDPR-RECORD-MISSING { code: u404, message: "GDPR record not found", context: none })
+;; Operational errors (Standardized to u5000 range)
+(define-constant ERR-CONTRACT-PAUSED (err u5001))
+(define-constant ERR-TRANSACTION-FAILED (err u5002))
+(define-constant ERR-INVALID-BLOCK-HEIGHT (err u5003))
 
-;; Rate limiting and operational errors
-(define-constant ERR-RATE-LIMIT-EXCEEDED { code: u429, message: "Rate limit exceeded", context: none })
-(define-constant ERR-CONTRACT-PAUSED { code: u503, message: "Contract is paused", context: none })
-(define-constant ERR-TRANSACTION-FAILED { code: u500, message: "Transaction failed", context: none })
+;; Contract registry errors
+(define-constant ERR-CONTRACT-NOT-FOUND (err u6001))
+(define-constant ERR-VERSION-NOT-FOUND (err u6002))
+(define-constant ERR-VERSION-DEPRECATED (err u6003))
+(define-constant ERR-MIGRATION-FAILED (err u6004))
 
-;; Block and timestamp errors
-(define-constant ERR-INVALID-BLOCK-HEIGHT { code: u400, message: "Invalid block height", context: none })
-(define-constant ERR-FUTURE-BLOCK-HEIGHT { code: u400, message: "Block height is in the future", context: none })
-
-;; String and encoding errors
-(define-constant ERR-INVALID-STRING { code: u400, message: "Invalid string encoding", context: none })
-(define-constant ERR-STRING-TOO-LONG { code: u400, message: "String exceeds maximum length", context: none })
-
-;; Contract registry errors (Clarity 4 contract-of / dynamic discovery)
-(define-constant ERR-CONTRACT-NOT-FOUND { code: u404, message: "Contract not found in registry", context: none })
-(define-constant ERR-VERSION-NOT-FOUND  { code: u404, message: "Contract version not found",    context: none })
-(define-constant ERR-VERSION-DEPRECATED { code: u410, message: "Contract version is deprecated", context: none })
-(define-constant ERR-MIGRATION-FAILED   { code: u500, message: "Contract migration failed",      context: none })
-
-;; Generic error code mapping
-(define-read-only (get-error-http-code (error-code uint))
-    (match error-code
-        u400 "Bad Request"
-        u401 "Unauthorized"
-        u403 "Forbidden"
-        u404 "Not Found"
-        u409 "Conflict"
-        u422 "Unprocessable Entity"
-        u429 "Too Many Requests"
-        u500 "Internal Server Error"
-        u503 "Service Unavailable"
-        "Unknown Error"
-    )
+;; Generic error code mapping for UI display
+(define-read-only (get-error-http-label (error-code uint))
+    (if (is-eq error-code u400) "Bad Request"
+    (if (is-eq error-code u401) "Unauthorized"
+    (if (is-eq error-code u403) "Forbidden"
+    (if (is-eq error-code u404) "Not Found"
+    (if (is-eq error-code u409) "Conflict"
+    (if (is-eq error-code u422) "Unprocessable Entity"
+    (if (is-eq error-code u429) "Too Many Requests"
+    (if (is-eq error-code u500) "Internal Server Error"
+    (if (is-eq error-code u503) "Service Unavailable"
+    "Unknown Error")))))))))
 )
 
 ;; Get user-friendly error message
 (define-read-only (get-error-message (error-code uint))
-    (match error-code
-        u400 "The request contained invalid data"
-        u401 "You are not authorized to perform this action"
-        u403 "Access denied"
-        u404 "The requested resource was not found"
-        u409 "The resource already exists"
-        u422 "The request could not be processed due to invalid state"
-        u429 "Too many requests, please try again later"
-        u500 "An internal server error occurred"
-        u503 "The service is temporarily unavailable"
-        "An error occurred"
-    )
+    (if (is-eq error-code u400) "The request contained invalid data"
+    (if (is-eq error-code u401) "You are not authorized to perform this action"
+    (if (is-eq error-code u403) "Access denied"
+    (if (is-eq error-code u404) "The requested resource was not found"
+    (if (is-eq error-code u409) "The resource already exists"
+    (if (is-eq error-code u422) "The request could not be processed due to invalid state"
+    (if (is-eq error-code u429) "Too many requests, please try again later"
+    (if (is-eq error-code u500) "An internal server error occurred"
+    (if (is-eq error-code u503) "The service is temporarily unavailable"
+    "An error occurred")))))))))
 )
