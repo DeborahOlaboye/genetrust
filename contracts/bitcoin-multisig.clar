@@ -31,10 +31,10 @@
     { policy-id: uint }
     {
         name: (string-utf8 64),
-        threshold: uint,                     ;; M — minimum signatures required
-        total-signers: uint,                 ;; N — total signers
-        pubkeys: (list 15 (buff 33)),        ;; Compressed public keys of all signers
-        owner: principal,                    ;; Who created this policy
+        threshold: uint,                    ;; M — minimum signatures required
+        total-signers: uint,                ;; N — total signers
+        pubkeys: (list 15 (buff 33)),       ;; Compressed public keys of all signers
+        owner: principal,                   ;; Who created this policy
         is-active: bool,
         created-at: uint,
         min-amount-sats: uint               ;; Minimum BTC amount requiring multisig
@@ -51,6 +51,7 @@
         amount-sats: uint,
         message-hash: (buff 32),          ;; Hash of (listing-id + buyer + amount-sats)
         signatures: (list 15 (buff 65)),  ;; Collected valid signatures
+        signers: (list 15 (buff 33)),     ;; Collected pubkeys to prevent duplicate signing
         signature-count: uint,
         is-approved: bool,
         is-used: bool,
@@ -149,6 +150,7 @@
                     amount-sats: amount-sats,
                     message-hash: msg-hash,
                     signatures: (list),
+                    signers: (list),
                     signature-count: u0,
                     is-approved: false,
                     is-used: false,
@@ -173,25 +175,29 @@
         (req (unwrap! (map-get? approval-requests { approval-id: approval-id }) ERR-APPROVAL-NOT-FOUND))
         (policy (unwrap! (map-get? multisig-policies { policy-id: (get policy-id req) }) ERR-POLICY-NOT-FOUND))
     )
+        ;; Validations
         (asserts! (not (get is-used req)) ERR-APPROVAL-ALREADY-USED)
         (asserts! (< stacks-block-height (get expires-at req)) ERR-APPROVAL-EXPIRED)
-
-        ;; Verify the signature is valid for one of the policy pubkeys
-        (asserts!
-            (secp256k1-verify (get message-hash req) signature pubkey)
-            ERR-INVALID-SIGNATURE)
-
-        ;; Verify pubkey is in the policy
+        
+        ;; Verify pubkey is authorized in the policy
         (asserts! (is-some (index-of (get pubkeys policy) pubkey)) ERR-NOT-AUTHORIZED)
+        
+        ;; Prevent same key signing twice
+        (asserts! (is-none (index-of (get signers req) pubkey)) ERR-ALREADY-SIGNED)
+
+        ;; Verify the signature: secp256k1-verify returns true/false
+        (asserts! (secp256k1-verify (get message-hash req) signature pubkey) ERR-INVALID-SIGNATURE)
 
         (let (
             (new-sigs (unwrap-panic (as-max-len? (append (get signatures req) signature) u15)))
+            (new-signers (unwrap-panic (as-max-len? (append (get signers req) pubkey) u15)))
             (new-count (+ (get signature-count req) u1))
             (now-approved (>= new-count (get threshold policy)))
         )
             (map-set approval-requests { approval-id: approval-id }
                 (merge req {
                     signatures: new-sigs,
+                    signers: new-signers,
                     signature-count: new-count,
                     is-approved: now-approved
                 })
@@ -217,6 +223,7 @@
 (define-public (set-multisig-admin (new-admin principal))
     (begin
         (asserts! (is-eq tx-sender (var-get multisig-admin)) ERR-NOT-AUTHORIZED)
-        (ok (var-set multisig-admin new-admin))
+        (var-set multisig-admin new-admin)
+        (ok true)
     )
 )
