@@ -59,6 +59,23 @@
     { proof-ids: (list 50 uint) }
 )
 
+;; ─── Internal helpers ────────────────────────────────────────────────────────
+
+;; Helper to append a proof-id to a specific data-id index map
+(define-private (add-to-index (data-id uint) (proof-id uint) (is-verified-map bool))
+    (let ((existing (default-to { proof-ids: (list) } 
+            (if is-verified-map 
+                (map-get? verified-proofs-by-data-id { data-id: data-id })
+                (map-get? proofs-by-data-id { data-id: data-id })))))
+        (if is-verified-map
+            (map-set verified-proofs-by-data-id { data-id: data-id }
+                { proof-ids: (unwrap-panic (as-max-len? (append (get proof-ids existing) proof-id) u50)) })
+            (map-set proofs-by-data-id { data-id: data-id }
+                { proof-ids: (unwrap-panic (as-max-len? (append (get proof-ids existing) proof-id) u50)) })
+        )
+    )
+)
+
 ;; ─── Read-only helpers ───────────────────────────────────────────────────────
 
 (define-read-only (get-proof (proof-id uint))
@@ -103,6 +120,9 @@
         (asserts! (and (>= proof-type u1) (<= proof-type u3)) ERR-INVALID-PROOF-TYPE)
         ;; Subnet must be active
         (asserts! (contract-call? .subnet-registry is-subnet-active subnet-id) ERR-SUBNET-NOT-FOUND)
+        
+        ;; Verify proof data integrity against the hash
+        (asserts! (is-eq (sha256 proof-data) proof-hash) ERR-INVALID-PROOF)
 
         (let ((proof-id (var-get next-proof-id)))
             (map-set proofs
@@ -124,11 +144,7 @@
             )
 
             ;; Update data-id index
-            (let ((existing (default-to { proof-ids: (list) }
-                    (map-get? proofs-by-data-id { data-id: data-id }))))
-                (map-set proofs-by-data-id { data-id: data-id }
-                    { proof-ids: (unwrap-panic (as-max-len? (append (get proof-ids existing) proof-id) u50)) })
-            )
+            (add-to-index data-id proof-id false)
 
             (var-set next-proof-id (+ proof-id u1))
             (ok proof-id)
@@ -156,11 +172,8 @@
             ERR-EXPIRED-PROOF)
 
         ;; Verify state root matches what the bridge has
-        (let ((bridge-root-result (contract-call? .cross-subnet-bridge get-subnet-state-root (get subnet-id p))))
-            (asserts! (is-ok bridge-root-result) ERR-INVALID-PROOF)
-            (asserts!
-                (is-eq (get state-root p) (unwrap-panic bridge-root-result))
-                ERR-INVALID-PROOF)
+        (let ((bridge-root (unwrap! (contract-call? .cross-subnet-bridge get-subnet-state-root (get subnet-id p)) ERR-INVALID-PROOF)))
+            (asserts! (is-eq (get state-root p) bridge-root) ERR-INVALID-PROOF)
         )
 
         ;; Mark verified
@@ -173,11 +186,7 @@
         )
 
         ;; Update verified index
-        (let ((existing (default-to { proof-ids: (list) }
-                (map-get? verified-proofs-by-data-id { data-id: (get data-id p) }))))
-            (map-set verified-proofs-by-data-id { data-id: (get data-id p) }
-                { proof-ids: (unwrap-panic (as-max-len? (append (get proof-ids existing) proof-id) u50)) })
-        )
+        (add-to-index (get data-id p) proof-id true)
 
         (ok true)
     )
