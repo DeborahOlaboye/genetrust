@@ -1,7 +1,7 @@
-;; subnet-bridge-trait.clar
-;; Trait defining the interface for cross-subnet communication bridges.
-;; All subnet bridge contracts must implement this trait so the main chain
-;; can interact with them uniformly.
+;; title: subnet-bridge-trait
+;; version: 1.0.0
+;; summary: Trait defining the interface for cross-subnet communication bridges.
+;; description: Standardizes the protocol for submitting, receiving, and verifying messages between the main chain and subnets.
 
 (define-trait subnet-bridge-trait
     (
