@@ -1,7 +1,5 @@
 ;; segwit-tx-parser.clar
 ;; Parses and validates Bitcoin Segwit (BIP-141) transaction proofs on-chain.
-;; Stores verified transaction records that can be referenced by the Bitcoin
-;; escrow contract to confirm payment.
 
 ;; Error codes
 (define-constant ERR-NOT-AUTHORIZED (err u2100))
@@ -17,10 +15,6 @@
 ;; Output type constants
 (define-constant OUTPUT-P2WPKH u1)
 (define-constant OUTPUT-P2WSH u2)
-(define-constant OUTPUT-P2TR u3)   ;; Taproot (future)
-(define-constant OUTPUT-OTHER u99)
-
-;; Confirmation depth required before a tx is considered final
 (define-constant REQUIRED-CONFIRMATIONS u6)
 
 ;; Admin
@@ -31,87 +25,59 @@
     { txid: (buff 32) }
     {
         txid: (buff 32),
-        block-height: uint,          ;; Bitcoin block height
+        block-height: uint,
         block-header-hash: (buff 32),
         output-index: uint,
-        output-type: uint,           ;; OUTPUT-P2WPKH | OUTPUT-P2WSH
-        witness-program: (buff 32),  ;; 20 or 32-byte witness program (zero-padded to 32)
-        amount-sats: uint,           ;; Satoshi value of the output
-        recipient-hash: (buff 20),   ;; P2WPKH: pubkey hash; P2WSH: first 20 bytes of script hash
-        confirmed-at: uint,          ;; Stacks block height when recorded
+        output-type: uint,
+        witness-program: (buff 32),
+        amount-sats: uint,
+        recipient-hash: (buff 20),
+        confirmed-at: uint,
         is-spent: bool,
-        spent-by: (optional (buff 32)) ;; Escrow ID that consumed this tx
+        spent-by: (optional (buff 32))
     }
 )
 
-;; Index by recipient witness program for fast lookups
+;; Index by recipient witness program
 (define-map txs-by-recipient
     { witness-program: (buff 32) }
     { txids: (list 20 (buff 32)) }
 )
 
-;; Authorised relayers / parsers who can submit tx proofs
+;; Authorized relayers
 (define-map authorized-parsers
     { parser: principal }
     { active: bool }
 )
 
-;; ─── Read-only helpers ───────────────────────────────────────────────────────
+;; --- Read-only helpers ---
 
 (define-read-only (get-verified-tx (txid (buff 32)))
     (map-get? verified-txs { txid: txid })
 )
 
-(define-read-only (get-txs-for-recipient (witness-program (buff 32)))
-    (map-get? txs-by-recipient { witness-program: witness-program })
-)
-
-(define-read-only (is-tx-confirmed (txid (buff 32)) (current-burn-height uint))
+(define-read-only (is-tx-confirmed (txid (buff 32)))
     (match (map-get? verified-txs { txid: txid })
-        tx (>= (- current-burn-height (get block-height tx)) REQUIRED-CONFIRMATIONS)
-        false
-    )
-)
-
-(define-read-only (is-tx-spendable (txid (buff 32)) (current-burn-height uint))
-    (match (map-get? verified-txs { txid: txid })
-        tx (and
-            (not (get is-spent tx))
-            (>= (- current-burn-height (get block-height tx)) REQUIRED-CONFIRMATIONS))
+        tx (>= (- burn-block-height (get block-height tx)) REQUIRED-CONFIRMATIONS)
         false
     )
 )
 
 (define-read-only (is-authorized-parser (parser principal))
-    (match (map-get? authorized-parsers { parser: parser })
-        p (get active p)
-        false
-    )
+    (default-to false (get active (map-get? authorized-parsers { parser: parser })))
 )
 
-;; ─── Parser management ───────────────────────────────────────────────────────
+;; --- Parser management ---
 
 (define-public (add-parser (parser principal))
     (begin
         (asserts! (is-eq tx-sender (var-get parser-admin)) ERR-NOT-AUTHORIZED)
-        (map-set authorized-parsers { parser: parser } { active: true })
-        (ok true)
+        (ok (map-set authorized-parsers { parser: parser } { active: true }))
     )
 )
 
-(define-public (remove-parser (parser principal))
-    (begin
-        (asserts! (is-eq tx-sender (var-get parser-admin)) ERR-NOT-AUTHORIZED)
-        (map-set authorized-parsers { parser: parser } { active: false })
-        (ok true)
-    )
-)
+;; --- Transaction submission ---
 
-;; ─── Transaction submission ──────────────────────────────────────────────────
-
-;; Submit a verified segwit transaction proof
-;; The parser (relayer) is responsible for verifying the Merkle inclusion proof
-;; off-chain before calling this function with the confirmed data.
 (define-public (submit-verified-tx
     (txid (buff 32))
     (block-height uint)
@@ -125,18 +91,14 @@
     (begin
         (asserts! (is-authorized-parser tx-sender) ERR-NOT-AUTHORIZED)
         (asserts! (is-none (map-get? verified-txs { txid: txid })) ERR-TX-EXISTS)
-        (asserts! (> amount-sats u0) ERR-INVALID-TX)
-        (asserts! (or (is-eq output-type OUTPUT-P2WPKH) (is-eq output-type OUTPUT-P2WSH))
-            ERR-OUTPUT-NOT-SEGWIT)
-
-        ;; Validate block header hash against burn chain
-        (match (get-burn-block-info? header-hash block-height)
-            stored-hash
-                (asserts! (is-eq stored-hash block-header-hash) ERR-INVALID-PROOF)
-            (asserts! false ERR-INVALID-PROOF)
+        
+        ;; Cross-check Bitcoin header hash via Clarity 2 burn-block-height context
+        (let ((actual-hash (unwrap! (get-burn-block-info? header-hash block-height) ERR-INVALID-PROOF)))
+            (asserts! (is-eq actual-hash block-header-hash) ERR-INVALID-PROOF)
         )
 
-        ;; Store transaction record
+        (asserts! (or (is-eq output-type OUTPUT-P2WPKH) (is-eq output-type OUTPUT-P2WSH)) ERR-OUTPUT-NOT-SEGWIT)
+
         (map-set verified-txs { txid: txid }
             {
                 txid: txid,
@@ -147,38 +109,24 @@
                 witness-program: witness-program,
                 amount-sats: amount-sats,
                 recipient-hash: recipient-hash,
-                confirmed-at: stacks-block-height,
+                confirmed-at: burn-block-height,
                 is-spent: false,
                 spent-by: none
             }
         )
 
-        ;; Update recipient index
-        (let ((existing (default-to { txids: (list) }
-                (map-get? txs-by-recipient { witness-program: witness-program }))))
-            (map-set txs-by-recipient { witness-program: witness-program }
-                { txids: (unwrap-panic (as-max-len? (append (get txids existing) txid) u20)) })
+        (let ((existing (default-to { txids: (list) } (map-get? txs-by-recipient { witness-program: witness-program }))))
+            (ok (map-set txs-by-recipient { witness-program: witness-program }
+                { txids: (unwrap-panic (as-max-len? (append (get txids existing) txid) u20)) }))
         )
-
-        (ok true)
     )
 )
 
-;; Mark a transaction output as spent by an escrow
 (define-public (mark-tx-spent (txid (buff 32)) (escrow-id (buff 32)))
     (let ((tx (unwrap! (map-get? verified-txs { txid: txid }) ERR-TX-NOT-FOUND)))
         (asserts! (is-authorized-parser tx-sender) ERR-NOT-AUTHORIZED)
         (asserts! (not (get is-spent tx)) ERR-ALREADY-SPENT)
-        (map-set verified-txs { txid: txid }
-            (merge tx { is-spent: true, spent-by: (some escrow-id) }))
-        (ok true)
-    )
-)
-
-;; Admin
-(define-public (set-parser-admin (new-admin principal))
-    (begin
-        (asserts! (is-eq tx-sender (var-get parser-admin)) ERR-NOT-AUTHORIZED)
-        (ok (var-set parser-admin new-admin))
+        (ok (map-set verified-txs { txid: txid }
+            (merge tx { is-spent: true, spent-by: (some escrow-id) })))
     )
 )
