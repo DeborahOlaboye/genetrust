@@ -16,7 +16,7 @@
 (define-constant ERR-INVALID-BLOCK (err u400))
 (define-constant ERR-TRANSACTION-FAILED (err u500))
 
-;; Clarity 4 principal-of? identity error codes
+;; Clarity 2 principal-of? identity error codes
 (define-constant ERR-INVALID-PUBKEY (err u422))
 (define-constant ERR-PUBKEY-MISMATCH (err u403))
 (define-constant ERR-SIGNER-NOT-VERIFIED (err u403))
@@ -70,8 +70,8 @@
         data-id: uint,                   ;; Reference to the genetic data
         user: principal,                 ;; Who is using the data
         purpose: uint,                   ;; Purpose of use (research, commercial, etc.)
-        access-granted-at: uint,         ;; When access was granted
-        access-expires-at: uint,         ;; When access expires
+        access-granted-at: uint,          ;; When access was granted
+        access-expires-at: uint,          ;; When access expires
         access-level: uint               ;; Level of access granted
     }
 )
@@ -93,7 +93,7 @@
     { data-id: uint }
     {
         right-to-be-forgotten-requested: bool,    ;; Has the user requested deletion
-        data-portability-requested: bool,         ;; Has the user requested their data
+        data-portability-requested: bool,          ;; Has the user requested their data
         processing-restricted: bool,              ;; Is data processing restricted
         last-updated: uint                        ;; When record was last updated
     }
@@ -103,10 +103,9 @@
 (define-data-var next-usage-id uint u1)
 (define-data-var next-log-id uint u1)
 
-;; ── Clarity 4 principal-of? signer identity maps ─────────────────────────────
+;; --- Signer identity maps ---
 
 ;; Track signers who have proved key ownership via principal-of?
-;; Used to enforce identity-gated consent operations.
 (define-map signer-proofs
     { signer: principal }
     {
@@ -116,8 +115,7 @@
     }
 )
 
-;; Multi-signature consent: require N data subjects to co-sign a consent change
-;; before it takes effect (institutional data sharing governance).
+;; Multi-signature consent: require N data subjects to co-sign
 (define-map multisig-consent-proposals
     { data-id: uint, proposal-id: uint }
     {
@@ -141,7 +139,7 @@
 
 (define-data-var next-proposal-id uint u1)
 
-;; Error context helper: Record error with context for debugging
+;; Error context helper
 (define-private (record-error (error-code uint) (message (string-utf8 256)) (context (string-utf8 512)) (data-id uint))
     (let ((error-id (var-get error-counter)))
         (begin
@@ -152,7 +150,7 @@
                     error-code: error-code,
                     message: message,
                     context-data: context,
-                    timestamp: stacks-block-height,
+                    timestamp: burn-block-height,
                     data-id: data-id
                 }
             )
@@ -166,7 +164,7 @@
     (map-get? error-context { error-id: error-id })
 )
 
-;; Historical audit trail map - extended access log with more details
+;; Historical audit trail map
 (define-map historical-audit-trail
     { audit-id: uint }
     {
@@ -206,11 +204,9 @@
     { count: uint }
 )
 
-;; ── Clarity 4 principal-of? Governance API ───────────────────────────────────
+;; --- Governance API ---
 
-;; Register a signer proof in the governance contract.
-;; Callers provide their compressed pubkey; principal-of? proves they hold the
-;; corresponding private key without revealing it.
+;; Register a signer proof
 (define-public (register-signer-proof (pubkey (buff 33)))
     (let ((derived (unwrap! (principal-of? pubkey) ERR-INVALID-PUBKEY)))
         (asserts! (is-eq derived tx-sender) ERR-PUBKEY-MISMATCH)
@@ -218,15 +214,15 @@
             { signer: tx-sender }
             {
                 pubkey-hash:  (hash160 pubkey),
-                verified-at:  stacks-block-height,
+                verified-at:  burn-block-height,
                 is-active:    true
             }
         )
         (ok (print {
-            event:       "signer-registered",
-            signer:      tx-sender,
+            event:        "signer-registered",
+            signer:       tx-sender,
             pubkey-hash: (hash160 pubkey),
-            block:       stacks-block-height
+            block:        burn-block-height
         }))
     )
 )
@@ -239,8 +235,7 @@
     )
 )
 
-;; Consent operations gated by identity: the owner must prove key ownership
-;; via principal-of? before amending consent, strengthening GDPR accountability.
+;; Amend consent with identity proof
 (define-public (amend-consent-with-proof
     (data-id         uint)
     (research-consent  bool)
@@ -248,13 +243,10 @@
     (clinical-consent  bool)
     (jurisdiction    uint)
     (consent-duration uint)
-    (pubkey          (buff 33)))
+    (pubkey           (buff 33)))
     (begin
-        ;; Cryptographic identity gate
         (let ((derived (unwrap! (principal-of? pubkey) ERR-INVALID-PUBKEY)))
             (asserts! (is-eq derived tx-sender) ERR-PUBKEY-MISMATCH)
-
-            ;; Caller must have a registered signer proof
             (asserts!
                 (match (map-get? signer-proofs { signer: tx-sender })
                     p (get is-active p)
@@ -262,8 +254,6 @@
                 )
                 ERR-SIGNER-NOT-VERIFIED
             )
-
-            ;; Delegate to the existing amend-consent-policy logic
             (amend-consent-policy
                 data-id
                 research-consent
@@ -276,9 +266,7 @@
     )
 )
 
-;; Multi-signature consent proposal: requires N verified data subjects to
-;; co-sign before a major consent change goes live. Suitable for institutional
-;; genomic data sharing governed by multiple stakeholders.
+;; Propose multi-sig consent
 (define-public (propose-multisig-consent
     (data-id           uint)
     (new-research      bool)
@@ -289,7 +277,6 @@
     (threshold         uint)
     (pubkey            (buff 33)))
     (begin
-        ;; Identity proof gate
         (let ((derived (unwrap! (principal-of? pubkey) ERR-INVALID-PUBKEY)))
             (asserts! (is-eq derived tx-sender) ERR-PUBKEY-MISMATCH)
             (asserts! (>= threshold u2) ERR-MULTISIG-CONSENT-THRESHOLD)
@@ -307,12 +294,12 @@
                         threshold:      threshold,
                         approval-count: u1,
                         executed:       false,
-                        expires-at:     (+ stacks-block-height u288)
+                        expires-at:     (+ burn-block-height u288)
                     }
                 )
                 (map-set multisig-consent-approvals
                     { data-id: data-id, proposal-id: proposal-id, approver: tx-sender }
-                    { approved-at: stacks-block-height }
+                    { approved-at: burn-block-height }
                 )
                 (var-set next-proposal-id (+ proposal-id u1))
                 (ok (print {
@@ -326,7 +313,7 @@
     )
 )
 
-;; Approve a multi-sig consent proposal with identity proof.
+;; Approve a multi-sig consent proposal
 (define-public (approve-multisig-consent
     (data-id     uint)
     (proposal-id uint)
@@ -345,7 +332,7 @@
                     (map-get? multisig-consent-proposals { data-id: data-id, proposal-id: proposal-id })
                     ERR-NOT-FOUND)))
                 (asserts! (not (get executed proposal)) ERR-NOT-AUTHORIZED)
-                (asserts! (< stacks-block-height (get expires-at proposal)) ERR-EXPIRED)
+                (asserts! (< burn-block-height (get expires-at proposal)) ERR-EXPIRED)
                 (asserts!
                     (is-none (map-get? multisig-consent-approvals
                         { data-id: data-id, proposal-id: proposal-id, approver: tx-sender }))
@@ -353,7 +340,7 @@
                 )
                 (map-set multisig-consent-approvals
                     { data-id: data-id, proposal-id: proposal-id, approver: tx-sender }
-                    { approved-at: stacks-block-height }
+                    { approved-at: burn-block-height }
                 )
                 (let ((new-count (+ (get approval-count proposal) u1)))
                     (map-set multisig-consent-proposals
@@ -372,7 +359,7 @@
     )
 )
 
-;; Execute a multi-sig consent proposal once threshold is reached.
+;; Execute a multi-sig consent proposal
 (define-public (execute-multisig-consent
     (data-id     uint)
     (proposal-id uint)
@@ -384,17 +371,15 @@
                     (map-get? multisig-consent-proposals { data-id: data-id, proposal-id: proposal-id })
                     ERR-NOT-FOUND)))
                 (asserts! (not (get executed proposal)) ERR-NOT-AUTHORIZED)
-                (asserts! (< stacks-block-height (get expires-at proposal)) ERR-EXPIRED)
+                (asserts! (< burn-block-height (get expires-at proposal)) ERR-EXPIRED)
                 (asserts!
                     (>= (get approval-count proposal) (get threshold proposal))
                     ERR-MULTISIG-CONSENT-THRESHOLD
                 )
-                ;; Mark executed before write
                 (map-set multisig-consent-proposals
                     { data-id: data-id, proposal-id: proposal-id }
                     (merge proposal { executed: true })
                 )
-                ;; Write the new consent policy
                 (try! (amend-consent-policy
                     data-id
                     (get new-research proposal)
@@ -426,10 +411,9 @@
     (commercial-consent bool)
     (clinical-consent bool)
     (jurisdiction uint)
-    (consent-duration uint))  ;; Duration in blocks
+    (consent-duration uint))
     
     (begin
-        ;; Validate jurisdiction
         (asserts! (or 
             (is-eq jurisdiction JURISDICTION-GLOBAL)
             (is-eq jurisdiction JURISDICTION-US)
@@ -439,10 +423,9 @@
         ) ERR-INVALID-JURISDICTION)
         
         (let (
-            (current-time stacks-block-height)
-            (expiration-time (+ stacks-block-height consent-duration))
+            (current-time burn-block-height)
+            (expiration-time (+ burn-block-height consent-duration))
         )
-            ;; Set the consent record
             (map-set consent-records
                 { data-id: data-id }
                 {
@@ -456,7 +439,6 @@
                 }
             )
             
-            ;; If EU jurisdiction, initialize GDPR record
             (if (is-eq jurisdiction JURISDICTION-EU)
                 (map-set gdpr-records
                     { data-id: data-id }
@@ -469,7 +451,6 @@
                 )
                 true
             )
-            
             (ok true)
         )
     )
@@ -482,13 +463,10 @@
     (commercial-consent bool)
     (clinical-consent bool)
     (jurisdiction uint)
-    (consent-duration uint))  ;; Duration in blocks
+    (consent-duration uint))
     
     (let ((consent (unwrap! (map-get? consent-records { data-id: data-id }) ERR-NOT-FOUND)))
-        ;; Only the owner can update consent
         (asserts! (is-eq tx-sender (get owner consent)) ERR-NOT-AUTHORIZED)
-        
-        ;; Validate jurisdiction
         (asserts! (or 
             (is-eq jurisdiction JURISDICTION-GLOBAL)
             (is-eq jurisdiction JURISDICTION-US)
@@ -498,12 +476,11 @@
         ) ERR-INVALID-JURISDICTION)
         
         (let (
-            (current-time stacks-block-height)
-            (expiration-time (+ stacks-block-height consent-duration))
+            (current-time burn-block-height)
+            (expiration-time (+ burn-block-height consent-duration))
         )
-            ;; Record the consent change before updating and continue
             (begin
-                (asserts! (is-ok (record-consent-change 
+                (try! (record-consent-change 
                     data-id
                     (get research-consent consent)
                     (get commercial-consent consent)
@@ -511,9 +488,8 @@
                     research-consent
                     commercial-consent
                     clinical-consent
-                )) ERR-NOT-FOUND)
+                ))
                 
-                ;; Update the consent record
                 (map-set consent-records
                     { data-id: data-id }
                     {
@@ -527,7 +503,6 @@
                     }
                 )
                 
-                ;; If changed to EU jurisdiction, initialize GDPR record if it doesn't exist
                 (if (and (is-eq jurisdiction JURISDICTION-EU) (is-none (map-get? gdpr-records { data-id: data-id })))
                     (map-set gdpr-records
                         { data-id: data-id }
@@ -540,37 +515,32 @@
                     )
                     true
                 )
-                
                 (ok true)
             )
         )
     )
 )
 
-;; Record a processing activity (data usage)
+;; Record a processing activity
 (define-public (record-processing-activity
     (data-id uint)
     (user principal)
     (purpose uint)
-    (access-duration uint)  ;; Duration in blocks
+    (access-duration uint)
     (access-level uint))
     
     (let (
         (consent (unwrap! (map-get? consent-records { data-id: data-id }) ERR-NOT-FOUND))
         (usage-id (var-get next-usage-id))
-        (current-time stacks-block-height)
+        (current-time burn-block-height)
     )
-        ;; Verify consent is valid and not expired
         (asserts! (< current-time (get consent-expires-at consent)) ERR-EXPIRED)
-        
-        ;; Validate purpose
         (asserts! (or 
             (is-eq purpose CONSENT-RESEARCH)
             (is-eq purpose CONSENT-COMMERCIAL)
             (is-eq purpose CONSENT-CLINICAL)
         ) ERR-INVALID-PURPOSE)
         
-        ;; Verify consent for the specific purpose
         (asserts! 
             (or 
                 (and (is-eq purpose CONSENT-RESEARCH) (get research-consent consent))
@@ -580,7 +550,6 @@
             ERR-NO-CONSENT
         )
         
-        ;; Check for GDPR restrictions if applicable
         (if (is-eq (get jurisdiction consent) JURISDICTION-EU)
             (let ((gdpr-data (map-get? gdpr-records { data-id: data-id })))
                 (if (is-some gdpr-data)
@@ -591,10 +560,7 @@
             true
         )
         
-        ;; Increment the usage ID counter
         (var-set next-usage-id (+ usage-id u1))
-        
-        ;; Register the usage
         (map-set usage-records
             { usage-id: usage-id }
             {
@@ -606,12 +572,11 @@
                 access-level: access-level
             }
         )
-        
         (ok usage-id)
     )
 )
 
-;; Audit data access (creates audit trail)
+;; Audit data access
 (define-public (audit-access
     (data-id uint)
     (purpose uint)
@@ -619,12 +584,9 @@
     
     (let (
         (log-id (var-get next-log-id))
-        (current-time stacks-block-height)
+        (current-time burn-block-height)
     )
-        ;; Increment the log ID counter
         (var-set next-log-id (+ log-id u1))
-        
-        ;; Create the access log
         (map-set access-logs
             { log-id: log-id }
             {
@@ -635,22 +597,19 @@
                 tx-id: tx-id
             }
         )
-        
-        ;; Also record in extended audit trail for compliance purposes
-        (asserts! (is-ok (record-extended-audit-trail
+        (try! (record-extended-audit-trail
             data-id
             tx-sender
             purpose
             u1
             u"access"
             tx-id
-        )) ERR-TRANSACTION-FAILED)
-        
+        ))
         (ok log-id)
     )
 )
 
-;; Validate whether consent permits a specific processing purpose
+;; Validate consent for purpose
 (define-public (validate-consent-for-purpose
     (data-id uint)
     (purpose uint))
@@ -658,7 +617,7 @@
     (match (map-get? consent-records { data-id: data-id })
         consent 
         (let (
-            (current-time stacks-block-height)
+            (current-time burn-block-height)
             (is-expired (>= current-time (get consent-expires-at consent)))
             (has-purpose-consent 
                 (or 
@@ -676,123 +635,88 @@
 
 ;; GDPR Specific Functions
 
-;; GDPR: Request erasure (right to be forgotten)
 (define-public (gdpr-request-erasure (data-id uint))
     (let (
         (consent (unwrap! (map-get? consent-records { data-id: data-id }) ERR-NOT-FOUND))
-        (current-time stacks-block-height)
+        (current-time burn-block-height)
     )
-        ;; Only the owner can request this
         (asserts! (is-eq tx-sender (get owner consent)) ERR-NOT-AUTHORIZED)
-        
-        ;; Only for EU jurisdiction
         (asserts! (is-eq (get jurisdiction consent) JURISDICTION-EU) ERR-INVALID-JURISDICTION)
-        
-        ;; Update GDPR record
         (let ((gdpr-record (unwrap! (map-get? gdpr-records { data-id: data-id }) ERR-GDPR-RECORD-MISSING)))
             (map-set gdpr-records
                 { data-id: data-id }
-                {
+                (merge gdpr-record {
                     right-to-be-forgotten-requested: true,
-                    data-portability-requested: (get data-portability-requested gdpr-record),
-                    processing-restricted: (get processing-restricted gdpr-record),
                     last-updated: current-time
-                }
+                })
             )
-            
             (ok true)
         )
     )
 )
 
-;; GDPR: Request data portability
 (define-public (gdpr-request-portability (data-id uint))
     (let (
         (consent (unwrap! (map-get? consent-records { data-id: data-id }) ERR-NOT-FOUND))
-        (current-time stacks-block-height)
+        (current-time burn-block-height)
     )
-        ;; Only the owner can request this
         (asserts! (is-eq tx-sender (get owner consent)) ERR-NOT-AUTHORIZED)
-        
-        ;; Only for EU jurisdiction
         (asserts! (is-eq (get jurisdiction consent) JURISDICTION-EU) ERR-INVALID-JURISDICTION)
-        
-        ;; Update GDPR record
         (let ((gdpr-record (unwrap! (map-get? gdpr-records { data-id: data-id }) ERR-GDPR-RECORD-MISSING)))
             (map-set gdpr-records
                 { data-id: data-id }
-                {
-                    right-to-be-forgotten-requested: (get right-to-be-forgotten-requested gdpr-record),
+                (merge gdpr-record {
                     data-portability-requested: true,
-                    processing-restricted: (get processing-restricted gdpr-record),
                     last-updated: current-time
-                }
+                })
             )
-            
             (ok true)
         )
     )
 )
 
-;; GDPR: Restrict data processing
 (define-public (gdpr-restrict-processing (data-id uint))
     (let (
         (consent (unwrap! (map-get? consent-records { data-id: data-id }) ERR-NOT-FOUND))
-        (current-time stacks-block-height)
+        (current-time burn-block-height)
     )
-        ;; Only the owner can request this
         (asserts! (is-eq tx-sender (get owner consent)) ERR-NOT-AUTHORIZED)
-        
-        ;; Only for EU jurisdiction
         (asserts! (is-eq (get jurisdiction consent) JURISDICTION-EU) ERR-INVALID-JURISDICTION)
-        
-        ;; Update GDPR record
         (let ((gdpr-record (unwrap! (map-get? gdpr-records { data-id: data-id }) ERR-GDPR-RECORD-MISSING)))
             (map-set gdpr-records
                 { data-id: data-id }
-                {
-                    right-to-be-forgotten-requested: (get right-to-be-forgotten-requested gdpr-record),
-                    data-portability-requested: (get data-portability-requested gdpr-record),
+                (merge gdpr-record {
                     processing-restricted: true,
                     last-updated: current-time
-                }
+                })
             )
-            
             (ok true)
         )
     )
 )
 
-;; GDPR: Restore data processing
 (define-public (gdpr-restore-processing (data-id uint))
     (let (
         (consent (unwrap! (map-get? consent-records { data-id: data-id }) ERR-NOT-FOUND))
-        (current-time stacks-block-height)
+        (current-time burn-block-height)
     )
-        ;; Only the owner can request this
         (asserts! (is-eq tx-sender (get owner consent)) ERR-NOT-AUTHORIZED)
-        
-        ;; Only for EU jurisdiction
         (asserts! (is-eq (get jurisdiction consent) JURISDICTION-EU) ERR-INVALID-JURISDICTION)
-        
-        ;; Update GDPR record
         (let ((gdpr-record (unwrap! (map-get? gdpr-records { data-id: data-id }) ERR-GDPR-RECORD-MISSING)))
             (map-set gdpr-records
                 { data-id: data-id }
-                {
-                    right-to-be-forgotten-requested: (get right-to-be-forgotten-requested gdpr-record),
-                    data-portability-requested: (get data-portability-requested gdpr-record),
+                (merge gdpr-record {
                     processing-restricted: false,
                     last-updated: current-time
-                }
+                })
             )
-            
             (ok true)
         )
     )
 )
 
-;; Helper: Record extended audit trail entry with more details
+;; Helpers
+
 (define-private (record-extended-audit-trail
     (data-id uint)
     (user principal)
@@ -802,7 +726,7 @@
     (tx-id (buff 32)))
     (let (
         (audit-id (var-get audit-trail-counter))
-        (current-time stacks-block-height)
+        (current-time burn-block-height)
     )
         (begin
             (var-set audit-trail-counter (+ audit-id u1))
@@ -825,7 +749,6 @@
     )
 )
 
-;; Helper: Record consent change history
 (define-private (record-consent-change
     (data-id uint)
     (old-research bool)
@@ -848,7 +771,7 @@
                     new-research: new-research,
                     new-commercial: new-commercial,
                     new-clinical: new-clinical,
-                    changed-at: stacks-block-height,
+                    changed-at: burn-block-height,
                     changed-by: tx-sender
                 }
             )
@@ -863,37 +786,30 @@
 
 ;; Read functions
 
-;; Fetch consent record
 (define-read-only (fetch-consent-record (data-id uint))
     (map-get? consent-records { data-id: data-id })
 )
 
-;; Fetch usage record
 (define-read-only (fetch-usage-record (usage-id uint))
     (map-get? usage-records { usage-id: usage-id })
 )
 
-;; Fetch access log
 (define-read-only (fetch-access-log (log-id uint))
     (map-get? access-logs { log-id: log-id })
 )
 
-;; Fetch GDPR record
 (define-read-only (fetch-gdpr-record (data-id uint))
     (map-get? gdpr-records { data-id: data-id })
 )
 
-;; Fetch extended historical audit trail entry
 (define-read-only (fetch-audit-trail (audit-id uint))
     (map-get? historical-audit-trail { audit-id: audit-id })
 )
 
-;; Fetch consent change history
 (define-read-only (fetch-consent-change (data-id uint) (change-id uint))
     (map-get? consent-history { data-id: data-id, change-id: change-id })
 )
 
-;; Get total consent changes for a dataset
 (define-read-only (get-consent-change-count (data-id uint))
     (match (map-get? consent-change-count { data-id: data-id })
         count-entry (get count count-entry)
@@ -901,22 +817,19 @@
     )
 )
 
-;; Get audit trail summary for compliance reporting
 (define-read-only (get-audit-trail-summary (data-id uint))
     {
         data-id: data-id,
         total-audit-entries: (var-get audit-trail-counter),
         total-consent-changes: (get-consent-change-count data-id),
-        last-audit-block: (var-get audit-trail-counter)
+        last-audit-block: burn-block-height
     }
 )
 
-;; Check if user has access history for compliance purposes
 (define-read-only (has-access-history (data-id uint) (user principal))
-    (is-some (map-get? access-logs { log-id: u0 }))
+    (> (var-get next-log-id) u1)
 )
 
-;; Get compliance report for a dataset
 (define-read-only (get-compliance-report (data-id uint))
     (let (
         (consent-record (map-get? consent-records { data-id: data-id }))
@@ -941,18 +854,16 @@
     )
 )
 
-;; Get time-based usage statistics for compliance
 (define-read-only (get-usage-statistics (data-id uint))
     {
         data-id: data-id,
         total-usage-records: (var-get next-usage-id),
         total-access-logs: (var-get next-log-id),
         audit-trail-entries: (var-get audit-trail-counter),
-        current-block: stacks-block-height
+        current-block: burn-block-height
     }
 )
 
-;; Calculate compliance score based on audit trail completeness
 (define-read-only (calculate-compliance-score (data-id uint))
     (let (
         (consent-changes (get-consent-change-count data-id))
@@ -967,7 +878,6 @@
     )
 )
 
-;; Verify GDPR Article 30 compliance with audit trail
 (define-read-only (verify-gdpr-article-30-compliance (data-id uint))
     (let (
         (consent-record (map-get? consent-records { data-id: data-id }))
@@ -989,14 +899,10 @@
     )
 )
 
-;; ── Identity-gated governance read-only helpers ──────────────────────────────
-
-;; Return the signer proof record for a given principal
 (define-read-only (get-signer-proof (signer principal))
     (map-get? signer-proofs { signer: signer })
 )
 
-;; Check whether a signer proof is active (no gas cost for callers)
 (define-read-only (signer-proof-active (signer principal))
     (match (map-get? signer-proofs { signer: signer })
         p (get is-active p)
@@ -1004,16 +910,12 @@
     )
 )
 
-;; Record data access only when the accessor has an active signer proof.
-;; This creates a verifiable audit chain: every access entry links to a
-;; verified on-chain identity.
 (define-public (audit-verified-access
     (data-id  uint)
     (purpose  uint)
     (tx-id    (buff 32))
     (pubkey   (buff 33)))
     (begin
-        ;; Identity gate: accessor must prove key ownership
         (let ((derived (unwrap! (principal-of? pubkey) ERR-INVALID-PUBKEY)))
             (asserts! (is-eq derived tx-sender) ERR-PUBKEY-MISMATCH)
             (asserts!
@@ -1023,16 +925,13 @@
                 )
                 ERR-SIGNER-NOT-VERIFIED
             )
-            ;; Delegate to existing audit-access
             (audit-access data-id purpose tx-id)
         )
     )
 )
 
-;; Administrative functions
 (define-data-var contract-owner principal tx-sender)
 
-;; Get complete audit trail analytics
 (define-read-only (get-audit-analytics (data-id uint))
     {
         data-id: data-id,
@@ -1043,37 +942,33 @@
     }
 )
 
-;; Query historical consent state
 (define-read-only (get-historical-consent-state (data-id uint) (change-id uint))
     (fetch-consent-change data-id change-id)
 )
 
-;; Get GDPR request status
 (define-read-only (get-gdpr-request-status (data-id uint))
     (match (map-get? gdpr-records { data-id: data-id })
-        gdpr-data {
+        gdpr-data (some {
             data-id: data-id,
             erasure-requested: (get right-to-be-forgotten-requested gdpr-data),
             portability-requested: (get data-portability-requested gdpr-data),
             processing-restricted: (get processing-restricted gdpr-data),
             last-updated: (get last-updated gdpr-data)
-        }
+        })
         none
     )
 )
 
-;; Advanced: Export audit trail data for compliance
 (define-read-only (get-audit-trail-export-summary)
     {
         total-audit-entries: (var-get audit-trail-counter),
         total-access-logs: (var-get next-log-id),
         total-usage-records: (var-get next-usage-id),
-        export-timestamp: stacks-block-height,
+        export-timestamp: burn-block-height,
         compliance-ready: true
     }
 )
 
-;; Get all data processing purposes tracked
 (define-read-only (get-tracked-purposes)
     {
         research: CONSENT-RESEARCH,
@@ -1082,7 +977,6 @@
     }
 )
 
-;; Assign governance owner
 (define-public (assign-governance-owner (new-owner principal))
     (begin
         (asserts! (is-eq tx-sender (var-get contract-owner)) ERR-NOT-AUTHORIZED)
