@@ -6,7 +6,8 @@ import LoadingSpinner from '../components/common/LoadingSpinner';
 // Lazy load components with retry
 const UserDashboard = lazyWithRetry(() => import('../pages/UserDashboard'));
 const ResearcherDashboard = lazyWithRetry(() => import('../pages/ResearcherDashboard'));
-const UploadPage = lazyWithRetry(() => import('../pages/UploadPage'));
+const UploadPage   = lazyWithRetry(() => import('../pages/UploadPage'));
+const ConsentPage  = lazyWithRetry(() => import('../pages/ConsentPage'));
 const NotFound = lazyWithRetry(() => import('../pages/NotFound'));
 
 // Suspense fallback component
@@ -23,6 +24,7 @@ const AppRouter = () => (
         <Route path="/" element={<UserDashboard />} />
         <Route path="/researcher" element={<ResearcherDashboard />} />
         <Route path="/upload" element={<UploadPage />} />
+        <Route path="/consent" element={<ConsentPage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </Suspense>

@@ -199,6 +199,88 @@ export class ContractService {
     }
   }
 
+  // ── Data Governance / Consent ────────────────────────────────────────────────
+
+  async fetchConsentRecord(dataId) {
+    if (this.useRealSDK) return this.sdk.fetchConsentRecord?.(dataId) ?? null;
+    return this._consentRecords?.[dataId] ?? null;
+  }
+
+  async fetchGdprRecord(dataId) {
+    if (this.useRealSDK) return this.sdk.fetchGdprRecord?.(dataId) ?? null;
+    return this._gdprRecords?.[dataId] ?? null;
+  }
+
+  async getConsentChangeCount(dataId) {
+    if (this.useRealSDK) return this.sdk.getConsentChangeCount?.(dataId) ?? 0;
+    return this._consentChangeCounts?.[dataId] ?? 0;
+  }
+
+  async setConsentPolicy(dataId, { research, commercial, clinical, jurisdiction, durationBlocks }) {
+    if (this.useRealSDK) return this.sdk.setConsentPolicy?.(dataId, { research, commercial, clinical, jurisdiction, durationBlocks });
+    await new Promise(r => setTimeout(r, 400));
+    if (!this._consentRecords) this._consentRecords = {};
+    const record = {
+      owner: this.walletAddress || 'ST1MOCKOWNER',
+      researchConsent: research, commercialConsent: commercial, clinicalConsent: clinical,
+      jurisdiction, consentExpiresAt: Date.now() + durationBlocks * 600000,
+      lastUpdated: Date.now(),
+    };
+    this._consentRecords[dataId] = record;
+    if (jurisdiction === 2) {
+      if (!this._gdprRecords) this._gdprRecords = {};
+      this._gdprRecords[dataId] = { erasureRequested: false, portabilityRequested: false, processingRestricted: false };
+    }
+    return record;
+  }
+
+  async amendConsentPolicy(dataId, { research, commercial, clinical, jurisdiction, durationBlocks }) {
+    if (this.useRealSDK) return this.sdk.amendConsentPolicy?.(dataId, { research, commercial, clinical, jurisdiction, durationBlocks });
+    await new Promise(r => setTimeout(r, 400));
+    if (!this._consentRecords?.[dataId]) throw new Error('No consent record found for dataset');
+    if (!this._consentChangeCounts) this._consentChangeCounts = {};
+    this._consentChangeCounts[dataId] = (this._consentChangeCounts[dataId] ?? 0) + 1;
+    const updated = {
+      ...this._consentRecords[dataId],
+      researchConsent: research, commercialConsent: commercial, clinicalConsent: clinical,
+      jurisdiction, lastUpdated: Date.now(),
+    };
+    this._consentRecords[dataId] = updated;
+    return updated;
+  }
+
+  async gdprRequestErasure(dataId) {
+    if (this.useRealSDK) return this.sdk.gdprRequestErasure?.(dataId);
+    await new Promise(r => setTimeout(r, 300));
+    if (!this._gdprRecords) this._gdprRecords = {};
+    this._gdprRecords[dataId] = { ...(this._gdprRecords[dataId] ?? {}), erasureRequested: true };
+    return this._gdprRecords[dataId];
+  }
+
+  async gdprRequestPortability(dataId) {
+    if (this.useRealSDK) return this.sdk.gdprRequestPortability?.(dataId);
+    await new Promise(r => setTimeout(r, 300));
+    if (!this._gdprRecords) this._gdprRecords = {};
+    this._gdprRecords[dataId] = { ...(this._gdprRecords[dataId] ?? {}), portabilityRequested: true };
+    return this._gdprRecords[dataId];
+  }
+
+  async gdprRestrictProcessing(dataId) {
+    if (this.useRealSDK) return this.sdk.gdprRestrictProcessing?.(dataId);
+    await new Promise(r => setTimeout(r, 300));
+    if (!this._gdprRecords) this._gdprRecords = {};
+    this._gdprRecords[dataId] = { ...(this._gdprRecords[dataId] ?? {}), processingRestricted: true };
+    return this._gdprRecords[dataId];
+  }
+
+  async gdprRestoreProcessing(dataId) {
+    if (this.useRealSDK) return this.sdk.gdprRestoreProcessing?.(dataId);
+    await new Promise(r => setTimeout(r, 300));
+    if (!this._gdprRecords) this._gdprRecords = {};
+    this._gdprRecords[dataId] = { ...(this._gdprRecords[dataId] ?? {}), processingRestricted: false };
+    return this._gdprRecords[dataId];
+  }
+
   async getStatus() {
     if (this.useRealSDK) {
       return this.sdk.getStatus();

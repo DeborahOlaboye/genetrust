@@ -9,6 +9,7 @@ import { APP_CONFIG } from '../config/app.js';
 import toast, { Toaster } from 'react-hot-toast';
 import { DatasetUploadWizard } from '../components/upload/DatasetUploadWizard.jsx';
 import { WalletGate } from '../components/upload/WalletGate.jsx';
+import { ConsentManagementPanel } from '../components/consent/ConsentManagementPanel.jsx';
 
 const StatCard = ({ title, value, accent = 'purple' }) => (
   <div 
@@ -56,7 +57,7 @@ export default function UserDashboard() {
   const [newPrice, setNewPrice] = useState('');
   const [newAccess, setNewAccess] = useState(3);
   const [selectedDataset, setSelectedDataset] = useState('');
-  const [isFetching, setIsFetching] = useState(false);
+  const [consentDatasetId, setConsentDatasetId] = useState(null);
 
   // Connect wallet on mount if using real SDK
   useEffect(() => {
@@ -456,14 +457,44 @@ export default function UserDashboard() {
             <div className="divide-y divide-[#8B5CF6]/10" role="list">
               {datasets.length === 0 && <div className="text-[#9AA0B2]">No datasets yet.</div>}
               {datasets.map(ds => (
-                <div key={ds.id} role="listitem" className="py-3 flex items-center justify-between">
-                  <div>
-                    <div className="font-medium">Dataset #{ds.id}</div>
-                    <div className="text-sm text-[#9AA0B2]">{ds.description}</div>
+                <div key={ds.id} role="listitem" className="py-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="font-medium">Dataset #{ds.id}</div>
+                      <div className="text-sm text-[#9AA0B2]">{ds.description}</div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="text-right text-sm text-[#9AA0B2]">
+                        {ds.stats?.variants || 0} variants • {ds.stats?.genes || 0} genes
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setConsentDatasetId(consentDatasetId === ds.id ? null : ds.id)}
+                        style={{
+                          padding: '0.3rem 0.65rem',
+                          borderRadius: '0.4rem',
+                          border: '1px solid rgba(139,92,246,0.3)',
+                          background: consentDatasetId === ds.id ? 'rgba(139,92,246,0.15)' : 'transparent',
+                          color: '#A78BFA',
+                          cursor: 'pointer',
+                          fontSize: '0.75rem',
+                          fontWeight: 500,
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {consentDatasetId === ds.id ? '✕ Consent' : '🔐 Consent'}
+                      </button>
+                    </div>
                   </div>
-                  <div className="text-right text-sm text-[#9AA0B2]">
-                    {ds.stats?.variants || 0} variants • {ds.stats?.genes || 0} genes
-                  </div>
+                  {consentDatasetId === ds.id && (
+                    <div style={{ marginTop: '0.75rem' }}>
+                      <ConsentManagementPanel
+                        dataId={ds.id}
+                        contractService={contractService}
+                        onSaved={() => toast.success('Consent policy updated!')}
+                      />
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
