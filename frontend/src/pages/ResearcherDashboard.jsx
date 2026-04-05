@@ -160,7 +160,7 @@ export default function ResearcherDashboard() {
               </div>
             ))}
           </div>
-        </div>
+        </SectionCard>
       </main>
 
       {/* Screen reader live region for purchase status */}
