@@ -27,6 +27,7 @@ const Navigation = () => {
     { label: 'How it works', href: '#how-it-works' },
     { label: 'Researchers Dashboard', href: '/researcher' },
     { label: 'Upload Dataset', href: '/upload' },
+    { label: 'Consent', href: '/consent' },
     { label: 'Dashboard', href: '/' }
   ];
 

@@ -5,6 +5,17 @@ export { default as TxBatchPanel } from './TxBatchPanel';
 export { default as WalletSelector } from './WalletSelector';
 export { default as WalletStatusIndicator } from './WalletStatusIndicator';
 
+// Consent management
+export {
+  ConsentManagementPanel,
+  ConsentPolicyForm,
+  ConsentToggle,
+  JurisdictionSelector,
+  GdprActionsPanel,
+  ConsentStatusBadge,
+  ConsentSummaryCard,
+} from './consent/index.js';
+
 // Upload wizard
 export {
   DatasetUploadWizard,
