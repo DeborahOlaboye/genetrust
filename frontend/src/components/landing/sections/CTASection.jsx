@@ -67,6 +67,12 @@ const CTASection = () => {
               </button>
             </a>
 
+            <a href="/consent">
+              <button className="px-8 py-4 text-[#06B6D4] border border-[#06B6D4]/30 rounded-lg hover:bg-[#06B6D4]/5 hover:border-[#06B6D4]/50 transition-all duration-300 min-w-[180px]">
+                Manage Consent
+              </button>
+            </a>
+
             <a href="https://github.com/DeborahOlaboye/genetrust">
               <button className="px-8 py-4 text-[#F59E0B] border border-[#F59E0B]/30 rounded-lg hover:bg-[#F59E0B]/5 hover:border-[#F59E0B]/50 transition-all duration-300 min-w-[180px]">
                 Documentation
