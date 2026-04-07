@@ -1,1250 +1,136 @@
-;; dataset-registry.clar
-;; Core contract for dataset registry and access control on the Stacks blockchain
-;; Handles dataset ownership, metadata, pricing tiers, and access delegation
+;; genetic-data.clar
+;; Dataset registry and access control for GeneTrust
 
-;; Import trait and access control
-(impl-trait .dataset-registry-trait.dataset-registry-trait)
-(use-trait access-trait .access-control.access-control-trait)
-
-;; Import error definitions
-(use-trait err-context .error-definitions.error-context)
-
-;; Error codes mapped to HTTP status
+;; Errors
 (define-constant ERR-NOT-AUTHORIZED (err u401))
-(define-constant ERR-INVALID-DATA (err u400))
-(define-constant ERR-DATA-EXISTS (err u409))
-(define-constant ERR-DATA-NOT-FOUND (err u404))
-(define-constant ERR-INVALID-ACCESS_LEVEL (err u400))
-(define-constant ERR-RATE_LIMIT (err u429))
-(define-constant ERR-CONTRACT_PAUSED (err u503))
-(define-constant ERR-ACCESS_DENIED (err u403))
-(define-constant ERR-INVALID-BLOCK (err u400))
-(define-constant ERR-INVALID-PRICE (err u400))
+(define-constant ERR-NOT-FOUND (err u404))
+(define-constant ERR-ALREADY-EXISTS (err u409))
 (define-constant ERR-INVALID-INPUT (err u400))
 
-;; Clarity 4 principal-of? / delegation error codes
-(define-constant ERR-INVALID-PUBKEY (err u422))
-(define-constant ERR-PUBKEY-MISMATCH (err u403))
-(define-constant ERR-DELEGATION-NOT-FOUND (err u404))
-(define-constant ERR-DELEGATION-EXPIRED (err u403))
-(define-constant ERR-MULTISIG-THRESHOLD (err u400))
-(define-constant ERR-ALREADY-APPROVED (err u409))
-(define-constant ERR-ACTION-NOT-FOUND (err u404))
+;; Access levels
+(define-constant ACCESS-BASIC u1)
+(define-constant ACCESS-DETAILED u2)
+(define-constant ACCESS-FULL u3)
 
-;; Error context tracking
-(define-map error-context 
-    { error-id: uint }
-    {
-        error-code: uint,
-        message: (string-utf8 256),
-        context-data: (string-utf8 512),
-        timestamp: uint,
-        operator: principal
-    }
-)
-(define-data-var error-counter uint u0)
+;; Access expires after ~30 days of blocks
+(define-constant ACCESS-EXPIRY-BLOCKS u8640)
 
-;; Constants
-(define-constant BLOCKS_PER_DAY 144)  ;; ~1 day (assuming 10 min/block)
-(define-constant MAX_OPS_PER_WINDOW 10)  ;; Max operations per rate limit window
-(define-constant ACCESS_EXPIRATION_BLOCKS 8640)  ;; ~30 days (144 * 60)
-(define-constant ACCESS_LEVEL_BASIC u1)
-(define-constant ACCESS_LEVEL_DETAILED u2)
-(define-constant ACCESS_LEVEL_FULL u3)
+;; Dataset counter
+(define-data-var next-data-id uint u1)
 
-;; Rate limiting constants
-(define-constant RATE_LIMIT_WINDOW BLOCKS_PER_DAY)  ;; Reuse constant
-(define-constant MAX_OPERATIONS_PER_WINDOW MAX_OPS_PER_WINDOW)  ;; Reuse constant
-
-;; Contract state
-(define-data-var is-paused bool false)
-(define-data-var contract-owner principal tx-sender)
-;; Remove unused vars to save storage
-(define-data-var operation-window-start uint u0)  ;; Keep only necessary vars
-;; Counter used by analytics functions to track total access-grant events
-(define-data-var audit-trail-counter uint u0)
-
-;; Data structures
-;; Optimized data structure with minimal storage
-(define-map genetic-datasets
+;; Datasets
+(define-map datasets
     { data-id: uint }
     {
         owner: principal,
+        metadata-hash: (buff 32),
+        storage-url: (string-utf8 200),
+        description: (string-utf8 200),
+        access-level: uint,
         price: uint,
-        access-level: uint,               ;; Using constants: ACCESS_LEVEL_*
-        metadata-hash: (buff 32),         ;; Hash of genetic data metadata
-        encrypted-storage-url: (string-utf8 200),  ;; Reduced from 256 to save gas
-        description: (string-utf8 200),   ;; Reduced from 256 to save gas
-        created-at: uint,                 ;; Block height when created
-        updated-at: uint,                 ;; Block height when last updated
-        is-active: bool                   ;; Whether the dataset is active
+        is-active: bool,
+        created-at: uint
     }
 )
 
-;; Track access rights for each data set
+;; Access rights granted to users
 (define-map access-rights
     { data-id: uint, user: principal }
     {
-        access-level: uint,               ;; Using constants: ACCESS_LEVEL_*
-        expiration: uint,                 ;; Block height when access expires
-        granted-by: principal,            ;; Who granted the access
-        created-at: uint                  ;; When access was granted
-    }
-)
-
-;; Track rate limiting for operations
-(define-map operation-counts
-    { user: principal }
-    {
-        count: uint,
-        window-start: uint
-    }
-)
-
-;; Track dataset version history for historical queries
-(define-map dataset-version-history
-    { data-id: uint, version: uint }
-    {
-        owner: principal,
-        price: uint,
         access-level: uint,
-        metadata-hash: (buff 32),
-        encrypted-storage-url: (string-utf8 200),
-        description: (string-utf8 200),
-        created-at: uint,
-        updated-at: uint,
-        is-active: bool,
-        block-height: uint
+        expires-at: uint,
+        granted-by: principal
     }
 )
 
-;; Track current version for each dataset
-(define-map dataset-versions
-    { data-id: uint }
-    { current-version: uint }
-)
-
-;; Track historical access changes
-(define-map access-history
-    { data-id: uint, user: principal, change-id: uint }
-    {
-        old-access-level: uint,
-        new-access-level: uint,
-        changed-at: uint,
-        changed-by: principal,
-        is-active: bool
-    }
-)
-
-;; Track access change counter per dataset-user pair
-(define-map access-change-count
-    { data-id: uint, user: principal }
-    { count: uint }
-)
-
-;; ── Clarity 4 principal-of? delegation maps ─────────────────────────────────
-
-;; Track active delegations: owner delegates read/write access to another principal
-;; using cryptographic proof via principal-of? on a compressed secp256k1 pubkey
-(define-map delegations
-    { data-id: uint, delegator: principal }
-    {
-        delegate:       principal,   ;; Who receives the delegated access
-        access-level:   uint,        ;; What level they can exercise
-        granted-at:     uint,        ;; Block height when delegation was made
-        expires-at:     uint,        ;; Block height when delegation expires
-        pubkey-hash:    (buff 20),   ;; hash160 of the delegator's pubkey used
-        is-active:      bool
-    }
-)
-
-;; Delegation expiration window: ~7 days at Nakamoto block times
-(define-constant DELEGATION-EXPIRY-BLOCKS u1008)
-
-;; ── Multi-signature support maps ─────────────────────────────────────────────
-;; Multi-sig actions require N-of-M approvals from verified principals
-
-;; Pending multisig actions (e.g. ownership transfer, bulk access grant)
-(define-map multisig-actions
-    { action-id: uint }
-    {
-        data-id:       uint,
-        action-type:   (string-utf8 50),    ;; "transfer-ownership" | "bulk-grant" | "deactivate"
-        proposer:      principal,
-        target:        principal,            ;; The beneficiary/new owner
-        access-level:  uint,
-        threshold:     uint,                 ;; Required number of approvals
-        approval-count:uint,
-        executed:      bool,
-        proposed-at:   uint,
-        expires-at:    uint
-    }
-)
-
-;; Track which principals have approved a given action
-(define-map multisig-approvals
-    { action-id: uint, approver: principal }
-    { approved-at: uint, pubkey-hash: (buff 20) }
-)
-
-;; Global action counter
-(define-data-var next-action-id uint u1)
-
-;; Multisig expiry: ~3 days
-(define-constant MULTISIG-EXPIRY-BLOCKS u432)
-
-;; Events
-;; Use more efficient event encoding
-(define-constant EVENT-DATA-REGISTERED 0x01)
-(define-constant EVENT-DATA-UPDATED 0x02)
-(define-constant EVENT-ACCESS-GRANTED 0x03)
-(define-constant EVENT-ACCESS-REVOKED 0x04)
-(define-constant EVENT-DELEGATION-GRANTED 0x05)
-(define-constant EVENT-DELEGATION-REVOKED 0x06)
-(define-constant EVENT-MULTISIG-PROPOSED 0x07)
-(define-constant EVENT-MULTISIG-EXECUTED 0x08)
-
-;; Security Helpers
-(define-read-only (is-contract-paused) (var-get is-paused))
-
-;; Error context helper: Record error with context for debugging
-(define-private (record-error (error-code uint) (message (string-utf8 256)) (context (string-utf8 512)))
-    (let ((error-id (var-get error-counter)))
-        (begin
-            (var-set error-counter (+ error-id u1))
-            (map-set error-context
-                { error-id: error-id }
-                {
-                    error-code: error-code,
-                    message: message,
-                    context-data: context,
-                    timestamp: stacks-block-height,
-                    operator: tx-sender
-                }
-            )
-            error-id
-        )
-    )
-)
-
-;; Error helper: Get error context
-(define-read-only (get-error-context (error-id uint))
-    (map-get? error-context { error-id: error-id })
-)
-
-;; Clarity 3 helper: min for uint
-(define-private (min-u (a uint) (b uint)) (if (<= a b) a b))
-
-;; Clarity 4 Helper: Safe string to uint conversion
-(define-private (safe-string-to-uint (input (string-utf8 100)))
-    (match (string-to-uint? input)
-        value (ok value)
-        error (err ERR-INVALID-DATA)
-    )
-)
-
-;; Clarity 4 Helper: Safe string slicing with bounds checking
-(define-private (safe-slice-utf8 (input (string-utf8 500)) (start uint) (len uint))
-    (match (slice? input start len)
-        sliced (ok sliced)
-        error (err ERR-INVALID-DATA)
-    )
-)
-
-(define-private (check-paused)
-    (if (is-contract-paused)
-        (begin
-            (record-error u503 u"Contract is paused" u"check-paused")
-            ERR-CONTRACT_PAUSED
-        )
-        (ok true)
-    )
-)
-
-(define-private (check-rate-limit (user principal))
-    (let (
-        (current-window (get-window-start))
-        (user-stats (default-to 
-            { count: u1, window-start: current-window }
-            (map-get? operation-counts { user: user })
-        ))
-    )
-        (if (is-eq (get window-start user-stats) current-window)
-            (let ((new-count (+ (get count user-stats) u1)))
-                (if (> new-count MAX_OPERATIONS_PER_WINDOW)
-                    (begin
-                        (record-error u429 u"Rate limit exceeded" u"user exceeded operation quota in window")
-                        ERR-RATE_LIMIT
-                    )
-                    (begin
-                        (map-set operation-counts 
-                            { user: user } 
-                            { count: new-count, window-start: current-window }
-                        )
-                        (ok true)
-                    )
-                )
-            )
-            (begin
-                (map-set operation-counts 
-                    { user: user } 
-                    { count: u1, window-start: current-window }
-                )
-                (ok true)
-            )
-        )
-    )
-)
-
-(define-read-only (get-window-start)
-    (let ((current-block stacks-block-height))
-        (- current-block (mod current-block RATE_LIMIT_WINDOW))
-    )
-)
-
-(define-read-only (get-dataset-owner (data-id uint))
-    (match (map-get? genetic-datasets { data-id: data-id })
-        dataset (some (get owner dataset))
-        none
-    )
-)
-
-(define-private (only-owner (data-id uint))
-    (let ((owner (unwrap! (get-dataset-owner data-id) ERR-DATA-NOT-FOUND)))
-        (asserts! (is-eq owner tx-sender) ERR-NOT-AUTHORIZED)
-        (ok (unwrap! (map-get? genetic-datasets { data-id: data-id }) ERR-DATA-NOT-FOUND))
-    )
-)
-
-(define-private (validate-access-level (level uint))
-    (begin
-        (asserts! (and (>= level u1) (<= level u3)) ERR-INVALID-ACCESS_LEVEL)
-        (ok true)
-    )
-)
-
-;; Register a new genetic dataset
-(define-public (register-genetic-data
-    (data-id uint)
-    (price (string-utf8 20))  ;; Accept price as string for better UX
-    (access-level uint)
+;; Register a new dataset
+(define-public (register-dataset
     (metadata-hash (buff 32))
     (storage-url (string-utf8 200))
-    (description (string-utf8 200)))
-    
-    (try! (check-paused))
-    (try! (check-rate-limit tx-sender))
-    
-    ;; Validate input using Clarity 4 features
-    (asserts! (is-none (map-get? genetic-datasets { data-id: data-id })) ERR-DATA-EXISTS)
-    
-    ;; Validate access level
-    (try! (validate-access-level access-level))
-    
-    ;; Validate URL and description lengths
-    (asserts! (<= (len storage-url) u200) ERR-INVALID-INPUT)
-    (asserts! (<= (len description) u200) ERR-INVALID-INPUT)
-    
-    ;; Convert string price to uint with validation
-    (let ((parsed-price (try! (safe-string-to-uint price))))
-        (asserts! (> parsed-price u0) ERR-INVALID-PRICE)
-        
-        ;; Create new dataset record
-        (let ((new-dataset {
-                    owner: tx-sender,
-                    price: parsed-price,
-                    access-level: access-level,
-                    metadata-hash: metadata-hash,
-                    encrypted-storage-url: (try! (safe-slice-utf8 storage-url u0 (min-u (len storage-url) u200))),
-                    description: description,
-                    created-at: stacks-block-height,
-                    updated-at: stacks-block-height,
-                    is-active: true
-                }))
-            (begin
-                ;; Record initial version
-                (try! (record-dataset-version data-id new-dataset))
-                
-                ;; Set the dataset
-                (map-set genetic-datasets { data-id: data-id } new-dataset)
-                
-                (ok (print { 
-                    event: EVENT-DATA-REGISTERED, 
-                    data-id: data-id, 
-                    by: tx-sender,
-                    block: stacks-block-height,
-                    tx: tx-sender
-                }))
-            )
+    (description (string-utf8 200))
+    (access-level uint)
+    (price uint))
+    (let ((data-id (var-get next-data-id)))
+        (asserts! (> (len metadata-hash) u0) ERR-INVALID-INPUT)
+        (asserts! (> (len storage-url) u0) ERR-INVALID-INPUT)
+        (asserts! (> (len description) u0) ERR-INVALID-INPUT)
+        (asserts! (> price u0) ERR-INVALID-INPUT)
+        (asserts! (and (>= access-level ACCESS-BASIC) (<= access-level ACCESS-FULL)) ERR-INVALID-INPUT)
+        (map-set datasets { data-id: data-id }
+            {
+                owner: tx-sender,
+                metadata-hash: metadata-hash,
+                storage-url: storage-url,
+                description: description,
+                access-level: access-level,
+                price: price,
+                is-active: true,
+                created-at: stacks-block-height
+            }
         )
+        (var-set next-data-id (+ data-id u1))
+        (ok data-id)
     )
 )
 
-;; Update dataset metadata
-(define-public (update-genetic-data
-    (data-id uint)
-    (new-price (optional (string-utf8 20)))
-    (new-access-level (optional uint))
-    (new-metadata-hash (optional (buff 32)))
-    (new-storage-url (optional (string-utf8 200)))
-    (new-description (optional (string-utf8 200)))
-)
-    (try! (check-paused))
-    (try! (check-rate-limit tx-sender))
-    
-    (let ((dataset (try! (only-owner data-id))))
-        
-        ;; Convert string price to uint if provided (using Clarity 4's string-to-uint?)
-        (let ((parsed-price 
-                (if (is-some new-price) 
-                    (try! (safe-string-to-uint (unwrap-panic new-price)))
-                    (get price dataset)
-                )))
-            
-            ;; Process description with safe slicing if provided
-            (let ((processed-description 
-                    (if (is-some new-description)
-                        (let ((desc (unwrap-panic new-description)))
-                            ;; Truncate to first 200 chars if needed using safe-slice-utf8
-                            (try! (safe-slice-utf8 desc u0 (min-u (len desc) u200)))
-                        )
-                        (get description dataset)
-                    )))
-                
-                ;; Only update what's provided
-                (let ((updates {
-                    owner: (get owner dataset),
-                    price: parsed-price,
-                    access-level: (default-to (get access-level dataset) new-access-level),
-                    metadata-hash: (default-to (get metadata-hash dataset) new-metadata-hash),
-                    encrypted-storage-url: (default-to (get encrypted-storage-url dataset) new-storage-url),
-                    description: processed-description,
-                    created-at: (get created-at dataset),
-                    updated-at: stacks-block-height,
-                    is-active: (get is-active dataset)
-                }))
-                    
-                    ;; Validate access level if it's being updated
-                    (when (is-some new-access-level)
-                        (asserts! (and (>= (get access-level updates) ACCESS_LEVEL_BASIC) 
-                                      (<= (get access-level updates) ACCESS_LEVEL_FULL)) 
-                                 ERR-INVALID-ACCESS_LEVEL)
-                    )
-                    
-                    ;; Record version history before updating
-                    (try! (record-dataset-version data-id updates))
-                    
-                    (map-set genetic-datasets { data-id: data-id } updates)
-                    (ok (print { 
-                        event: EVENT-DATA-UPDATED, 
-                        data-id: data-id, 
-                        by: tx-sender,
-                        block: stacks-block-height,
-                        tx: tx-sender
-                    }))
-                )
-            )
-        )
-    )
-)
-
-;; Implement trait functions
-
-;; Get data details - implements trait function
-(define-public (get-data-details (data-id uint))
-    (match (map-get? genetic-datasets { data-id: data-id })
-        dataset (ok {
-            owner: (get owner dataset),
-            price: (get price dataset),
-            access-level: (get access-level dataset),
-            metadata-hash: (get metadata-hash dataset)
-        })
-        (err u404)
-    )
-)
-
-;; Verify access rights - implements trait function
-(define-read-only (has-access (data-id uint) (user principal) (required-level uint))
-    (match (map-get? access-rights { data-id: data-id, user: user })
-        rights (and 
-            (>= (get access-level rights) required-level)
-            (< stacks-block-height (get expiration rights))
-        )
-        false
-    )
-)
-
-(define-read-only (verify-access-rights (data-id uint) (user principal))
-    (has-access data-id user ACCESS_LEVEL_BASIC)
-)
-
-;; Grant access - implements trait function
+;; Grant access to a user (owner only)
 (define-public (grant-access (data-id uint) (user principal) (access-level uint))
-    (try! (check-paused))
-    
-    (let ((dataset (unwrap! (map-get? genetic-datasets { data-id: data-id }) ERR-DATA-NOT-FOUND)))
-        (try! (only-owner data-id))
-        
-        ;; Ensure access level is valid and doesn't exceed dataset's max level
-        (asserts! (and (>= access-level ACCESS_LEVEL_BASIC) 
-                      (<= access-level (get access-level dataset))) 
-                 ERR-INVALID-ACCESS_LEVEL)
-        
-        ;; Record old access level for history
-        (let ((old-access (match (map-get? access-rights { data-id: data-id, user: user })
-            rights (get access-level rights)
-            u0
-        )))
-            (begin
-                ;; Record the change in history
-                (try! (record-access-change data-id user old-access access-level))
-                
-                (map-set access-rights
-                    { data-id: data-id, user: user }
-                    {
-                        access-level: access-level,
-                        expiration: (+ stacks-block-height ACCESS_EXPIRATION_BLOCKS),
-                        granted-by: tx-sender,
-                        created-at: stacks-block-height
-                    }
-                )
-                (ok (print { 
-                    event: EVENT-ACCESS-GRANTED, 
-                    data-id: data-id, 
-                    to: user, 
-                    level: access-level,
-                    expires-at: (+ stacks-block-height ACCESS_EXPIRATION_BLOCKS)
-                }))
-            )
+    (let ((dataset (unwrap! (map-get? datasets { data-id: data-id }) ERR-NOT-FOUND)))
+        (asserts! (> data-id u0) ERR-INVALID-INPUT)
+        (asserts! (not (is-eq user tx-sender)) ERR-INVALID-INPUT)
+        (asserts! (is-eq tx-sender (get owner dataset)) ERR-NOT-AUTHORIZED)
+        (asserts! (and (>= access-level ACCESS-BASIC) (<= access-level ACCESS-FULL)) ERR-INVALID-INPUT)
+        (map-set access-rights { data-id: data-id, user: user }
+            {
+                access-level: access-level,
+                expires-at: (+ stacks-block-height ACCESS-EXPIRY-BLOCKS),
+                granted-by: tx-sender
+            }
         )
+        (ok true)
     )
 )
 
-;; Read-only functions for data discovery
-
-;; Get dataset details including description and URLs
-(define-read-only (get-dataset-details (data-id uint))
-    (map-get? genetic-datasets { data-id: data-id })
+;; Revoke access from a user (owner only)
+(define-public (revoke-access (data-id uint) (user principal))
+    (let ((dataset (unwrap! (map-get? datasets { data-id: data-id }) ERR-NOT-FOUND)))
+        (asserts! (> data-id u0) ERR-INVALID-INPUT)
+        (asserts! (not (is-eq user tx-sender)) ERR-INVALID-INPUT)
+        (asserts! (is-eq tx-sender (get owner dataset)) ERR-NOT-AUTHORIZED)
+        (map-delete access-rights { data-id: data-id, user: user })
+        (ok true)
+    )
 )
 
-;; Check if user has access to a dataset
-(define-read-only (get-user-access (data-id uint) (user principal))
+;; Deactivate a dataset (owner only)
+(define-public (deactivate-dataset (data-id uint))
+    (let ((dataset (unwrap! (map-get? datasets { data-id: data-id }) ERR-NOT-FOUND)))
+        (asserts! (> data-id u0) ERR-INVALID-INPUT)
+        (asserts! (is-eq tx-sender (get owner dataset)) ERR-NOT-AUTHORIZED)
+        (map-set datasets { data-id: data-id } (merge dataset { is-active: false }))
+        (ok true)
+    )
+)
+
+;; Read: get dataset info
+(define-read-only (get-dataset (data-id uint))
+    (map-get? datasets { data-id: data-id })
+)
+
+;; Read: check if a user has access
+(define-read-only (get-access (data-id uint) (user principal))
     (map-get? access-rights { data-id: data-id, user: user })
 )
 
-;; Get access change for a specific change ID
-(define-read-only (get-access-change
-    (data-id uint)
-    (user principal)
-    (change-id uint))
-    (map-get? access-history { data-id: data-id, user: user, change-id: change-id })
-)
-
-;; Time-based access analytics: count total changes for a user in time period
-(define-read-only (count-user-access-changes (data-id uint) (user principal))
-    (match (map-get? access-change-count { data-id: data-id, user: user })
-        counts (get count counts)
-        u0
+;; Read: check if access is currently valid (not expired)
+(define-read-only (has-valid-access (data-id uint) (user principal))
+    (match (map-get? access-rights { data-id: data-id, user: user })
+        rights (ok (< stacks-block-height (get expires-at rights)))
+        (ok false)
     )
 )
 
-;; Get dataset change timeline
-(define-read-only (get-dataset-change-timeline (data-id uint))
-    {
-        data-id: data-id,
-        total-versions: (match (map-get? dataset-versions { data-id: data-id })
-            ver-info (get current-version ver-info)
-            u0
-        ),
-        current-block: stacks-block-height
-    }
-)
-
-;; Historical access state query
-(define-read-only (get-historical-access-state
-    (data-id uint)
-    (user principal)
-    (at-block uint))
-    {
-        data-id: data-id,
-        user: user,
-        block-height: at-block,
-        current-access: (map-get? access-rights { data-id: data-id, user: user })
-    }
-)
-
-;; Transfer ownership of a dataset
-(define-public (transfer-ownership (data-id uint) (new-owner principal))
-    (try! (check-paused))
-    
-    (let ((dataset (unwrap! (map-get? genetic-datasets { data-id: data-id }) ERR-DATA-NOT-FOUND)))
-        (try! (only-owner data-id))
-        
-        (map-set genetic-datasets
-            { data-id: data-id }
-            {
-                owner: new-owner,
-                price: (get price dataset),
-                access-level: (get access-level dataset),
-                metadata-hash: (get metadata-hash dataset),
-                encrypted-storage-url: (get encrypted-storage-url dataset),
-                description: (get description dataset),
-                created-at: (get created-at dataset),
-                updated-at: stacks-block-height,
-                is-active: (get is-active dataset)
-            }
-        )
-        (ok (print { 
-            event: "ownership-transferred", 
-            data-id: data-id, 
-            from: tx-sender, 
-            to: new-owner 
-        }))
-    )
-)
-
-;; Batch operations using Clarity 4 fold/map
-;; Helper to grant access sequentially with short-circuit on first error
-(define-private (batch-grant-helper (acc (response bool uint)) (item (tuple (0 uint) (1 principal) (2 uint))))
-    (if (is-err acc)
-        acc
-        (let (
-            (gid (get 0 item))
-            (usr (get 1 item))
-            (lvl (get 2 item))
-        )
-            (let ((res (grant-access gid usr lvl)))
-                (if (is-ok res) acc res)
-            )
-        )
-    )
-)
-
-;; Helper: Get dataset by version ID
-(define-private (get-dataset-version (data-id uint) (version uint))
-    (match (map-get? dataset-version-history { data-id: data-id, version: version })
-        hist (ok hist)
-        (err ERR-DATA-NOT-FOUND)
-    )
-)
-
-;; Historical query: Get dataset state at a specific block height (Clarity 4 at-block)
-(define-read-only (get-dataset-at-block 
-    (data-id uint) 
-    (block-height uint))
-  (match (get-block-info? id-header-hash block-height)
-    header (ok {
-        data-id: data-id,
-        block-height: block-height,
-        dataset: (map-get? genetic-datasets { data-id: data-id }),
-        note: "State at specified block height"
-    })
-    (err ERR-INVALID-BLOCK)
-  )
-)
-
-;; Get all versions of a dataset
-(define-read-only (get-dataset-versions (data-id uint))
-    (match (map-get? dataset-versions { data-id: data-id })
-        version-map {
-            data-id: data-id,
-            current-version: (get current-version version-map),
-            total-versions: (get current-version version-map)
-        }
-        none
-    )
-)
-
-;; Get specific version of dataset history
-(define-read-only (get-dataset-version-at (data-id uint) (version uint))
-    (get-dataset-version data-id version)
-)
-
-;; Check dataset access history for a user
-(define-read-only (get-access-history 
-    (data-id uint) 
-    (user principal))
-    {
-        data-id: data-id,
-        user: user,
-        change-count: (default-to { count: u0 } (map-get? access-change-count { data-id: data-id, user: user }))
-    }
-)
-
-;; Helper: Record dataset version when modified
-(define-private (record-dataset-version (data-id uint) (dataset (tuple (owner principal) (price uint) (access-level uint) (metadata-hash (buff 32)) (encrypted-storage-url (string-utf8 200)) (description (string-utf8 200)) (created-at uint) (updated-at uint) (is-active bool))))
-    (let (
-        (current-versions (default-to { current-version: u0 } (map-get? dataset-versions { data-id: data-id })))
-        (next-version (+ (get current-version current-versions) u1))
-    )
-        (begin
-            (map-set dataset-version-history
-                { data-id: data-id, version: next-version }
-                (merge dataset { block-height: stacks-block-height })
-            )
-            (map-set dataset-versions
-                { data-id: data-id }
-                { current-version: next-version }
-            )
-            (ok next-version)
-        )
-    )
-)
-
-;; Analytics: Get total access grants for a dataset
-(define-read-only (get-total-access-grants (data-id uint))
-    {
-        data-id: data-id,
-        total-grants: (var-get audit-trail-counter)
-    }
-)
-
-;; Analytics: Get dataset lifecycle information
-(define-read-only (get-dataset-lifecycle (data-id uint))
-    (match (map-get? genetic-datasets { data-id: data-id })
-        dataset {
-            data-id: data-id,
-            created-at: (get created-at dataset),
-            last-updated: (get updated-at dataset),
-            blocks-since-creation: (- stacks-block-height (get created-at dataset)),
-            is-active: (get is-active dataset),
-            owner: (get owner dataset)
-        }
-        none
-    )
-)
-
-;; Analytics: Get data modification frequency
-(define-read-only (get-modification-frequency (data-id uint))
-    (match (map-get? dataset-versions { data-id: data-id })
-        version-info {
-            data-id: data-id,
-            total-modifications: (get current-version version-info),
-            current-block: stacks-block-height
-        }
-        none
-    )
-)
-
-;; Helper: Record access level change history
-(define-private (record-access-change
-    (data-id uint)
-    (user principal)
-    (old-level uint)
-    (new-level uint))
-    (let (
-        (change-count (default-to { count: u0 } (map-get? access-change-count { data-id: data-id, user: user })))
-        (next-change-id (+ (get count change-count) u1))
-    )
-        (begin
-            (map-set access-history
-                { data-id: data-id, user: user, change-id: next-change-id }
-                {
-                    old-access-level: old-level,
-                    new-access-level: new-level,
-                    changed-at: stacks-block-height,
-                    changed-by: tx-sender,
-                    is-active: true
-                }
-            )
-            (map-set access-change-count
-                { data-id: data-id, user: user }
-                { count: next-change-id }
-            )
-            (ok next-change-id)
-        )
-    )
-)
-
-;; Public batch grant that zips three lists into tuples and folds over them
-(define-public (batch-grant-access 
-    (data-ids (list 50 uint))
-    (users (list 50 principal))
-    (access-levels (list 50 uint)))
-  (begin
-    (try! (check-paused))
-    (asserts! (and (is-eq (len data-ids) (len users)) (is-eq (len users) (len access-levels))) ERR-INVALID-DATA)
-    ;; Each grant will validate ownership and access-level; fold short-circuits on error
-    (fold batch-grant-helper (zip data-ids users access-levels) (ok true))
-  )
-)
-
-;; Map-based bulk grant returning a list of success flags for each tuple
-(define-public (bulk-grant-access-map
-    (data-ids (list 50 uint))
-    (users (list 50 principal))
-    (access-levels (list 50 uint)))
-  (begin
-    (try! (check-paused))
-    (asserts! (and (is-eq (len data-ids) (len users)) (is-eq (len users) (len access-levels))) ERR-INVALID-DATA)
-    (ok (map (lambda (t)
-        (is-ok (grant-access (get 0 t) (get 1 t) (get 2 t)))
-    ) (zip data-ids users access-levels)))
-  )
-)
-
-;; Batch dataset registration using fold
-(define-private (batch-register-helper (acc (response bool uint)) (item (tuple (0 uint) (1 (string-utf8 20)) (2 uint) (3 (buff 32)) (4 (string-utf8 200)) (5 (string-utf8 200)))))
-    (if (is-err acc)
-        acc
-        (let (
-            (did (get 0 item))
-            (price (get 1 item))
-            (lvl (get 2 item))
-            (mh (get 3 item))
-            (url (get 4 item))
-            (desc (get 5 item))
-        )
-            (let ((res (register-genetic-data did price lvl mh url desc)))
-                (if (is-ok res) acc res)
-            )
-        )
-    )
-)
-
-(define-public (batch-register-datasets (items (list 50 (tuple (0 uint) (1 (string-utf8 20)) (2 uint) (3 (buff 32)) (4 (string-utf8 200)) (5 (string-utf8 200))))))
-  (begin
-    (try! (check-paused))
-    (fold batch-register-helper items (ok true))
-  )
-)
-
-;; Get active datasets count
-(define-read-only (get-active-datasets-count)
-    (var-get audit-trail-counter)
-)
-
-;; Verify dataset version exists
-(define-read-only (dataset-version-exists (data-id uint) (version uint))
-    (is-some (map-get? dataset-version-history { data-id: data-id, version: version }))
-)
-
-;; Get historical ownership chain for a dataset
-(define-read-only (get-dataset-owner-history (data-id uint))
-    {
-        data-id: data-id,
-        current-owner: (match (map-get? genetic-datasets { data-id: data-id })
-            dataset (get owner dataset)
-            none
-        ),
-        total-versions: (match (map-get? dataset-versions { data-id: data-id })
-            version-info (get current-version version-info)
-            u0
-        )
-    }
-)
-
-;; Advanced analytics: Block-based time series for access changes
-(define-read-only (get-access-changes-in-block-range 
-    (data-id uint) 
-    (user principal) 
-    (start-block uint) 
-    (end-block uint))
-    {
-        data-id: data-id,
-        user: user,
-        block-range: { start: start-block, end: end-block },
-        current-block: stacks-block-height,
-        total-changes: (count-user-access-changes data-id user)
-    }
-)
-
-;; Get dataset state change summary for time period
-(define-read-only (get-dataset-change-summary (data-id uint) (start-block uint) (end-block uint))
-    {
-        data-id: data-id,
-        start-block: start-block,
-        end-block: end-block,
-        duration-blocks: (- end-block start-block),
-        total-versions: (match (map-get? dataset-versions { data-id: data-id })
-            version-info (get current-version version-info)
-            u0
-        ),
-        current-block: stacks-block-height
-    }
-)
-
-;; Set contract owner
-(define-public (set-contract-owner (new-owner principal))
-    (begin
-        (asserts! (is-eq tx-sender (var-get contract-owner)) ERR-NOT-AUTHORIZED)
-        (ok (var-set contract-owner new-owner))
-    )
-)
-
-;; Revoke a user's access to a dataset.
-;; Only the dataset owner or the contract owner may revoke access.
-;; Records the revocation in the access-history map for audit purposes.
-(define-public (revoke-access (data-id uint) (user principal))
-    (begin
-        (try! (check-paused))
-        (let (
-            (dataset (unwrap! (map-get? genetic-datasets { data-id: data-id }) ERR-DATA-NOT-FOUND))
-            (rights  (unwrap! (map-get? access-rights   { data-id: data-id, user: user }) ERR-DATA-NOT-FOUND))
-        )
-            (asserts!
-                (or (is-eq tx-sender (get owner dataset))
-                    (is-eq tx-sender (var-get contract-owner)))
-                ERR-NOT-AUTHORIZED
-            )
-            ;; Record the revocation in history before deleting the right
-            (try! (record-access-change data-id user (get access-level rights) u0))
-            (map-delete access-rights { data-id: data-id, user: user })
-            (ok (print {
-                event:   EVENT-ACCESS-REVOKED,
-                data-id: data-id,
-                user:    user,
-                block:   stacks-block-height
-            }))
-        )
-    )
-)
-
-;; ── Clarity 4 principal-of? Delegation API ───────────────────────────────────
-
-;; Secure delegation with cryptographic verification.
-;; The caller provides their compressed secp256k1 public key (33 bytes).
-;; principal-of? derives the Stacks principal from the pubkey and asserts it
-;; matches tx-sender — proving ownership of the private key without revealing it.
-;;
-;; This implements the pattern from issue #97:
-;;   (let ((derived-principal (unwrap! (principal-of? pubkey) ERR-INVALID-PUBKEY)))
-;;     (asserts! (is-eq derived-principal tx-sender) ERR-PUBKEY-MISMATCH)
-;;     (grant-access data-id delegate access-level))
-(define-public (delegate-access
-    (data-id      uint)
-    (delegate     principal)
-    (access-level uint)
-    (pubkey       (buff 33)))   ;; compressed secp256k1 public key (33 bytes)
-    (begin
-        (try! (check-paused))
-        (try! (check-rate-limit tx-sender))
-
-        ;; Cryptographic identity verification via Clarity 4 principal-of?
-        (let ((derived-principal (unwrap! (principal-of? pubkey) ERR-INVALID-PUBKEY)))
-            ;; Verify the pubkey belongs to the caller — no key exposure needed
-            (asserts! (is-eq derived-principal tx-sender) ERR-PUBKEY-MISMATCH)
-
-            ;; Caller must own the dataset to delegate access
-            (try! (only-owner data-id))
-
-            ;; Validate access level
-            (try! (validate-access-level access-level))
-
-            ;; Record the delegation
-            (map-set delegations
-                { data-id: data-id, delegator: tx-sender }
-                {
-                    delegate:       delegate,
-                    access-level:   access-level,
-                    granted-at:     stacks-block-height,
-                    expires-at:     (+ stacks-block-height DELEGATION-EXPIRY-BLOCKS),
-                    pubkey-hash:    (hash160 pubkey),
-                    is-active:      true
-                }
-            )
-
-            ;; Also write the actual access right so delegate can use it
-            (grant-access data-id delegate access-level)
-        )
-    )
-)
-
-;; ── Multi-signature API ───────────────────────────────────────────────────────
-
-;; Propose a multi-sig action for a dataset.
-;; The proposer's identity is verified via principal-of? before the proposal
-;; is registered on-chain.
-(define-public (propose-multisig-action
-    (data-id      uint)
-    (action-type  (string-utf8 50))
-    (target       principal)
-    (access-level uint)
-    (threshold    uint)
-    (pubkey       (buff 33)))
-    (begin
-        (try! (check-paused))
-        (try! (check-rate-limit tx-sender))
-
-        ;; Identity verification — proposer must prove key ownership
-        (let ((derived (unwrap! (principal-of? pubkey) ERR-INVALID-PUBKEY)))
-            (asserts! (is-eq derived tx-sender) ERR-PUBKEY-MISMATCH)
-
-            ;; Proposer must own the dataset
-            (try! (only-owner data-id))
-
-            ;; Threshold must be at least 2 for multi-sig
-            (asserts! (>= threshold u2) ERR-MULTISIG-THRESHOLD)
-
-            (let ((action-id (var-get next-action-id)))
-                (map-set multisig-actions
-                    { action-id: action-id }
-                    {
-                        data-id:        data-id,
-                        action-type:    action-type,
-                        proposer:       tx-sender,
-                        target:         target,
-                        access-level:   access-level,
-                        threshold:      threshold,
-                        approval-count: u1,   ;; Proposer auto-approves
-                        executed:       false,
-                        proposed-at:    stacks-block-height,
-                        expires-at:     (+ stacks-block-height MULTISIG-EXPIRY-BLOCKS)
-                    }
-                )
-                ;; Record proposer's auto-approval
-                (map-set multisig-approvals
-                    { action-id: action-id, approver: tx-sender }
-                    { approved-at: stacks-block-height, pubkey-hash: (hash160 pubkey) }
-                )
-                (var-set next-action-id (+ action-id u1))
-                (ok (print { event: "multisig-proposed", action-id: action-id, data-id: data-id }))
-            )
-        )
-    )
-)
-
-;; Approve a pending multi-sig action.
-;; Each approver provides their compressed pubkey; principal-of? proves identity.
-(define-public (approve-multisig-action (action-id uint) (pubkey (buff 33)))
-    (begin
-        (try! (check-paused))
-
-        ;; Verify approver identity
-        (let ((derived (unwrap! (principal-of? pubkey) ERR-INVALID-PUBKEY)))
-            (asserts! (is-eq derived tx-sender) ERR-PUBKEY-MISMATCH)
-
-            (let ((action (unwrap! (map-get? multisig-actions { action-id: action-id }) ERR-ACTION-NOT-FOUND)))
-                ;; Action must not be expired or already executed
-                (asserts! (not (get executed action)) ERR-NOT-AUTHORIZED)
-                (asserts! (< stacks-block-height (get expires-at action)) ERR-DELEGATION-EXPIRED)
-
-                ;; Prevent double-approval
-                (asserts!
-                    (is-none (map-get? multisig-approvals { action-id: action-id, approver: tx-sender }))
-                    ERR-ALREADY-APPROVED
-                )
-
-                ;; Record this approval
-                (map-set multisig-approvals
-                    { action-id: action-id, approver: tx-sender }
-                    { approved-at: stacks-block-height, pubkey-hash: (hash160 pubkey) }
-                )
-
-                ;; Increment approval count
-                (let ((new-count (+ (get approval-count action) u1)))
-                    (map-set multisig-actions
-                        { action-id: action-id }
-                        (merge action { approval-count: new-count })
-                    )
-                    (ok (print {
-                        event:          "multisig-approved",
-                        action-id:      action-id,
-                        approver:       tx-sender,
-                        approval-count: new-count,
-                        threshold:      (get threshold action)
-                    }))
-                )
-            )
-        )
-    )
-)
-
-;; Execute a multi-sig action once threshold is reached.
-;; Dispatches to the appropriate internal handler based on action-type.
-(define-public (execute-multisig-action (action-id uint) (pubkey (buff 33)))
-    (begin
-        (try! (check-paused))
-
-        ;; Executor identity verification
-        (let ((derived (unwrap! (principal-of? pubkey) ERR-INVALID-PUBKEY)))
-            (asserts! (is-eq derived tx-sender) ERR-PUBKEY-MISMATCH)
-
-            (let ((action (unwrap! (map-get? multisig-actions { action-id: action-id }) ERR-ACTION-NOT-FOUND)))
-                (asserts! (not (get executed action)) ERR-NOT-AUTHORIZED)
-                (asserts! (< stacks-block-height (get expires-at action)) ERR-DELEGATION-EXPIRED)
-
-                ;; Check threshold has been met
-                (asserts! (>= (get approval-count action) (get threshold action)) ERR-MULTISIG-THRESHOLD)
-
-                ;; Mark executed before dispatch (re-entrancy guard)
-                (map-set multisig-actions
-                    { action-id: action-id }
-                    (merge action { executed: true })
-                )
-
-                ;; Dispatch to action handler
-                (let ((result
-                    (if (is-eq (get action-type action) u"transfer-ownership")
-                        (transfer-ownership (get data-id action) (get target action))
-                        (if (is-eq (get action-type action) u"grant-access")
-                            (grant-access (get data-id action) (get target action) (get access-level action))
-                            (if (is-eq (get action-type action) u"revoke-access")
-                                (revoke-access (get data-id action) (get target action))
-                                ERR-INVALID-INPUT
-                            )
-                        )
-                    )
-                ))
-                    (try! result)
-                    (ok (print { event: "multisig-executed", action-id: action-id, by: tx-sender }))
-                )
-            )
-        )
-    )
-)
-
-;; Read-only: Get multisig action details
-(define-read-only (get-multisig-action (action-id uint))
-    (map-get? multisig-actions { action-id: action-id })
-)
-
-;; Read-only: Check if a principal has approved an action
-(define-read-only (has-approved-action (action-id uint) (approver principal))
-    (is-some (map-get? multisig-approvals { action-id: action-id, approver: approver }))
-)
-
-;; Verify that an active, non-expired delegation exists for a data-id
-(define-read-only (verify-delegation (data-id uint) (delegator principal))
-    (match (map-get? delegations { data-id: data-id, delegator: delegator })
-        delegation (ok {
-            is-valid:       (and
-                                (get is-active delegation)
-                                (< stacks-block-height (get expires-at delegation))
-                            ),
-            delegate:       (get delegate delegation),
-            access-level:   (get access-level delegation),
-            expires-at:     (get expires-at delegation),
-            granted-at:     (get granted-at delegation)
-        })
-        ERR-DELEGATION-NOT-FOUND
-    )
-)
-
-;; Get delegation details for off-chain consumers
-(define-read-only (get-delegation (data-id uint) (delegator principal))
-    (map-get? delegations { data-id: data-id, delegator: delegator })
-)
-
-;; Revoke an active delegation. The caller must be the original delegator.
-;; Also revokes the delegate's access right on the dataset.
-(define-public (revoke-delegation (data-id uint) (pubkey (buff 33)))
-    (begin
-        (try! (check-paused))
-
-        ;; Verify caller owns the pubkey via principal-of?
-        (let ((derived-principal (unwrap! (principal-of? pubkey) ERR-INVALID-PUBKEY)))
-            (asserts! (is-eq derived-principal tx-sender) ERR-PUBKEY-MISMATCH)
-
-            ;; Load the delegation
-            (let ((delegation (unwrap!
-                    (map-get? delegations { data-id: data-id, delegator: tx-sender })
-                    ERR-DELEGATION-NOT-FOUND)))
-
-                ;; Mark inactive instead of deleting, preserving audit trail
-                (map-set delegations
-                    { data-id: data-id, delegator: tx-sender }
-                    (merge delegation { is-active: false })
-                )
-
-                ;; Revoke the delegate's access right
-                (try! (revoke-access data-id (get delegate delegation)))
-
-                (ok (print {
-                    event:      "delegation-revoked",
-                    data-id:    data-id,
-                    delegator:  tx-sender,
-                    delegate:   (get delegate delegation),
-                    block:      stacks-block-height
-                }))
-            )
-        )
-    )
-)
-
-;; ── Clarity 4 contract-of / Dynamic Contract Discovery ───────────────────────
-;; The functions below integrate with the on-chain contract-registry to enable
-;; dynamic contract resolution.  The canonical Clarity 4 pattern is:
-;;
-;;   (define-public (action-via-registry (registry <contract-registry-trait>))
-;;     (let ((target-principal (try! (contract-call? registry get-latest-version u"exchange"))))
-;;       ;; target-principal is the live exchange contract.
-;;       ;; When the caller already holds a trait-typed reference to it they can
-;;       ;; call (contract-of their-ref) and compare against target-principal to
-;;       ;; prove they received the genuine registered contract.
-;;       (ok target-principal)))
-;;
-;; These helpers expose that same lookup for callers that only have access to
-;; the dataset-registry contract.
-
-;; Resolve the current active principal for any named slot in the registry.
-;; Delegates to the deployed contract-registry instance.
-(define-public (resolve-contract
-    (registry <contract-registry-trait>)
-    (name     (string-utf8 100)))
-    (begin
-        (try! (check-paused))
-        (contract-call? registry get-latest-version name)
-    )
-)
-
-;; Verify that a caller-supplied contract principal is the registered latest
-;; version for a named slot.  This is the safety check that should precede any
-;; dynamic dispatch in consuming code.
-(define-public (verify-registered-contract
-    (registry           <contract-registry-trait>)
-    (name               (string-utf8 100))
-    (contract-principal principal))
-    (begin
-        (try! (check-paused))
-        (let ((expected (try! (contract-call? registry get-latest-version name))))
-            (asserts! (is-eq expected contract-principal) ERR-NOT-AUTHORIZED)
-            (ok true)
-        )
-    )
-)
-
-;; Read-only version lookup — off-chain callers can discover which principal
-;; is currently registered without spending gas on a public call.
-(define-read-only (get-registered-principal
-    (registry <contract-registry-trait>)
-    (name     (string-utf8 100)))
-    ;; Clarity read-only functions cannot call other contracts' public functions,
-    ;; so we return a note directing callers to use resolve-contract or query the
-    ;; contract-registry directly.
-    { note: u"Use resolve-contract or query .contract-registry directly", name: name }
-)
-
-;; Registry-verified access grant.
-;; Before recording the access right the function confirms that tx-sender is
-;; the currently registered exchange contract, preventing rogue callers from
-;; writing access records directly to this contract.
-(define-public (grant-access-with-registry
-    (registry     <contract-registry-trait>)
-    (data-id      uint)
-    (user         principal)
-    (access-level uint))
-    (begin
-        (try! (check-paused))
-        ;; Resolve the registered exchange principal and verify the caller.
-        (let ((registered-exchange (try! (contract-call? registry get-latest-version u"exchange"))))
-            (asserts! (is-eq tx-sender registered-exchange) ERR-NOT-AUTHORIZED)
-            ;; Delegate to the existing grant-access logic.
-            (grant-access data-id user access-level)
-        )
-    )
-)
-
-;; Discover the capabilities declared by a specific named contract version.
-;; The caller supplies the version number so this works even when the latest
-;; version has been superseded by a newer one.
-(define-public (discover-capabilities
-    (registry <contract-registry-trait>)
-    (name     (string-utf8 100))
-    (version  uint))
-    (begin
-        (try! (check-paused))
-        (try! (contract-call? registry is-version-active name version))
-        (contract-call? registry get-capabilities name version)
-    )
+;; Read: get next data-id (useful for frontend)
+(define-read-only (get-next-data-id)
+    (ok (var-get next-data-id))
 )

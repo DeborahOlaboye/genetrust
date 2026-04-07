@@ -8,88 +8,23 @@ requirements = []
 
 [contracts.dataset-registry]
 path = 'contracts/genetic-data.clar'
-clarity_version = 4
-epoch = 3.1
-
-[contracts.dataset-registry-trait]
-path = 'contracts/dataset-registry-trait.clar'
 clarity_version = 3
 epoch = 3.0
 
 [contracts.exchange]
 path = 'contracts/exchange.clar'
 clarity_version = 3
-epoch = 3.1
+epoch = 3.0
 
 [contracts.attestations]
 path = 'contracts/attestations.clar'
 clarity_version = 3
 epoch = 3.0
 
-[contracts.access-control]
-path = 'contracts/access-control.clar'
-clarity_version = 4
-epoch = 3.1
-
 [contracts.data-governance]
 path = 'contracts/data-governance.clar'
-clarity_version = 4
-epoch = 3.1
-
-[contracts.bitcoin-validator-trait]
-path = 'contracts/bitcoin-validator-trait.clar'
 clarity_version = 3
 epoch = 3.0
-
-[contracts.segwit-validator]
-path = 'contracts/segwit-validator.clar'
-clarity_version = 3
-epoch = 3.0
-
-[contracts.segwit-tx-parser]
-path = 'contracts/segwit-tx-parser.clar'
-clarity_version = 3
-epoch = 3.0
-
-[contracts.bitcoin-multisig]
-path = 'contracts/bitcoin-multisig.clar'
-clarity_version = 3
-epoch = 3.0
-
-[contracts.bitcoin-payment-verifier]
-path = 'contracts/bitcoin-payment-verifier.clar'
-clarity_version = 3
-epoch = 3.0
-
-[contracts.bitcoin-escrow]
-path = 'contracts/bitcoin-escrow.clar'
-clarity_version = 3
-epoch = 3.0
-
-[contracts.subnet-bridge-trait]
-path = 'contracts/subnet-bridge-trait.clar'
-clarity_version = 3
-epoch = 3.1
-
-[contracts.subnet-registry]
-path = 'contracts/subnet-registry.clar'
-clarity_version = 3
-epoch = 3.1
-
-[contracts.cross-subnet-bridge]
-path = 'contracts/cross-subnet-bridge.clar'
-clarity_version = 3
-epoch = 3.1
-
-[contracts.cross-chain-proof-verifier]
-path = 'contracts/cross-chain-proof-verifier.clar'
-clarity_version = 3
-epoch = 3.1
-
-[contracts.subnet-settlement]
-path = 'contracts/subnet-settlement.clar'
-clarity_version = 3
-epoch = 3.1
 
 [repl.analysis]
 passes = ['check_checker']
