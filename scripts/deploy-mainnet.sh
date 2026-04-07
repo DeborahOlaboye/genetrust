@@ -62,7 +62,7 @@ echo ""
 echo "🚀 Starting mainnet deployment..."
 echo ""
 
-clarinet deployment apply --network mainnet -f deployments/default.mainnet-plan.yaml --settings settings/Mainnet.toml
+clarinet deployments apply --mainnet --use-on-disk-deployment-plan --no-dashboard
 
 echo ""
 echo "✅ Deployment complete!"

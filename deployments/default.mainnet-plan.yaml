@@ -2,68 +2,31 @@
 id: 0
 name: Mainnet deployment
 network: mainnet
-stacks-node: "https://api.mainnet.hiro.so"
-bitcoin-node: "https://bitcoind.mainnet.stacks.co"
+stacks-node: "https://api.hiro.so"
+bitcoin-node: "http://blockstack:blockstacksystem@bitcoin.blockstack.com:8332"
 plan:
   batches:
     - id: 0
       transactions:
         - contract-publish:
-            contract-name: dataset-registry-trait
-            expected-sender: "SP101YT8S9464KE0S0TQDGWV83V5H3A37DKEFYSJ0"
-            cost: 5510
-            path: contracts/dataset-registry-trait.clar
-            anchor-block-only: true
-            clarity-version: 2
-      epoch: "2.5"
-    - id: 1
-      transactions:
-        - contract-publish:
-            contract-name: error-definitions
-            expected-sender: "SP101YT8S9464KE0S0TQDGWV83V5H3A37DKEFYSJ0"
-            cost: 95420
-            path: contracts/error-definitions.clar
-            anchor-block-only: true
-            clarity-version: 3
-      epoch: "3.0"
-    - id: 2
-      transactions:
-        - contract-publish:
-            contract-name: attestations
-            expected-sender: "SP101YT8S9464KE0S0TQDGWV83V5H3A37DKEFYSJ0"
-            cost: 121130
-            path: contracts/attestations.clar
-            anchor-block-only: true
-            clarity-version: 3
-        - contract-publish:
-            contract-name: access-control
-            expected-sender: "SP101YT8S9464KE0S0TQDGWV83V5H3A37DKEFYSJ0"
-            cost: 45230
-            path: contracts/access-control.clar
-            anchor-block-only: true
-            clarity-version: 3
-      epoch: "3.1"
-    - id: 3
-      transactions:
-        - contract-publish:
             contract-name: data-governance
-            expected-sender: "SP101YT8S9464KE0S0TQDGWV83V5H3A37DKEFYSJ0"
-            cost: 164390
+            expected-sender: SP3KKFRRWQVJXEJCGM6ZB359EF01VRY86HW6CCD45
+            cost: 18750
             path: contracts/data-governance.clar
             anchor-block-only: true
             clarity-version: 3
         - contract-publish:
-            contract-name: dataset-registry
-            expected-sender: "SP101YT8S9464KE0S0TQDGWV83V5H3A37DKEFYSJ0"
-            cost: 74350
-            path: contracts/genetic-data.clar
+            contract-name: attestations
+            expected-sender: SP3KKFRRWQVJXEJCGM6ZB359EF01VRY86HW6CCD45
+            cost: 18750
+            path: contracts/attestations.clar
             anchor-block-only: true
             clarity-version: 3
         - contract-publish:
             contract-name: exchange
-            expected-sender: "SP101YT8S9464KE0S0TQDGWV83V5H3A37DKEFYSJ0"
-            cost: 191060
+            expected-sender: SP3KKFRRWQVJXEJCGM6ZB359EF01VRY86HW6CCD45
+            cost: 18750
             path: contracts/exchange.clar
             anchor-block-only: true
             clarity-version: 3
-      epoch: "3.1"
+      epoch: "3.0"
