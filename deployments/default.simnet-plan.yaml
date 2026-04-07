@@ -34,11 +34,6 @@ plan:
             path: contracts/data-governance.clar
             clarity-version: 3
         - emulated-contract-publish:
-            contract-name: dataset-registry-trait
-            emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
-            path: contracts/dataset-registry-trait.clar
-            clarity-version: 3
-        - emulated-contract-publish:
             contract-name: dataset-registry
             emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
             path: contracts/genetic-data.clar

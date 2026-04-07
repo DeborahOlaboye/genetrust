@@ -34,36 +34,14 @@ const Navigation = () => {
   // Lock body scroll when mobile menu is open
   useEffect(() => {
     if (typeof document !== 'undefined') {
-      document.body.style.overflow = mobileMenuOpen ? 'hidden' : '';
+      document.body.style.overflow = isMobileMenuOpen ? 'hidden' : '';
     }
     return () => {
       if (typeof document !== 'undefined') {
         document.body.style.overflow = '';
       }
     };
-  }, [mobileMenuOpen]);
-
-  // Close mobile menu when clicking outside the nav element
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (mobileMenuOpen && navRef.current && !navRef.current.contains(e.target)) {
-        setMobileMenuOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [mobileMenuOpen]);
-
-  // Close mobile menu on Escape key
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.key === 'Escape' && mobileMenuOpen) {
-        setMobileMenuOpen(false);
-      }
-    };
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [mobileMenuOpen]);
+  }, [isMobileMenuOpen]);
 
   // On mount, initialize userSession and restore session if signed in
   useEffect(() => {
@@ -236,12 +214,11 @@ const Navigation = () => {
           <div className="md:hidden">
             <button
               type="button"
-              onClick={() => setMobileMenuOpen(open => !open)}
+              onClick={toggleMobileMenu}
               className="bg-[#14102E] inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-white hover:bg-[#8B5CF6]/10 transition-colors duration-200"
               aria-controls="mobile-menu"
               aria-expanded={isMobileMenuOpen}
               aria-haspopup="true"
-              onClick={toggleMobileMenu}
             >
               <span className="sr-only">{isMobileMenuOpen ? 'Close main menu' : 'Open main menu'}</span>
               {/* Hamburger / X icon toggles with menu state */}
@@ -297,7 +274,6 @@ const Navigation = () => {
           </div>
         </div>
       </div>
-      )}
     </nav>
   );
 };

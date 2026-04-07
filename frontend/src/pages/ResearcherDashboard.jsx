@@ -25,6 +25,7 @@ export default function ResearcherDashboard() {
   const [accessLevel, setAccessLevel] = useState(1);
   const [isFetching, setIsFetching] = useState(true);
   const [initError, setInitError] = useState(null);
+  const [statusAnnouncement, setStatusAnnouncement] = useState('');
 
   useEffect(() => {
     let mounted = true;
@@ -50,9 +51,13 @@ export default function ResearcherDashboard() {
     setLoadingId(listingId);
     try {
       const res = await contractService.purchaseListing({ listingId, desiredAccessLevel: accessLevel });
-      toast.success(`Access Level ${res.accessLevel} granted. TX: ${res.txId.slice(0, 10)}…`, { duration: 6000 });
+      const msg = `Access Level ${res.accessLevel} granted. TX: ${res.txId.slice(0, 10)}…`;
+      toast.success(msg, { duration: 6000 });
+      setStatusAnnouncement(msg);
     } catch (e) {
-      toast.error(`Purchase failed: ${e?.message || 'Unknown error'}`);
+      const msg = `Purchase failed: ${e?.message || 'Unknown error'}`;
+      toast.error(msg);
+      setStatusAnnouncement(msg);
     } finally {
       setLoadingId(null);
     }
@@ -68,15 +73,9 @@ export default function ResearcherDashboard() {
           <p className="text-sm text-[#9AA0B2] mt-1">Browse and purchase access to genomic datasets listed on-chain.</p>
         </div>
 
-        {/* Page Header */}
-        <div>
-          <h2 className="text-2xl font-bold text-white">Researcher Dashboard</h2>
-          <p className="mt-1 text-sm text-[#9AA0B2]">Browse and purchase access to genetic datasets on the marketplace.</p>
-        </div>
-
         {/* Screen reader live region for loading state */}
         <div role="status" className="sr-only">
-          {isFetching ? 'Loading marketplace listings…' : fetchError ? `Error: ${fetchError}` : `${listings.length} listing${listings.length !== 1 ? 's' : ''} loaded.`}
+          {isFetching ? 'Loading marketplace listings…' : initError ? `Error: ${initError}` : `${listings.length} listing${listings.length !== 1 ? 's' : ''} loaded.`}
         </div>
 
         {/* Screen reader live region for status announcements */}
