@@ -119,6 +119,16 @@
 )
 
 ;; Submit an attestation proof for a dataset
+;; @param data-id: ID of the dataset being proved
+;; @param proof-type: Type of proof (1-4)
+;; @param proof-hash: 32-byte hash of the proof
+;; @param parameters: DNA parameters up to 256 bytes
+;; @param metadata: Proof metadata (max 200 chars)
+;; @returns: ok with proof-id on success, error otherwise
+;; @requires: data-id must be positive
+;; @requires: proof-type must be 1-4
+;; @requires: proof-hash must be exactly 32 bytes
+;; @requires: parameters must not be empty
 (define-public (register-proof
     (data-id uint)
     (proof-type uint)
@@ -126,16 +136,22 @@
     (parameters (buff 256))
     (metadata (string-utf8 200)))
     (let ((proof-id (var-get next-proof-id)))
+        ;; Validate data-id is positive
         (asserts! (> data-id u0) ERR-INVALID-INPUT)
-        (asserts! (> (len proof-hash) u0) ERR-INVALID-INPUT)
-        (asserts! (> (len parameters) u0) ERR-INVALID-INPUT)
-        (asserts! (<= (len metadata) u200) ERR-INVALID-INPUT)
+        ;; Validate proof-type is valid (1-4)
         (asserts!
             (or (is-eq proof-type PROOF-GENE-PRESENCE)
                 (is-eq proof-type PROOF-GENE-ABSENCE)
                 (is-eq proof-type PROOF-GENE-VARIANT)
                 (is-eq proof-type PROOF-AGGREGATE))
-            ERR-INVALID-INPUT)
+            ERR-INVALID-PROOF-TYPE)
+        ;; Validate proof-hash is exactly 32 bytes
+        (asserts! (is-eq (len proof-hash) u32) ERR-INVALID-HASH)
+        ;; Validate parameters is not empty and within bounds
+        (asserts! (and (> (len parameters) u0) (<= (len parameters) u256)) ERR-INVALID-BUFFER-SIZE)
+        ;; Validate metadata length
+        (asserts! (<= (len metadata) u200) ERR-INVALID-STRING-LENGTH)
+        ;; Create the proof
         (map-set proofs { proof-id: proof-id }
             {
                 data-id: data-id,
@@ -149,6 +165,7 @@
                 metadata: metadata
             }
         )
+        ;; Increment counter
         (var-set next-proof-id (+ proof-id u1))
         (ok proof-id)
     )
