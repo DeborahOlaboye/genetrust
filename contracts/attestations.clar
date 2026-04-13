@@ -1,12 +1,33 @@
 ;; attestations.clar
 ;; Medical lab attestations for genetic data - verify data properties without revealing raw data
 
-;; Errors
-(define-constant ERR-NOT-AUTHORIZED (err u401))
-(define-constant ERR-NOT-FOUND (err u404))
-(define-constant ERR-ALREADY-EXISTS (err u409))
+;; Errors - Input Validation (400-409)
 (define-constant ERR-INVALID-INPUT (err u400))
+(define-constant ERR-INVALID-HASH (err u403))
+(define-constant ERR-INVALID-METADATA (err u404))
+(define-constant ERR-INVALID-PROOF-TYPE (err u405))
+(define-constant ERR-INVALID-STRING-LENGTH (err u407))
+(define-constant ERR-INVALID-BUFFER-SIZE (err u408))
+(define-constant ERR-INVALID-PARAMETERS (err u409))
+
+;; Errors - Authorization (410-414)
+(define-constant ERR-NOT-AUTHORIZED (err u410))
+(define-constant ERR-NOT-OWNER (err u411))
+(define-constant ERR-NOT-CONTRACT-OWNER (err u413))
+(define-constant ERR-NOT-VERIFIER (err u414))
+
+;; Errors - Not Found (430-439)
+(define-constant ERR-NOT-FOUND (err u430))
+(define-constant ERR-PROOF-NOT-FOUND (err u433))
+(define-constant ERR-VERIFIER-NOT-FOUND (err u434))
+
+;; Errors - Conflict (440-449)
+(define-constant ERR-ALREADY-EXISTS (err u440))
+(define-constant ERR-DUPLICATE-ACCESS-GRANT (err u444))
+
+;; Errors - Service Unavailable (503-511)
 (define-constant ERR-VERIFIER-INACTIVE (err u503))
+(define-constant ERR-CONTRACT-PAUSED (err u511))
 
 ;; Proof type constants
 (define-constant PROOF-GENE-PRESENCE u1)
