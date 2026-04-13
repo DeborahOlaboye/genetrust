@@ -1,11 +1,39 @@
 ;; genetic-data.clar
 ;; Dataset registry and access control for GeneTrust
 
-;; Errors
-(define-constant ERR-NOT-AUTHORIZED (err u401))
-(define-constant ERR-NOT-FOUND (err u404))
-(define-constant ERR-ALREADY-EXISTS (err u409))
+;; Errors - Input Validation (400-409)
 (define-constant ERR-INVALID-INPUT (err u400))
+(define-constant ERR-INVALID-AMOUNT (err u401))
+(define-constant ERR-INVALID-HASH (err u403))
+(define-constant ERR-INVALID-METADATA (err u404))
+(define-constant ERR-INVALID-ACCESS-LEVEL (err u406))
+(define-constant ERR-INVALID-STRING-LENGTH (err u407))
+
+;; Errors - Authorization (410-414)
+(define-constant ERR-NOT-AUTHORIZED (err u410))
+(define-constant ERR-NOT-OWNER (err u411))
+(define-constant ERR-INSUFFICIENT-PERMISSIONS (err u412))
+
+;; Errors - Not Found (430-439)
+(define-constant ERR-NOT-FOUND (err u430))
+(define-constant ERR-DATASET-NOT-FOUND (err u431))
+(define-constant ERR-ACCESS-RIGHT-NOT-FOUND (err u436))
+
+;; Errors - Conflict (440-449)
+(define-constant ERR-ALREADY-EXISTS (err u440))
+(define-constant ERR-DATASET-ALREADY-EXISTS (err u441))
+(define-constant ERR-DUPLICATE-ACCESS-GRANT (err u444))
+
+;; Errors - Gone/Inactive (450-459)
+(define-constant ERR-INACTIVE-DATASET (err u450))
+
+;; Errors - Precondition Failed (460-469)
+(define-constant ERR-INSUFFICIENT-ACCESS-LEVEL (err u621))
+
+;; Errors - Custom Business Logic (600-699)
+(define-constant ERR-SELF-GRANT-NOT-ALLOWED (err u610))
+(define-constant ERR-CANNOT-REVOKE-OWN-ACCESS (err u611))
+(define-constant ERR-EXPIRED-ACCESS (err u423))
 
 ;; Access levels
 (define-constant ACCESS-BASIC u1)
