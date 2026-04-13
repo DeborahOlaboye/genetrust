@@ -115,12 +115,28 @@
 )
 
 ;; Grant access to a user (owner only)
+;; @param data-id: ID of the dataset
+;; @param user: Principal to grant access to
+;; @param access-level: Access level to grant (1-3)
+;; @returns: ok true on success, error otherwise
+;; @requires: Caller must be dataset owner
+;; @requires: User cannot be the caller
+;; @requires: Dataset must exist and be active
 (define-public (grant-access (data-id uint) (user principal) (access-level uint))
-    (let ((dataset (unwrap! (map-get? datasets { data-id: data-id }) ERR-NOT-FOUND)))
+    (let ((dataset (unwrap! (map-get? datasets { data-id: data-id }) ERR-DATASET-NOT-FOUND)))
+        ;; Validate data-id is positive
         (asserts! (> data-id u0) ERR-INVALID-INPUT)
-        (asserts! (not (is-eq user tx-sender)) ERR-INVALID-INPUT)
-        (asserts! (is-eq tx-sender (get owner dataset)) ERR-NOT-AUTHORIZED)
-        (asserts! (and (>= access-level ACCESS-BASIC) (<= access-level ACCESS-FULL)) ERR-INVALID-INPUT)
+        ;; Prevent self-grant
+        (asserts! (not (is-eq user tx-sender)) ERR-SELF-GRANT-NOT-ALLOWED)
+        ;; Verify caller is the dataset owner
+        (asserts! (is-eq tx-sender (get owner dataset)) ERR-NOT-OWNER)
+        ;; Verify dataset is active
+        (asserts! (get is-active dataset) ERR-INACTIVE-DATASET)
+        ;; Validate access-level is in valid range
+        (asserts! (and (>= access-level ACCESS-BASIC) (<= access-level ACCESS-FULL)) ERR-INVALID-ACCESS-LEVEL)
+        ;; Check if access already exists
+        (asserts! (is-none (map-get? access-rights { data-id: data-id, user: user })) ERR-DUPLICATE-ACCESS-GRANT)
+        ;; Grant the access
         (map-set access-rights { data-id: data-id, user: user }
             {
                 access-level: access-level,
