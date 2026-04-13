@@ -97,11 +97,20 @@
     )
 )
 
-;; Cancel a listing (owner only)
+;; Cancel a marketplace listing (owner only)
+;; @param listing-id: ID of the listing to cancel
+;; @returns: ok true on success, error otherwise
+;; @requires: Caller must be listing owner
+;; @requires: Listing must exist and be active
 (define-public (cancel-listing (listing-id uint))
-    (let ((listing (unwrap! (map-get? listings { listing-id: listing-id }) ERR-NOT-FOUND)))
+    (let ((listing (unwrap! (map-get? listings { listing-id: listing-id }) ERR-LISTING-NOT-FOUND)))
+        ;; Validate listing-id is positive
         (asserts! (> listing-id u0) ERR-INVALID-INPUT)
-        (asserts! (is-eq tx-sender (get owner listing)) ERR-NOT-AUTHORIZED)
+        ;; Verify caller is the listing owner
+        (asserts! (is-eq tx-sender (get owner listing)) ERR-NOT-OWNER)
+        ;; Check listing is not already inactive
+        (asserts! (get active listing) ERR-NOT-FOUND)
+        ;; Deactivate the listing
         (map-set listings { listing-id: listing-id } (merge listing { active: false }))
         (ok true)
     )
