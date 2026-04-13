@@ -100,10 +100,19 @@
 )
 
 ;; Deactivate a verifier (contract owner only)
+;; @param verifier-id: ID of the verifier to deactivate
+;; @returns: ok true on success, error otherwise
+;; @requires: Caller must be contract owner
+;; @requires: Verifier must exist and be active
 (define-public (deactivate-verifier (verifier-id uint))
-    (let ((v (unwrap! (map-get? verifiers { verifier-id: verifier-id }) ERR-NOT-FOUND)))
-        (asserts! (is-eq tx-sender (var-get contract-owner)) ERR-NOT-AUTHORIZED)
+    (let ((v (unwrap! (map-get? verifiers { verifier-id: verifier-id }) ERR-VERIFIER-NOT-FOUND)))
+        ;; Verify caller is contract owner
+        (asserts! (is-eq tx-sender (var-get contract-owner)) ERR-NOT-CONTRACT-OWNER)
+        ;; Validate verifier-id is positive
         (asserts! (> verifier-id u0) ERR-INVALID-INPUT)
+        ;; Check verifier is not already deactivated
+        (asserts! (get active v) ERR-VERIFIER-INACTIVE)
+        ;; Deactivate the verifier
         (map-set verifiers { verifier-id: verifier-id } (merge v { active: false }))
         (ok true)
     )
