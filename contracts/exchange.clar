@@ -57,16 +57,29 @@
 )
 
 ;; Create a marketplace listing for a dataset
+;; @param data-id: ID of the dataset to list
+;; @param price: Price in microSTX (must be > 0)
+;; @param access-level: Access level offered (1-3)
+;; @param description: Listing description (10-200 chars)
+;; @returns: ok with listing-id on success, error otherwise
+;; @requires: data-id must be positive
+;; @requires: price must be positive
+;; @requires: access-level must be 1-3
 (define-public (create-listing
     (data-id uint)
     (price uint)
     (access-level uint)
     (description (string-utf8 200)))
     (let ((listing-id (var-get next-listing-id)))
+        ;; Validate data-id is positive
         (asserts! (> data-id u0) ERR-INVALID-INPUT)
-        (asserts! (> price u0) ERR-INVALID-INPUT)
-        (asserts! (and (>= access-level u1) (<= access-level u3)) ERR-INVALID-INPUT)
-        (asserts! (> (len description) u0) ERR-INVALID-INPUT)
+        ;; Validate price is positive
+        (asserts! (> price u0) ERR-INVALID-AMOUNT)
+        ;; Validate access-level is in valid range (1-3)
+        (asserts! (and (>= access-level u1) (<= access-level u3)) ERR-INVALID-ACCESS-LEVEL)
+        ;; Validate description length (10-200 chars)
+        (asserts! (and (>= (len description) u10) (<= (len description) u200)) ERR-INVALID-STRING-LENGTH)
+        ;; Create the listing
         (map-set listings { listing-id: listing-id }
             {
                 owner: tx-sender,
@@ -78,6 +91,7 @@
                 created-at: stacks-block-height
             }
         )
+        ;; Increment counter
         (var-set next-listing-id (+ listing-id u1))
         (ok listing-id)
     )
