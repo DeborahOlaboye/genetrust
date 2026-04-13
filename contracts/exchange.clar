@@ -1,12 +1,33 @@
 ;; exchange.clar
 ;; Genetic data marketplace - list datasets, purchase access with STX
 
-;; Errors
-(define-constant ERR-NOT-AUTHORIZED (err u401))
-(define-constant ERR-NOT-FOUND (err u404))
-(define-constant ERR-ALREADY-EXISTS (err u409))
+;; Errors - Input Validation (400-409)
 (define-constant ERR-INVALID-INPUT (err u400))
+(define-constant ERR-INVALID-AMOUNT (err u401))
+(define-constant ERR-INVALID-ACCESS-LEVEL (err u406))
+(define-constant ERR-INVALID-STRING-LENGTH (err u407))
+
+;; Errors - Authorization (410-414)
+(define-constant ERR-NOT-AUTHORIZED (err u410))
+(define-constant ERR-NOT-OWNER (err u411))
+
+;; Errors - Not Found (430-439)
+(define-constant ERR-NOT-FOUND (err u430))
+(define-constant ERR-LISTING-NOT-FOUND (err u432))
+(define-constant ERR-PURCHASE-NOT-FOUND (err u435))
+
+;; Errors - Conflict (440-449)
+(define-constant ERR-ALREADY-EXISTS (err u440))
+(define-constant ERR-LISTING-ALREADY-EXISTS (err u442))
+(define-constant ERR-DUPLICATE-PURCHASE (err u443))
+
+;; Errors - Precondition Failed (460-469)
+(define-constant ERR-INSUFFICIENT-ACCESS-LEVEL (err u621))
+(define-constant ERR-PRICE-MISMATCH (err u620))
+
+;; Errors - Server Errors (500-519)
 (define-constant ERR-PAYMENT-FAILED (err u500))
+(define-constant ERR-TRANSACTION-FAILED (err u501))
 
 ;; Listing counter
 (define-data-var next-listing-id uint u1)
