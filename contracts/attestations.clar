@@ -70,11 +70,21 @@
 )
 
 ;; Register a trusted verifier (contract owner only)
+;; @param name: Name of the verifier (1-64 chars)
+;; @param verifier-address: Principal address of the verifier
+;; @returns: ok with verifier-id on success, error otherwise
+;; @requires: Caller must be contract owner
+;; @requires: Name must not be empty
+;; @requires: Address must not be the contract itself
 (define-public (register-verifier (name (string-utf8 64)) (verifier-address principal))
     (let ((verifier-id (var-get next-verifier-id)))
-        (asserts! (is-eq tx-sender (var-get contract-owner)) ERR-NOT-AUTHORIZED)
-        (asserts! (> (len name) u0) ERR-INVALID-INPUT)
-        (asserts! (not (is-eq verifier-address (as-contract tx-sender))) ERR-INVALID-INPUT)
+        ;; Verify caller is contract owner
+        (asserts! (is-eq tx-sender (var-get contract-owner)) ERR-NOT-CONTRACT-OWNER)
+        ;; Validate name length (1-64 chars)
+        (asserts! (and (> (len name) u0) (<= (len name) u64)) ERR-INVALID-STRING-LENGTH)
+        ;; Prevent contract address as verifier
+        (asserts! (not (is-eq verifier-address (as-contract tx-sender))) ERR-INVALID-PARAMETERS)
+        ;; Register the verifier
         (map-set verifiers { verifier-id: verifier-id }
             {
                 address: verifier-address,
@@ -83,6 +93,7 @@
                 added-at: stacks-block-height
             }
         )
+        ;; Increment counter
         (var-set next-verifier-id (+ verifier-id u1))
         (ok verifier-id)
     )
