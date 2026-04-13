@@ -1,0 +1,144 @@
+name: Smart Contract Tests
+
+on:
+  push:
+    branches: [main, develop, issue/002-comprehensive-test-suite]
+    paths:
+      - 'contracts/**'
+      - 'tests/**'
+      - 'vitest.config.js'
+      - 'package.json'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'contracts/**'
+      - 'tests/**'
+      - 'vitest.config.js'
+      - 'package.json'
+
+env:
+  NODE_VERSION: '18'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    name: Run Smart Contract Tests
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify contracts compile
+        run: npm run check-contracts
+
+      - name: Run unit tests
+        run: npm run test
+
+      - name: Generate coverage report
+        run: npm run test:report
+        continue-on-error: true
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./coverage/coverage-final.json
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false
+        continue-on-error: true
+
+      - name: Archive test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: |
+            coverage/
+            test-results.json
+          retention-days: 30
+
+      - name: Comment PR with results
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const coverageFile = './coverage/coverage-summary.json';
+            
+            let comment = '## Test Results\n\n';
+            
+            if (fs.existsSync(coverageFile)) {
+              const coverage = JSON.parse(fs.readFileSync(coverageFile, 'utf8'));
+              const total = coverage.total;
+              
+              comment += `| Metric | Coverage |\n`;
+              comment += `|--------|----------|\n`;
+              comment += `| Lines | ${total.lines.pct}% |\n`;
+              comment += `| Statements | ${total.statements.pct}% |\n`;
+              comment += `| Functions | ${total.functions.pct}% |\n`;
+              comment += `| Branches | ${total.branches.pct}% |\n`;
+            } else {
+              comment += 'Coverage report not generated\n';
+            }
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+
+  lint:
+    runs-on: ubuntu-latest
+    name: Lint Code
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run linter
+        run: npm run lint
+        continue-on-error: true
+
+      - name: Check code formatting
+        run: npm run format:check
+        continue-on-error: true
+
+  type-check:
+    runs-on: ubuntu-latest
+    name: Type Check
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npm run check-types
+        continue-on-error: true
