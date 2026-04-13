@@ -1,12 +1,33 @@
 ;; attestations.clar
 ;; Medical lab attestations for genetic data - verify data properties without revealing raw data
 
-;; Errors
-(define-constant ERR-NOT-AUTHORIZED (err u401))
-(define-constant ERR-NOT-FOUND (err u404))
-(define-constant ERR-ALREADY-EXISTS (err u409))
+;; Errors - Input Validation (400-409)
 (define-constant ERR-INVALID-INPUT (err u400))
+(define-constant ERR-INVALID-HASH (err u403))
+(define-constant ERR-INVALID-METADATA (err u404))
+(define-constant ERR-INVALID-PROOF-TYPE (err u405))
+(define-constant ERR-INVALID-STRING-LENGTH (err u407))
+(define-constant ERR-INVALID-BUFFER-SIZE (err u408))
+(define-constant ERR-INVALID-PARAMETERS (err u409))
+
+;; Errors - Authorization (410-414)
+(define-constant ERR-NOT-AUTHORIZED (err u410))
+(define-constant ERR-NOT-OWNER (err u411))
+(define-constant ERR-NOT-CONTRACT-OWNER (err u413))
+(define-constant ERR-NOT-VERIFIER (err u414))
+
+;; Errors - Not Found (430-439)
+(define-constant ERR-NOT-FOUND (err u430))
+(define-constant ERR-PROOF-NOT-FOUND (err u433))
+(define-constant ERR-VERIFIER-NOT-FOUND (err u434))
+
+;; Errors - Conflict (440-449)
+(define-constant ERR-ALREADY-EXISTS (err u440))
+(define-constant ERR-DUPLICATE-ACCESS-GRANT (err u444))
+
+;; Errors - Service Unavailable (503-511)
 (define-constant ERR-VERIFIER-INACTIVE (err u503))
+(define-constant ERR-CONTRACT-PAUSED (err u511))
 
 ;; Proof type constants
 (define-constant PROOF-GENE-PRESENCE u1)
@@ -49,11 +70,21 @@
 )
 
 ;; Register a trusted verifier (contract owner only)
+;; @param name: Name of the verifier (1-64 chars)
+;; @param verifier-address: Principal address of the verifier
+;; @returns: ok with verifier-id on success, error otherwise
+;; @requires: Caller must be contract owner
+;; @requires: Name must not be empty
+;; @requires: Address must not be the contract itself
 (define-public (register-verifier (name (string-utf8 64)) (verifier-address principal))
     (let ((verifier-id (var-get next-verifier-id)))
-        (asserts! (is-eq tx-sender (var-get contract-owner)) ERR-NOT-AUTHORIZED)
-        (asserts! (> (len name) u0) ERR-INVALID-INPUT)
-        (asserts! (not (is-eq verifier-address (as-contract tx-sender))) ERR-INVALID-INPUT)
+        ;; Verify caller is contract owner
+        (asserts! (is-eq tx-sender (var-get contract-owner)) ERR-NOT-CONTRACT-OWNER)
+        ;; Validate name length (1-64 chars)
+        (asserts! (and (> (len name) u0) (<= (len name) u64)) ERR-INVALID-STRING-LENGTH)
+        ;; Prevent contract address as verifier
+        (asserts! (not (is-eq verifier-address (as-contract tx-sender))) ERR-INVALID-PARAMETERS)
+        ;; Register the verifier
         (map-set verifiers { verifier-id: verifier-id }
             {
                 address: verifier-address,
@@ -62,22 +93,42 @@
                 added-at: stacks-block-height
             }
         )
+        ;; Increment counter
         (var-set next-verifier-id (+ verifier-id u1))
         (ok verifier-id)
     )
 )
 
 ;; Deactivate a verifier (contract owner only)
+;; @param verifier-id: ID of the verifier to deactivate
+;; @returns: ok true on success, error otherwise
+;; @requires: Caller must be contract owner
+;; @requires: Verifier must exist and be active
 (define-public (deactivate-verifier (verifier-id uint))
-    (let ((v (unwrap! (map-get? verifiers { verifier-id: verifier-id }) ERR-NOT-FOUND)))
-        (asserts! (is-eq tx-sender (var-get contract-owner)) ERR-NOT-AUTHORIZED)
+    (let ((v (unwrap! (map-get? verifiers { verifier-id: verifier-id }) ERR-VERIFIER-NOT-FOUND)))
+        ;; Verify caller is contract owner
+        (asserts! (is-eq tx-sender (var-get contract-owner)) ERR-NOT-CONTRACT-OWNER)
+        ;; Validate verifier-id is positive
         (asserts! (> verifier-id u0) ERR-INVALID-INPUT)
+        ;; Check verifier is not already deactivated
+        (asserts! (get active v) ERR-VERIFIER-INACTIVE)
+        ;; Deactivate the verifier
         (map-set verifiers { verifier-id: verifier-id } (merge v { active: false }))
         (ok true)
     )
 )
 
 ;; Submit an attestation proof for a dataset
+;; @param data-id: ID of the dataset being proved
+;; @param proof-type: Type of proof (1-4)
+;; @param proof-hash: 32-byte hash of the proof
+;; @param parameters: DNA parameters up to 256 bytes
+;; @param metadata: Proof metadata (max 200 chars)
+;; @returns: ok with proof-id on success, error otherwise
+;; @requires: data-id must be positive
+;; @requires: proof-type must be 1-4
+;; @requires: proof-hash must be exactly 32 bytes
+;; @requires: parameters must not be empty
 (define-public (register-proof
     (data-id uint)
     (proof-type uint)
@@ -85,16 +136,22 @@
     (parameters (buff 256))
     (metadata (string-utf8 200)))
     (let ((proof-id (var-get next-proof-id)))
+        ;; Validate data-id is positive
         (asserts! (> data-id u0) ERR-INVALID-INPUT)
-        (asserts! (> (len proof-hash) u0) ERR-INVALID-INPUT)
-        (asserts! (> (len parameters) u0) ERR-INVALID-INPUT)
-        (asserts! (<= (len metadata) u200) ERR-INVALID-INPUT)
+        ;; Validate proof-type is valid (1-4)
         (asserts!
             (or (is-eq proof-type PROOF-GENE-PRESENCE)
                 (is-eq proof-type PROOF-GENE-ABSENCE)
                 (is-eq proof-type PROOF-GENE-VARIANT)
                 (is-eq proof-type PROOF-AGGREGATE))
-            ERR-INVALID-INPUT)
+            ERR-INVALID-PROOF-TYPE)
+        ;; Validate proof-hash is exactly 32 bytes
+        (asserts! (is-eq (len proof-hash) u32) ERR-INVALID-HASH)
+        ;; Validate parameters is not empty and within bounds
+        (asserts! (and (> (len parameters) u0) (<= (len parameters) u256)) ERR-INVALID-BUFFER-SIZE)
+        ;; Validate metadata length
+        (asserts! (<= (len metadata) u200) ERR-INVALID-STRING-LENGTH)
+        ;; Create the proof
         (map-set proofs { proof-id: proof-id }
             {
                 data-id: data-id,
@@ -108,6 +165,7 @@
                 metadata: metadata
             }
         )
+        ;; Increment counter
         (var-set next-proof-id (+ proof-id u1))
         (ok proof-id)
     )

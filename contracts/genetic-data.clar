@@ -1,11 +1,39 @@
 ;; genetic-data.clar
 ;; Dataset registry and access control for GeneTrust
 
-;; Errors
-(define-constant ERR-NOT-AUTHORIZED (err u401))
-(define-constant ERR-NOT-FOUND (err u404))
-(define-constant ERR-ALREADY-EXISTS (err u409))
+;; Errors - Input Validation (400-409)
 (define-constant ERR-INVALID-INPUT (err u400))
+(define-constant ERR-INVALID-AMOUNT (err u401))
+(define-constant ERR-INVALID-HASH (err u403))
+(define-constant ERR-INVALID-METADATA (err u404))
+(define-constant ERR-INVALID-ACCESS-LEVEL (err u406))
+(define-constant ERR-INVALID-STRING-LENGTH (err u407))
+
+;; Errors - Authorization (410-414)
+(define-constant ERR-NOT-AUTHORIZED (err u410))
+(define-constant ERR-NOT-OWNER (err u411))
+(define-constant ERR-INSUFFICIENT-PERMISSIONS (err u412))
+
+;; Errors - Not Found (430-439)
+(define-constant ERR-NOT-FOUND (err u430))
+(define-constant ERR-DATASET-NOT-FOUND (err u431))
+(define-constant ERR-ACCESS-RIGHT-NOT-FOUND (err u436))
+
+;; Errors - Conflict (440-449)
+(define-constant ERR-ALREADY-EXISTS (err u440))
+(define-constant ERR-DATASET-ALREADY-EXISTS (err u441))
+(define-constant ERR-DUPLICATE-ACCESS-GRANT (err u444))
+
+;; Errors - Gone/Inactive (450-459)
+(define-constant ERR-INACTIVE-DATASET (err u450))
+
+;; Errors - Precondition Failed (460-469)
+(define-constant ERR-INSUFFICIENT-ACCESS-LEVEL (err u621))
+
+;; Errors - Custom Business Logic (600-699)
+(define-constant ERR-SELF-GRANT-NOT-ALLOWED (err u610))
+(define-constant ERR-CANNOT-REVOKE-OWN-ACCESS (err u611))
+(define-constant ERR-EXPIRED-ACCESS (err u423))
 
 ;; Access levels
 (define-constant ACCESS-BASIC u1)
@@ -44,6 +72,12 @@
 )
 
 ;; Register a new dataset
+;; @param metadata-hash: 32-byte hash of dataset metadata
+;; @param storage-url: URL where dataset is stored (5-200 chars)
+;; @param description: Dataset description (10-200 chars)
+;; @param access-level: Access level (1=basic, 2=detailed, 3=full)
+;; @param price: Price in microSTX (must be > 0)
+;; @returns: ok with data-id on success, error otherwise
 (define-public (register-dataset
     (metadata-hash (buff 32))
     (storage-url (string-utf8 200))
@@ -51,11 +85,17 @@
     (access-level uint)
     (price uint))
     (let ((data-id (var-get next-data-id)))
-        (asserts! (> (len metadata-hash) u0) ERR-INVALID-INPUT)
-        (asserts! (> (len storage-url) u0) ERR-INVALID-INPUT)
-        (asserts! (> (len description) u0) ERR-INVALID-INPUT)
-        (asserts! (> price u0) ERR-INVALID-INPUT)
-        (asserts! (and (>= access-level ACCESS-BASIC) (<= access-level ACCESS-FULL)) ERR-INVALID-INPUT)
+        ;; Validate metadata hash
+        (asserts! (is-eq (len metadata-hash) u32) ERR-INVALID-HASH)
+        ;; Validate storage URL is not empty and reasonable length
+        (asserts! (and (> (len storage-url) u0) (<= (len storage-url) u200)) ERR-INVALID-STRING-LENGTH)
+        ;; Validate description is not empty and reasonable length
+        (asserts! (and (>= (len description) u10) (<= (len description) u200)) ERR-INVALID-STRING-LENGTH)
+        ;; Validate price is positive
+        (asserts! (> price u0) ERR-INVALID-AMOUNT)
+        ;; Validate access-level is in valid range (1-3)
+        (asserts! (and (>= access-level ACCESS-BASIC) (<= access-level ACCESS-FULL)) ERR-INVALID-ACCESS-LEVEL)
+        ;; Create the dataset
         (map-set datasets { data-id: data-id }
             {
                 owner: tx-sender,
@@ -68,18 +108,35 @@
                 created-at: stacks-block-height
             }
         )
+        ;; Increment counter
         (var-set next-data-id (+ data-id u1))
         (ok data-id)
     )
 )
 
 ;; Grant access to a user (owner only)
+;; @param data-id: ID of the dataset
+;; @param user: Principal to grant access to
+;; @param access-level: Access level to grant (1-3)
+;; @returns: ok true on success, error otherwise
+;; @requires: Caller must be dataset owner
+;; @requires: User cannot be the caller
+;; @requires: Dataset must exist and be active
 (define-public (grant-access (data-id uint) (user principal) (access-level uint))
-    (let ((dataset (unwrap! (map-get? datasets { data-id: data-id }) ERR-NOT-FOUND)))
+    (let ((dataset (unwrap! (map-get? datasets { data-id: data-id }) ERR-DATASET-NOT-FOUND)))
+        ;; Validate data-id is positive
         (asserts! (> data-id u0) ERR-INVALID-INPUT)
-        (asserts! (not (is-eq user tx-sender)) ERR-INVALID-INPUT)
-        (asserts! (is-eq tx-sender (get owner dataset)) ERR-NOT-AUTHORIZED)
-        (asserts! (and (>= access-level ACCESS-BASIC) (<= access-level ACCESS-FULL)) ERR-INVALID-INPUT)
+        ;; Prevent self-grant
+        (asserts! (not (is-eq user tx-sender)) ERR-SELF-GRANT-NOT-ALLOWED)
+        ;; Verify caller is the dataset owner
+        (asserts! (is-eq tx-sender (get owner dataset)) ERR-NOT-OWNER)
+        ;; Verify dataset is active
+        (asserts! (get is-active dataset) ERR-INACTIVE-DATASET)
+        ;; Validate access-level is in valid range
+        (asserts! (and (>= access-level ACCESS-BASIC) (<= access-level ACCESS-FULL)) ERR-INVALID-ACCESS-LEVEL)
+        ;; Check if access already exists
+        (asserts! (is-none (map-get? access-rights { data-id: data-id, user: user })) ERR-DUPLICATE-ACCESS-GRANT)
+        ;; Grant the access
         (map-set access-rights { data-id: data-id, user: user }
             {
                 access-level: access-level,
@@ -92,21 +149,41 @@
 )
 
 ;; Revoke access from a user (owner only)
+;; @param data-id: ID of the dataset
+;; @param user: Principal whose access to revoke
+;; @returns: ok true on success, error otherwise
+;; @requires: Caller must be dataset owner
+;; @requires: User cannot be the caller
+;; @requires: Dataset must exist
 (define-public (revoke-access (data-id uint) (user principal))
-    (let ((dataset (unwrap! (map-get? datasets { data-id: data-id }) ERR-NOT-FOUND)))
+    (let ((dataset (unwrap! (map-get? datasets { data-id: data-id }) ERR-DATASET-NOT-FOUND))
+          (access (unwrap! (map-get? access-rights { data-id: data-id, user: user }) ERR-ACCESS-RIGHT-NOT-FOUND)))
+        ;; Validate data-id is positive
         (asserts! (> data-id u0) ERR-INVALID-INPUT)
-        (asserts! (not (is-eq user tx-sender)) ERR-INVALID-INPUT)
-        (asserts! (is-eq tx-sender (get owner dataset)) ERR-NOT-AUTHORIZED)
+        ;; Prevent self-revoke
+        (asserts! (not (is-eq user tx-sender)) ERR-CANNOT-REVOKE-OWN-ACCESS)
+        ;; Verify caller is the dataset owner
+        (asserts! (is-eq tx-sender (get owner dataset)) ERR-NOT-OWNER)
+        ;; Delete the access right
         (map-delete access-rights { data-id: data-id, user: user })
         (ok true)
     )
 )
 
 ;; Deactivate a dataset (owner only)
+;; @param data-id: ID of the dataset to deactivate
+;; @returns: ok true on success, error otherwise
+;; @requires: Caller must be dataset owner
+;; @requires: Dataset must exist and be active
 (define-public (deactivate-dataset (data-id uint))
-    (let ((dataset (unwrap! (map-get? datasets { data-id: data-id }) ERR-NOT-FOUND)))
+    (let ((dataset (unwrap! (map-get? datasets { data-id: data-id }) ERR-DATASET-NOT-FOUND)))
+        ;; Validate data-id is positive
         (asserts! (> data-id u0) ERR-INVALID-INPUT)
-        (asserts! (is-eq tx-sender (get owner dataset)) ERR-NOT-AUTHORIZED)
+        ;; Verify caller is the dataset owner
+        (asserts! (is-eq tx-sender (get owner dataset)) ERR-NOT-OWNER)
+        ;; Check dataset is not already deactivated
+        (asserts! (get is-active dataset) ERR-INACTIVE-DATASET)
+        ;; Deactivate the dataset
         (map-set datasets { data-id: data-id } (merge dataset { is-active: false }))
         (ok true)
     )

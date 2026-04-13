@@ -1,12 +1,33 @@
 ;; exchange.clar
 ;; Genetic data marketplace - list datasets, purchase access with STX
 
-;; Errors
-(define-constant ERR-NOT-AUTHORIZED (err u401))
-(define-constant ERR-NOT-FOUND (err u404))
-(define-constant ERR-ALREADY-EXISTS (err u409))
+;; Errors - Input Validation (400-409)
 (define-constant ERR-INVALID-INPUT (err u400))
+(define-constant ERR-INVALID-AMOUNT (err u401))
+(define-constant ERR-INVALID-ACCESS-LEVEL (err u406))
+(define-constant ERR-INVALID-STRING-LENGTH (err u407))
+
+;; Errors - Authorization (410-414)
+(define-constant ERR-NOT-AUTHORIZED (err u410))
+(define-constant ERR-NOT-OWNER (err u411))
+
+;; Errors - Not Found (430-439)
+(define-constant ERR-NOT-FOUND (err u430))
+(define-constant ERR-LISTING-NOT-FOUND (err u432))
+(define-constant ERR-PURCHASE-NOT-FOUND (err u435))
+
+;; Errors - Conflict (440-449)
+(define-constant ERR-ALREADY-EXISTS (err u440))
+(define-constant ERR-LISTING-ALREADY-EXISTS (err u442))
+(define-constant ERR-DUPLICATE-PURCHASE (err u443))
+
+;; Errors - Precondition Failed (460-469)
+(define-constant ERR-INSUFFICIENT-ACCESS-LEVEL (err u621))
+(define-constant ERR-PRICE-MISMATCH (err u620))
+
+;; Errors - Server Errors (500-519)
 (define-constant ERR-PAYMENT-FAILED (err u500))
+(define-constant ERR-TRANSACTION-FAILED (err u501))
 
 ;; Listing counter
 (define-data-var next-listing-id uint u1)
@@ -36,16 +57,29 @@
 )
 
 ;; Create a marketplace listing for a dataset
+;; @param data-id: ID of the dataset to list
+;; @param price: Price in microSTX (must be > 0)
+;; @param access-level: Access level offered (1-3)
+;; @param description: Listing description (10-200 chars)
+;; @returns: ok with listing-id on success, error otherwise
+;; @requires: data-id must be positive
+;; @requires: price must be positive
+;; @requires: access-level must be 1-3
 (define-public (create-listing
     (data-id uint)
     (price uint)
     (access-level uint)
     (description (string-utf8 200)))
     (let ((listing-id (var-get next-listing-id)))
+        ;; Validate data-id is positive
         (asserts! (> data-id u0) ERR-INVALID-INPUT)
-        (asserts! (> price u0) ERR-INVALID-INPUT)
-        (asserts! (and (>= access-level u1) (<= access-level u3)) ERR-INVALID-INPUT)
-        (asserts! (> (len description) u0) ERR-INVALID-INPUT)
+        ;; Validate price is positive
+        (asserts! (> price u0) ERR-INVALID-AMOUNT)
+        ;; Validate access-level is in valid range (1-3)
+        (asserts! (and (>= access-level u1) (<= access-level u3)) ERR-INVALID-ACCESS-LEVEL)
+        ;; Validate description length (10-200 chars)
+        (asserts! (and (>= (len description) u10) (<= (len description) u200)) ERR-INVALID-STRING-LENGTH)
+        ;; Create the listing
         (map-set listings { listing-id: listing-id }
             {
                 owner: tx-sender,
@@ -57,32 +91,58 @@
                 created-at: stacks-block-height
             }
         )
+        ;; Increment counter
         (var-set next-listing-id (+ listing-id u1))
         (ok listing-id)
     )
 )
 
-;; Cancel a listing (owner only)
+;; Cancel a marketplace listing (owner only)
+;; @param listing-id: ID of the listing to cancel
+;; @returns: ok true on success, error otherwise
+;; @requires: Caller must be listing owner
+;; @requires: Listing must exist and be active
 (define-public (cancel-listing (listing-id uint))
-    (let ((listing (unwrap! (map-get? listings { listing-id: listing-id }) ERR-NOT-FOUND)))
+    (let ((listing (unwrap! (map-get? listings { listing-id: listing-id }) ERR-LISTING-NOT-FOUND)))
+        ;; Validate listing-id is positive
         (asserts! (> listing-id u0) ERR-INVALID-INPUT)
-        (asserts! (is-eq tx-sender (get owner listing)) ERR-NOT-AUTHORIZED)
+        ;; Verify caller is the listing owner
+        (asserts! (is-eq tx-sender (get owner listing)) ERR-NOT-OWNER)
+        ;; Check listing is not already inactive
+        (asserts! (get active listing) ERR-NOT-FOUND)
+        ;; Deactivate the listing
         (map-set listings { listing-id: listing-id } (merge listing { active: false }))
         (ok true)
     )
 )
 
 ;; Purchase access to a listed dataset - transfers STX to the owner
+;; @param listing-id: ID of the listing to purchase
+;; @param desired-access-level: Requested access level (must be <= listing access level)
+;; @returns: ok with purchase details on success, error otherwise
+;; @requires: Listing must exist and be active
+;; @requires: desired-access-level must be valid (1-3)
+;; @requires: desired-access-level must not exceed listing access level
+;; @requires: Payment must succeed
 (define-public (purchase-listing (listing-id uint) (desired-access-level uint))
     (let (
-        (listing (unwrap! (map-get? listings { listing-id: listing-id }) ERR-NOT-FOUND))
+        (listing (unwrap! (map-get? listings { listing-id: listing-id }) ERR-LISTING-NOT-FOUND))
         (owner (get owner listing))
         (price (get price listing))
     )
+        ;; Validate listing-id is positive
         (asserts! (> listing-id u0) ERR-INVALID-INPUT)
+        ;; Check listing is active
         (asserts! (get active listing) ERR-NOT-FOUND)
-        (asserts! (and (>= desired-access-level u1) (<= desired-access-level (get access-level listing))) ERR-INVALID-INPUT)
+        ;; Prevent buyer from being the owner
+        (asserts! (not (is-eq tx-sender owner)) ERR-INVALID-INPUT)
+        ;; Validate desired-access-level is valid (1-3)
+        (asserts! (and (>= desired-access-level u1) (<= desired-access-level u3)) ERR-INVALID-ACCESS-LEVEL)
+        ;; Check requested access level does not exceed listing access level
+        (asserts! (<= desired-access-level (get access-level listing)) ERR-INSUFFICIENT-ACCESS-LEVEL)
+        ;; Process payment
         (try! (stx-transfer? price tx-sender owner))
+        ;; Record the purchase
         (map-set purchases { listing-id: listing-id, buyer: tx-sender }
             {
                 paid: price,
@@ -90,6 +150,7 @@
                 purchased-at: stacks-block-height
             }
         )
+        ;; Return purchase confirmation
         (ok { listing-id: listing-id, access-level: desired-access-level, paid: price })
     )
 )
