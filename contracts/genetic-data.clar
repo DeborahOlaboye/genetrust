@@ -72,6 +72,12 @@
 )
 
 ;; Register a new dataset
+;; @param metadata-hash: 32-byte hash of dataset metadata
+;; @param storage-url: URL where dataset is stored (5-200 chars)
+;; @param description: Dataset description (10-200 chars)
+;; @param access-level: Access level (1=basic, 2=detailed, 3=full)
+;; @param price: Price in microSTX (must be > 0)
+;; @returns: ok with data-id on success, error otherwise
 (define-public (register-dataset
     (metadata-hash (buff 32))
     (storage-url (string-utf8 200))
@@ -79,11 +85,17 @@
     (access-level uint)
     (price uint))
     (let ((data-id (var-get next-data-id)))
-        (asserts! (> (len metadata-hash) u0) ERR-INVALID-INPUT)
-        (asserts! (> (len storage-url) u0) ERR-INVALID-INPUT)
-        (asserts! (> (len description) u0) ERR-INVALID-INPUT)
-        (asserts! (> price u0) ERR-INVALID-INPUT)
-        (asserts! (and (>= access-level ACCESS-BASIC) (<= access-level ACCESS-FULL)) ERR-INVALID-INPUT)
+        ;; Validate metadata hash
+        (asserts! (is-eq (len metadata-hash) u32) ERR-INVALID-HASH)
+        ;; Validate storage URL is not empty and reasonable length
+        (asserts! (and (> (len storage-url) u0) (<= (len storage-url) u200)) ERR-INVALID-STRING-LENGTH)
+        ;; Validate description is not empty and reasonable length
+        (asserts! (and (>= (len description) u10) (<= (len description) u200)) ERR-INVALID-STRING-LENGTH)
+        ;; Validate price is positive
+        (asserts! (> price u0) ERR-INVALID-AMOUNT)
+        ;; Validate access-level is in valid range (1-3)
+        (asserts! (and (>= access-level ACCESS-BASIC) (<= access-level ACCESS-FULL)) ERR-INVALID-ACCESS-LEVEL)
+        ;; Create the dataset
         (map-set datasets { data-id: data-id }
             {
                 owner: tx-sender,
@@ -96,6 +108,7 @@
                 created-at: stacks-block-height
             }
         )
+        ;; Increment counter
         (var-set next-data-id (+ data-id u1))
         (ok data-id)
     )
