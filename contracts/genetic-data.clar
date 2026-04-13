@@ -171,10 +171,19 @@
 )
 
 ;; Deactivate a dataset (owner only)
+;; @param data-id: ID of the dataset to deactivate
+;; @returns: ok true on success, error otherwise
+;; @requires: Caller must be dataset owner
+;; @requires: Dataset must exist and be active
 (define-public (deactivate-dataset (data-id uint))
-    (let ((dataset (unwrap! (map-get? datasets { data-id: data-id }) ERR-NOT-FOUND)))
+    (let ((dataset (unwrap! (map-get? datasets { data-id: data-id }) ERR-DATASET-NOT-FOUND)))
+        ;; Validate data-id is positive
         (asserts! (> data-id u0) ERR-INVALID-INPUT)
-        (asserts! (is-eq tx-sender (get owner dataset)) ERR-NOT-AUTHORIZED)
+        ;; Verify caller is the dataset owner
+        (asserts! (is-eq tx-sender (get owner dataset)) ERR-NOT-OWNER)
+        ;; Check dataset is not already deactivated
+        (asserts! (get is-active dataset) ERR-INACTIVE-DATASET)
+        ;; Deactivate the dataset
         (map-set datasets { data-id: data-id } (merge dataset { is-active: false }))
         (ok true)
     )
