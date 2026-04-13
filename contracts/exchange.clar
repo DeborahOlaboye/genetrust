@@ -117,16 +117,32 @@
 )
 
 ;; Purchase access to a listed dataset - transfers STX to the owner
+;; @param listing-id: ID of the listing to purchase
+;; @param desired-access-level: Requested access level (must be <= listing access level)
+;; @returns: ok with purchase details on success, error otherwise
+;; @requires: Listing must exist and be active
+;; @requires: desired-access-level must be valid (1-3)
+;; @requires: desired-access-level must not exceed listing access level
+;; @requires: Payment must succeed
 (define-public (purchase-listing (listing-id uint) (desired-access-level uint))
     (let (
-        (listing (unwrap! (map-get? listings { listing-id: listing-id }) ERR-NOT-FOUND))
+        (listing (unwrap! (map-get? listings { listing-id: listing-id }) ERR-LISTING-NOT-FOUND))
         (owner (get owner listing))
         (price (get price listing))
     )
+        ;; Validate listing-id is positive
         (asserts! (> listing-id u0) ERR-INVALID-INPUT)
+        ;; Check listing is active
         (asserts! (get active listing) ERR-NOT-FOUND)
-        (asserts! (and (>= desired-access-level u1) (<= desired-access-level (get access-level listing))) ERR-INVALID-INPUT)
+        ;; Prevent buyer from being the owner
+        (asserts! (not (is-eq tx-sender owner)) ERR-INVALID-INPUT)
+        ;; Validate desired-access-level is valid (1-3)
+        (asserts! (and (>= desired-access-level u1) (<= desired-access-level u3)) ERR-INVALID-ACCESS-LEVEL)
+        ;; Check requested access level does not exceed listing access level
+        (asserts! (<= desired-access-level (get access-level listing)) ERR-INSUFFICIENT-ACCESS-LEVEL)
+        ;; Process payment
         (try! (stx-transfer? price tx-sender owner))
+        ;; Record the purchase
         (map-set purchases { listing-id: listing-id, buyer: tx-sender }
             {
                 paid: price,
@@ -134,6 +150,7 @@
                 purchased-at: stacks-block-height
             }
         )
+        ;; Return purchase confirmation
         (ok { listing-id: listing-id, access-level: desired-access-level, paid: price })
     )
 )
