@@ -27,8 +27,27 @@ export const CONSENT_TYPES = [
   { key: 'clinical',   label: 'Clinical Use',    desc: 'Direct patient-care or clinical trial applications',    color: '#06B6D4' },
 ];
 
+export const MIN_DURATION_BLOCKS = 144;
+
 // Default consent duration: ~1 year in Stacks blocks (144 blocks/day × 365)
 export const DEFAULT_DURATION_BLOCKS = 144 * 365;
+
+export function getDurationBlocksFromExpiry(expiryMs) {
+  if (typeof expiryMs !== 'number' || Number.isNaN(expiryMs)) {
+    return DEFAULT_DURATION_BLOCKS;
+  }
+
+  const blocks = Math.round((expiryMs - Date.now()) / 600000);
+  return Math.max(blocks, DEFAULT_DURATION_BLOCKS);
+}
+
+export function clampDurationBlocks(value) {
+  const blocks = Number(value ?? DEFAULT_DURATION_BLOCKS);
+  if (Number.isNaN(blocks) || blocks < MIN_DURATION_BLOCKS) {
+    return MIN_DURATION_BLOCKS;
+  }
+  return Math.round(blocks);
+}
 
 const INITIAL = {
   policy:       null,   // fetched consent record
