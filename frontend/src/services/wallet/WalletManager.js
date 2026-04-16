@@ -67,6 +67,26 @@ class WalletManager {
     }
   }
 
+  getPersistedProvider() {
+    return this._loadPersistedProvider();
+  }
+
+  isProviderEnabled(providerName) {
+    return !!this._providers.has(providerName);
+  }
+
+  getProviderMetadata(providerName) {
+    const provider = this._providers.get(providerName);
+    if (!provider) return null;
+
+    return {
+      name: providerName,
+      isConnected: provider.isConnected?.() ?? false,
+      address: provider.getAddress?.() || null,
+      network: provider.getNetwork?.() || null,
+    };
+  }
+
   _initializeProviders() {
     // Initialize Reown if enabled
     if (this._config.providers[PROVIDERS.REOWN]?.enabled !== false) {
