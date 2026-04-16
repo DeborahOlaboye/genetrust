@@ -233,12 +233,17 @@ class WalletManager {
   }
 
   getState() {
+    const provider = this._currentProvider;
+    const networkValue = provider?.getNetwork?.();
+
     return {
-      address: this._currentProvider?.getAddress() || null,
-      isConnected: this._currentProvider?.isConnected() || false,
-      network: this._currentProvider?.getNetwork()?.coreApiUrl || null,
-      provider: this._currentProvider ? this._getProviderName(this._currentProvider) : null,
-      availableProviders: this.getProviders()
+      address: provider?.getAddress?.() || null,
+      isConnected: provider?.isConnected?.() || false,
+      network: typeof networkValue === 'string'
+        ? networkValue
+        : networkValue?.coreApiUrl || null,
+      provider: provider ? this._getProviderName(provider) : null,
+      availableProviders: this.getProviders(),
     };
   }
 
