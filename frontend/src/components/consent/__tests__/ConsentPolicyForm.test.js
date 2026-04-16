@@ -3,6 +3,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ConsentPolicyForm } from '../ConsentPolicyForm.jsx';
+import { DEFAULT_DURATION_BLOCKS } from '../../hooks/useConsentPolicy.js';
 
 describe('ConsentPolicyForm', () => {
   it('pre-populates duration and submits existing policy values', async () => {
@@ -66,5 +67,26 @@ describe('ConsentPolicyForm', () => {
 
     expect(screen.getByRole('form', { name: /Consent policy form/i })).toBeInTheDocument();
     expect(screen.getByLabelText(/Consent Duration \(blocks\)/i)).toHaveAttribute('aria-describedby', expect.stringContaining('consent-duration-help'));
+  });
+
+  it('resets form fields when existing consent data is removed', async () => {
+    const existing = {
+      researchConsent: true,
+      commercialConsent: false,
+      clinicalConsent: true,
+      jurisdiction: 2,
+      consentExpiresAt: Date.now() + 600000,
+    };
+
+    const onSubmit = vi.fn();
+    const { rerender } = render(<ConsentPolicyForm existing={existing} onSubmit={onSubmit} saving={false} error={null} />);
+
+    const durationInput = screen.getByLabelText(/Consent Duration \(blocks\)/i);
+    expect(durationInput).toHaveValue(getDurationBlocksFromExpiry(existing.consentExpiresAt));
+
+    rerender(<ConsentPolicyForm existing={null} onSubmit={onSubmit} saving={false} error={null} />);
+
+    expect(screen.getByRole('switch', { name: /Research Use consent/i })).toHaveAttribute('aria-checked', 'false');
+    expect(screen.getByLabelText(/Consent Duration \(blocks\)/i)).toHaveValue(DEFAULT_DURATION_BLOCKS);
   });
 });

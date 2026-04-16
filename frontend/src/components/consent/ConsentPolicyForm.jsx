@@ -31,7 +31,15 @@ export function ConsentPolicyForm({ existing, onSubmit, saving, error }) {
 
   // sync if parent refreshes existing record
   useEffect(() => {
-    if (!existing) return;
+    if (!existing) {
+      setResearch(false);
+      setCommercial(false);
+      setClinical(false);
+      setJurisdiction(0);
+      setDuration(DEFAULT_DURATION_BLOCKS);
+      return;
+    }
+
     setResearch(existing.researchConsent ?? false);
     setCommercial(existing.commercialConsent ?? false);
     setClinical(existing.clinicalConsent ?? false);
@@ -141,6 +149,6 @@ export function ConsentPolicyForm({ existing, onSubmit, saving, error }) {
       >
         {saving ? 'Saving…' : isAmend ? 'Update Consent Policy' : 'Set Consent Policy'}
       </button>
-    </div>
+    </form>
   );
 }
