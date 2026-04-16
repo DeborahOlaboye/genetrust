@@ -232,6 +232,14 @@ class WalletManager {
     return this._providers.get(providerName) || null;
   }
 
+  setDefaultProvider(providerName) {
+    if (!this._providers.has(providerName)) {
+      throw new Error(`Provider ${providerName} is not available`);
+    }
+    this._config.defaultProvider = providerName;
+    this._persistProvider(providerName);
+  }
+
   getProviderStatuses() {
     return Array.from(this._providers.entries()).map(([name, provider]) => ({
       name,
