@@ -232,6 +232,15 @@ class WalletManager {
     return this._providers.get(providerName) || null;
   }
 
+  getProviderStatuses() {
+    return Array.from(this._providers.entries()).map(([name, provider]) => ({
+      name,
+      isConnected: provider.isConnected?.() ?? false,
+      address: provider.getAddress?.() || null,
+      network: provider.getNetwork?.() || null,
+    }));
+  }
+
   getState() {
     const provider = this._currentProvider;
     const networkValue = provider?.getNetwork?.();
