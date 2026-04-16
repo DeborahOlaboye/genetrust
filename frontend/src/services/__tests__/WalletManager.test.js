@@ -112,6 +112,26 @@ describe('WalletManager', () => {
     });
   });
 
+  it('returns provider statuses for all configured providers', async () => {
+    await manager.init();
+
+    const statuses = manager.getProviderStatuses();
+    expect(statuses).toEqual([
+      {
+        name: PROVIDERS.REOWN,
+        isConnected: false,
+        address: null,
+        network: { coreApiUrl: `${PROVIDERS.REOWN}_network` },
+      },
+      {
+        name: PROVIDERS.HIRO,
+        isConnected: false,
+        address: null,
+        network: { coreApiUrl: `${PROVIDERS.HIRO}_network` },
+      }
+    ]);
+  });
+
   it('does not return metadata for a missing provider', () => {
     expect(manager.getProviderMetadata('missing')).toBeNull();
   });
