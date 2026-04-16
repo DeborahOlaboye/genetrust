@@ -6,7 +6,7 @@
 import React, { useEffect, useState } from 'react';
 import { ConsentToggle }       from './ConsentToggle.jsx';
 import { JurisdictionSelector } from './JurisdictionSelector.jsx';
-import { CONSENT_TYPES, DEFAULT_DURATION_BLOCKS } from '../../hooks/useConsentPolicy.js';
+import { CONSENT_TYPES, DEFAULT_DURATION_BLOCKS, MIN_DURATION_BLOCKS, getDurationBlocksFromExpiry, clampDurationBlocks } from '../../hooks/useConsentPolicy.js';
 
 const inputStyle = {
   width: '100%',
@@ -27,26 +27,47 @@ export function ConsentPolicyForm({ existing, onSubmit, saving, error }) {
   const [commercial,  setCommercial]  = useState(existing?.commercialConsent  ?? false);
   const [clinical,    setClinical]    = useState(existing?.clinicalConsent    ?? false);
   const [jurisdiction, setJurisdiction] = useState(existing?.jurisdiction ?? 0);
-  const [duration,    setDuration]    = useState(DEFAULT_DURATION_BLOCKS);
+  const [duration,    setDuration]    = useState(() => getDurationBlocksFromExpiry(existing?.consentExpiresAt));
 
   // sync if parent refreshes existing record
   useEffect(() => {
-    if (!existing) return;
+    if (!existing) {
+      setResearch(false);
+      setCommercial(false);
+      setClinical(false);
+      setJurisdiction(0);
+      setDuration(DEFAULT_DURATION_BLOCKS);
+      return;
+    }
+
     setResearch(existing.researchConsent ?? false);
     setCommercial(existing.commercialConsent ?? false);
     setClinical(existing.clinicalConsent ?? false);
     setJurisdiction(existing.jurisdiction ?? 0);
+    setDuration(getDurationBlocksFromExpiry(existing.consentExpiresAt));
   }, [existing]);
 
   const noneSelected = !research && !commercial && !clinical;
+  const durationBlocks = clampDurationBlocks(duration);
+  const invalidDuration = durationBlocks < MIN_DURATION_BLOCKS;
+  const durationDays = Math.max(1, Math.round(durationBlocks / 144));
+  const submitDisabled = saving || noneSelected || invalidDuration;
 
   const handleSubmit = () => {
-    if (noneSelected) return;
-    onSubmit({ research, commercial, clinical, jurisdiction, durationBlocks: Number(duration) || DEFAULT_DURATION_BLOCKS });
+    if (submitDisabled) return;
+    onSubmit({ research, commercial, clinical, jurisdiction, durationBlocks });
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+    <form
+      role="form"
+      aria-label="Consent policy form"
+      onSubmit={e => {
+        e.preventDefault();
+        handleSubmit();
+      }}
+      style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}
+    >
       {/* Consent type toggles */}
       <div>
         <p style={{ color: '#9AA0B2', fontSize: '0.82rem', fontWeight: 500, marginBottom: '0.5rem' }}>
@@ -83,14 +104,24 @@ export function ConsentPolicyForm({ existing, onSubmit, saving, error }) {
         <input
           id="consent-duration"
           type="number"
-          min="144"
+          min={MIN_DURATION_BLOCKS}
           value={duration}
-          onChange={e => setDuration(e.target.value)}
+          onChange={e => {
+            const next = Number(e.target.value);
+            setDuration(Number.isNaN(next) ? MIN_DURATION_BLOCKS : next);
+          }}
+          aria-describedby="consent-duration-help consent-duration-error"
+          aria-invalid={invalidDuration}
           style={{ ...inputStyle, marginTop: '0.35rem' }}
         />
-        <span style={{ color: '#4B5563', fontSize: '0.72rem' }}>
-          ~{Math.round(Number(duration) / 144)} days ({duration} blocks)
+        <span id="consent-duration-help" style={{ color: '#4B5563', fontSize: '0.72rem' }}>
+          ~{durationDays} days ({durationBlocks} blocks)
         </span>
+        {invalidDuration && (
+          <p id="consent-duration-error" style={{ color: '#EF4444', fontSize: '0.75rem', marginTop: '0.35rem' }}>
+            Minimum consent duration is {MIN_DURATION_BLOCKS} blocks.
+          </p>
+        )}
       </div>
 
       {/* Error */}
@@ -102,22 +133,22 @@ export function ConsentPolicyForm({ existing, onSubmit, saving, error }) {
 
       {/* Submit */}
       <button
-        type="button"
-        onClick={handleSubmit}
-        disabled={saving || noneSelected}
+        type="submit"
+        disabled={submitDisabled}
+        aria-busy={saving}
         style={{
           padding: '0.7rem',
           borderRadius: '0.5rem',
           border: 'none',
-          background: (saving || noneSelected) ? 'rgba(139,92,246,0.3)' : 'linear-gradient(135deg,#8B5CF6,#6D28D9)',
+          background: submitDisabled ? 'rgba(139,92,246,0.3)' : 'linear-gradient(135deg,#8B5CF6,#6D28D9)',
           color: '#fff',
           fontWeight: 600,
-          cursor: (saving || noneSelected) ? 'not-allowed' : 'pointer',
+          cursor: submitDisabled ? 'not-allowed' : 'pointer',
           fontSize: '0.9rem',
         }}
       >
         {saving ? 'Saving…' : isAmend ? 'Update Consent Policy' : 'Set Consent Policy'}
       </button>
-    </div>
+    </form>
   );
 }
