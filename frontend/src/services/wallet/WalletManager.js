@@ -171,6 +171,10 @@ class WalletManager {
       throw new Error(`Provider ${providerName} not found or not enabled`);
     }
 
+    if (this._currentProvider === provider && provider.isConnected?.()) {
+      return provider.getState ? provider.getState() : this.getState();
+    }
+
     try {
       // Disconnect current provider if different
       if (this._currentProvider && this._currentProvider !== provider) {
