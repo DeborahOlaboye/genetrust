@@ -89,6 +89,17 @@ describe('WalletManager', () => {
     expect(manager.getCurrentProvider()).toBeNull();
   });
 
+  it('returns current state for an already connected provider without reconnecting', async () => {
+    await manager.init();
+    await manager.connect(PROVIDERS.REOWN);
+    const result = await manager.connect(PROVIDERS.REOWN);
+
+    expect(result).toEqual({
+      provider: PROVIDERS.REOWN,
+      address: `${PROVIDERS.REOWN}_address`
+    });
+  });
+
   it('returns provider metadata for an enabled provider', async () => {
     await manager.init();
 
