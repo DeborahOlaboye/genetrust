@@ -11,6 +11,8 @@ const PROVIDERS = {
   LEDGER: 'ledger',
 };
 
+const PERSISTED_PROVIDER_KEY = 'genetrust_active_wallet_provider';
+
 class WalletManager {
   constructor(config = {}) {
     this._config = {
@@ -36,6 +38,33 @@ class WalletManager {
 
     // Initialize enabled providers
     this._initializeProviders();
+  }
+
+  _persistProvider(providerName) {
+    if (typeof window === 'undefined') return;
+    try {
+      localStorage.setItem(PERSISTED_PROVIDER_KEY, providerName);
+    } catch (_) {
+      // ignore storage failures
+    }
+  }
+
+  _loadPersistedProvider() {
+    if (typeof window === 'undefined') return null;
+    try {
+      return localStorage.getItem(PERSISTED_PROVIDER_KEY);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  _clearPersistedProvider() {
+    if (typeof window === 'undefined') return;
+    try {
+      localStorage.removeItem(PERSISTED_PROVIDER_KEY);
+    } catch (_) {
+      // ignore
+    }
   }
 
   _initializeProviders() {
@@ -93,15 +122,18 @@ class WalletManager {
         )
       );
 
-      // Set the default provider if not set
-      if (!this._currentProvider && this._providers.has(this._config.defaultProvider)) {
+      const persistedProvider = this._loadPersistedProvider();
+      if (persistedProvider && this._providers.has(persistedProvider)) {
+        this._currentProvider = this._providers.get(persistedProvider);
+      } else if (!this._currentProvider && this._providers.has(this._config.defaultProvider)) {
         this._currentProvider = this._providers.get(this._config.defaultProvider);
       }
 
       this._isInitialized = true;
       logger.info('Wallet manager initialized', { 
         providers: Array.from(this._providers.keys()),
-        defaultProvider: this._config.defaultProvider
+        defaultProvider: this._config.defaultProvider,
+        currentProvider: this.getCurrentProvider()
       });
     } catch (error) {
       logger.error('Failed to initialize wallet manager', { error });
@@ -127,6 +159,7 @@ class WalletManager {
 
       this._currentProvider = provider;
       const state = await provider.connect();
+      this._persistProvider(providerName || this.getCurrentProvider());
       this._emit();
       return state;
     } catch (error) {
@@ -141,6 +174,7 @@ class WalletManager {
     try {
       await this._currentProvider.disconnect();
       this._currentProvider = null;
+      this._clearPersistedProvider();
       this._emit();
     } catch (error) {
       logger.error('Failed to disconnect wallet', { error });
