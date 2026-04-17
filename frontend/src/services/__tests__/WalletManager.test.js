@@ -135,4 +135,10 @@ describe('WalletManager', () => {
   it('does not return metadata for a missing provider', () => {
     expect(manager.getProviderMetadata('missing')).toBeNull();
   });
+
+  it('allows changing the default provider at runtime', () => {
+    manager.setDefaultProvider(PROVIDERS.HIRO);
+    expect(manager.getPersistedProvider()).toBe(PROVIDERS.HIRO);
+    expect(manager._config.defaultProvider).toBe(PROVIDERS.HIRO);
+  });
 });
