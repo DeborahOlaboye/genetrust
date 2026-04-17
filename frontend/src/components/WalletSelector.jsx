@@ -39,13 +39,14 @@ const addressColor = (address) => {
 /**
  * Visual badge/chip representing a single account entry.
  */
-const AccountChip = ({ account, isActive, onClick }) => {
+const AccountChip = ({ account, isActive, isFocused, onClick }) => {
   const bg = addressColor(account.address);
   return (
     <button
       type="button"
       role="option"
       aria-selected={isActive}
+      aria-current={isFocused ? 'true' : undefined}
       onClick={onClick}
       style={{
         display:        'flex',
@@ -53,7 +54,7 @@ const AccountChip = ({ account, isActive, onClick }) => {
         gap:            '10px',
         width:          '100%',
         padding:        '10px 14px',
-        background:     isActive ? 'rgba(99,102,241,0.12)' : 'transparent',
+        background:     isActive ? 'rgba(99,102,241,0.12)' : isFocused ? 'rgba(99,102,241,0.06)' : 'transparent',
         border:         'none',
         borderRadius:   '8px',
         cursor:         'pointer',
@@ -111,6 +112,7 @@ AccountChip.propTypes = {
     source:  PropTypes.string,
   }).isRequired,
   isActive: PropTypes.bool,
+  isFocused: PropTypes.bool,
   onClick:  PropTypes.func.isRequired,
 };
 
@@ -146,8 +148,29 @@ const WalletSelector = ({ className = '', onSwitch }) => {
   const [ledgerLoading,  setLedgerLoading]  = useState(false);
   const [ledgerError,    setLedgerError]    = useState('');
 
-  const panelRef = useRef(null);
-  const listboxId = 'wallet-account-list';
+  const [focusedIndex, setFocusedIndex] = useState(0);
+
+  // Keyboard navigation for the dropdown
+  useEffect(() => {
+    if (!open) return undefined;
+
+    const handleKeyDown = (event) => {
+      if (event.key === 'ArrowDown') {
+        event.preventDefault();
+        setFocusedIndex(prev => (prev + 1) % accounts.length);
+      } else if (event.key === 'ArrowUp') {
+        event.preventDefault();
+        setFocusedIndex(prev => (prev - 1 + accounts.length) % accounts.length);
+      } else if (event.key === 'Enter') {
+        event.preventDefault();
+        handleSwitch(focusedIndex);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [open, accounts.length, focusedIndex, handleSwitch]);
+
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -306,6 +329,7 @@ const WalletSelector = ({ className = '', onSwitch }) => {
                 key={acc.address}
                 account={acc}
                 isActive={idx === activeIndex}
+                isFocused={idx === focusedIndex}
                 onClick={() => handleSwitch(idx)}
               />
             ))}
