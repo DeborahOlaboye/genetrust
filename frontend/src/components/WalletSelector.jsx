@@ -13,6 +13,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import { useWalletContext } from '../contexts/WalletContext';
+import { isStacksAddress } from '../lib/validations';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -43,8 +44,9 @@ const AccountChip = ({ account, isActive, onClick }) => {
   return (
     <button
       type="button"
+      role="option"
+      aria-selected={isActive}
       onClick={onClick}
-      aria-pressed={isActive}
       style={{
         display:        'flex',
         alignItems:     'center',
@@ -145,6 +147,7 @@ const WalletSelector = ({ className = '', onSwitch }) => {
   const [ledgerError,    setLedgerError]    = useState('');
 
   const panelRef = useRef(null);
+  const listboxId = 'wallet-account-list';
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -157,6 +160,19 @@ const WalletSelector = ({ className = '', onSwitch }) => {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
+  useEffect(() => {
+    if (!open) return undefined;
+
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        setOpen(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [open]);
+
   const handleSwitch = useCallback((index) => {
     switchAccount(index);
     setOpen(false);
@@ -166,7 +182,16 @@ const WalletSelector = ({ className = '', onSwitch }) => {
   const handleImport = useCallback(() => {
     setImportError('');
     const trimmed = importAddress.trim();
-    if (!trimmed) { setImportError('Address is required'); return; }
+    if (!trimmed) {
+      setImportError('Address is required');
+      return;
+    }
+
+    if (!isStacksAddress(trimmed)) {
+      setImportError('Enter a valid Stacks address');
+      return;
+    }
+
     try {
       addAccount(trimmed, importLabel.trim() || 'Imported Account', 'testnet', 'imported');
       setImportAddress('');
@@ -222,6 +247,7 @@ const WalletSelector = ({ className = '', onSwitch }) => {
         onClick={() => setOpen(v => !v)}
         aria-expanded={open}
         aria-haspopup="listbox"
+        aria-controls={listboxId}
         style={{
           display:      'flex',
           alignItems:   'center',
@@ -254,6 +280,7 @@ const WalletSelector = ({ className = '', onSwitch }) => {
       {/* Dropdown panel */}
       {open && (
         <div
+          id={listboxId}
           role="listbox"
           aria-label="Select wallet account"
           style={{
@@ -322,6 +349,7 @@ const WalletSelector = ({ className = '', onSwitch }) => {
                   placeholder="Stacks address"
                   value={importAddress}
                   onChange={e => setImportAddress(e.target.value)}
+                  aria-describedby={importError ? 'import-error' : undefined}
                   style={inputStyle}
                 />
                 <input
@@ -331,7 +359,7 @@ const WalletSelector = ({ className = '', onSwitch }) => {
                   onChange={e => setImportLabel(e.target.value)}
                   style={{ ...inputStyle, marginTop: '6px' }}
                 />
-                {importError && <p style={{ fontSize: '12px', color: '#f87171', margin: '4px 0 0' }}>{importError}</p>}
+                {importError && <p id="import-error" style={{ fontSize: '12px', color: '#f87171', margin: '4px 0 0' }}>{importError}</p>}
                 <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
                   <button type="button" onClick={handleImport} style={{ ...actionBtnStyle, flex: 1, background: '#6366f1', color: '#fff' }}>
                     Import
