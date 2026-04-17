@@ -388,6 +388,7 @@ const WalletSelector = ({ className = '', onSwitch }) => {
                   value={importAddress}
                   onChange={e => setImportAddress(e.target.value)}
                   aria-describedby={importError ? 'import-error' : undefined}
+                  aria-invalid={!!importError}
                   style={inputStyle}
                 />
                 <input
