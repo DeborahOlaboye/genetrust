@@ -366,6 +366,9 @@ const WalletSelector = ({ className = '', onSwitch }) => {
             <p style={{ padding: '6px 14px', fontSize: '11px', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>
               Accounts
             </p>
+            <p style={{ padding: '2px 14px', fontSize: '10px', color: '#9ca3af', margin: 0 }}>
+              Use ↑↓ to navigate, Enter to select, Esc to close
+            </p>
             {accounts.map((acc, idx) => (
               <AccountChip
                 key={acc.address}
