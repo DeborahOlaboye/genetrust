@@ -140,13 +140,14 @@ const WalletSelector = ({ className = '', onSwitch }) => {
     disconnect,
   } = useWalletContext();
 
-  const [open,           setOpen]          = useState(false);
-  const [addMode,        setAddMode]        = useState(false);
-  const [importAddress,  setImportAddress]  = useState('');
-  const [importLabel,    setImportLabel]    = useState('');
-  const [importError,    setImportError]    = useState('');
-  const [ledgerLoading,  setLedgerLoading]  = useState(false);
-  const [ledgerError,    setLedgerError]    = useState('');
+  const [announcement, setAnnouncement] = useState('');
+
+  // Announce account switches to screen readers
+  useEffect(() => {
+    if (accounts[activeIndex]) {
+      setAnnouncement(`Switched to account ${accounts[activeIndex].label || truncateAddress(accounts[activeIndex].address)}`);
+    }
+  }, [activeIndex, accounts]);
 
   const [focusedIndex, setFocusedIndex] = useState(0);
 
@@ -264,6 +265,10 @@ const WalletSelector = ({ className = '', onSwitch }) => {
 
   return (
     <div ref={panelRef} className={className} style={{ position: 'relative', display: 'inline-block' }}>
+      {/* Screen reader announcements */}
+      <div aria-live="polite" aria-atomic="true" style={{ position: 'absolute', left: '-10000px', width: '1px', height: '1px', overflow: 'hidden' }}>
+        {announcement}
+      </div>
       {/* Trigger button */}
       <button
         type="button"
