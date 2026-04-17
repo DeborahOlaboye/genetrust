@@ -151,10 +151,12 @@ const WalletSelector = ({ className = '', onSwitch }) => {
     }
   }, [importError, ledgerError]);
 
-  // Auto-focus first account when opening
+  // Announce dropdown state changes
   useEffect(() => {
-    if (open && accounts.length > 0) {
-      setFocusedIndex(0);
+    if (open) {
+      setAnnouncement(`Account selector opened, ${accounts.length} accounts available`);
+    } else {
+      setAnnouncement('Account selector closed');
     }
   }, [open, accounts.length]);
 
