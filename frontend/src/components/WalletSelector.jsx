@@ -244,12 +244,12 @@ const WalletSelector = ({ className = '', onSwitch }) => {
     setImportError('');
     const trimmed = importAddress.trim();
     if (!trimmed) {
-      setImportError('Address is required');
+      setImportError('Please enter a Stacks address to import');
       return;
     }
 
     if (!isStacksAddress(trimmed)) {
-      setImportError('Enter a valid Stacks address');
+      setImportError('Invalid Stacks address format. Please check and try again');
       return;
     }
 
