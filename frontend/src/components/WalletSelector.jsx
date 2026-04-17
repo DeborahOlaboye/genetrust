@@ -171,6 +171,12 @@ const WalletSelector = ({ className = '', onSwitch }) => {
       } else if (event.key === 'ArrowUp') {
         event.preventDefault();
         setFocusedIndex(prev => (prev - 1 + accounts.length) % accounts.length);
+      } else if (event.key === 'Home') {
+        event.preventDefault();
+        setFocusedIndex(0);
+      } else if (event.key === 'End') {
+        event.preventDefault();
+        setFocusedIndex(accounts.length - 1);
       } else if (event.key === 'Enter') {
         event.preventDefault();
         handleSwitch(focusedIndex);
