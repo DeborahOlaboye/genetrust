@@ -49,6 +49,14 @@ module.exports = {
   testEnvironmentOptions: {
     url: 'http://localhost',
   },
+  // Environment variables for tests
+  setupFiles: ['<rootDir>/src/test-env.js'],
+  // Better error handling
+  bail: false,
+  // Clear mocks between tests
+  clearMocks: true,
+  // Restore mocks between tests
+  restoreMocks: true,
   // Improve test performance
   maxWorkers: '50%',
   // Better error reporting
