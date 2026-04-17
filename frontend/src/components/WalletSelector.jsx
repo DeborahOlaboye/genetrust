@@ -142,12 +142,14 @@ const WalletSelector = ({ className = '', onSwitch }) => {
 
   const [announcement, setAnnouncement] = useState('');
 
-  // Announce account switches to screen readers
+  // Announce errors to screen readers
   useEffect(() => {
-    if (accounts[activeIndex]) {
-      setAnnouncement(`Switched to account ${accounts[activeIndex].label || truncateAddress(accounts[activeIndex].address)}`);
+    if (importError) {
+      setAnnouncement(`Error: ${importError}`);
+    } else if (ledgerError) {
+      setAnnouncement(`Ledger error: ${ledgerError}`);
     }
-  }, [activeIndex, accounts]);
+  }, [importError, ledgerError]);
 
   // Auto-focus first account when opening
   useEffect(() => {
