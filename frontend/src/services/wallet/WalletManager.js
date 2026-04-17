@@ -134,7 +134,7 @@ class WalletManager {
     try {
       // Initialize all providers
       await Promise.all(
-        Array.from(this._providers.values()).map(provider => 
+        Array.from(this._providers.values()).map(provider =>
           provider.init().catch(error => {
             logger.error(`Failed to initialize ${provider.constructor.name}`, { error });
             return null;
@@ -150,7 +150,7 @@ class WalletManager {
       }
 
       this._isInitialized = true;
-      logger.info('Wallet manager initialized', { 
+      logger.info('Wallet manager initialized', {
         providers: Array.from(this._providers.keys()),
         defaultProvider: this._config.defaultProvider,
         currentProvider: this.getCurrentProvider()
@@ -222,6 +222,10 @@ class WalletManager {
 
   getCurrentProvider() {
     return this._currentProvider ? this._getProviderName(this._currentProvider) : null;
+  }
+
+  getCurrentProviderState() {
+    return this._currentProvider?.getState?.() || null;
   }
 
   getProviders() {
