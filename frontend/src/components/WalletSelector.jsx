@@ -185,6 +185,7 @@ const WalletSelector = ({ className = '', onSwitch }) => {
     const handler = (e) => {
       if (panelRef.current && !panelRef.current.contains(e.target)) {
         setOpen(false);
+        setFocusedIndex(0); // Reset focus
       }
     };
     document.addEventListener('mousedown', handler);
