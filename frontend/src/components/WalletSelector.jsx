@@ -357,6 +357,7 @@ const WalletSelector = ({ className = '', onSwitch }) => {
                   type="button"
                   onClick={() => setAddMode(true)}
                   style={actionBtnStyle}
+                  aria-label="Import a new Stacks address account"
                 >
                   + Import Address
                 </button>
@@ -367,6 +368,7 @@ const WalletSelector = ({ className = '', onSwitch }) => {
                     onClick={handleConnectLedger}
                     disabled={ledgerLoading}
                     style={actionBtnStyle}
+                    aria-label="Connect a Ledger hardware wallet"
                   >
                     {ledgerLoading ? 'Connecting Ledger…' : '🔑 Connect Ledger'}
                   </button>
@@ -416,6 +418,7 @@ const WalletSelector = ({ className = '', onSwitch }) => {
               type="button"
               onClick={() => { disconnect(); setOpen(false); }}
               style={{ ...actionBtnStyle, color: '#f87171' }}
+              aria-label="Disconnect from wallet and close menu"
             >
               Disconnect
             </button>
