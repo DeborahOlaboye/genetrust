@@ -151,14 +151,35 @@ const WalletSelector = ({ className = '', onSwitch }) => {
     }
   }, [importError, ledgerError]);
 
-  // Announce dropdown state changes
+  // Focus trapping in dropdown
   useEffect(() => {
-    if (open) {
-      setAnnouncement(`Account selector opened, ${accounts.length} accounts available`);
-    } else {
-      setAnnouncement('Account selector closed');
-    }
-  }, [open, accounts.length]);
+    if (!open) return undefined;
+
+    const focusableElements = panelRef.current?.querySelectorAll(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    );
+    const firstElement = focusableElements?.[0];
+    const lastElement = focusableElements?.[focusableElements.length - 1];
+
+    const handleTabKey = (e) => {
+      if (e.key !== 'Tab') return;
+
+      if (e.shiftKey) {
+        if (document.activeElement === firstElement) {
+          e.preventDefault();
+          lastElement?.focus();
+        }
+      } else {
+        if (document.activeElement === lastElement) {
+          e.preventDefault();
+          firstElement?.focus();
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleTabKey);
+    return () => document.removeEventListener('keydown', handleTabKey);
+  }, [open]);
 
   // Keyboard navigation for the dropdown
   useEffect(() => {
