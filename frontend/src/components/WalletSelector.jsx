@@ -399,9 +399,16 @@ const WalletSelector = ({ className = '', onSwitch }) => {
                     disabled={ledgerLoading}
                     style={actionBtnStyle}
                     aria-label="Connect a Ledger hardware wallet"
+                    aria-describedby={ledgerLoading ? 'ledger-status' : undefined}
                   >
                     {ledgerLoading ? 'Connecting Ledger…' : '🔑 Connect Ledger'}
                   </button>
+                )}
+
+                {ledgerLoading && (
+                  <p id="ledger-status" style={{ fontSize: '12px', color: '#60a5fa', padding: '4px 14px', margin: 0 }}>
+                    Connecting to Ledger device, please wait...
+                  </p>
                 )}
 
                 {ledgerError && (
