@@ -424,10 +424,14 @@ const WalletSelector = ({ className = '', onSwitch }) => {
                   placeholder="Stacks address"
                   value={importAddress}
                   onChange={e => setImportAddress(e.target.value)}
-                  aria-describedby={importError ? 'import-error' : undefined}
+                  aria-describedby={importError ? 'import-error' : 'address-help'}
                   aria-invalid={!!importError}
+                  aria-required="true"
                   style={inputStyle}
                 />
+                <div id="address-help" style={{ fontSize: '11px', color: '#6b7280', margin: '2px 0 4px' }}>
+                  Enter a valid Stacks address starting with SP or ST
+                </div>
                 <input
                   type="text"
                   placeholder="Label (optional)"
