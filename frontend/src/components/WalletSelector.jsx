@@ -303,7 +303,7 @@ const WalletSelector = ({ className = '', onSwitch }) => {
   return (
     <div ref={panelRef} className={className} style={{ position: 'relative', display: 'inline-block' }}>
       {/* Screen reader announcements */}
-      <div aria-live="polite" aria-atomic="true" style={{ position: 'absolute', left: '-10000px', width: '1px', height: '1px', overflow: 'hidden' }}>
+      <div aria-live="polite" aria-atomic="true" role="status" style={{ position: 'absolute', left: '-10000px', width: '1px', height: '1px', overflow: 'hidden' }}>
         {announcement}
       </div>
       {/* Trigger button */}
