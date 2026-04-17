@@ -11,6 +11,8 @@ const PROVIDERS = {
   LEDGER: 'ledger',
 };
 
+const PERSISTED_PROVIDER_KEY = 'genetrust_active_wallet_provider';
+
 class WalletManager {
   constructor(config = {}) {
     this._config = {
@@ -36,6 +38,53 @@ class WalletManager {
 
     // Initialize enabled providers
     this._initializeProviders();
+  }
+
+  _persistProvider(providerName) {
+    if (typeof window === 'undefined') return;
+    try {
+      localStorage.setItem(PERSISTED_PROVIDER_KEY, providerName);
+    } catch (_) {
+      // ignore storage failures
+    }
+  }
+
+  _loadPersistedProvider() {
+    if (typeof window === 'undefined') return null;
+    try {
+      return localStorage.getItem(PERSISTED_PROVIDER_KEY);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  _clearPersistedProvider() {
+    if (typeof window === 'undefined') return;
+    try {
+      localStorage.removeItem(PERSISTED_PROVIDER_KEY);
+    } catch (_) {
+      // ignore
+    }
+  }
+
+  getPersistedProvider() {
+    return this._loadPersistedProvider();
+  }
+
+  isProviderEnabled(providerName) {
+    return !!this._providers.has(providerName);
+  }
+
+  getProviderMetadata(providerName) {
+    const provider = this._providers.get(providerName);
+    if (!provider) return null;
+
+    return {
+      name: providerName,
+      isConnected: provider.isConnected?.() ?? false,
+      address: provider.getAddress?.() || null,
+      network: provider.getNetwork?.() || null,
+    };
   }
 
   _initializeProviders() {
@@ -85,7 +134,7 @@ class WalletManager {
     try {
       // Initialize all providers
       await Promise.all(
-        Array.from(this._providers.values()).map(provider => 
+        Array.from(this._providers.values()).map(provider =>
           provider.init().catch(error => {
             logger.error(`Failed to initialize ${provider.constructor.name}`, { error });
             return null;
@@ -93,15 +142,18 @@ class WalletManager {
         )
       );
 
-      // Set the default provider if not set
-      if (!this._currentProvider && this._providers.has(this._config.defaultProvider)) {
+      const persistedProvider = this._loadPersistedProvider();
+      if (persistedProvider && this._providers.has(persistedProvider)) {
+        this._currentProvider = this._providers.get(persistedProvider);
+      } else if (!this._currentProvider && this._providers.has(this._config.defaultProvider)) {
         this._currentProvider = this._providers.get(this._config.defaultProvider);
       }
 
       this._isInitialized = true;
-      logger.info('Wallet manager initialized', { 
+      logger.info('Wallet manager initialized', {
         providers: Array.from(this._providers.keys()),
-        defaultProvider: this._config.defaultProvider
+        defaultProvider: this._config.defaultProvider,
+        currentProvider: this.getCurrentProvider()
       });
     } catch (error) {
       logger.error('Failed to initialize wallet manager', { error });
@@ -119,6 +171,10 @@ class WalletManager {
       throw new Error(`Provider ${providerName} not found or not enabled`);
     }
 
+    if (this._currentProvider === provider && provider.isConnected?.()) {
+      return provider.getState ? provider.getState() : this.getState();
+    }
+
     try {
       // Disconnect current provider if different
       if (this._currentProvider && this._currentProvider !== provider) {
@@ -127,6 +183,7 @@ class WalletManager {
 
       this._currentProvider = provider;
       const state = await provider.connect();
+      this._persistProvider(providerName || this.getCurrentProvider());
       this._emit();
       return state;
     } catch (error) {
@@ -141,6 +198,7 @@ class WalletManager {
     try {
       await this._currentProvider.disconnect();
       this._currentProvider = null;
+      this._clearPersistedProvider();
       this._emit();
     } catch (error) {
       logger.error('Failed to disconnect wallet', { error });
@@ -166,6 +224,10 @@ class WalletManager {
     return this._currentProvider ? this._getProviderName(this._currentProvider) : null;
   }
 
+  getCurrentProviderState() {
+    return this._currentProvider?.getState?.() || null;
+  }
+
   getProviders() {
     return Array.from(this._providers.keys());
   }
@@ -174,13 +236,35 @@ class WalletManager {
     return this._providers.get(providerName) || null;
   }
 
+  setDefaultProvider(providerName) {
+    if (!this._providers.has(providerName)) {
+      throw new Error(`Provider ${providerName} is not available`);
+    }
+    this._config.defaultProvider = providerName;
+    this._persistProvider(providerName);
+  }
+
+  getProviderStatuses() {
+    return Array.from(this._providers.entries()).map(([name, provider]) => ({
+      name,
+      isConnected: provider.isConnected?.() ?? false,
+      address: provider.getAddress?.() || null,
+      network: provider.getNetwork?.() || null,
+    }));
+  }
+
   getState() {
+    const provider = this._currentProvider;
+    const networkValue = provider?.getNetwork?.();
+
     return {
-      address: this._currentProvider?.getAddress() || null,
-      isConnected: this._currentProvider?.isConnected() || false,
-      network: this._currentProvider?.getNetwork()?.coreApiUrl || null,
-      provider: this._currentProvider ? this._getProviderName(this._currentProvider) : null,
-      availableProviders: this.getProviders()
+      address: provider?.getAddress?.() || null,
+      isConnected: provider?.isConnected?.() || false,
+      network: typeof networkValue === 'string'
+        ? networkValue
+        : networkValue?.coreApiUrl || null,
+      provider: provider ? this._getProviderName(provider) : null,
+      availableProviders: this.getProviders(),
     };
   }
 

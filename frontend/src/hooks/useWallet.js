@@ -59,6 +59,7 @@ const useWallet = (config = {}) => {
     network: null,
     provider: null,
     availableProviders: [],
+    providerStatuses: [],
     isLoading: true,
     error: null
   });
@@ -69,6 +70,7 @@ const useWallet = (config = {}) => {
     setState(prevState => ({
       ...prevState,
       ...walletState,
+      providerStatuses: walletManager.getProviderStatuses(),
       isLoading: false,
       error: null
     }));

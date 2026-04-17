@@ -57,6 +57,7 @@ const WalletContext = createContext({
 
   // ── Constants ─────────────────────────────────────────────────────────
   PROVIDERS: {},
+  providerStatuses: [],
 });
 
 /**
@@ -96,6 +97,7 @@ export const WalletProvider = ({ children, config = {}, sessionOptions = {} }) =
     signMessage:        wallet.signMessage,
     sendTransaction:    wallet.sendTransaction,
     PROVIDERS:          wallet.PROVIDERS,
+    providerStatuses:   wallet.providerStatuses,
 
     // Multi-account
     accounts:               multi.accounts,
