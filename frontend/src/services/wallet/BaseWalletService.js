@@ -1,4 +1,5 @@
 import { createLogger } from '../../utils/logger';
+import { WalletAdapter } from './WalletAdapter.js';
 
 const logger = createLogger({ module: 'BaseWalletService' });
 
@@ -6,7 +7,7 @@ const logger = createLogger({ module: 'BaseWalletService' });
  * Base class for all wallet services
  * Defines the common interface that all wallet providers must implement
  */
-export class BaseWalletService {
+export class BaseWalletService extends WalletAdapter {
   constructor() {
     if (new.target === BaseWalletService) {
       throw new Error('Cannot instantiate BaseWalletService directly');
