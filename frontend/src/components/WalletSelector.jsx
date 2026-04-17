@@ -396,6 +396,12 @@ const WalletSelector = ({ className = '', onSwitch }) => {
                   placeholder="Label (optional)"
                   value={importLabel}
                   onChange={e => setImportLabel(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleImport();
+                    }
+                  }}
                   style={{ ...inputStyle, marginTop: '6px' }}
                 />
                 {importError && <p id="import-error" style={{ fontSize: '12px', color: '#f87171', margin: '4px 0 0' }}>{importError}</p>}
