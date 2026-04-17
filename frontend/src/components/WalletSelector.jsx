@@ -149,7 +149,12 @@ const WalletSelector = ({ className = '', onSwitch }) => {
     }
   }, [activeIndex, accounts]);
 
-  const [focusedIndex, setFocusedIndex] = useState(0);
+  // Auto-focus first account when opening
+  useEffect(() => {
+    if (open && accounts.length > 0) {
+      setFocusedIndex(0);
+    }
+  }, [open, accounts.length]);
 
   // Keyboard navigation for the dropdown
   useEffect(() => {
