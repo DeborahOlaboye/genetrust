@@ -70,6 +70,9 @@ export const APP_CONFIG = {
 
   // Debug logging
   enableDebugLogs: isDev || import.meta.env.VITE_DEBUG === 'true',
+
+  // Resolved deployer for the active network (useful for explorer links)
+  activeDeployer: (import.meta.env.VITE_NETWORK === 'mainnet') ? MAINNET_DEPLOYER : TESTNET_DEPLOYER,
 };
 
 export { TESTNET_DEPLOYER, MAINNET_DEPLOYER };
