@@ -15,9 +15,16 @@ const {
   bufferCV,
 } = require('@stacks/transactions');
 
+// ─── CLI Args ─────────────────────────────────────────────────────────────────
+// Usage: node interact-genetrust.js [--dry-run] [--users N] [--rounds N]
+const args        = process.argv.slice(2);
+const DRY_RUN     = args.includes('--dry-run');
+const argUsers    = args.indexOf('--users');
+const argRounds   = args.indexOf('--rounds');
+
 // ─── Scale Config ─────────────────────────────────────────────────────────────
-const NUM_USERS_LIMIT = 20;
-const NUM_ROUNDS      = 5;
+const NUM_USERS_LIMIT = argUsers !== -1 ? parseInt(args[argUsers + 1], 10) : 20;
+const NUM_ROUNDS      = argRounds !== -1 ? parseInt(args[argRounds + 1], 10) : 5;
 
 // ─── Fee / Timing Config ──────────────────────────────────────────────────────
 const TX_FEE          = BigInt(400);   // fee per transaction in microSTX
@@ -124,6 +131,14 @@ async function callContract(userIdx, contractName, functionName, functionArgs) {
   const isOwner  = userIdx === -1;
   const senderKey = isOwner ? OWNER_KEY : PRIVATE_KEYS[userIdx];
   let nonce = isOwner ? state.ownerNonce : state.userNonces[userIdx];
+
+  if (DRY_RUN) {
+    process.stdout.write('(dry)');
+    state.successCount++;
+    if (isOwner) state.ownerNonce++;
+    else state.userNonces[userIdx]++;
+    return 0;
+  }
 
   let attempts = 0;
   while (true) {
