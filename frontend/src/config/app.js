@@ -71,3 +71,5 @@ export const APP_CONFIG = {
   // Debug logging
   enableDebugLogs: isDev || import.meta.env.VITE_DEBUG === 'true',
 };
+
+export { TESTNET_DEPLOYER, MAINNET_DEPLOYER };
