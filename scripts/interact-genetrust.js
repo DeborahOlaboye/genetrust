@@ -388,13 +388,16 @@ async function main() {
   console.log('');
   await runOwnerCalls();
 
+  const elapsedMs  = Date.now() - state.startTime;
+  const elapsedSec = (elapsedMs / 1000).toFixed(1);
   const rate = totalExpected > 0 ? ((state.successCount / totalExpected) * 100).toFixed(1) : 'N/A';
   console.log('════════════════════════════════════════════════════');
   console.log('  GeneTrust Activity Complete!');
   console.log('════════════════════════════════════════════════════');
   console.log(`  Successful transactions: ${state.successCount}`);
   console.log(`  Failed transactions:     ${state.failCount}`);
-  console.log(`\n  Target: ${totalExpected} transactions (${NUM_USERS} users × ${callsPerUser} calls × ${NUM_ROUNDS} rounds + 1 owner call)`);
+  console.log(`  Elapsed time:            ${elapsedSec}s`);
+  console.log(`\n  Target: ${totalExpected} transactions (${NUM_USERS} users x ${callsPerUser} calls x ${NUM_ROUNDS} rounds + 1 owner call)`);
   console.log(`  Success rate: ${rate}%\n`);
   console.log(`  View contract activity:`);
   console.log(`  https://explorer.hiro.so/address/${CONTRACT_OWNER}?chain=mainnet\n`);
