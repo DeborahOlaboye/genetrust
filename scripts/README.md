@@ -84,3 +84,23 @@ Settings files contain deployer mnemonics and are **gitignored**. Never commit t
 
 Create `settings/Testnet.toml` or `settings/Mainnet.toml` from the `Devnet.toml` template
 and replace the mnemonic with your deployer wallet's seed phrase.
+
+## Release Workflow
+
+When cutting a new release:
+
+1. Bump the version in `package.json`
+2. Create an annotated git tag:
+   ```bash
+   git tag -a v0.2.0 -m "Release v0.2.0"
+   git push origin v0.2.0
+   ```
+3. The `changelog` GitHub Actions workflow automatically regenerates `CHANGELOG.md`
+   and commits it to the repository using [git-cliff](https://git-cliff.org).
+
+To preview what the next changelog entry will look like before tagging:
+```bash
+make changelog-preview
+# or
+npm run changelog:preview
+```

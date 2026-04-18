@@ -129,6 +129,39 @@ npm test:watch
 - Todo Tree
 - DotENV
 
+## Changelog Generation
+
+GeneTrust uses [git-cliff](https://git-cliff.org) to generate `CHANGELOG.md` from Conventional Commit messages.
+
+Install git-cliff (one-time, not in package.json since it is a Rust binary):
+
+```bash
+# macOS
+brew install git-cliff
+
+# Cargo
+cargo install git-cliff
+```
+
+Preview unreleased changes:
+
+```bash
+make changelog-preview
+# or
+npm run changelog:preview
+```
+
+Regenerate the full changelog:
+
+```bash
+make changelog
+# or
+npm run changelog
+```
+
+Configuration lives in `cliff.toml` at the project root.
+On tag push, the `changelog` GitHub Actions workflow runs this automatically.
+
 ## Troubleshooting
 
 ### Common Issues

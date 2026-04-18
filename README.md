@@ -90,6 +90,11 @@ Medical lab attestation proofs that verify genetic data properties without expos
 
 Please do not commit `settings/Mainnet.toml`, `.env.local`, or any file containing private keys or mnemonic phrases.
 
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for a full history of releases and notable changes.
+Releases follow [Semantic Versioning](https://semver.org) and are tagged as `vMAJOR.MINOR.PATCH`.
+
 ## License
 
 MIT — see [LICENSE](LICENSE) for details.
