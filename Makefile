@@ -1,4 +1,4 @@
-.PHONY: check verify deploy-simnet deploy-testnet deploy-mainnet post-verify-mainnet post-verify-testnet help
+.PHONY: check verify deploy-simnet deploy-testnet deploy-mainnet post-verify-mainnet post-verify-testnet changelog changelog-preview help
 
 help:
 	@echo "GeneTrust Contract Deployment"
@@ -13,6 +13,8 @@ help:
 	@echo "  deploy-mainnet      Deploy to Stacks mainnet"
 	@echo "  post-verify-mainnet Verify mainnet deployment receipts"
 	@echo "  post-verify-testnet Verify testnet deployment receipts"
+	@echo "  changelog           Regenerate CHANGELOG.md from git history (requires git-cliff)"
+	@echo "  changelog-preview   Preview unreleased changes (requires git-cliff)"
 	@echo ""
 
 check:
@@ -35,3 +37,9 @@ post-verify-mainnet:
 
 post-verify-testnet:
 	bash scripts/post-deploy-verify.sh testnet
+
+changelog:
+	git-cliff -o CHANGELOG.md
+
+changelog-preview:
+	git-cliff --unreleased
