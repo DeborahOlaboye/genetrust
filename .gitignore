@@ -86,3 +86,7 @@ Desktop.ini
 .project
 .classpath
 .settings/
+
+# ─── TypeScript ───────────────────────────────────────────────────────────────
+*.tsbuildinfo
+tsconfig.tsbuildinfo
