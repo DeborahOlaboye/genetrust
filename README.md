@@ -77,6 +77,25 @@ Medical lab attestation proofs that verify genetic data properties without expos
 
 **Proof Types:** `1` = Gene Presence · `2` = Gene Absence · `3` = Gene Variant · `4` = Aggregate
 
+## Contributing
+
+1. Fork the repository
+2. Create a branch: `git checkout -b feat/your-feature`
+3. Make changes and commit in logical increments
+4. Push and open a pull request against `main`
+
+Please do not commit `settings/Mainnet.toml`, `.env.local`, or any file containing private keys or mnemonic phrases.
+
+## License
+
+MIT — see [LICENSE](LICENSE) for details.
+
+## Acknowledgments
+
+- [Hiro Systems](https://hiro.so) for Clarinet and the Stacks developer toolchain
+- [Stacks Foundation](https://stacks.org) for blockchain infrastructure
+- [Protocol Labs](https://protocol.ai) for IPFS decentralized storage
+
 ## Roadmap
 
 - [x] 4 production Clarity smart contracts deployed to mainnet
