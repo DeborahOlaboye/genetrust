@@ -13,6 +13,24 @@ A decentralized platform for secure genetic data sharing, consent management, an
 | `data-governance` | `SP3KKFRRWQVJXEJCGM6ZB359EF01VRY86HW6CCD45.data-governance` |
 | `attestations` | `SP3KKFRRWQVJXEJCGM6ZB359EF01VRY86HW6CCD45.attestations` |
 
+## Contracts
+
+### `dataset-registry` — genetic-data.clar
+
+Registers and manages genetic datasets on-chain with tiered access control.
+
+| Function | Type | Description |
+|---|---|---|
+| `register-dataset` | public | Register a new genetic dataset |
+| `grant-access` | public | Grant a user access to a dataset |
+| `revoke-access` | public | Revoke a user's access |
+| `deactivate-dataset` | public | Deactivate a dataset |
+| `get-dataset` | read-only | Fetch dataset details |
+| `has-valid-access` | read-only | Check if a user's access is still valid |
+| `get-next-data-id` | read-only | Get the next available dataset ID |
+
+**Access Levels:** `1` = Basic · `2` = Detailed · `3` = Full
+
 ## Running the Frontend
 
 ```bash
