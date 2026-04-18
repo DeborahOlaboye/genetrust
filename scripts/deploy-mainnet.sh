@@ -65,7 +65,8 @@ echo ""
 clarinet deployments apply --mainnet --use-on-disk-deployment-plan --no-dashboard
 
 echo ""
-echo "✅ Deployment complete!"
+echo "Deployment complete!"
 echo ""
-echo "📝 Check deployments/default.mainnet-receipts.json for transaction details"
-echo ""
+
+# Run post-deployment verification
+bash scripts/post-deploy-verify.sh mainnet
