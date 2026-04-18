@@ -87,6 +87,22 @@ Initial MVP release of GeneTrust on Stacks testnet.
 - Playwright E2E test configuration
 - Docker build support (`Dockerfile`, `docker-compose.yml`)
 
+### Smart Contract Error Codes (v0.1.0)
+
+| Code | Contract | Meaning |
+|------|----------|---------|
+| `u100` | genetic-data | Unauthorized caller |
+| `u101` | genetic-data | Dataset already exists |
+| `u102` | genetic-data | Dataset not found |
+| `u103` | genetic-data | Invalid access level (must be 1-3) |
+| `u200` | exchange | Listing not found |
+| `u201` | exchange | Insufficient STX balance |
+| `u202` | exchange | Listing already exists |
+| `u300` | attestations | Verifier not authorized |
+| `u301` | attestations | Proof already exists |
+| `u400` | data-governance | No active consent record |
+| `u401` | data-governance | Erasure already requested |
+
 ---
 
 [Unreleased]: https://github.com/DeborahOlaboye/genetrust/compare/v0.1.0...HEAD
