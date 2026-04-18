@@ -3,6 +3,10 @@
 // Check if running in development mode
 const isDev = import.meta.env.MODE === 'development';
 
+// Known deployer addresses
+const TESTNET_DEPLOYER = 'ST2VXH7RRKSAYNMWCVVMD972B7HP3H2QY96V8Q161';
+const MAINNET_DEPLOYER = 'SP3KKFRRWQVJXEJCGM6ZB359EF01VRY86HW6CCD45';
+
 // Warn if network/node URL mismatch detected
 const configuredNetwork = import.meta.env.VITE_NETWORK || 'testnet';
 const configuredNode    = import.meta.env.VITE_STACKS_NODE || '';
@@ -44,19 +48,19 @@ export const APP_CONFIG = {
   // These can be overridden via environment variables
   contracts: {
     datasetRegistry: {
-      address: import.meta.env.VITE_DATASET_REGISTRY_ADDRESS || 'ST2VXH7RRKSAYNMWCVVMD972B7HP3H2QY96V8Q161',
+      address: import.meta.env.VITE_DATASET_REGISTRY_ADDRESS || TESTNET_DEPLOYER,
       name: import.meta.env.VITE_DATASET_REGISTRY_NAME || 'dataset-registry',
     },
     exchange: {
-      address: import.meta.env.VITE_EXCHANGE_ADDRESS || 'ST2VXH7RRKSAYNMWCVVMD972B7HP3H2QY96V8Q161',
+      address: import.meta.env.VITE_EXCHANGE_ADDRESS || TESTNET_DEPLOYER,
       name: import.meta.env.VITE_EXCHANGE_NAME || 'exchange',
     },
     attestations: {
-      address: import.meta.env.VITE_ATTESTATIONS_ADDRESS || 'ST2VXH7RRKSAYNMWCVVMD972B7HP3H2QY96V8Q161',
+      address: import.meta.env.VITE_ATTESTATIONS_ADDRESS || TESTNET_DEPLOYER,
       name: import.meta.env.VITE_ATTESTATIONS_NAME || 'attestations',
     },
     dataGovernance: {
-      address: import.meta.env.VITE_DATA_GOVERNANCE_ADDRESS || 'ST2VXH7RRKSAYNMWCVVMD972B7HP3H2QY96V8Q161',
+      address: import.meta.env.VITE_DATA_GOVERNANCE_ADDRESS || TESTNET_DEPLOYER,
       name: import.meta.env.VITE_DATA_GOVERNANCE_NAME || 'data-governance',
     },
   },
