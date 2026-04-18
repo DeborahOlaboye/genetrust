@@ -225,3 +225,21 @@ cd frontend && npm test
 
 - Read-only helper functions that only compose already-tested logic.
 - Deployment scripts (tested manually against testnet).
+
+## Code Style
+
+### JavaScript / JSX
+
+- ESLint and Prettier are configured at the root and in `frontend/`. Run `npm run lint:fix` and `npm run format` before committing.
+- Use `const` and `let` — never `var`.
+- Prefer named exports over default exports in config and utility files.
+- Do not leave `console.log` statements in production code — use `logger.debug` from `frontend/src/config/logger.js`.
+- Arrow functions for callbacks; named `function` declarations for top-level functions.
+
+### Clarity (Smart Contracts)
+
+- Two-space indentation.
+- Group related error constants with a comment label (e.g. `Errors - Input Validation (400-409)`).
+- One blank line between function definitions.
+- Use named constants (`ACCESS-BASIC`, `CONSENT-EXPIRY-BLOCKS`) instead of magic numbers.
+- Prefer `unwrap!` over `unwrap-panic` — all errors must be catchable.
