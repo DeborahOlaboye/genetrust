@@ -1,4 +1,7 @@
 ---
+# GeneTrust Simnet Deployment Plan
+# Used by: clarinet console, clarinet test, clarinet check
+# No credentials required - uses built-in simnet deployer wallet
 id: 0
 name: "Simulated deployment, used as a default for `clarinet console`, `clarinet test` and `clarinet check`"
 network: simnet

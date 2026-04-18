@@ -1,0 +1,13 @@
+# GeneTrust Mainnet Settings Template
+# Copy this file to settings/Mainnet.toml and fill in your deployer mnemonic.
+# settings/Mainnet.toml is gitignored - never commit it.
+#
+# WARNING: This wallet will spend real STX on deployment fees (~18750 ustx per contract).
+
+[network]
+name = "mainnet"
+deployment_fee_rate = 10
+
+[accounts.deployer]
+mnemonic = "REPLACE_WITH_YOUR_MAINNET_MNEMONIC"
+# stx_address: YOUR_MAINNET_STX_ADDRESS (SP...)
