@@ -26,3 +26,39 @@ GeneTrust is committed to providing a welcoming and inclusive environment. All c
 - Avoid discriminatory, harassing, or offensive language
 
 Violations may result in removal from the project. Report issues to the maintainers via GitHub issues.
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js >= 18
+- npm >= 9
+- [Clarinet](https://docs.hiro.so/stacks/clarinet) for smart contract development
+- A Stacks wallet (e.g. [Leather](https://leather.io)) for testnet interaction
+
+### Local Setup
+
+```bash
+# Clone the repository
+git clone https://github.com/DeborahOlaboye/genetrust.git
+cd genetrust
+
+# Install root dependencies (SDK + tests)
+npm install
+
+# Install frontend dependencies
+cd frontend && npm install && cd ..
+
+# Configure environment
+cp frontend/.env.example frontend/.env.local
+# Edit frontend/.env.local as needed
+
+# Verify smart contracts
+clarinet check
+
+# Run contract tests
+npm test
+
+# Start the frontend dev server
+cd frontend && npm run dev
+```
