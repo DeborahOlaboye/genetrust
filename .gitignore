@@ -58,3 +58,9 @@ coverage/
 *.lcov
 .nyc_output/
 frontend/coverage/
+
+# ─── Vite / Rollup cache ──────────────────────────────────────────────────────
+.vite/
+frontend/.vite/
+*.local
+rollup.config.js.cache
