@@ -179,7 +179,7 @@
 
 ;; @notice Returns the next listing-id that will be assigned on the next create-listing call.
 ;; @dev Useful for frontends to predict listing-id before submitting a transaction.
-;; @return ok(uint) — the next available listing-id.
+;; @return ok(uint) - the next available listing-id.
 (define-read-only (get-next-listing-id)
     (ok (var-get next-listing-id))
 )

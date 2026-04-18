@@ -226,7 +226,7 @@
 
 ;; @notice Returns the next auto-increment ID that will be assigned to the next registered dataset.
 ;; @dev Useful for frontends to predict the data-id before submitting a transaction.
-;; @return ok(uint) — the next available data-id.
+;; @return ok(uint) - the next available data-id.
 (define-read-only (get-next-data-id)
     (ok (var-get next-data-id))
 )
