@@ -12,14 +12,16 @@
 (define-constant ERR-NOT-FOUND (err u404))
 (define-constant ERR-INVALID-INPUT (err u400))
 
-;; Jurisdiction constants (readable by frontend)
-(define-constant JURISDICTION-GLOBAL u0)
-(define-constant JURISDICTION-US u1)
-(define-constant JURISDICTION-EU u2)
-(define-constant JURISDICTION-UK u3)
-(define-constant JURISDICTION-CANADA u4)
+;; @notice Jurisdiction identifiers mapped to uint codes for on-chain storage.
+;;         Frontends should decode these to human-readable region labels.
+(define-constant JURISDICTION-GLOBAL u0)  ;; No regional restriction
+(define-constant JURISDICTION-US u1)      ;; United States (HIPAA)
+(define-constant JURISDICTION-EU u2)      ;; European Union (GDPR)
+(define-constant JURISDICTION-UK u3)      ;; United Kingdom (UK GDPR)
+(define-constant JURISDICTION-CANADA u4) ;; Canada (PIPEDA)
 
-;; Consent expiry: ~1 year
+;; @notice Number of blocks representing approximately one year of consent validity.
+;;         Based on ~10-minute Stacks block times: 6 blocks/hr x 24 hr x 365 days = 52560.
 (define-constant CONSENT-EXPIRY-BLOCKS u52560)
 
 ;; Consent records per dataset
