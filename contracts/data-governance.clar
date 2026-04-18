@@ -40,7 +40,9 @@
     }
 )
 
-;; GDPR flags per dataset
+;; @notice Tracks GDPR right invocations for each dataset.
+;;         Flags are set to true when the owner exercises their rights and are never unset.
+;; @dev Downstream systems must honor these flags when processing or exposing dataset data.
 (define-map gdpr-records
     { data-id: uint }
     {
