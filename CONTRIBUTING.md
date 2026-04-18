@@ -91,3 +91,40 @@ bash scripts/pre-deploy-check.sh testnet
 | `chore/<description>` | Tooling, dependencies, CI changes |
 
 Branch names must be lowercase and use hyphens, not underscores or numbers as separators. Branch from `main` and keep branches short-lived.
+
+## Commit Message Format
+
+GeneTrust uses [Conventional Commits](https://www.conventionalcommits.org/). Every commit message must follow this format:
+
+```
+<type>(<scope>): <short description>
+
+[optional body]
+```
+
+### Types
+
+| Type | When to use |
+|---|---|
+| `feat` | A new feature |
+| `fix` | A bug fix |
+| `docs` | Documentation changes only |
+| `refactor` | Code change that neither fixes a bug nor adds a feature |
+| `test` | Adding or updating tests |
+| `chore` | Tooling, build, CI, dependency updates |
+| `perf` | Performance improvement |
+
+### Scopes
+
+Common scopes: `contracts`, `scripts`, `frontend`, `config`, `env`, `types`, `deployments`, `sdk`.
+
+### Examples
+
+```
+feat(contracts): add has-valid-consent read-only function
+fix(scripts): replace em-dash with ASCII hyphen in NatSpec comments
+docs(contributing): add branching strategy section
+chore(gitignore): ignore interact-results-*.json output files
+```
+
+Keep the subject line under 72 characters. Use the body for WHY, not WHAT.
