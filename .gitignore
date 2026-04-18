@@ -114,3 +114,15 @@ __pycache__/
 venv/
 ENV/
 .python-version
+
+# ─── Temporary and scratch files ──────────────────────────────────────────────
+*.tmp
+*.temp
+*.bak
+*.orig
+*.rej
+*.patch
+*.diff
+*~
+.scratch/
+scratch/
