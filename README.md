@@ -3,3 +3,7 @@
 A decentralized platform for secure genetic data sharing, consent management, and marketplace trading built on the Stacks blockchain.
 
 > Your DNA. Your Rules. Your Revenue.
+
+## Overview
+
+GeneTrust solves a critical paradox in genomic research: researchers need diverse genetic datasets to drive medical breakthroughs, while individuals want to contribute their data but fear privacy violations and receive no compensation. GeneTrust creates a decentralized marketplace where individuals own, control, and monetize their genetic data while maintaining complete privacy through on-chain consent management and attestation proofs.
