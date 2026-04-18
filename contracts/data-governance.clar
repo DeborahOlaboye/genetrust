@@ -1,5 +1,11 @@
 ;; data-governance.clar
-;; Consent management and GDPR controls for GeneTrust
+;; @title GeneTrust Data Governance
+;; @version 1.0.0
+;; @author GeneTrust
+;; @notice Manages consent settings and GDPR rights for genetic datasets.
+;;         Each dataset owner can set research, commercial, and clinical consent flags
+;;         and invoke data subject rights: erasure, portability, and processing restriction.
+;; @dev Deployed on Stacks mainnet at SP3KKFRRWQVJXEJCGM6ZB359EF01VRY86HW6CCD45.data-governance
 
 ;; Errors
 (define-constant ERR-NOT-AUTHORIZED (err u401))
