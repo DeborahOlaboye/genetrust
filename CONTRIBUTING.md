@@ -170,3 +170,25 @@ npm run test:report
 ### Deployment
 
 Never deploy contracts yourself. Submit a PR; deployment to mainnet is handled by the maintainers after audit.
+
+## Frontend Contributions
+
+The frontend is a React + Vite application in the `frontend/` directory.
+
+### Setup
+
+```bash
+cd frontend
+cp .env.example .env.local
+npm install
+npm run dev
+```
+
+### Rules
+
+- All new UI logic must be in `frontend/src/`.
+- Do not hard-code contract addresses or network URLs — use `APP_CONFIG` from `frontend/src/config/app.js`.
+- Use the `logger` utility from `frontend/src/config/logger.js` instead of `console.log` directly.
+- Wallet connection must go through `walletConfig.js` — do not call `@stacks/connect` directly from components.
+- New components go in `frontend/src/components/`. Shared UI elements go in `frontend/src/components/common/`.
+- Run the linter before committing: `npm run lint`.
