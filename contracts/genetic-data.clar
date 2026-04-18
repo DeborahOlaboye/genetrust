@@ -198,17 +198,25 @@
     )
 )
 
-;; Read: get dataset info
+;; @notice Returns all stored fields for a given dataset.
+;; @param data-id The dataset ID to look up.
+;; @return Some(dataset) if found, none otherwise.
 (define-read-only (get-dataset (data-id uint))
     (map-get? datasets { data-id: data-id })
 )
 
-;; Read: check if a user has access
+;; @notice Returns the access-rights record for a user on a given dataset.
+;; @param data-id The dataset ID.
+;; @param user The principal whose access record to retrieve.
+;; @return Some(access-right) if found, none otherwise.
 (define-read-only (get-access (data-id uint) (user principal))
     (map-get? access-rights { data-id: data-id, user: user })
 )
 
-;; Read: check if access is currently valid (not expired)
+;; @notice Checks whether a user currently has non-expired access to a dataset.
+;; @param data-id The dataset ID.
+;; @param user The principal to check.
+;; @return ok(true) if access exists and has not expired, ok(false) otherwise.
 (define-read-only (has-valid-access (data-id uint) (user principal))
     (match (map-get? access-rights { data-id: data-id, user: user })
         rights (ok (< stacks-block-height (get expires-at rights)))
@@ -216,7 +224,9 @@
     )
 )
 
-;; Read: get next data-id (useful for frontend)
+;; @notice Returns the next auto-increment ID that will be assigned to the next registered dataset.
+;; @dev Useful for frontends to predict the data-id before submitting a transaction.
+;; @return ok(uint) — the next available data-id.
 (define-read-only (get-next-data-id)
     (ok (var-get next-data-id))
 )
