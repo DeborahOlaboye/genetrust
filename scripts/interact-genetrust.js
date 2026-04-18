@@ -2,6 +2,7 @@
 // Interacts with all 4 deployed GeneTrust contracts across multiple users
 // Usage: node interact-genetrust.js
 
+const fs = require('fs');
 const {
   makeContractCall,
   broadcastTransaction,
@@ -406,6 +407,24 @@ async function main() {
   console.log(`  https://explorer.hiro.so/address/${CONTRACT_OWNER}.exchange?chain=mainnet`);
   console.log(`  https://explorer.hiro.so/address/${CONTRACT_OWNER}.data-governance?chain=mainnet`);
   console.log(`  https://explorer.hiro.so/address/${CONTRACT_OWNER}.attestations?chain=mainnet\n`);
+
+  // Write results summary to disk
+  const results = {
+    timestamp: new Date().toISOString(),
+    dryRun: DRY_RUN,
+    users: NUM_USERS,
+    rounds: NUM_ROUNDS,
+    successCount: state.successCount,
+    failCount: state.failCount,
+    successRate: rate,
+    elapsedSeconds: parseFloat(elapsedSec),
+    roundSuccess: state.roundSuccess,
+    roundFail: state.roundFail,
+    contractOwner: CONTRACT_OWNER,
+  };
+  const outFile = `interact-results-${Date.now()}.json`;
+  fs.writeFileSync(outFile, JSON.stringify(results, null, 2));
+  console.log(`  Results written to: ${outFile}\n`);
 }
 
 main().catch(console.error);
