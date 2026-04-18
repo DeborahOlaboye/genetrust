@@ -53,7 +53,15 @@
     }
 )
 
-;; Set or update consent for a dataset
+;; @notice Sets or updates the consent configuration for a dataset.
+;; @param data-id The dataset ID to configure consent for (must be > 0).
+;; @param research-consent Whether research use of this dataset is permitted.
+;; @param commercial-consent Whether commercial use of this dataset is permitted.
+;; @param clinical-consent Whether clinical use of this dataset is permitted.
+;; @param jurisdiction The regulatory jurisdiction code (0-4) governing this consent.
+;; @return ok(true) on success. ERR-INVALID-INPUT if data-id or jurisdiction is invalid.
+;;         ERR-NOT-AUTHORIZED if caller is not the existing record owner.
+;; @requires Caller must be the existing consent record owner (if a record exists).
 (define-public (set-consent
     (data-id uint)
     (research-consent bool)
