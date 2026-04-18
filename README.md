@@ -44,6 +44,39 @@ Marketplace for listing and purchasing access to genetic datasets with direct ST
 | `get-purchase` | read-only | Fetch a purchase record |
 | `get-next-listing-id` | read-only | Get the next available listing ID |
 
+### `data-governance` — data-governance.clar
+
+Manages consent settings and GDPR rights per dataset.
+
+| Function | Type | Description |
+|---|---|---|
+| `set-consent` | public | Set research/commercial/clinical consent flags |
+| `request-erasure` | public | Request right-to-be-forgotten |
+| `request-portability` | public | Request data portability export |
+| `restrict-processing` | public | Restrict data processing |
+| `get-consent` | read-only | Fetch consent record |
+| `get-gdpr-status` | read-only | Fetch GDPR flags |
+| `has-valid-consent` | read-only | Check if consent is still active |
+
+**Jurisdictions:** `0` = Global · `1` = US (HIPAA) · `2` = EU (GDPR) · `3` = UK · `4` = Canada
+
+### `attestations` — attestations.clar
+
+Medical lab attestation proofs that verify genetic data properties without exposing raw data.
+
+| Function | Type | Description |
+|---|---|---|
+| `register-verifier` | public | Register a trusted medical lab (owner only) |
+| `deactivate-verifier` | public | Deactivate a verifier (owner only) |
+| `register-proof` | public | Submit an attestation proof for a dataset |
+| `verify-proof` | public | Mark a proof as verified (verifier only) |
+| `set-contract-owner` | public | Transfer contract ownership |
+| `get-proof` | read-only | Fetch proof details |
+| `get-verifier` | read-only | Fetch verifier details |
+| `is-verified` | read-only | Check if a proof has been verified |
+
+**Proof Types:** `1` = Gene Presence · `2` = Gene Absence · `3` = Gene Variant · `4` = Aggregate
+
 ## Running the Frontend
 
 ```bash
