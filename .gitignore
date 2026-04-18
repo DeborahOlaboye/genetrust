@@ -1,6 +1,5 @@
 
-# ─── Stacks / Clarinet credentials ───────────────────────────────────────────
-# Deployer mnemonics — never commit these
+# Deployer credentials - never commit
 **/settings/Mainnet.toml
 **/settings/Testnet.toml
 # Allow example templates
@@ -11,6 +10,7 @@ history.txt
 # ─── Logs ─────────────────────────────────────────────────────────────────────
 logs/
 *.log
+interact-results-*.json
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*

@@ -1,5 +1,10 @@
 ;; exchange.clar
-;; Genetic data marketplace - list datasets, purchase access with STX
+;; @title GeneTrust Exchange
+;; @version 1.0.0
+;; @author GeneTrust
+;; @notice Marketplace for listing and purchasing access to genetic datasets.
+;;         STX payments transfer directly from buyer to dataset owner with no intermediary.
+;; @dev Deployed on Stacks mainnet at SP3KKFRRWQVJXEJCGM6ZB359EF01VRY86HW6CCD45.exchange
 
 ;; Errors - Input Validation (400-409)
 (define-constant ERR-INVALID-INPUT (err u400))
@@ -29,10 +34,11 @@
 (define-constant ERR-PAYMENT-FAILED (err u500))
 (define-constant ERR-TRANSACTION-FAILED (err u501))
 
-;; Listing counter
+;; @notice Auto-incrementing counter for listing IDs. Starts at 1.
 (define-data-var next-listing-id uint u1)
 
-;; Listings map
+;; @notice Stores all marketplace listings keyed by listing-id.
+;; @dev active flag is used for soft-cancellation; listings are never hard-deleted.
 (define-map listings
     { listing-id: uint }
     {
@@ -46,7 +52,8 @@
     }
 )
 
-;; Purchases map
+;; @notice Records all completed purchases. Keyed by listing-id + buyer principal.
+;; @dev A buyer can only have one purchase record per listing (no duplicate purchases).
 (define-map purchases
     { listing-id: uint, buyer: principal }
     {
@@ -155,17 +162,24 @@
     )
 )
 
-;; Read: get a listing
+;; @notice Returns all stored fields for a given listing.
+;; @param listing-id The listing ID to look up.
+;; @return Some(listing) if found, none otherwise. Check active field before use.
 (define-read-only (get-listing (listing-id uint))
     (map-get? listings { listing-id: listing-id })
 )
 
-;; Read: get a purchase record
+;; @notice Returns the purchase record for a specific buyer on a specific listing.
+;; @param listing-id The listing that was purchased.
+;; @param buyer The principal who made the purchase.
+;; @return Some(purchase) if found, none if the buyer has not purchased this listing.
 (define-read-only (get-purchase (listing-id uint) (buyer principal))
     (map-get? purchases { listing-id: listing-id, buyer: buyer })
 )
 
-;; Read: get next listing-id (useful for frontend)
+;; @notice Returns the next listing-id that will be assigned on the next create-listing call.
+;; @dev Useful for frontends to predict listing-id before submitting a transaction.
+;; @return ok(uint) - the next available listing-id.
 (define-read-only (get-next-listing-id)
     (ok (var-get next-listing-id))
 )

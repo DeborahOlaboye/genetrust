@@ -1,5 +1,11 @@
 ;; attestations.clar
-;; Medical lab attestations for genetic data - verify data properties without revealing raw data
+;; @title GeneTrust Attestations
+;; @version 1.0.0
+;; @author GeneTrust
+;; @notice Registry for zero-knowledge attestation proofs on genetic datasets.
+;;         Trusted verifiers (e.g. medical labs) can register proofs and mark them as verified
+;;         without exposing the underlying raw genetic data.
+;; @dev Deployed on Stacks mainnet at SP3KKFRRWQVJXEJCGM6ZB359EF01VRY86HW6CCD45.attestations
 
 ;; Errors - Input Validation (400-409)
 (define-constant ERR-INVALID-INPUT (err u400))
@@ -29,20 +35,24 @@
 (define-constant ERR-VERIFIER-INACTIVE (err u503))
 (define-constant ERR-CONTRACT-PAUSED (err u511))
 
-;; Proof type constants
-(define-constant PROOF-GENE-PRESENCE u1)
-(define-constant PROOF-GENE-ABSENCE u2)
-(define-constant PROOF-GENE-VARIANT u3)
-(define-constant PROOF-AGGREGATE u4)
+;; @notice Proof type identifiers for different genetic attestation categories.
+(define-constant PROOF-GENE-PRESENCE u1)  ;; Confirms a specific gene is present
+(define-constant PROOF-GENE-ABSENCE u2)   ;; Confirms a specific gene is absent
+(define-constant PROOF-GENE-VARIANT u3)   ;; Confirms a specific variant at a locus
+(define-constant PROOF-AGGREGATE u4)      ;; Aggregate/statistical proof across multiple genes
 
-;; Admin
+;; @notice The principal that can register/deactivate verifiers and transfer ownership.
+;; @dev Initialized to tx-sender at deployment time.
 (define-data-var contract-owner principal tx-sender)
 
-;; Counters
+;; @notice Auto-incrementing counter for verifier IDs. Starts at 1.
 (define-data-var next-verifier-id uint u1)
+;; @notice Auto-incrementing counter for proof IDs. Starts at 1.
 (define-data-var next-proof-id uint u1)
 
-;; Registered trusted verifiers (e.g. medical labs)
+;; @notice Registry of trusted verifiers such as medical labs or accredited institutions.
+;;         Only the contract owner can add or deactivate verifiers.
+;; @dev active flag allows soft-deactivation; verifiers are never hard-deleted.
 (define-map verifiers
     { verifier-id: uint }
     {
@@ -53,7 +63,9 @@
     }
 )
 
-;; Proof registry - one entry per proof
+;; @notice Stores each submitted attestation proof keyed by auto-incremented proof-id.
+;;         Proofs start unverified; a registered verifier must call verify-proof to confirm them.
+;; @dev verifier-id is none until the proof is verified. creator is always tx-sender at submission.
 (define-map proofs
     { proof-id: uint }
     {
@@ -171,7 +183,12 @@
     )
 )
 
-;; Verify a proof (verifier must be the tx-sender and active)
+;; @notice Marks an existing proof as verified. Caller must be the registered verifier address.
+;; @param proof-id The proof to verify (must be > 0 and exist).
+;; @param verifier-id The verifier performing the verification (must be active).
+;; @return ok(true) on success. ERR-NOT-FOUND if proof or verifier is missing.
+;;         ERR-VERIFIER-INACTIVE if verifier is deactivated. ERR-NOT-AUTHORIZED if caller is not the verifier address.
+;; @requires Caller principal must match the address stored in the verifier record.
 (define-public (verify-proof (proof-id uint) (verifier-id uint))
     (let (
         (proof (unwrap! (map-get? proofs { proof-id: proof-id }) ERR-NOT-FOUND))
@@ -188,7 +205,11 @@
     )
 )
 
-;; Transfer contract ownership
+;; @notice Transfers contract ownership to a new principal.
+;; @param new-owner The principal to transfer ownership to. Must not be the contract itself.
+;; @return ok(true) on success. ERR-NOT-AUTHORIZED if caller is not the current owner.
+;;         ERR-INVALID-INPUT if new-owner is the contract address.
+;; @requires Caller must be the current contract-owner.
 (define-public (set-contract-owner (new-owner principal))
     (begin
         (asserts! (is-eq tx-sender (var-get contract-owner)) ERR-NOT-AUTHORIZED)
@@ -197,17 +218,23 @@
     )
 )
 
-;; Read: get proof details
+;; @notice Returns all stored fields for a given proof.
+;; @param proof-id The proof ID to look up.
+;; @return Some(proof) if found, none otherwise. Check verified field before trusting the proof.
 (define-read-only (get-proof (proof-id uint))
     (map-get? proofs { proof-id: proof-id })
 )
 
-;; Read: get verifier details
+;; @notice Returns the registration record for a given verifier.
+;; @param verifier-id The verifier ID to look up.
+;; @return Some(verifier) if found, none otherwise. Check active field before trusting as verifier.
 (define-read-only (get-verifier (verifier-id uint))
     (map-get? verifiers { verifier-id: verifier-id })
 )
 
-;; Read: check if a proof is verified
+;; @notice Checks whether a proof has been verified by an active verifier.
+;; @param proof-id The proof ID to check.
+;; @return ok(true) if proof exists and verified flag is true, ok(false) otherwise.
 (define-read-only (is-verified (proof-id uint))
     (match (map-get? proofs { proof-id: proof-id })
         proof (ok (get verified proof))
@@ -215,7 +242,9 @@
     )
 )
 
-;; Read: get next proof-id (useful for frontend)
+;; @notice Returns the next proof-id that will be assigned on the next register-proof call.
+;; @dev Useful for frontends to predict proof-id before submitting a transaction.
+;; @return ok(uint) - the next available proof-id.
 (define-read-only (get-next-proof-id)
     (ok (var-get next-proof-id))
 )

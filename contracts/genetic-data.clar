@@ -1,5 +1,10 @@
 ;; genetic-data.clar
-;; Dataset registry and access control for GeneTrust
+;; @title GeneTrust Dataset Registry
+;; @version 1.0.0
+;; @author GeneTrust
+;; @notice Registers and manages genetic datasets on the Stacks blockchain.
+;;         Handles dataset ownership, tiered access control, and access expiry.
+;; @dev Deployed on Stacks mainnet at SP3KKFRRWQVJXEJCGM6ZB359EF01VRY86HW6CCD45.dataset-registry
 
 ;; Errors - Input Validation (400-409)
 (define-constant ERR-INVALID-INPUT (err u400))
@@ -46,7 +51,9 @@
 ;; Dataset counter
 (define-data-var next-data-id uint u1)
 
-;; Datasets
+;; @notice Primary storage map for all registered genetic datasets.
+;;         Keyed by auto-incremented data-id. Owner is always tx-sender at registration time.
+;; @dev is-active flag is used for soft-deletion; datasets are never hard-deleted.
 (define-map datasets
     { data-id: uint }
     {
@@ -61,7 +68,9 @@
     }
 )
 
-;; Access rights granted to users
+;; @notice Tracks access rights granted by dataset owners to other principals.
+;;         Access automatically expires after ACCESS-EXPIRY-BLOCKS (~30 days).
+;; @dev expiration is block-height based. Frontend should call has-valid-access before use.
 (define-map access-rights
     { data-id: uint, user: principal }
     {
@@ -189,17 +198,25 @@
     )
 )
 
-;; Read: get dataset info
+;; @notice Returns all stored fields for a given dataset.
+;; @param data-id The dataset ID to look up.
+;; @return Some(dataset) if found, none otherwise.
 (define-read-only (get-dataset (data-id uint))
     (map-get? datasets { data-id: data-id })
 )
 
-;; Read: check if a user has access
+;; @notice Returns the access-rights record for a user on a given dataset.
+;; @param data-id The dataset ID.
+;; @param user The principal whose access record to retrieve.
+;; @return Some(access-right) if found, none otherwise.
 (define-read-only (get-access (data-id uint) (user principal))
     (map-get? access-rights { data-id: data-id, user: user })
 )
 
-;; Read: check if access is currently valid (not expired)
+;; @notice Checks whether a user currently has non-expired access to a dataset.
+;; @param data-id The dataset ID.
+;; @param user The principal to check.
+;; @return ok(true) if access exists and has not expired, ok(false) otherwise.
 (define-read-only (has-valid-access (data-id uint) (user principal))
     (match (map-get? access-rights { data-id: data-id, user: user })
         rights (ok (< stacks-block-height (get expires-at rights)))
@@ -207,7 +224,9 @@
     )
 )
 
-;; Read: get next data-id (useful for frontend)
+;; @notice Returns the next auto-increment ID that will be assigned to the next registered dataset.
+;; @dev Useful for frontends to predict the data-id before submitting a transaction.
+;; @return ok(uint) - the next available data-id.
 (define-read-only (get-next-data-id)
     (ok (var-get next-data-id))
 )
