@@ -62,3 +62,19 @@ npm test
 # Start the frontend dev server
 cd frontend && npm run dev
 ```
+
+## Development Workflow
+
+1. Search [existing issues](https://github.com/DeborahOlaboye/genetrust/issues) before opening a new one.
+2. For significant changes, open an issue first to discuss the approach.
+3. Fork the repository and create a branch from `main`.
+4. Make your changes in logical, focused commits (see [Commit Message Format](#commit-message-format)).
+5. Ensure all tests pass: `npm test`.
+6. Verify contracts compile: `clarinet check`.
+7. Open a pull request against `main` with a clear description.
+
+For contract changes specifically, run the pre-deployment checklist:
+
+```bash
+bash scripts/pre-deploy-check.sh testnet
+```
