@@ -77,6 +77,18 @@ Medical lab attestation proofs that verify genetic data properties without expos
 
 **Proof Types:** `1` = Gene Presence · `2` = Gene Absence · `3` = Gene Variant · `4` = Aggregate
 
+## Roadmap
+
+- [x] 4 production Clarity smart contracts deployed to mainnet
+- [x] React frontend with Stacks wallet integration
+- [x] Marketplace listings and purchases
+- [x] Consent management and GDPR controls
+- [x] Medical lab attestation proofs
+- [ ] Researcher dashboard search and filtering
+- [ ] Bulk dataset operations
+- [ ] Mobile application
+- [ ] Multi-jurisdiction compliance automation
+
 ## How It Works
 
 ### For Data Owners
