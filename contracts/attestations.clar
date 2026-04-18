@@ -35,17 +35,19 @@
 (define-constant ERR-VERIFIER-INACTIVE (err u503))
 (define-constant ERR-CONTRACT-PAUSED (err u511))
 
-;; Proof type constants
-(define-constant PROOF-GENE-PRESENCE u1)
-(define-constant PROOF-GENE-ABSENCE u2)
-(define-constant PROOF-GENE-VARIANT u3)
-(define-constant PROOF-AGGREGATE u4)
+;; @notice Proof type identifiers for different genetic attestation categories.
+(define-constant PROOF-GENE-PRESENCE u1)  ;; Confirms a specific gene is present
+(define-constant PROOF-GENE-ABSENCE u2)   ;; Confirms a specific gene is absent
+(define-constant PROOF-GENE-VARIANT u3)   ;; Confirms a specific variant at a locus
+(define-constant PROOF-AGGREGATE u4)      ;; Aggregate/statistical proof across multiple genes
 
-;; Admin
+;; @notice The principal that can register/deactivate verifiers and transfer ownership.
+;; @dev Initialized to tx-sender at deployment time.
 (define-data-var contract-owner principal tx-sender)
 
-;; Counters
+;; @notice Auto-incrementing counter for verifier IDs. Starts at 1.
 (define-data-var next-verifier-id uint u1)
+;; @notice Auto-incrementing counter for proof IDs. Starts at 1.
 (define-data-var next-proof-id uint u1)
 
 ;; Registered trusted verifiers (e.g. medical labs)
