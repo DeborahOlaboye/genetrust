@@ -288,6 +288,14 @@ async function processUser(userIdx, round) {
   if (rc === 2) return;
   await sleep(SLEEP_BETWEEN);
 
+  // 8b. data-governance: restrict processing for dataset
+  process.stdout.write('\n  [data-governance::restrict-processing]');
+  rc = await callContract(userIdx, 'data-governance', 'restrict-processing', [
+    uintCV(dataId),
+  ]);
+  if (rc === 2) return;
+  await sleep(SLEEP_BETWEEN);
+
   // 9. exchange: cancel the listing created in step 4
   // listing-id is auto-incremented per create-listing call; we track via dataId
   process.stdout.write('\n  [exchange::cancel-listing]             ');
