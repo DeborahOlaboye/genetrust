@@ -63,7 +63,9 @@
     }
 )
 
-;; Proof registry - one entry per proof
+;; @notice Stores each submitted attestation proof keyed by auto-incremented proof-id.
+;;         Proofs start unverified; a registered verifier must call verify-proof to confirm them.
+;; @dev verifier-id is none until the proof is verified. creator is always tx-sender at submission.
 (define-map proofs
     { proof-id: uint }
     {
