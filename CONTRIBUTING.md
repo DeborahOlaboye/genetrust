@@ -128,3 +128,15 @@ chore(gitignore): ignore interact-results-*.json output files
 ```
 
 Keep the subject line under 72 characters. Use the body for WHY, not WHAT.
+
+## Pull Request Process
+
+1. **Title** — use the same Conventional Commits format as your commit messages.
+2. **Description** — explain what changed, why, and how to test it.
+3. **Size** — keep PRs focused. One feature or fix per PR. Large refactors may be split.
+4. **Tests** — all existing tests must pass. Add new tests for new behavior.
+5. **Contracts** — if you modify a `.clar` file, run `clarinet check` and include the output in the PR description.
+6. **Review** — at least one maintainer approval is required before merging.
+7. **Merge** — squash-merge into `main`. The PR title becomes the commit message.
+
+Do not force-push to a PR branch after review has started.
