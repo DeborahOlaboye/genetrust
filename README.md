@@ -13,6 +13,16 @@ A decentralized platform for secure genetic data sharing, consent management, an
 | `data-governance` | `SP3KKFRRWQVJXEJCGM6ZB359EF01VRY86HW6CCD45.data-governance` |
 | `attestations` | `SP3KKFRRWQVJXEJCGM6ZB359EF01VRY86HW6CCD45.attestations` |
 
+## Running the Frontend
+
+```bash
+cd frontend
+npm run dev
+# Visit http://localhost:5173
+```
+
+Connect your Stacks wallet and interact with the deployed mainnet contracts directly from the browser.
+
 ## Prerequisites
 
 - Node.js >= 18
