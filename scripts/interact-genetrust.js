@@ -1,6 +1,27 @@
 // GeneTrust Multi-User Activity Script
 // Interacts with all 4 deployed GeneTrust contracts across multiple users
-// Usage: node interact-genetrust.js
+//
+// Usage:
+//   node interact-genetrust.js                        # run with defaults
+//   node interact-genetrust.js --dry-run              # simulate without broadcasting
+//   node interact-genetrust.js --users 5 --rounds 2   # custom scale
+//
+// Per-user calls per round (10 total):
+//   1. dataset-registry::register-dataset
+//   2. data-governance::set-consent
+//   3. dataset-registry::grant-access
+//   4. exchange::create-listing
+//   5. attestations::register-proof
+//   6. data-governance::request-portability
+//   7. data-governance::request-erasure
+//   8. dataset-registry::revoke-access
+//   9. data-governance::restrict-processing
+//  10. exchange::cancel-listing
+//  11. dataset-registry::deactivate-dataset  (final step)
+//
+// Owner calls (2 total):
+//   - attestations::register-verifier
+//   - attestations::deactivate-verifier
 
 const fs = require('fs');
 const {
