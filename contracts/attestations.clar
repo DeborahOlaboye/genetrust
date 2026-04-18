@@ -209,17 +209,23 @@
     )
 )
 
-;; Read: get proof details
+;; @notice Returns all stored fields for a given proof.
+;; @param proof-id The proof ID to look up.
+;; @return Some(proof) if found, none otherwise. Check verified field before trusting the proof.
 (define-read-only (get-proof (proof-id uint))
     (map-get? proofs { proof-id: proof-id })
 )
 
-;; Read: get verifier details
+;; @notice Returns the registration record for a given verifier.
+;; @param verifier-id The verifier ID to look up.
+;; @return Some(verifier) if found, none otherwise. Check active field before trusting as verifier.
 (define-read-only (get-verifier (verifier-id uint))
     (map-get? verifiers { verifier-id: verifier-id })
 )
 
-;; Read: check if a proof is verified
+;; @notice Checks whether a proof has been verified by an active verifier.
+;; @param proof-id The proof ID to check.
+;; @return ok(true) if proof exists and verified flag is true, ok(false) otherwise.
 (define-read-only (is-verified (proof-id uint))
     (match (map-get? proofs { proof-id: proof-id })
         proof (ok (get verified proof))
@@ -227,7 +233,9 @@
     )
 )
 
-;; Read: get next proof-id (useful for frontend)
+;; @notice Returns the next proof-id that will be assigned on the next register-proof call.
+;; @dev Useful for frontends to predict proof-id before submitting a transaction.
+;; @return ok(uint) - the next available proof-id.
 (define-read-only (get-next-proof-id)
     (ok (var-get next-proof-id))
 )
