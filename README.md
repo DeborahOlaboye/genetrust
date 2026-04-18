@@ -13,6 +13,30 @@ A decentralized platform for secure genetic data sharing, consent management, an
 | `data-governance` | `SP3KKFRRWQVJXEJCGM6ZB359EF01VRY86HW6CCD45.data-governance` |
 | `attestations` | `SP3KKFRRWQVJXEJCGM6ZB359EF01VRY86HW6CCD45.attestations` |
 
+## Project Structure
+
+```
+genetrust/
+├── contracts/                  # Clarity smart contracts
+│   ├── genetic-data.clar       # Dataset registry and access control
+│   ├── exchange.clar           # Marketplace — list and purchase datasets
+│   ├── data-governance.clar    # Consent management and GDPR controls
+│   └── attestations.clar       # Medical lab attestation proofs
+├── frontend/                   # React + Vite application
+│   └── src/
+│       ├── components/         # Reusable UI components
+│       ├── pages/              # Route-level page components
+│       ├── hooks/              # Custom React hooks
+│       └── services/           # Contract and wallet service layers
+├── tests/                      # Vitest + Clarinet contract tests
+├── scripts/                    # Deployment scripts
+│   └── deploy-mainnet.sh
+├── deployments/                # Clarinet deployment plans
+│   └── default.mainnet-plan.yaml
+└── settings/                   # Network configuration (gitignored)
+    └── Mainnet.toml
+```
+
 ## Tech Stack
 
 | Layer | Technology |
