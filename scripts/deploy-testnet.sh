@@ -52,5 +52,6 @@ clarinet deployments apply --testnet --use-on-disk-deployment-plan --no-dashboar
 echo ""
 echo "Testnet deployment complete!"
 echo ""
-echo "Check deployments/default.testnet-receipts.json for transaction details"
-echo ""
+
+# Run post-deployment verification
+bash scripts/post-deploy-verify.sh testnet
