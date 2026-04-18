@@ -20,7 +20,11 @@ lerna-debug.log*
 costs-reports.json
 
 # ─── Node ─────────────────────────────────────────────────────────────────────
-node_modules
+node_modules/
+jspm_packages/
+.npm/
+.pnp.*
+.yarn/
 
 # ─── Playwright E2E test artifacts ────────────────────────────────────────────
 /playwright-report/
