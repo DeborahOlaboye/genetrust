@@ -76,3 +76,18 @@ export const APP_CONFIG = {
 };
 
 export { TESTNET_DEPLOYER, MAINNET_DEPLOYER };
+
+const EXPLORER_BASE = 'https://explorer.hiro.so';
+const chain = APP_CONFIG.NETWORK === 'mainnet' ? 'mainnet' : 'testnet';
+
+export function getExplorerTxUrl(txId) {
+  return `${EXPLORER_BASE}/txid/${txId}?chain=${chain}`;
+}
+
+export function getExplorerAddressUrl(address) {
+  return `${EXPLORER_BASE}/address/${address}?chain=${chain}`;
+}
+
+export function getExplorerContractUrl(contractId) {
+  return `${EXPLORER_BASE}/address/${contractId}?chain=${chain}`;
+}
