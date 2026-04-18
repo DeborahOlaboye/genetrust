@@ -52,3 +52,9 @@ out/
 .output/
 frontend/dist/
 frontend/build/
+
+# ─── Coverage ─────────────────────────────────────────────────────────────────
+coverage/
+*.lcov
+.nyc_output/
+frontend/coverage/
