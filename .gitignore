@@ -74,3 +74,15 @@ rollup.config.js.cache
 ehthumbs.db
 Thumbs.db
 Desktop.ini
+
+# ─── IDE / Editor ─────────────────────────────────────────────────────────────
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
