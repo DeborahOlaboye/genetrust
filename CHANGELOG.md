@@ -60,6 +60,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Initial MVP release of GeneTrust on Stacks testnet.
 
+**Deployer:** `ST2VXH7RRKSAYNMWCVVMD972B7HP3H2QY96V8Q161`
+**Network:** Stacks testnet (epoch 3.0)
+**Contracts:** `dataset-registry`, `exchange`, `attestations`, `data-governance`
+
 ### Added
 - `contracts/genetic-data.clar` — dataset registry contract for on-chain metadata and access control
 - `contracts/exchange.clar` — decentralized marketplace with escrow and direct purchase flows
