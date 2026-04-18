@@ -379,7 +379,9 @@ async function runOwnerCalls() {
 async function main() {
   console.log('════════════════════════════════════════════════════');
   console.log('  GeneTrust Multi-Contract Interaction Script');
-  console.log(`  Contract Owner: ${CONTRACT_OWNER}`);
+  console.log(`  Contract Owner : ${CONTRACT_OWNER}`);
+  console.log(`  Node URL       : ${NODE_URL}`);
+  console.log(`  Dry-run mode   : ${DRY_RUN ? 'YES (no transactions broadcast)' : 'NO (live)'}`);
   console.log('════════════════════════════════════════════════════\n');
 
   if (NUM_USERS === 0) {
