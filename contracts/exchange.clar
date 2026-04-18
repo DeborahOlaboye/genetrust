@@ -34,10 +34,11 @@
 (define-constant ERR-PAYMENT-FAILED (err u500))
 (define-constant ERR-TRANSACTION-FAILED (err u501))
 
-;; Listing counter
+;; @notice Auto-incrementing counter for listing IDs. Starts at 1.
 (define-data-var next-listing-id uint u1)
 
-;; Listings map
+;; @notice Stores all marketplace listings keyed by listing-id.
+;; @dev active flag is used for soft-cancellation; listings are never hard-deleted.
 (define-map listings
     { listing-id: uint }
     {
