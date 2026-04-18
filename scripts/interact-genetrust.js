@@ -366,10 +366,12 @@ async function main() {
     process.exit(1);
   }
 
-  const callsPerUser  = 6;
-  const totalExpected = NUM_USERS * callsPerUser * NUM_ROUNDS + 1;
-  console.log(`Number of users: ${NUM_USERS}  |  Rounds: ${NUM_ROUNDS}`);
-  console.log(`Calls per user:  ${callsPerUser} (register-dataset, set-consent, grant-access, create-listing, register-proof, request-portability)`);
+  const callsPerUser  = 10; // register-dataset, set-consent, grant-access, create-listing, register-proof, request-portability, request-erasure, revoke-access, restrict-processing, cancel-listing + deactivate-dataset
+  const ownerCalls    = 2;  // register-verifier + deactivate-verifier
+  const totalExpected = NUM_USERS * callsPerUser * NUM_ROUNDS + ownerCalls;
+  console.log(`Number of users: ${NUM_USERS}  |  Rounds: ${NUM_ROUNDS}  |  Dry-run: ${DRY_RUN}`);
+  console.log(`Calls per user:  ${callsPerUser}`);
+  console.log(`Owner calls:     ${ownerCalls}`);
   console.log(`Target:          ${totalExpected} transactions\n`);
 
   if (OWNER_KEY && !OWNER_KEY.includes('YOUR_OWNER')) {
