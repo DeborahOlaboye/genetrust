@@ -43,3 +43,12 @@ frontend/.env.*.local
 !.env.example
 !frontend/.env.example
 !frontend/.env.*.example
+
+# ─── Build output ─────────────────────────────────────────────────────────────
+dist/
+dist-ssr/
+build/
+out/
+.output/
+frontend/dist/
+frontend/build/
