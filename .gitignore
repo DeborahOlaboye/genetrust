@@ -1,18 +1,22 @@
 
+# ─── Stacks / Clarinet credentials ───────────────────────────────────────────
 **/settings/Mainnet.toml
 **/settings/Testnet.toml
 .cache/**
 history.txt
 
+# ─── Logs ─────────────────────────────────────────────────────────────────────
 logs
 *.log
 npm-debug.log*
 coverage
 *.info
 costs-reports.json
+
+# ─── Node ─────────────────────────────────────────────────────────────────────
 node_modules
 
-# Playwright E2E test artifacts
+# ─── Playwright E2E test artifacts ────────────────────────────────────────────
 /playwright-report/
 /playwright/.cache/
 /test-results/
