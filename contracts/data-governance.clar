@@ -156,17 +156,23 @@
     )
 )
 
-;; Read: get consent for a dataset
+;; @notice Returns the full consent record for a dataset.
+;; @param data-id The dataset ID to look up.
+;; @return Some(consent-record) if found, none otherwise.
 (define-read-only (get-consent (data-id uint))
     (map-get? consent-records { data-id: data-id })
 )
 
-;; Read: get GDPR flags for a dataset
+;; @notice Returns the GDPR rights flags for a dataset.
+;; @param data-id The dataset ID to look up.
+;; @return Some(gdpr-record) if found, none if no GDPR rights have been invoked.
 (define-read-only (get-gdpr-status (data-id uint))
     (map-get? gdpr-records { data-id: data-id })
 )
 
-;; Read: check if consent is currently valid (not expired)
+;; @notice Checks whether the consent for a dataset is currently valid (not expired).
+;; @param data-id The dataset ID to check.
+;; @return ok(true) if a consent record exists and has not expired, ok(false) otherwise.
 (define-read-only (has-valid-consent (data-id uint))
     (match (map-get? consent-records { data-id: data-id })
         consent (ok (< stacks-block-height (get expires-at consent)))
