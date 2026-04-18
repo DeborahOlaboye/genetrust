@@ -280,6 +280,15 @@ async function processUser(userIdx, round) {
   if (rc === 2) return;
   await sleep(SLEEP_BETWEEN);
 
+  // 7. exchange: cancel the listing created in step 4
+  // listing-id is auto-incremented per create-listing call; we track via dataId
+  process.stdout.write('\n  [exchange::cancel-listing]             ');
+  rc = await callContract(userIdx, 'exchange', 'cancel-listing', [
+    uintCV(listingId),
+  ]);
+  if (rc === 2) return;
+  await sleep(SLEEP_BETWEEN);
+
   console.log('');
 }
 
