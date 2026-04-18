@@ -204,6 +204,14 @@ Since contracts cannot be deleted on mainnet:
 4. ✅ Verify contract addresses on block explorer
 5. ✅ Monitor for suspicious activity post-deployment
 
+## Release History
+
+Contract deployment versions are tracked in [CHANGELOG.md](CHANGELOG.md).
+Before each deployment, review the changelog entry for the target version to understand
+which contracts changed and whether a re-deployment is required.
+
+See [docs/release-process.md](docs/release-process.md) for the full release workflow.
+
 ## Support
 
 For issues or questions:
