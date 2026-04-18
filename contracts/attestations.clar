@@ -183,7 +183,12 @@
     )
 )
 
-;; Verify a proof (verifier must be the tx-sender and active)
+;; @notice Marks an existing proof as verified. Caller must be the registered verifier address.
+;; @param proof-id The proof to verify (must be > 0 and exist).
+;; @param verifier-id The verifier performing the verification (must be active).
+;; @return ok(true) on success. ERR-NOT-FOUND if proof or verifier is missing.
+;;         ERR-VERIFIER-INACTIVE if verifier is deactivated. ERR-NOT-AUTHORIZED if caller is not the verifier address.
+;; @requires Caller principal must match the address stored in the verifier record.
 (define-public (verify-proof (proof-id uint) (verifier-id uint))
     (let (
         (proof (unwrap! (map-get? proofs { proof-id: proof-id }) ERR-NOT-FOUND))
