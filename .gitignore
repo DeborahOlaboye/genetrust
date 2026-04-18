@@ -103,3 +103,14 @@ interact-results-*.json
 # They are safe to commit but often contain environment-specific data
 # Uncomment the line below to ignore them:
 # deployments/*-receipts.json
+
+# ─── Python / tooling ─────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+.Python
+.venv/
+venv/
+ENV/
+.python-version
