@@ -3,6 +3,16 @@
 // Check if running in development mode
 const isDev = import.meta.env.MODE === 'development';
 
+// Warn if network/node URL mismatch detected
+const configuredNetwork = import.meta.env.VITE_NETWORK || 'testnet';
+const configuredNode    = import.meta.env.VITE_STACKS_NODE || '';
+if (isDev && configuredNetwork === 'mainnet' && configuredNode.includes('testnet')) {
+  console.warn('[GeneTrust] VITE_NETWORK=mainnet but VITE_STACKS_NODE points to a testnet URL. Check frontend/.env.local.');
+}
+if (isDev && configuredNetwork === 'testnet' && configuredNode.includes('api.hiro.so') && !configuredNode.includes('testnet')) {
+  console.warn('[GeneTrust] VITE_NETWORK=testnet but VITE_STACKS_NODE points to the mainnet API. Check frontend/.env.local.');
+}
+
 // Warn in development if USE_REAL_SDK is true but contract addresses are still defaults
 if (isDev && import.meta.env.VITE_USE_REAL_SDK === 'true') {
   const defaultAddr = 'ST2VXH7RRKSAYNMWCVVMD972B7HP3H2QY96V8Q161';
