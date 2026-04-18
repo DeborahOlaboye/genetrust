@@ -1,5 +1,11 @@
 ;; attestations.clar
-;; Medical lab attestations for genetic data - verify data properties without revealing raw data
+;; @title GeneTrust Attestations
+;; @version 1.0.0
+;; @author GeneTrust
+;; @notice Registry for zero-knowledge attestation proofs on genetic datasets.
+;;         Trusted verifiers (e.g. medical labs) can register proofs and mark them as verified
+;;         without exposing the underlying raw genetic data.
+;; @dev Deployed on Stacks mainnet at SP3KKFRRWQVJXEJCGM6ZB359EF01VRY86HW6CCD45.attestations
 
 ;; Errors - Input Validation (400-409)
 (define-constant ERR-INVALID-INPUT (err u400))
