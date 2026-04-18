@@ -1,0 +1,13 @@
+# GeneTrust Testnet Settings Template
+# Copy this file to settings/Testnet.toml and fill in your deployer mnemonic.
+# settings/Testnet.toml is gitignored - never commit it.
+#
+# Testnet STX faucet: https://explorer.hiro.so/sandbox/faucet?chain=testnet
+
+[network]
+name = "testnet"
+deployment_fee_rate = 10
+
+[accounts.deployer]
+mnemonic = "REPLACE_WITH_YOUR_TESTNET_MNEMONIC"
+# stx_address: YOUR_TESTNET_STX_ADDRESS
