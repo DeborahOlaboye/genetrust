@@ -288,7 +288,16 @@ async function processUser(userIdx, round) {
   if (rc === 2) return;
   await sleep(SLEEP_BETWEEN);
 
-  // 8b. data-governance: restrict processing for dataset
+  // 8c. dataset-registry: revoke the access granted in step 3
+  process.stdout.write('\n  [dataset-registry::revoke-access]     ');
+  rc = await callContract(userIdx, 'dataset-registry', 'revoke-access', [
+    uintCV(dataId),
+    principalCV(grantee),
+  ]);
+  if (rc === 2) return;
+  await sleep(SLEEP_BETWEEN);
+
+  // 8e. data-governance: restrict processing for dataset
   process.stdout.write('\n  [data-governance::restrict-processing]');
   rc = await callContract(userIdx, 'data-governance', 'restrict-processing', [
     uintCV(dataId),
