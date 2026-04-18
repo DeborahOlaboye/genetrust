@@ -90,3 +90,7 @@ Desktop.ini
 # ─── TypeScript ───────────────────────────────────────────────────────────────
 *.tsbuildinfo
 tsconfig.tsbuildinfo
+
+# ─── Docker ───────────────────────────────────────────────────────────────────
+.docker/
+docker-compose.override.yml
