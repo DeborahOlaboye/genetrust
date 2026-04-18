@@ -243,3 +243,19 @@ cd frontend && npm test
 - One blank line between function definitions.
 - Use named constants (`ACCESS-BASIC`, `CONSENT-EXPIRY-BLOCKS`) instead of magic numbers.
 - Prefer `unwrap!` over `unwrap-panic` — all errors must be catchable.
+
+## Security
+
+GeneTrust handles genetic data and financial transactions on a public blockchain. Security is a first-class concern.
+
+### What to watch for
+
+- **Private key exposure** — never log, store, or transmit private keys. The interact script reads keys from in-memory arrays only.
+- **Credential files** — `settings/Mainnet.toml`, `settings/Testnet.toml`, `.env`, and `.env.local` are gitignored. Never commit them.
+- **Input validation** — every public contract function must validate all parameters with `asserts!` before any map operation.
+- **Reentrancy** — Clarity's execution model prevents reentrancy, but avoid patterns that could allow unexpected state changes in multi-contract calls.
+- **Integer overflow** — Clarity uses 128-bit integers with runtime overflow protection, but be deliberate with arithmetic in fee and price calculations.
+
+### Reporting a Vulnerability
+
+Do **not** open a public GitHub issue for security vulnerabilities. Email the maintainers directly at the address in the repository's GitHub security policy, or use GitHub's private vulnerability reporting feature.
