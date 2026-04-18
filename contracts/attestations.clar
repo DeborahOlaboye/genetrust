@@ -205,7 +205,11 @@
     )
 )
 
-;; Transfer contract ownership
+;; @notice Transfers contract ownership to a new principal.
+;; @param new-owner The principal to transfer ownership to. Must not be the contract itself.
+;; @return ok(true) on success. ERR-NOT-AUTHORIZED if caller is not the current owner.
+;;         ERR-INVALID-INPUT if new-owner is the contract address.
+;; @requires Caller must be the current contract-owner.
 (define-public (set-contract-owner (new-owner principal))
     (begin
         (asserts! (is-eq tx-sender (var-get contract-owner)) ERR-NOT-AUTHORIZED)
