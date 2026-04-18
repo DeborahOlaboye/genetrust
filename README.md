@@ -446,7 +446,15 @@ Interactive Three.js rendering of genetic data structures
 
 ## Contributing
 
-We welcome contributions!
+We welcome contributions! Please read [CONTRIBUTING.md](CONTRIBUTING.md) before submitting a pull request.
+
+Key resources:
+- [Contributing Guide](CONTRIBUTING.md) — workflow, branch naming, commit format, PR process
+- [Smart Contract Guide](docs/contract-guide.md) — Clarity rules, error codes, NatSpec format
+- [Environment Setup](docs/env-setup.md) — env variables and local configuration
+- [Bug Report Template](.github/ISSUE_TEMPLATE/bug_report.md)
+- [Feature Request Template](.github/ISSUE_TEMPLATE/feature_request.md)
+
 ---
 
 ## 📄 License
