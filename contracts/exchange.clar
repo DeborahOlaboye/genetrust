@@ -52,7 +52,8 @@
     }
 )
 
-;; Purchases map
+;; @notice Records all completed purchases. Keyed by listing-id + buyer principal.
+;; @dev A buyer can only have one purchase record per listing (no duplicate purchases).
 (define-map purchases
     { listing-id: uint, buyer: principal }
     {
