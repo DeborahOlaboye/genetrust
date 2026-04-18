@@ -77,6 +77,16 @@ Medical lab attestation proofs that verify genetic data properties without expos
 
 **Proof Types:** `1` = Gene Presence · `2` = Gene Absence · `3` = Gene Variant · `4` = Aggregate
 
+## Deploying Contracts
+
+Fill in your mnemonic in `settings/Mainnet.toml` (gitignored), then:
+
+```bash
+bash scripts/deploy-mainnet.sh
+```
+
+The script verifies contracts with `clarinet check` before deploying. Each contract is deployed with a fee of `18750` ustx to `SP3KKFRRWQVJXEJCGM6ZB359EF01VRY86HW6CCD45`.
+
 ## Running the Frontend
 
 ```bash
