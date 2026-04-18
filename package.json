@@ -28,6 +28,8 @@
     "deploy:mainnet": "bash scripts/deploy-mainnet.sh",
     "deploy:verify": "bash scripts/verify-contracts.sh",
     "deploy:pre-check": "bash scripts/pre-deploy-check.sh",
+    "changelog": "git-cliff -o CHANGELOG.md",
+    "changelog:preview": "git-cliff --unreleased",
     "start": "node src/main.js",
     "docker:build": "docker build -t genetrust .",
     "docker:run": "docker run -p 3000:3000 genetrust"
