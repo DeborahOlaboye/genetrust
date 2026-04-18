@@ -94,3 +94,6 @@ tsconfig.tsbuildinfo
 # ─── Docker ───────────────────────────────────────────────────────────────────
 .docker/
 docker-compose.override.yml
+
+# ─── Interact script results ──────────────────────────────────────────────────
+interact-results-*.json
