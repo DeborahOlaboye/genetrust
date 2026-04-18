@@ -24,7 +24,9 @@
 ;;         Based on ~10-minute Stacks block times: 6 blocks/hr x 24 hr x 365 days = 52560.
 (define-constant CONSENT-EXPIRY-BLOCKS u52560)
 
-;; Consent records per dataset
+;; @notice Stores per-dataset consent settings set by the data owner.
+;;         Consent expires after CONSENT-EXPIRY-BLOCKS and must be renewed.
+;; @dev owner is captured at set-consent time; only owner can update or invoke GDPR rights.
 (define-map consent-records
     { data-id: uint }
     {
