@@ -77,6 +77,24 @@ Medical lab attestation proofs that verify genetic data properties without expos
 
 **Proof Types:** `1` = Gene Presence · `2` = Gene Absence · `3` = Gene Variant · `4` = Aggregate
 
+## Interact Script
+
+`interact-genetrust.js` in `/stacks/` drives multi-user activity across all four contracts. Each user per round performs:
+
+1. `dataset-registry::register-dataset`
+2. `data-governance::set-consent`
+3. `dataset-registry::grant-access`
+4. `exchange::create-listing`
+5. `attestations::register-proof`
+6. `data-governance::request-portability`
+
+```bash
+cd /path/to/stacks
+node interact-genetrust.js
+```
+
+Set `OWNER_KEY` at the top of the file before running. With `20` users and `5` rounds the script sends **601 transactions** total.
+
 ## Deploying Contracts
 
 Fill in your mnemonic in `settings/Mainnet.toml` (gitignored), then:
