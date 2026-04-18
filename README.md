@@ -31,6 +31,19 @@ Registers and manages genetic datasets on-chain with tiered access control.
 
 **Access Levels:** `1` = Basic · `2` = Detailed · `3` = Full
 
+### `exchange` — exchange.clar
+
+Marketplace for listing and purchasing access to genetic datasets with direct STX transfers.
+
+| Function | Type | Description |
+|---|---|---|
+| `create-listing` | public | List a dataset for sale |
+| `cancel-listing` | public | Cancel an active listing |
+| `purchase-listing` | public | Purchase access — transfers STX to owner |
+| `get-listing` | read-only | Fetch listing details |
+| `get-purchase` | read-only | Fetch a purchase record |
+| `get-next-listing-id` | read-only | Get the next available listing ID |
+
 ## Running the Frontend
 
 ```bash
