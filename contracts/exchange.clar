@@ -162,17 +162,24 @@
     )
 )
 
-;; Read: get a listing
+;; @notice Returns all stored fields for a given listing.
+;; @param listing-id The listing ID to look up.
+;; @return Some(listing) if found, none otherwise. Check active field before use.
 (define-read-only (get-listing (listing-id uint))
     (map-get? listings { listing-id: listing-id })
 )
 
-;; Read: get a purchase record
+;; @notice Returns the purchase record for a specific buyer on a specific listing.
+;; @param listing-id The listing that was purchased.
+;; @param buyer The principal who made the purchase.
+;; @return Some(purchase) if found, none if the buyer has not purchased this listing.
 (define-read-only (get-purchase (listing-id uint) (buyer principal))
     (map-get? purchases { listing-id: listing-id, buyer: buyer })
 )
 
-;; Read: get next listing-id (useful for frontend)
+;; @notice Returns the next listing-id that will be assigned on the next create-listing call.
+;; @dev Useful for frontends to predict listing-id before submitting a transaction.
+;; @return ok(uint) — the next available listing-id.
 (define-read-only (get-next-listing-id)
     (ok (var-get next-listing-id))
 )
