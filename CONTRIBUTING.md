@@ -140,3 +140,33 @@ Keep the subject line under 72 characters. Use the body for WHY, not WHAT.
 7. **Merge** — squash-merge into `main`. The PR title becomes the commit message.
 
 Do not force-push to a PR branch after review has started.
+
+## Smart Contract Contributions
+
+GeneTrust contracts are written in [Clarity](https://docs.stacks.co/clarity) and run on the Stacks blockchain.
+
+### Rules
+
+- All contracts must pass `clarinet check` with **zero warnings** — the `check_checker` pass is enforced.
+- Every function parameter used in a map operation must have an explicit `asserts!` guard before the map call.
+- Use NatSpec-style `;;` comments for all public and read-only functions: `@param`, `@return`, `@requires`.
+- Avoid non-ASCII characters in comments — Clarity rejects em dashes (`—`) and smart quotes.
+- Error constants must follow the existing grouping: 400-409 input, 410-414 auth, 430-439 not found, 440-449 conflict.
+- Epoch must remain `3.0` (Clarity v3) to match the mainnet deployment.
+
+### Testing Contracts
+
+```bash
+# Check contracts
+clarinet check
+
+# Run Vitest + clarinet-sdk tests
+npm test
+
+# Run tests with coverage
+npm run test:report
+```
+
+### Deployment
+
+Never deploy contracts yourself. Submit a PR; deployment to mainnet is handled by the maintainers after audit.
