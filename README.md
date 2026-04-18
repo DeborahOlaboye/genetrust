@@ -1,5 +1,9 @@
 # GeneTrust
 
+[![Contracts](https://img.shields.io/badge/contracts-4%20deployed-brightgreen)](https://explorer.hiro.so/address/SP3KKFRRWQVJXEJCGM6ZB359EF01VRY86HW6CCD45?chain=mainnet)
+[![Clarity](https://img.shields.io/badge/Clarity-v3-blue)](https://docs.stacks.co/clarity)
+[![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+
 A decentralized platform for secure genetic data sharing, consent management, and marketplace trading built on the Stacks blockchain.
 
 > Your DNA. Your Rules. Your Revenue.
