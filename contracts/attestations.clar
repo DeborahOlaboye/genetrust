@@ -50,7 +50,9 @@
 ;; @notice Auto-incrementing counter for proof IDs. Starts at 1.
 (define-data-var next-proof-id uint u1)
 
-;; Registered trusted verifiers (e.g. medical labs)
+;; @notice Registry of trusted verifiers such as medical labs or accredited institutions.
+;;         Only the contract owner can add or deactivate verifiers.
+;; @dev active flag allows soft-deactivation; verifiers are never hard-deleted.
 (define-map verifiers
     { verifier-id: uint }
     {
