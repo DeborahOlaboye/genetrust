@@ -2,10 +2,16 @@
 # Deployer credentials and local env overrides - never commit
 **/settings/Mainnet.toml
 **/settings/Testnet.toml
+.env
 .env.local
 .env.*.local
+frontend/.env
 frontend/.env.local
 frontend/.env.*.local
+# Allow example env templates
+!.env.example
+!frontend/.env.example
+!frontend/.env.*.example
 .cache/**
 history.txt
 
