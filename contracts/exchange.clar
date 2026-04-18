@@ -1,5 +1,10 @@
 ;; exchange.clar
-;; Genetic data marketplace - list datasets, purchase access with STX
+;; @title GeneTrust Exchange
+;; @version 1.0.0
+;; @author GeneTrust
+;; @notice Marketplace for listing and purchasing access to genetic datasets.
+;;         STX payments transfer directly from buyer to dataset owner with no intermediary.
+;; @dev Deployed on Stacks mainnet at SP3KKFRRWQVJXEJCGM6ZB359EF01VRY86HW6CCD45.exchange
 
 ;; Errors - Input Validation (400-409)
 (define-constant ERR-INVALID-INPUT (err u400))
