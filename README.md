@@ -77,6 +77,19 @@ Medical lab attestation proofs that verify genetic data properties without expos
 
 **Proof Types:** `1` = Gene Presence · `2` = Gene Absence · `3` = Gene Variant · `4` = Aggregate
 
+## Running Tests
+
+```bash
+# Contract tests (Clarinet + Vitest)
+npm test
+
+# Frontend unit tests
+cd frontend && npm test
+
+# Coverage report
+cd frontend && npm run test:coverage
+```
+
 ## Interact Script
 
 `interact-genetrust.js` in `/stacks/` drives multi-user activity across all four contracts. Each user per round performs:
