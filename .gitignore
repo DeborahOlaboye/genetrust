@@ -30,3 +30,16 @@ jspm_packages/
 /playwright-report/
 /playwright/.cache/
 /test-results/
+
+# ─── Environment files ────────────────────────────────────────────────────────
+# Local overrides — contain secrets, never commit
+.env
+.env.local
+.env.*.local
+frontend/.env
+frontend/.env.local
+frontend/.env.*.local
+# Allow documented example templates
+!.env.example
+!frontend/.env.example
+!frontend/.env.*.example
