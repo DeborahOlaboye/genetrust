@@ -25,12 +25,10 @@ if [ ! -f "settings/Testnet.toml" ]; then
     exit 1
 fi
 
-# Verify contracts compile before deploying
-echo "Verifying contracts..."
-clarinet check
+# Run pre-deployment checks
+echo "Running pre-deployment checks..."
+bash scripts/pre-deploy-check.sh testnet
 
-echo ""
-echo "Contracts verified successfully."
 echo ""
 echo "Deployment will use:"
 echo "  - Network: Testnet"
