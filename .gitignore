@@ -147,3 +147,10 @@ $RECYCLE.BIN/
 *.msm
 *.msp
 *.lnk
+
+# ─── Frontend tooling extras ──────────────────────────────────────────────────
+frontend/.next/
+frontend/storybook-static/
+frontend/.turbo/
+frontend/.parcel-cache/
+frontend/tsconfig.tsbuildinfo
