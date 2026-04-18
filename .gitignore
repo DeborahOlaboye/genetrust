@@ -1,6 +1,11 @@
 
+# Deployer credentials and local env overrides - never commit
 **/settings/Mainnet.toml
 **/settings/Testnet.toml
+.env.local
+.env.*.local
+frontend/.env.local
+frontend/.env.*.local
 .cache/**
 history.txt
 
