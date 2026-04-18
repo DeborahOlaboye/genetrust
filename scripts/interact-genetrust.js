@@ -315,6 +315,14 @@ async function processUser(userIdx, round) {
   if (rc === 2) return;
   await sleep(SLEEP_BETWEEN);
 
+  // 10. dataset-registry: deactivate the dataset (soft-delete)
+  process.stdout.write('\n  [dataset-registry::deactivate-dataset] ');
+  rc = await callContract(userIdx, 'dataset-registry', 'deactivate-dataset', [
+    uintCV(dataId),
+  ]);
+  if (rc === 2) return;
+  await sleep(SLEEP_BETWEEN);
+
   console.log('');
 }
 
