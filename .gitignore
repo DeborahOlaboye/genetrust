@@ -1,22 +1,15 @@
 
-# Deployer credentials and local env overrides - never commit
+# Deployer credentials - never commit
 **/settings/Mainnet.toml
 **/settings/Testnet.toml
-.env
-.env.local
-.env.*.local
-frontend/.env
-frontend/.env.local
-frontend/.env.*.local
-# Allow example env templates
-!.env.example
-!frontend/.env.example
-!frontend/.env.*.example
+# Allow example templates
+!**/settings/*.toml.example
 .cache/**
 history.txt
 
 logs
 *.log
+interact-results-*.json
 npm-debug.log*
 coverage
 *.info

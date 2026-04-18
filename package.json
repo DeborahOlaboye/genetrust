@@ -23,7 +23,11 @@
     "prepare": "husky install",
     "check-types": "tsc --noEmit",
     "check-contracts": "clarinet check",
-    "deploy": "clarinet deploy",
+    "deploy:simnet": "bash scripts/deploy-simnet.sh",
+    "deploy:testnet": "bash scripts/deploy-testnet.sh",
+    "deploy:mainnet": "bash scripts/deploy-mainnet.sh",
+    "deploy:verify": "bash scripts/verify-contracts.sh",
+    "deploy:pre-check": "bash scripts/pre-deploy-check.sh",
     "start": "node src/main.js",
     "docker:build": "docker build -t genetrust .",
     "docker:run": "docker run -p 3000:3000 genetrust"
