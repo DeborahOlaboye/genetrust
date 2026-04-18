@@ -192,3 +192,36 @@ npm run dev
 - Wallet connection must go through `walletConfig.js` — do not call `@stacks/connect` directly from components.
 - New components go in `frontend/src/components/`. Shared UI elements go in `frontend/src/components/common/`.
 - Run the linter before committing: `npm run lint`.
+
+## Testing Requirements
+
+All contributions must maintain or improve test coverage.
+
+### Contract Tests (Vitest + clarinet-sdk)
+
+Located in `tests/`. Run with:
+
+```bash
+npm test
+npm run test:report   # with coverage report
+```
+
+- Each public contract function should have at least one happy-path and one error-path test.
+- Use `simnet.callPublicFn` for write operations and `simnet.callReadOnlyFn` for reads.
+- Do not use mocks for contract state — use the simnet chain directly.
+
+### Frontend Tests
+
+Located in `frontend/src/**/*.test.jsx`. Run with:
+
+```bash
+cd frontend && npm test
+```
+
+- Unit tests for utilities and hooks use Vitest.
+- Do not mock the Stacks blockchain — mock only external HTTP calls.
+
+### What does NOT need a test
+
+- Read-only helper functions that only compose already-tested logic.
+- Deployment scripts (tested manually against testnet).
