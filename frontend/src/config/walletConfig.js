@@ -8,10 +8,12 @@ export const appConfig = new AppConfig(['store_write', 'publish_data']);
 export const userSession = new UserSession({ appConfig });
 
 // App Details
+const APP_URL = import.meta.env.VITE_APP_URL || (typeof window !== 'undefined' ? window.location.origin : 'https://genetrust.xyz');
+
 export const appDetails = {
-  name: 'GeneTrust',
-  icon: typeof window !== 'undefined' ? `${window.location.origin}/logo192.png` : '/logo192.png',
-  url: typeof window !== 'undefined' ? window.location.origin : 'https://genetrust.xyz'
+  name: import.meta.env.VITE_APP_NAME || 'GeneTrust',
+  icon: `${APP_URL}/logo192.png`,
+  url: APP_URL,
 };
 
 // Reown Client Configuration

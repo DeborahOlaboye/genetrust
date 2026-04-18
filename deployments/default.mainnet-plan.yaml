@@ -1,4 +1,11 @@
 ---
+# GeneTrust Mainnet Deployment Plan
+# Deployer: SP3KKFRRWQVJXEJCGM6ZB359EF01VRY86HW6CCD45
+# Network: Stacks Mainnet (Bitcoin L2)
+# Epoch: 3.0 (Clarity v3)
+# Cost: 18750 ustx per contract (safe margin above minimum ~5036 ustx)
+# Note: dataset-registry was deployed separately in batch 0 (txid: c02bc53b...)
+#       The remaining 3 contracts are deployed here in batch 0.
 id: 0
 name: Mainnet deployment
 network: mainnet
