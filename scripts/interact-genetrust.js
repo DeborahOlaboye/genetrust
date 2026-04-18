@@ -397,17 +397,21 @@ async function main() {
   console.log(`Owner calls:     ${ownerCalls}`);
   console.log(`Target:          ${totalExpected} transactions\n`);
 
-  if (OWNER_KEY && !OWNER_KEY.includes('YOUR_OWNER')) {
-    console.log('Fetching owner nonce...');
-    state.ownerNonce = await getNonce(CONTRACT_OWNER);
-    console.log(`  Owner nonce: ${state.ownerNonce}`);
-  }
+  if (!DRY_RUN) {
+    if (OWNER_KEY && !OWNER_KEY.includes('YOUR_OWNER')) {
+      console.log('Fetching owner nonce...');
+      state.ownerNonce = await getNonce(CONTRACT_OWNER);
+      console.log(`  Owner nonce: ${state.ownerNonce}`);
+    }
 
-  console.log('\nInitializing user nonces...');
-  for (let userIdx = 0; userIdx < NUM_USERS; userIdx++) {
-    state.userNonces[userIdx] = await getNonce(ADDRESSES[userIdx]);
+    console.log('\nInitializing user nonces...');
+    for (let userIdx = 0; userIdx < NUM_USERS; userIdx++) {
+      state.userNonces[userIdx] = await getNonce(ADDRESSES[userIdx]);
+    }
+    console.log('  Done.\n');
+  } else {
+    console.log('Dry-run mode: skipping nonce initialization.\n');
   }
-  console.log('  Done.\n');
 
   for (let round = 0; round < NUM_ROUNDS; round++) {
     const pct = Math.round(((round) / NUM_ROUNDS) * 100);
