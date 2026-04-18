@@ -327,11 +327,18 @@ async function runOwnerCalls() {
 
   console.log('Running owner-only contract calls...\n');
 
-  // Register a trusted verifier (medical lab)
+  // Register a trusted verifier (medical lab) and receive verifier-id 1
   process.stdout.write('  [attestations::register-verifier]     ');
   await callContract(-1, 'attestations', 'register-verifier', [
     stringUtf8CV('GeneTrust Lab Partner'),
     principalCV(ADDRESSES[0]),
+  ]);
+  await sleep(SLEEP_BETWEEN);
+
+  // Deactivate the verifier just registered (verifier-id 1)
+  process.stdout.write('\n  [attestations::deactivate-verifier]   ');
+  await callContract(-1, 'attestations', 'deactivate-verifier', [
+    uintCV(1),
   ]);
   await sleep(SLEEP_BETWEEN);
 
