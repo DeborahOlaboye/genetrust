@@ -64,3 +64,13 @@ frontend/coverage/
 frontend/.vite/
 *.local
 rollup.config.js.cache
+
+# ─── OS generated files ───────────────────────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
