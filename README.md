@@ -77,6 +77,20 @@ Medical lab attestation proofs that verify genetic data properties without expos
 
 **Proof Types:** `1` = Gene Presence · `2` = Gene Absence · `3` = Gene Variant · `4` = Aggregate
 
+## How It Works
+
+### For Data Owners
+1. Connect your Stacks wallet to the frontend
+2. Register a genetic dataset — metadata goes on-chain, encrypted data goes to IPFS
+3. Set consent preferences via `data-governance`
+4. Create a marketplace listing on `exchange`
+5. Receive STX directly when researchers purchase access
+
+### For Researchers
+1. Browse active listings on the marketplace
+2. Purchase access — STX transfers directly to the data owner
+3. Use the granted access level to retrieve and decrypt the dataset
+
 ## Environment Variables
 
 The frontend reads from `frontend/.env.local` (not committed). Create it from:
