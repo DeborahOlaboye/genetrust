@@ -3,6 +3,22 @@
 // Check if running in development mode
 const isDev = import.meta.env.MODE === 'development';
 
+// Warn in development if USE_REAL_SDK is true but contract addresses are still defaults
+if (isDev && import.meta.env.VITE_USE_REAL_SDK === 'true') {
+  const defaultAddr = 'ST2VXH7RRKSAYNMWCVVMD972B7HP3H2QY96V8Q161';
+  const vars = [
+    'VITE_DATASET_REGISTRY_ADDRESS',
+    'VITE_EXCHANGE_ADDRESS',
+    'VITE_ATTESTATIONS_ADDRESS',
+    'VITE_DATA_GOVERNANCE_ADDRESS',
+  ];
+  vars.forEach(v => {
+    if (!import.meta.env[v] || import.meta.env[v] === defaultAddr) {
+      console.warn(`[GeneTrust] ${v} is using the default testnet address. Set it in frontend/.env.local.`);
+    }
+  });
+}
+
 export const APP_CONFIG = {
   // Toggle to enable real contract calls
   // Set to true to use actual Stacks blockchain contracts
