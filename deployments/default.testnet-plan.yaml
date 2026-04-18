@@ -1,4 +1,9 @@
 ---
+# GeneTrust Testnet Deployment Plan
+# Deployer: ST2VXH7RRKSAYNMWCVVMD972B7HP3H2QY96V8Q161
+# Network: Stacks Testnet
+# Epoch: 3.0 (Clarity v3)
+# Obtain testnet STX from the Stacks faucet: https://explorer.hiro.so/sandbox/faucet?chain=testnet
 id: 0
 name: Testnet deployment
 network: testnet
@@ -9,41 +14,31 @@ plan:
     - id: 0
       transactions:
         - contract-publish:
-            contract-name: dataset-registry-trait
+            contract-name: dataset-registry
             expected-sender: ST2VXH7RRKSAYNMWCVVMD972B7HP3H2QY96V8Q161
-            cost: 5510
-            path: contracts/dataset-registry-trait.clar
-            anchor-block-only: true
-            clarity-version: 2
-      epoch: "2.5"
-    - id: 1
-      transactions:
-        - contract-publish:
-            contract-name: attestations
-            expected-sender: ST2VXH7RRKSAYNMWCVVMD972B7HP3H2QY96V8Q161
-            cost: 121130
-            path: contracts/attestations.clar
+            cost: 18750
+            path: contracts/genetic-data.clar
             anchor-block-only: true
             clarity-version: 3
         - contract-publish:
             contract-name: data-governance
             expected-sender: ST2VXH7RRKSAYNMWCVVMD972B7HP3H2QY96V8Q161
-            cost: 164390
+            cost: 18750
             path: contracts/data-governance.clar
             anchor-block-only: true
             clarity-version: 3
         - contract-publish:
-            contract-name: dataset-registry
+            contract-name: attestations
             expected-sender: ST2VXH7RRKSAYNMWCVVMD972B7HP3H2QY96V8Q161
-            cost: 74350
-            path: contracts/genetic-data.clar
+            cost: 18750
+            path: contracts/attestations.clar
             anchor-block-only: true
             clarity-version: 3
         - contract-publish:
             contract-name: exchange
             expected-sender: ST2VXH7RRKSAYNMWCVVMD972B7HP3H2QY96V8Q161
-            cost: 191060
+            cost: 18750
             path: contracts/exchange.clar
             anchor-block-only: true
             clarity-version: 3
-      epoch: "3.1"
+      epoch: "3.0"
