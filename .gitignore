@@ -1,7 +1,10 @@
 
 # ─── Stacks / Clarinet credentials ───────────────────────────────────────────
+# Deployer mnemonics — never commit these
 **/settings/Mainnet.toml
 **/settings/Testnet.toml
+# Allow example templates
+!**/settings/*.toml.example
 .cache/**
 history.txt
 
