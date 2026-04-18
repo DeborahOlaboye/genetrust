@@ -46,6 +46,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `SECURITY.md` with responsible disclosure policy using GitHub private vulnerability reporting
 - Settings files (`Testnet.toml`, `Mainnet.toml`) containing deployer mnemonics are now gitignored
 
+### Documentation
+- `docs/contract-guide.md` — Clarity contributor guide covering NatSpec format, error code ranges, and `check_checker` rules
+- `docs/env-setup.md` — environment variable reference for both frontend (VITE_*) and backend SDK
+- `scripts/README.md` — deployment workflow guide with settings table and release process
+- GitHub issue and pull request templates for standardised contributions
+- `CONTRIBUTING.md` covering branching strategy, Conventional Commits, and testing requirements
+
 ---
 
 ## [0.1.0] - 2025-05-01
