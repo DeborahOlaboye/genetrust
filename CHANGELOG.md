@@ -52,6 +52,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `scripts/README.md` — deployment workflow guide with settings table and release process
 - GitHub issue and pull request templates for standardised contributions
 - `CONTRIBUTING.md` covering branching strategy, Conventional Commits, and testing requirements
+- `CHANGELOG.md` (this file) — automated changelog with git-cliff config and GitHub Actions workflow
 
 ---
 
