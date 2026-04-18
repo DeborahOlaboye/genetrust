@@ -42,3 +42,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Illegal non-ASCII em-dash characters (`—`) in NatSpec `@return` lines of `exchange.clar` and `genetic-data.clar`
 
+---
+
+## [0.1.0] - 2025-05-01
+
+Initial MVP release of GeneTrust on Stacks testnet.
+
+### Added
+- `contracts/genetic-data.clar` — dataset registry contract for on-chain metadata and access control
+- `contracts/exchange.clar` — decentralized marketplace with escrow and direct purchase flows
+- `contracts/attestations.clar` — zero-knowledge proof registry for trait verification
+- `contracts/data-governance.clar` — GDPR/HIPAA consent and access auditing contract
+- `contracts/dataset-registry-trait.clar` — shared trait interface for registry interoperability
+- React + Vite frontend with User Dashboard and Researcher Dashboard
+- Stacks wallet integration via `@stacks/connect`
+- Three.js 3D DNA visualization component
+- AES-GCM tiered encryption (3 access levels) in the browser SDK
+- IPFS integration with content-addressed storage (`browserGeneTrust.js`)
+- `frontend/src/services/contractService.js` — high-level contract API for the UI
+- `frontend/src/services/walletService.js` — wallet connection and session management
+- `frontend/src/config/app.js` — centralized app configuration with env-var overrides
+- `frontend/src/config/walletConfig.js` — AppConfig, UserSession, and Reown client setup
+- `src/main.js` — backend service orchestrator
+- `src/storage/` — encryption and IPFS storage management
+- `src/zk-proofs/` — zero-knowledge proof scaffolding
+- `src/contract-integration/` — direct Clarity contract call clients
+- `deployments/default.testnet-plan.yaml` — testnet deployment plan for all 4 contracts
+- `deployments/default.mainnet-plan.yaml` — mainnet deployment plan
+- `deployments/default.simnet-plan.yaml` — local simnet deployment plan
+- `scripts/deploy-mainnet.sh` — mainnet deployment wrapper script
+- Vitest test suite with `vitest-environment-clarinet` for contract tests
+- Playwright E2E test configuration
+- Docker build support (`Dockerfile`, `docker-compose.yml`)
+
