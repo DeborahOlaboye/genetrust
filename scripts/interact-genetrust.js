@@ -93,6 +93,9 @@ const state = {
   userNonces: new Array(NUM_USERS).fill(BigInt(0)),
   successCount: 0,
   failCount: 0,
+  roundSuccess: [],
+  roundFail: [],
+  startTime: Date.now(),
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -332,12 +335,20 @@ async function main() {
   console.log('  Done.\n');
 
   for (let round = 0; round < NUM_ROUNDS; round++) {
-    console.log(`━━━ Round ${round + 1}/${NUM_ROUNDS} ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`);
+    const pct = Math.round(((round) / NUM_ROUNDS) * 100);
+    console.log(`━━━ Round ${round + 1}/${NUM_ROUNDS} (${pct}% complete) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`);
+    const roundStartSuccess = state.successCount;
+    const roundStartFail    = state.failCount;
     for (let userIdx = 0; userIdx < NUM_USERS; userIdx++) {
       console.log(`User ${userIdx + 1}/${NUM_USERS}: ${ADDRESSES[userIdx].slice(0, 12)}... (nonce: ${state.userNonces[userIdx]})`);
       await processUser(userIdx, round);
       console.log('');
     }
+    const roundOk   = state.successCount - roundStartSuccess;
+    const roundFail = state.failCount - roundStartFail;
+    state.roundSuccess.push(roundOk);
+    state.roundFail.push(roundFail);
+    console.log(`  Round ${round + 1} summary: ${roundOk} ok, ${roundFail} failed\n`);
   }
 
   console.log('');
