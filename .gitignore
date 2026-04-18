@@ -6,6 +6,7 @@ history.txt
 
 logs
 *.log
+interact-results-*.json
 npm-debug.log*
 coverage
 *.info
