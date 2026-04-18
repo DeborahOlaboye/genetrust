@@ -93,12 +93,16 @@ function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-// Pad a string to a 32-byte buffer (metadata hash simulation)
-function makeHash(seed) {
-  const buf = Buffer.alloc(32, 0);
-  Buffer.from(seed).copy(buf);
+// Pad a string to a fixed-length buffer (zero-padded on the right)
+function makeBuffer(seed, length) {
+  const src = Buffer.from(seed);
+  const buf = Buffer.alloc(length, 0);
+  src.copy(buf, 0, 0, Math.min(src.length, length));
   return bufferCV(buf);
 }
+
+function makeHash(seed)   { return makeBuffer(seed, 32); }
+function makeParams(seed) { return makeBuffer(seed, 64); }
 
 async function getNonce(address) {
   for (let i = 0; i < 10; i++) {
@@ -244,7 +248,7 @@ async function processUser(userIdx, round) {
     uintCV(dataId),
     uintCV(1), // proof type: gene presence
     makeHash(`proof-hash-user${userIdx}-round${round}`),
-    bufferCV(Buffer.from(`params-user${userIdx}-round${round}`).slice(0, 32).fill(0, Buffer.from(`params-user${userIdx}-round${round}`).length)),
+    makeParams(`params-user${userIdx}-round${round}`),
     stringUtf8CV(`Gene presence attestation for dataset ${dataId}`),
   ]);
   if (rc === 2) return;
