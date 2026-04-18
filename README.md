@@ -77,6 +77,22 @@ Medical lab attestation proofs that verify genetic data properties without expos
 
 **Proof Types:** `1` = Gene Presence · `2` = Gene Absence · `3` = Gene Variant · `4` = Aggregate
 
+## Environment Variables
+
+The frontend reads from `frontend/.env.local` (not committed). Create it from:
+
+```bash
+cp frontend/.env.example frontend/.env.local
+```
+
+| Variable | Description |
+|---|---|
+| `VITE_NETWORK` | `mainnet` or `testnet` |
+| `VITE_STACKS_NODE` | Hiro API endpoint |
+| `VITE_CONTRACT_OWNER` | Deployer address |
+
+`settings/Mainnet.toml` holds your wallet mnemonic for Clarinet deployments and is covered by `.gitignore` — never commit it.
+
 ## Running Tests
 
 ```bash
