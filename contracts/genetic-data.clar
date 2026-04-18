@@ -51,7 +51,9 @@
 ;; Dataset counter
 (define-data-var next-data-id uint u1)
 
-;; Datasets
+;; @notice Primary storage map for all registered genetic datasets.
+;;         Keyed by auto-incremented data-id. Owner is always tx-sender at registration time.
+;; @dev is-active flag is used for soft-deletion; datasets are never hard-deleted.
 (define-map datasets
     { data-id: uint }
     {
