@@ -78,3 +78,16 @@ For contract changes specifically, run the pre-deployment checklist:
 ```bash
 bash scripts/pre-deploy-check.sh testnet
 ```
+
+## Branching Strategy
+
+| Branch pattern | Purpose |
+|---|---|
+| `main` | Stable, production-ready code |
+| `feat/<description>` | New features |
+| `fix/<description>` | Bug fixes |
+| `docs/<description>` | Documentation only |
+| `refactor/<description>` | Code restructuring without behavior change |
+| `chore/<description>` | Tooling, dependencies, CI changes |
+
+Branch names must be lowercase and use hyphens, not underscores or numbers as separators. Branch from `main` and keep branches short-lived.
