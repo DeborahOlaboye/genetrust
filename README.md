@@ -13,6 +13,27 @@ A decentralized platform for secure genetic data sharing, consent management, an
 | `data-governance` | `SP3KKFRRWQVJXEJCGM6ZB359EF01VRY86HW6CCD45.data-governance` |
 | `attestations` | `SP3KKFRRWQVJXEJCGM6ZB359EF01VRY86HW6CCD45.attestations` |
 
+## Prerequisites
+
+- Node.js >= 18
+- npm >= 9
+- [Clarinet](https://docs.hiro.so/stacks/clarinet) for contract development
+- A Stacks-compatible wallet (Leather or Xverse)
+
+## Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/DeborahOlaboye/genetrust.git
+cd genetrust
+
+# Install root dependencies
+npm install
+
+# Install frontend dependencies
+cd frontend && npm install && cd ..
+```
+
 ## Project Structure
 
 ```
