@@ -19,6 +19,12 @@ const {
 const NUM_USERS_LIMIT = 20;
 const NUM_ROUNDS      = 5;
 
+// ─── Fee / Timing Config ──────────────────────────────────────────────────────
+const TX_FEE          = BigInt(400);   // fee per transaction in microSTX
+const SLEEP_BETWEEN   = 2000;          // ms between calls within a user round
+const RATE_LIMIT_WAIT = 10000;         // ms to wait on 429 rate-limit response
+const CHAIN_WAIT      = 120000;        // ms to wait on TooMuchChaining error
+
 // ─── Contract Config ──────────────────────────────────────────────────────────
 const CONTRACT_OWNER = 'SP3KKFRRWQVJXEJCGM6ZB359EF01VRY86HW6CCD45';
 const NODE_URL       = 'https://api.hiro.so';
@@ -98,12 +104,12 @@ async function getNonce(address) {
   for (let i = 0; i < 10; i++) {
     try {
       const res = await fetch(`${NODE_URL}/extended/v1/address/${address}/nonces`);
-      if (res.status === 429) { await sleep(5000 * (i + 1)); continue; }
-      if (!res.ok) { await sleep(3000 * (i + 1)); continue; }
+      if (res.status === 429) { await sleep(RATE_LIMIT_WAIT * (i + 1)); continue; }
+      if (!res.ok) { await sleep(SLEEP_BETWEEN * (i + 1)); continue; }
       const data = await res.json();
       return BigInt(data.possible_next_nonce);
     } catch {
-      await sleep(3000 * (i + 1));
+      await sleep(SLEEP_BETWEEN * (i + 1));
     }
   }
   throw new Error(`Failed to get nonce for ${address}`);
@@ -127,7 +133,7 @@ async function callContract(userIdx, contractName, functionName, functionArgs) {
         senderKey,
         network: 'mainnet',
         nonce,
-        fee: BigInt(400),
+        fee: TX_FEE,
         anchorMode: AnchorMode.Any,
         postConditionMode: PostConditionMode.Allow,
       });
@@ -142,15 +148,15 @@ async function callContract(userIdx, contractName, functionName, functionArgs) {
     const errMsg = result.error ? (result.reason || result.error) : '';
 
     if (errMsg.includes('429') || errMsg.includes('Too Many Requests')) {
-      process.stdout.write('⏳');
-      await sleep(10000);
+      process.stdout.write('(wait)');
+      await sleep(RATE_LIMIT_WAIT);
       if (attempts >= 5) { process.stdout.write('✗'); state.failCount++; return 1; }
       continue;
     }
 
     if (errMsg.includes('TooMuchChaining')) {
-      process.stdout.write('⏳');
-      await sleep(120000);
+      process.stdout.write('(chain-wait)');
+      await sleep(CHAIN_WAIT);
       nonce = await getNonce(isOwner ? CONTRACT_OWNER : ADDRESSES[userIdx]);
       if (isOwner) state.ownerNonce = nonce;
       else state.userNonces[userIdx] = nonce;
@@ -197,7 +203,7 @@ async function processUser(userIdx, round) {
     uintCV(100000),  // price: 0.1 STX
   ]);
   if (rc === 2) return;
-  await sleep(2000);
+  await sleep(SLEEP_BETWEEN);
 
   // 2. data-governance: set consent for the dataset
   process.stdout.write('\n  [data-governance::set-consent]        ');
@@ -209,7 +215,7 @@ async function processUser(userIdx, round) {
     uintCV(2),  // jurisdiction: EU (GDPR)
   ]);
   if (rc === 2) return;
-  await sleep(2000);
+  await sleep(SLEEP_BETWEEN);
 
   // 3. dataset-registry: grant access to next user
   process.stdout.write('\n  [dataset-registry::grant-access]      ');
@@ -219,7 +225,7 @@ async function processUser(userIdx, round) {
     uintCV(1), // basic access
   ]);
   if (rc === 2) return;
-  await sleep(2000);
+  await sleep(SLEEP_BETWEEN);
 
   // 4. exchange: list the dataset on the marketplace
   process.stdout.write('\n  [exchange::create-listing]            ');
@@ -230,7 +236,7 @@ async function processUser(userIdx, round) {
     stringUtf8CV(`Genomic dataset ${dataId} - research use`),
   ]);
   if (rc === 2) return;
-  await sleep(2000);
+  await sleep(SLEEP_BETWEEN);
 
   // 5. attestations: register a proof for the dataset
   process.stdout.write('\n  [attestations::register-proof]        ');
@@ -242,7 +248,7 @@ async function processUser(userIdx, round) {
     stringUtf8CV(`Gene presence attestation for dataset ${dataId}`),
   ]);
   if (rc === 2) return;
-  await sleep(2000);
+  await sleep(SLEEP_BETWEEN);
 
   // 6. data-governance: request GDPR data portability
   process.stdout.write('\n  [data-governance::request-portability]');
@@ -250,7 +256,7 @@ async function processUser(userIdx, round) {
     uintCV(dataId),
   ]);
   if (rc === 2) return;
-  await sleep(2000);
+  await sleep(SLEEP_BETWEEN);
 
   console.log('');
 }
@@ -270,7 +276,7 @@ async function runOwnerCalls() {
     stringUtf8CV('GeneTrust Lab Partner'),
     principalCV(ADDRESSES[0]),
   ]);
-  await sleep(2000);
+  await sleep(SLEEP_BETWEEN);
 
   console.log('\n');
   console.log('Owner calls complete.');
