@@ -68,7 +68,9 @@
     }
 )
 
-;; Access rights granted to users
+;; @notice Tracks access rights granted by dataset owners to other principals.
+;;         Access automatically expires after ACCESS-EXPIRY-BLOCKS (~30 days).
+;; @dev expiration is block-height based. Frontend should call has-valid-access before use.
 (define-map access-rights
     { data-id: uint, user: principal }
     {
