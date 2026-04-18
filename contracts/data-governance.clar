@@ -90,7 +90,11 @@
     )
 )
 
-;; Request right-to-be-forgotten (owner only)
+;; @notice Flags this dataset with the GDPR right-to-be-forgotten.
+;; @param data-id The dataset ID to flag (must be > 0 and have an existing consent record).
+;; @return ok(true) on success. ERR-NOT-FOUND if no consent record exists.
+;;         ERR-INVALID-INPUT if data-id is zero. ERR-NOT-AUTHORIZED if caller is not the owner.
+;; @requires Caller must be the dataset consent owner.
 (define-public (request-erasure (data-id uint))
     (let ((consent (unwrap! (map-get? consent-records { data-id: data-id }) ERR-NOT-FOUND)))
         (asserts! (> data-id u0) ERR-INVALID-INPUT)
