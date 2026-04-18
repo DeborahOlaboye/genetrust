@@ -1,6 +1,9 @@
 
+# Deployer credentials - never commit
 **/settings/Mainnet.toml
 **/settings/Testnet.toml
+# Allow example templates
+!**/settings/*.toml.example
 .cache/**
 history.txt
 
