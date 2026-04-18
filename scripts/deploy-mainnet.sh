@@ -52,10 +52,10 @@ if [ "$confirmation" != "yes" ]; then
     exit 0
 fi
 
-# Verify contracts compile
+# Run pre-deployment checks
 echo ""
-echo "🔍 Verifying contracts..."
-clarinet check
+echo "Running pre-deployment checks..."
+bash scripts/pre-deploy-check.sh mainnet
 
 # Deploy to mainnet
 echo ""
