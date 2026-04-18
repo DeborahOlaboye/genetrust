@@ -154,3 +154,12 @@ frontend/storybook-static/
 frontend/.turbo/
 frontend/.parcel-cache/
 frontend/tsconfig.tsbuildinfo
+
+# ─── Local database and cache files ───────────────────────────────────────────
+*.sqlite
+*.sqlite3
+*.db
+*.db-journal
+dump.rdb
+appendonly.aof
+.redis/
