@@ -42,6 +42,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Illegal non-ASCII em-dash characters (`—`) in NatSpec `@return` lines of `exchange.clar` and `genetic-data.clar`
 
+### Security
+- Added `SECURITY.md` with responsible disclosure policy using GitHub private vulnerability reporting
+- Settings files (`Testnet.toml`, `Mainnet.toml`) containing deployer mnemonics are now gitignored
+
 ---
 
 ## [0.1.0] - 2025-05-01
