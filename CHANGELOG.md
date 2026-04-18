@@ -75,3 +75,7 @@ Initial MVP release of GeneTrust on Stacks testnet.
 - Playwright E2E test configuration
 - Docker build support (`Dockerfile`, `docker-compose.yml`)
 
+---
+
+[Unreleased]: https://github.com/DeborahOlaboye/genetrust/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/DeborahOlaboye/genetrust/releases/tag/v0.1.0
