@@ -25,8 +25,9 @@ const ErrorDisplay = ({
   const errorDetails = error?.stack || error?.message || 'No additional details available';
   const showExpand = process.env.NODE_ENV === 'development' && errorDetails;
 
-  // Get a more specific title based on error type if available
+  // Explicit title prop always wins; otherwise derive from error code.
   const getErrorTitle = () => {
+    if (title !== 'Something went wrong') return title;
     if (error?.code) {
       const errorTitles = {
         [ERROR_CODES.NETWORK_OFFLINE]: 'Connection Error',
