@@ -44,6 +44,9 @@ const ErrorDisplay = ({
         [ERROR_CODES.RESOURCE_NOT_FOUND]: 'Not Found',
         [ERROR_CODES.RESOURCE_ALREADY_EXISTS]: 'Already Exists',
         [ERROR_CODES.RESOURCE_LIMIT_REACHED]: 'Limit Reached',
+        [ERROR_CODES.AUTH_UNAUTHORIZED]: 'Not Authorized',
+        [ERROR_CODES.AUTH_SESSION_EXPIRED]: 'Session Expired',
+        [ERROR_CODES.AUTH_PERMISSION_DENIED]: 'Permission Denied',
       };
       return errorTitles[error.code] || title;
     }
