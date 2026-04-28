@@ -1,4 +1,5 @@
 // Hooks barrel exports
+export { default as useErrorHandler } from './useErrorHandler';
 export { useTransactionStatus } from './useTransactionStatus';
 export { useTransactionRetry } from './useTransactionRetry';
 export { useWallet } from './useWallet';
