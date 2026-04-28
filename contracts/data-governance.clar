@@ -37,12 +37,13 @@
 (define-constant ERR-CANNOT-MODIFY-ERASED (err u612))
 
 ;; @notice Jurisdiction identifiers mapped to uint codes for on-chain storage.
-;;         Frontends should decode these to human-readable region labels.
+;;         Frontends must decode these to human-readable region labels.
+;;         Valid range: 0-4 (JURISDICTION-GLOBAL through JURISDICTION-CANADA).
 (define-constant JURISDICTION-GLOBAL u0)  ;; No regional restriction
-(define-constant JURISDICTION-US u1)      ;; United States (HIPAA)
-(define-constant JURISDICTION-EU u2)      ;; European Union (GDPR)
-(define-constant JURISDICTION-UK u3)      ;; United Kingdom (UK GDPR)
-(define-constant JURISDICTION-CANADA u4) ;; Canada (PIPEDA)
+(define-constant JURISDICTION-US u1)      ;; United States — HIPAA / CCPA
+(define-constant JURISDICTION-EU u2)      ;; European Union — GDPR (Regulation 2016/679)
+(define-constant JURISDICTION-UK u3)      ;; United Kingdom — UK GDPR / Data Protection Act 2018
+(define-constant JURISDICTION-CANADA u4) ;; Canada — PIPEDA / Bill C-27
 
 ;; @notice Number of blocks representing approximately one year of consent validity.
 ;;         Based on ~10-minute Stacks block times: 6 blocks/hr x 24 hr x 365 days = 52560.
