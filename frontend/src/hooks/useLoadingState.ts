@@ -5,6 +5,7 @@ interface UseLoadingStateReturn {
   error: Error | null;
   startLoading: () => void;
   stopLoading: (error?: Error | null) => void;
+  clearError: () => void;
   withLoading: <T>(asyncFunction: () => Promise<T>) => Promise<T>;
 }
 
@@ -23,6 +24,10 @@ const useLoadingState = (initialState: boolean = false): UseLoadingStateReturn =
       setError(error);
       console.error('Loading error:', error);
     }
+  }, []);
+
+  const clearError = useCallback(() => {
+    setError(null);
   }, []);
 
   const withLoading = useCallback(
@@ -46,6 +51,7 @@ const useLoadingState = (initialState: boolean = false): UseLoadingStateReturn =
     error,
     startLoading,
     stopLoading,
+    clearError,
     withLoading,
   };
 };
