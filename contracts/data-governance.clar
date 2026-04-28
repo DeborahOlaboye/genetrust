@@ -315,3 +315,9 @@
         (ok false)
     )
 )
+
+;; @notice Returns the deployed contract version string.
+;; @return The CONTRACT-VERSION constant value.
+(define-read-only (get-version)
+    CONTRACT-VERSION
+)
