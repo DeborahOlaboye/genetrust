@@ -76,8 +76,6 @@ const ErrorDisplay = ({
   const handleRetry = () => {
     if (onRetry) {
       onRetry();
-    } else if (typeof window !== 'undefined') {
-      window.location.reload();
     }
   };
 
