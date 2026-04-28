@@ -46,7 +46,8 @@
 (define-constant JURISDICTION-CANADA u4) ;; Canada — PIPEDA / Bill C-27
 
 ;; @notice Number of blocks representing approximately one year of consent validity.
-;;         Based on ~10-minute Stacks block times: 6 blocks/hr x 24 hr x 365 days = 52560.
+;;         Stacks produces ~1 block per 10 minutes: 6 blocks/hr × 24 hr × 365 days = 52 560.
+;;         After expiry the owner must call renew-consent or set-consent to re-activate.
 (define-constant CONSENT-EXPIRY-BLOCKS u52560)
 
 ;; @notice Stores per-dataset consent settings set by the data owner.
