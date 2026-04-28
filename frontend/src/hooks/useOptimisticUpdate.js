@@ -153,6 +153,7 @@ export const useOptimisticUpdate = (options = {}) => {
 
   return {
     isUpdating,
+    isPending: isUpdating,
     executeOptimisticUpdate,
     optimisticUpdate,
     optimisticArrayUpdate,

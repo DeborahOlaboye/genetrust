@@ -12,7 +12,7 @@ import { useState, useEffect } from 'react';
  * - Viewport utilities
  */
 
-const BREAKPOINTS = {
+export const BREAKPOINTS = {
   mobile: 640,
   tablet: 768,
   laptop: 1024,

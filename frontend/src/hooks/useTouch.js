@@ -12,6 +12,13 @@ import { useRef, useCallback, useEffect } from 'react';
  * - Pinch zoom detection
  */
 
+export const SWIPE_DIRECTION = {
+  LEFT: 'left',
+  RIGHT: 'right',
+  UP: 'up',
+  DOWN: 'down',
+};
+
 export const useTouch = (options = {}) => {
   const {
     onSwipeLeft,

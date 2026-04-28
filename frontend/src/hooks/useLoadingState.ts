@@ -2,9 +2,11 @@ import { useState, useCallback } from 'react';
 
 interface UseLoadingStateReturn {
   isLoading: boolean;
+  hasError: boolean;
   error: Error | null;
   startLoading: () => void;
   stopLoading: (error?: Error | null) => void;
+  clearError: () => void;
   withLoading: <T>(asyncFunction: () => Promise<T>) => Promise<T>;
 }
 
@@ -25,6 +27,10 @@ const useLoadingState = (initialState: boolean = false): UseLoadingStateReturn =
     }
   }, []);
 
+  const clearError = useCallback(() => {
+    setError(null);
+  }, []);
+
   const withLoading = useCallback(
     async <T,>(asyncFunction: () => Promise<T>): Promise<T> => {
       try {
@@ -43,9 +49,11 @@ const useLoadingState = (initialState: boolean = false): UseLoadingStateReturn =
 
   return {
     isLoading,
+    hasError: error !== null,
     error,
     startLoading,
     stopLoading,
+    clearError,
     withLoading,
   };
 };

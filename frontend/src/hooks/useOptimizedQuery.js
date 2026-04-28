@@ -15,10 +15,16 @@ import { requestDeduplicator, queryBatcher } from '../utils/performanceOptimizat
  * - Automatic retry on failure
  */
 
+export const QUERY_DEFAULTS = {
+  cacheTTL: 60000,
+  retryAttempts: 2,
+  retryDelay: 1000,
+};
+
 export const useOptimizedQuery = (options = {}) => {
   const {
     enableCache = true,
-    cacheTTL = 60000, // 1 minute
+    cacheTTL = QUERY_DEFAULTS.cacheTTL,
     enableBatching = false,
     enableDeduplication = true,
     retryAttempts = 2,
