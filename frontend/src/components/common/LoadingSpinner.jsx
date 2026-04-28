@@ -28,4 +28,6 @@ LoadingSpinner.propTypes = {
   label: PropTypes.string,
 };
 
+LoadingSpinner.displayName = 'LoadingSpinner';
+
 export default LoadingSpinner;
