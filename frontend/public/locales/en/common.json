@@ -65,5 +65,15 @@
   "consent_gdpr_title": "GDPR Rights",
   "consent_request_erasure": "Request Erasure",
   "consent_request_portability": "Request Data Portability",
-  "consent_restrict_processing": "Restrict Processing"
+  "consent_restrict_processing": "Restrict Processing",
+  "error_not_found": "The requested resource could not be found.",
+  "error_unauthorized": "You need to sign in to access this.",
+  "error_forbidden": "You do not have permission to perform this action.",
+  "error_server": "A server error occurred. Please try again later.",
+  "error_network": "Unable to connect. Please check your internet connection.",
+  "error_wallet_not_connected": "Please connect your wallet to continue.",
+  "error_transaction_rejected": "You rejected the transaction in your wallet.",
+  "error_insufficient_balance": "You do not have enough funds for this transaction.",
+  "error_unknown": "An unexpected error occurred. Please try again.",
+  "error_maintenance": "We are currently under maintenance. Please try again later."
 }

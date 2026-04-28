@@ -65,5 +65,15 @@
   "consent_gdpr_title": "Derechos GDPR",
   "consent_request_erasure": "Solicitar eliminación",
   "consent_request_portability": "Solicitar portabilidad de datos",
-  "consent_restrict_processing": "Restringir el procesamiento"
+  "consent_restrict_processing": "Restringir el procesamiento",
+  "error_not_found": "No se encontró el recurso solicitado.",
+  "error_unauthorized": "Debes iniciar sesión para acceder a esto.",
+  "error_forbidden": "No tienes permiso para realizar esta acción.",
+  "error_server": "Ocurrió un error en el servidor. Inténtalo de nuevo más tarde.",
+  "error_network": "No se puede conectar. Verifica tu conexión a internet.",
+  "error_wallet_not_connected": "Conecta tu billetera para continuar.",
+  "error_transaction_rejected": "Rechazaste la transacción en tu billetera.",
+  "error_insufficient_balance": "No tienes fondos suficientes para esta transacción.",
+  "error_unknown": "Ocurrió un error inesperado. Inténtalo de nuevo.",
+  "error_maintenance": "Estamos en mantenimiento. Inténtalo de nuevo más tarde."
 }

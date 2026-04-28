@@ -65,5 +65,15 @@
   "consent_gdpr_title": "حقوق اللائحة الأوروبية لحماية البيانات",
   "consent_request_erasure": "طلب المسح",
   "consent_request_portability": "طلب نقل البيانات",
-  "consent_restrict_processing": "تقييد المعالجة"
+  "consent_restrict_processing": "تقييد المعالجة",
+  "error_not_found": "لم يتم العثور على المورد المطلوب.",
+  "error_unauthorized": "يجب تسجيل الدخول للوصول إلى هذا.",
+  "error_forbidden": "ليس لديك إذن لتنفيذ هذا الإجراء.",
+  "error_server": "حدث خطأ في الخادم. يرجى المحاولة لاحقاً.",
+  "error_network": "تعذّر الاتصال. تحقق من اتصالك بالإنترنت.",
+  "error_wallet_not_connected": "يرجى توصيل محفظتك للمتابعة.",
+  "error_transaction_rejected": "رفضت المعاملة في محفظتك.",
+  "error_insufficient_balance": "ليس لديك أموال كافية لهذه المعاملة.",
+  "error_unknown": "حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.",
+  "error_maintenance": "نحن حاليًا في صيانة. يرجى المحاولة لاحقاً."
 }
