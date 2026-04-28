@@ -31,10 +31,12 @@ describe('components/common barrel export', () => {
   it('exports LoadingSpinner', () => {
     expect(LoadingSpinner).toBeDefined();
     expect(typeof LoadingSpinner).toBe('function');
+    expect(LoadingSpinner.displayName).toBe('LoadingSpinner');
   });
 
   it('exports SkeletonLoader', () => {
     expect(SkeletonLoader).toBeDefined();
     expect(typeof SkeletonLoader).toBe('function');
+    expect(SkeletonLoader.displayName).toBe('SkeletonLoader');
   });
 });
