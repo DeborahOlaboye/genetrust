@@ -75,7 +75,7 @@ export default function UserDashboard() {
   const [newDesc, setNewDesc] = useState('');
   const [descError, setDescError] = useState('');
   const [newPrice, setNewPrice] = useState('');
-  const [newAccess, setNewAccess] = useState(3);
+  const [newAccess, setNewAccess] = useState(DEFAULT_ACCESS_LEVEL);
   const [selectedDataset, setSelectedDataset] = useState('');
   const [consentDatasetId, setConsentDatasetId] = useState(null);
 
