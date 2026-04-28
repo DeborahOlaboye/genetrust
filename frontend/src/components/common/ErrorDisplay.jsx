@@ -247,7 +247,8 @@ ErrorDisplay.propTypes = {
   title: PropTypes.string,
   
   /**
-   * Whether to show error details (stack trace, etc.)
+   * Whether to show error details (stack trace, etc.). Also shown automatically
+   * when NODE_ENV=development.
    */
   showDetails: PropTypes.bool,
   
