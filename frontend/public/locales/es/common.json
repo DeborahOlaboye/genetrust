@@ -20,5 +20,15 @@
   "close": "Cerrar",
   "back": "Atrás",
   "next": "Siguiente",
-  "submit": "Enviar"
+  "submit": "Enviar",
+  "wallet_connected": "Billetera conectada",
+  "wallet_not_connected": "Billetera no conectada",
+  "wallet_connecting": "Conectando...",
+  "wallet_address": "Dirección de billetera",
+  "wallet_balance": "Saldo",
+  "wallet_connect_prompt": "Conecta tu billetera Stacks para continuar.",
+  "wallet_connect_button": "Conectar billetera",
+  "wallet_transaction_pending": "Transacción pendiente...",
+  "wallet_transaction_success": "Transacción confirmada",
+  "wallet_transaction_failed": "Transacción fallida"
 }

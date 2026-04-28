@@ -20,5 +20,15 @@
   "close": "إغلاق",
   "back": "رجوع",
   "next": "التالي",
-  "submit": "إرسال"
+  "submit": "إرسال",
+  "wallet_connected": "المحفظة متصلة",
+  "wallet_not_connected": "المحفظة غير متصلة",
+  "wallet_connecting": "جارٍ الاتصال...",
+  "wallet_address": "عنوان المحفظة",
+  "wallet_balance": "الرصيد",
+  "wallet_connect_prompt": "قم بتوصيل محفظة Stacks الخاصة بك للمتابعة.",
+  "wallet_connect_button": "ربط المحفظة",
+  "wallet_transaction_pending": "المعاملة معلقة...",
+  "wallet_transaction_success": "تم تأكيد المعاملة",
+  "wallet_transaction_failed": "فشلت المعاملة"
 }

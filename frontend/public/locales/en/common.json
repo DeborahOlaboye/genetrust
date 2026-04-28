@@ -20,5 +20,15 @@
   "close": "Close",
   "back": "Back",
   "next": "Next",
-  "submit": "Submit"
+  "submit": "Submit",
+  "wallet_connected": "Wallet Connected",
+  "wallet_not_connected": "Wallet Not Connected",
+  "wallet_connecting": "Connecting...",
+  "wallet_address": "Wallet Address",
+  "wallet_balance": "Balance",
+  "wallet_connect_prompt": "Connect your Stacks wallet to continue.",
+  "wallet_connect_button": "Connect Wallet",
+  "wallet_transaction_pending": "Transaction pending...",
+  "wallet_transaction_success": "Transaction confirmed",
+  "wallet_transaction_failed": "Transaction failed"
 }
