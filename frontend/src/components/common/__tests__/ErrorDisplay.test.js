@@ -102,4 +102,14 @@ describe('ErrorDisplay — getSeverity', () => {
     const { getByTestId } = render(<ErrorDisplay error={{ message: 'rejected', code: 4002 }} />);
     expect(getByTestId('alert').dataset.severity).toBe('info');
   });
+
+  it('uses warning severity for AUTH_SESSION_EXPIRED', () => {
+    const { getByTestId } = render(<ErrorDisplay error={{ message: 'expired', code: 1002 }} />);
+    expect(getByTestId('alert').dataset.severity).toBe('warning');
+  });
+
+  it('uses info severity for RESOURCE_NOT_FOUND', () => {
+    const { getByTestId } = render(<ErrorDisplay error={{ message: 'missing', code: 5001 }} />);
+    expect(getByTestId('alert').dataset.severity).toBe('info');
+  });
 });
