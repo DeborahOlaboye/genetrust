@@ -10,5 +10,15 @@
   "dashboard": "Dashboard",
   "settings": "Settings",
   "profile": "Profile",
-  "sign_out": "Sign Out"
+  "sign_out": "Sign Out",
+  "loading": "Loading...",
+  "error": "Error",
+  "retry": "Try Again",
+  "cancel": "Cancel",
+  "confirm": "Confirm",
+  "save": "Save",
+  "close": "Close",
+  "back": "Back",
+  "next": "Next",
+  "submit": "Submit"
 }

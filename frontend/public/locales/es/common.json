@@ -10,5 +10,15 @@
   "dashboard": "Panel",
   "settings": "Configuración",
   "profile": "Perfil",
-  "sign_out": "Cerrar sesión"
+  "sign_out": "Cerrar sesión",
+  "loading": "Cargando...",
+  "error": "Error",
+  "retry": "Intentar de nuevo",
+  "cancel": "Cancelar",
+  "confirm": "Confirmar",
+  "save": "Guardar",
+  "close": "Cerrar",
+  "back": "Atrás",
+  "next": "Siguiente",
+  "submit": "Enviar"
 }
