@@ -68,6 +68,9 @@ const ErrorDisplay = ({
         [ERROR_CODES.WALLET_INSUFFICIENT_BALANCE]: 'warning',
         [ERROR_CODES.WALLET_TRANSACTION_FAILED]: 'error',
         [ERROR_CODES.WALLET_NETWORK_MISMATCH]: 'warning',
+        [ERROR_CODES.RESOURCE_NOT_FOUND]: 'info',
+        [ERROR_CODES.RESOURCE_ALREADY_EXISTS]: 'warning',
+        [ERROR_CODES.RESOURCE_LIMIT_REACHED]: 'warning',
       };
       
       return errorSeverities[error.code] || 'error';
