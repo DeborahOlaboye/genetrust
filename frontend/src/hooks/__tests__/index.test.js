@@ -1,4 +1,6 @@
 import {
+  CACHE_TTL,
+  BREAKPOINTS,
   useErrorHandler,
   useAnalytics,
   useLoadingState,
@@ -51,6 +53,13 @@ describe('hooks barrel export', () => {
       expect(hook).toBeDefined();
       expect(typeof hook).toBe('function');
     });
+  });
+
+  it('exports CACHE_TTL with SHORT, DEFAULT and LONG keys', () => {
+    expect(CACHE_TTL).toBeDefined();
+    expect(CACHE_TTL).toHaveProperty('SHORT');
+    expect(CACHE_TTL).toHaveProperty('DEFAULT');
+    expect(CACHE_TTL).toHaveProperty('LONG');
   });
 
   it('exports BREAKPOINTS as an object with mobile/tablet/laptop/desktop keys', () => {
