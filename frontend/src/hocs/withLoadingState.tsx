@@ -9,16 +9,6 @@ interface AppError extends Error {
   };
 }
 
-// Define error codes locally
-const ERROR_CODES = {
-  NETWORK_OFFLINE: 'NETWORK_OFFLINE',
-  API_UNAUTHORIZED: 'API_UNAUTHORIZED',
-  API_FORBIDDEN: 'API_FORBIDDEN',
-  API_NOT_FOUND: 'API_NOT_FOUND',
-  API_SERVER_ERROR: 'API_SERVER_ERROR',
-  WALLET_NOT_CONNECTED: 'WALLET_NOT_CONNECTED',
-  WALLET_TRANSACTION_REJECTED: 'WALLET_TRANSACTION_REJECTED'
-};
 
 interface WithLoadingStateProps {
   isLoading?: boolean;
@@ -55,42 +45,24 @@ const withLoadingState = <P extends object>(
         {text && <span className="ml-2 text-gray-600 dark:text-gray-400">{text}</span>}
       </div>
     ),
-    ErrorComponent = ({ 
-      error, 
-      onRetry, 
-      onClose, 
+    ErrorComponent = ({
+      error,
+      onRetry,
+      onClose,
       title,
       showDetails = true,
       showRetry = true,
       showClose = true,
-      severity,
+      severity = null,
       fullWidth = false
     }) => {
-      // Determine the title based on error code if not provided
-      const getErrorTitle = () => {
-        if (title) return title;
-        if (error?.code) {
-          const errorTitles = {
-            [ERROR_CODES.NETWORK_OFFLINE]: 'Connection Error',
-            [ERROR_CODES.API_UNAUTHORIZED]: 'Authentication Required',
-            [ERROR_CODES.API_FORBIDDEN]: 'Access Denied',
-            [ERROR_CODES.API_NOT_FOUND]: 'Not Found',
-            [ERROR_CODES.API_SERVER_ERROR]: 'Server Error',
-            [ERROR_CODES.WALLET_NOT_CONNECTED]: 'Wallet Not Connected',
-            [ERROR_CODES.WALLET_TRANSACTION_REJECTED]: 'Transaction Rejected',
-          };
-          return errorTitles[error.code] || 'Something went wrong';
-        }
-        return 'Something went wrong';
-      };
-
       return (
         <div className={fullWidth ? 'w-full' : 'w-auto'}>
-          <ErrorDisplay 
+          <ErrorDisplay
             error={error}
             onRetry={onRetry}
             onClose={onClose}
-            title={getErrorTitle()}
+            title={title}
             showDetails={showDetails}
             showRetry={showRetry && !!onRetry}
             showClose={showClose && !!onClose}
@@ -117,13 +89,14 @@ const withLoadingState = <P extends object>(
 
     if (error) {
       return (
-        <ErrorComponent 
-          error={error} 
+        <ErrorComponent
+          error={error}
           onRetry={onRetry}
           onClose={onClose}
           title={errorTitle}
           showRetry={!!onRetry}
           showClose={!!onClose}
+          showDetails={process.env.NODE_ENV === 'development'}
         />
       );
     }

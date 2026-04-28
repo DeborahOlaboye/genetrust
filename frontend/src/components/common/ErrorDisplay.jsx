@@ -16,7 +16,7 @@ const ErrorDisplay = ({
   showDetails = false,
   showRetry = true,
   showClose = false,
-  severity = 'error',
+  severity = null,
   fullWidth = false,
   sx = {},
 }) => {
@@ -24,37 +24,63 @@ const ErrorDisplay = ({
   const errorMessage = getUserFriendlyMessage(error);
   const errorCode = error?.code || (error?.response?.status ? `HTTP_${error.response.status}` : null);
   const errorDetails = error?.stack || error?.message || 'No additional details available';
-  const showExpand = process.env.NODE_ENV === 'development' && errorDetails;
+  const showExpand = (showDetails || process.env.NODE_ENV === 'development') && errorDetails;
 
-  // Get a more specific title based on error type if available
+  // Explicit title prop always wins; otherwise derive from error code.
   const getErrorTitle = () => {
+    if (title !== 'Something went wrong') return title;
     if (error?.code) {
       const errorTitles = {
         [ERROR_CODES.NETWORK_OFFLINE]: 'Connection Error',
+        [ERROR_CODES.NETWORK_TIMEOUT]: 'Request Timed Out',
         [ERROR_CODES.API_UNAUTHORIZED]: 'Authentication Required',
         [ERROR_CODES.API_FORBIDDEN]: 'Access Denied',
         [ERROR_CODES.API_NOT_FOUND]: 'Not Found',
         [ERROR_CODES.API_SERVER_ERROR]: 'Server Error',
         [ERROR_CODES.WALLET_NOT_CONNECTED]: 'Wallet Not Connected',
         [ERROR_CODES.WALLET_TRANSACTION_REJECTED]: 'Transaction Rejected',
+        [ERROR_CODES.WALLET_INSUFFICIENT_BALANCE]: 'Insufficient Balance',
+        [ERROR_CODES.WALLET_TRANSACTION_FAILED]: 'Transaction Failed',
+        [ERROR_CODES.WALLET_NETWORK_MISMATCH]: 'Wrong Network',
+        [ERROR_CODES.RESOURCE_NOT_FOUND]: 'Not Found',
+        [ERROR_CODES.RESOURCE_ALREADY_EXISTS]: 'Already Exists',
+        [ERROR_CODES.RESOURCE_LIMIT_REACHED]: 'Limit Reached',
+        [ERROR_CODES.AUTH_UNAUTHORIZED]: 'Not Authorized',
+        [ERROR_CODES.AUTH_SESSION_EXPIRED]: 'Session Expired',
+        [ERROR_CODES.AUTH_PERMISSION_DENIED]: 'Permission Denied',
+        [ERROR_CODES.MAINTENANCE_MODE]: 'Maintenance in Progress',
       };
       return errorTitles[error.code] || title;
     }
     return title;
   };
 
-  // Get a more specific severity based on error type
+  // Get severity from explicit prop first, then derive from error code, then fallback.
   const getSeverity = () => {
-    if (severity) return severity;
+    if (severity !== null && severity !== undefined) return severity;
     
     if (error?.code) {
       // Map specific error codes to severity levels
       const errorSeverities = {
         [ERROR_CODES.NETWORK_OFFLINE]: 'warning',
+        [ERROR_CODES.NETWORK_TIMEOUT]: 'warning',
         [ERROR_CODES.API_UNAUTHORIZED]: 'warning',
         [ERROR_CODES.API_FORBIDDEN]: 'error',
         [ERROR_CODES.API_NOT_FOUND]: 'info',
+        [ERROR_CODES.API_SERVER_ERROR]: 'error',
+        [ERROR_CODES.WALLET_NOT_CONNECTED]: 'warning',
         [ERROR_CODES.WALLET_TRANSACTION_REJECTED]: 'info',
+        [ERROR_CODES.WALLET_INSUFFICIENT_BALANCE]: 'warning',
+        [ERROR_CODES.WALLET_TRANSACTION_FAILED]: 'error',
+        [ERROR_CODES.WALLET_NETWORK_MISMATCH]: 'warning',
+        [ERROR_CODES.RESOURCE_NOT_FOUND]: 'info',
+        [ERROR_CODES.RESOURCE_ALREADY_EXISTS]: 'warning',
+        [ERROR_CODES.RESOURCE_LIMIT_REACHED]: 'warning',
+        [ERROR_CODES.AUTH_UNAUTHORIZED]: 'warning',
+        [ERROR_CODES.AUTH_SESSION_EXPIRED]: 'warning',
+        [ERROR_CODES.AUTH_PERMISSION_DENIED]: 'error',
+        [ERROR_CODES.UNKNOWN_ERROR]: 'error',
+        [ERROR_CODES.MAINTENANCE_MODE]: 'info',
       };
       
       return errorSeverities[error.code] || 'error';
@@ -66,17 +92,15 @@ const ErrorDisplay = ({
   const handleRetry = () => {
     if (onRetry) {
       onRetry();
-    } else if (typeof window !== 'undefined') {
-      window.location.reload();
     }
   };
 
   const handleExpandClick = () => {
-    setExpanded(!expanded);
+    setExpanded(prev => !prev);
   };
 
-  const currentSeverity = getSeverity();
-  const errorTitle = getErrorTitle();
+  const currentSeverity = React.useMemo(getSeverity, [severity, error]);
+  const errorTitle = React.useMemo(getErrorTitle, [title, error]);
 
   return (
     <Box
@@ -223,7 +247,8 @@ ErrorDisplay.propTypes = {
   title: PropTypes.string,
   
   /**
-   * Whether to show error details (stack trace, etc.)
+   * Whether to show error details (stack trace, etc.). Also shown automatically
+   * when NODE_ENV=development.
    */
   showDetails: PropTypes.bool,
   
@@ -238,9 +263,10 @@ ErrorDisplay.propTypes = {
   showClose: PropTypes.bool,
   
   /**
-   * Severity of the error ('error', 'warning', 'info', 'success')
+   * Explicit severity override. When null (default) severity is derived from
+   * the error code. Pass a value to force a specific severity level.
    */
-  severity: PropTypes.oneOf(['error', 'warning', 'info', 'success']),
+  severity: PropTypes.oneOf(['error', 'warning', 'info', 'success', null]),
   
   /**
    * Whether the component should take full width
