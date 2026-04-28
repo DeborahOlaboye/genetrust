@@ -79,6 +79,10 @@ export default function UserDashboard() {
     if (descError) setDescError('');
   }, [descError]);
 
+  const handleToggleConsent = useCallback((datasetId) => {
+    setConsentDatasetId(prev => (prev === datasetId ? null : datasetId));
+  }, []);
+
   // Connect wallet on mount if using real SDK
   useEffect(() => {
     let mounted = true;
