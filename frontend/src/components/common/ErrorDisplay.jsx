@@ -30,12 +30,16 @@ const ErrorDisplay = ({
     if (error?.code) {
       const errorTitles = {
         [ERROR_CODES.NETWORK_OFFLINE]: 'Connection Error',
+        [ERROR_CODES.NETWORK_TIMEOUT]: 'Request Timed Out',
         [ERROR_CODES.API_UNAUTHORIZED]: 'Authentication Required',
         [ERROR_CODES.API_FORBIDDEN]: 'Access Denied',
         [ERROR_CODES.API_NOT_FOUND]: 'Not Found',
         [ERROR_CODES.API_SERVER_ERROR]: 'Server Error',
         [ERROR_CODES.WALLET_NOT_CONNECTED]: 'Wallet Not Connected',
         [ERROR_CODES.WALLET_TRANSACTION_REJECTED]: 'Transaction Rejected',
+        [ERROR_CODES.WALLET_INSUFFICIENT_BALANCE]: 'Insufficient Balance',
+        [ERROR_CODES.WALLET_TRANSACTION_FAILED]: 'Transaction Failed',
+        [ERROR_CODES.WALLET_NETWORK_MISMATCH]: 'Wrong Network',
       };
       return errorTitles[error.code] || title;
     }
