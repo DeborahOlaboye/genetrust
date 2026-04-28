@@ -52,5 +52,18 @@
   "listing_none": "No listings yet.",
   "listing_purchase": "Purchase Access",
   "listing_purchase_success": "Access granted!",
-  "listing_purchase_failed": "Purchase failed"
+  "listing_purchase_failed": "Purchase failed",
+  "consent_title": "Consent Settings",
+  "consent_research": "Research Use",
+  "consent_commercial": "Commercial Use",
+  "consent_clinical": "Clinical Use",
+  "consent_jurisdiction": "Jurisdiction",
+  "consent_save": "Save Consent",
+  "consent_save_success": "Consent policy updated!",
+  "consent_save_failed": "Failed to update consent",
+  "consent_expired": "Consent has expired. Please renew.",
+  "consent_gdpr_title": "GDPR Rights",
+  "consent_request_erasure": "Request Erasure",
+  "consent_request_portability": "Request Data Portability",
+  "consent_restrict_processing": "Restrict Processing"
 }

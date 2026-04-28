@@ -52,5 +52,18 @@
   "listing_none": "لا توجد قوائم حتى الآن.",
   "listing_purchase": "شراء الوصول",
   "listing_purchase_success": "تم منح الوصول!",
-  "listing_purchase_failed": "فشل الشراء"
+  "listing_purchase_failed": "فشل الشراء",
+  "consent_title": "إعدادات الموافقة",
+  "consent_research": "الاستخدام البحثي",
+  "consent_commercial": "الاستخدام التجاري",
+  "consent_clinical": "الاستخدام الطبي",
+  "consent_jurisdiction": "الاختصاص القضائي",
+  "consent_save": "حفظ الموافقة",
+  "consent_save_success": "تم تحديث سياسة الموافقة!",
+  "consent_save_failed": "فشل تحديث الموافقة",
+  "consent_expired": "انتهت صلاحية الموافقة. يرجى التجديد.",
+  "consent_gdpr_title": "حقوق اللائحة الأوروبية لحماية البيانات",
+  "consent_request_erasure": "طلب المسح",
+  "consent_request_portability": "طلب نقل البيانات",
+  "consent_restrict_processing": "تقييد المعالجة"
 }

@@ -52,5 +52,18 @@
   "listing_none": "Aún no hay listados.",
   "listing_purchase": "Comprar acceso",
   "listing_purchase_success": "¡Acceso concedido!",
-  "listing_purchase_failed": "Compra fallida"
+  "listing_purchase_failed": "Compra fallida",
+  "consent_title": "Configuración de consentimiento",
+  "consent_research": "Uso en investigación",
+  "consent_commercial": "Uso comercial",
+  "consent_clinical": "Uso clínico",
+  "consent_jurisdiction": "Jurisdicción",
+  "consent_save": "Guardar consentimiento",
+  "consent_save_success": "¡Política de consentimiento actualizada!",
+  "consent_save_failed": "Error al actualizar el consentimiento",
+  "consent_expired": "El consentimiento ha expirado. Por favor, renuévalo.",
+  "consent_gdpr_title": "Derechos GDPR",
+  "consent_request_erasure": "Solicitar eliminación",
+  "consent_request_portability": "Solicitar portabilidad de datos",
+  "consent_restrict_processing": "Restringir el procesamiento"
 }
