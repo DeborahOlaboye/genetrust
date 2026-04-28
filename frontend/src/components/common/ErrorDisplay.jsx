@@ -96,7 +96,7 @@ const ErrorDisplay = ({
   };
 
   const handleExpandClick = () => {
-    setExpanded(!expanded);
+    setExpanded(prev => !prev);
   };
 
   const currentSeverity = React.useMemo(getSeverity, [severity, error]);
