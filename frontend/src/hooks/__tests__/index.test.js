@@ -3,6 +3,7 @@ import {
   BREAKPOINTS,
   SWIPE_DIRECTION,
   ANALYTICS_EVENTS,
+  QUERY_DEFAULTS,
   useErrorHandler,
   useAnalytics,
   useLoadingState,
@@ -55,6 +56,13 @@ describe('hooks barrel export', () => {
       expect(hook).toBeDefined();
       expect(typeof hook).toBe('function');
     });
+  });
+
+  it('exports QUERY_DEFAULTS with cacheTTL, retryAttempts and retryDelay', () => {
+    expect(QUERY_DEFAULTS).toBeDefined();
+    expect(QUERY_DEFAULTS).toHaveProperty('cacheTTL');
+    expect(QUERY_DEFAULTS).toHaveProperty('retryAttempts');
+    expect(QUERY_DEFAULTS).toHaveProperty('retryDelay');
   });
 
   it('exports CACHE_TTL with SHORT, DEFAULT and LONG keys', () => {
