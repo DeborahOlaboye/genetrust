@@ -144,5 +144,14 @@
   "a11y_open_menu": "Open navigation menu",
   "a11y_close_menu": "Close navigation menu",
   "a11y_page_loaded": "Page loaded",
-  "a11y_error": "Error: {{message}}"
+  "a11y_error": "Error: {{message}}",
+  "landing_hero_title": "Your Genetic Data. Your Control.",
+  "landing_hero_subtitle": "Register, manage, and monetise your genomic datasets on the Stacks blockchain with full privacy and consent control.",
+  "landing_cta_primary": "Get Started",
+  "landing_cta_secondary": "Learn More",
+  "landing_how_it_works": "How It Works",
+  "landing_privacy_trust": "Privacy & Trust",
+  "landing_step_register": "Register your dataset on-chain.",
+  "landing_step_consent": "Set granular consent rules.",
+  "landing_step_earn": "Earn STX when researchers purchase access."
 }

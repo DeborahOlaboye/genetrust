@@ -144,5 +144,14 @@
   "a11y_open_menu": "Abrir menú de navegación",
   "a11y_close_menu": "Cerrar menú de navegación",
   "a11y_page_loaded": "Página cargada",
-  "a11y_error": "Error: {{message}}"
+  "a11y_error": "Error: {{message}}",
+  "landing_hero_title": "Tus datos genéticos. Tu control.",
+  "landing_hero_subtitle": "Registra, gestiona y monetiza tus conjuntos de datos genómicos en la blockchain de Stacks con total privacidad y control de consentimiento.",
+  "landing_cta_primary": "Comenzar",
+  "landing_cta_secondary": "Saber más",
+  "landing_how_it_works": "Cómo funciona",
+  "landing_privacy_trust": "Privacidad y confianza",
+  "landing_step_register": "Registra tu conjunto de datos en la cadena.",
+  "landing_step_consent": "Establece reglas de consentimiento detalladas.",
+  "landing_step_earn": "Gana STX cuando los investigadores compren acceso."
 }

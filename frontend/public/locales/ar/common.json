@@ -144,5 +144,14 @@
   "a11y_open_menu": "فتح قائمة التنقل",
   "a11y_close_menu": "إغلاق قائمة التنقل",
   "a11y_page_loaded": "تم تحميل الصفحة",
-  "a11y_error": "خطأ: {{message}}"
+  "a11y_error": "خطأ: {{message}}",
+  "landing_hero_title": "بياناتك الجينية. تحكّمك أنت.",
+  "landing_hero_subtitle": "سجّل مجموعات بياناتك الجينومية وأدرها وحوّلها إلى دخل على بلوك تشين Stacks مع كامل الخصوصية والتحكم في الموافقة.",
+  "landing_cta_primary": "ابدأ الآن",
+  "landing_cta_secondary": "اعرف أكثر",
+  "landing_how_it_works": "كيف يعمل",
+  "landing_privacy_trust": "الخصوصية والثقة",
+  "landing_step_register": "سجّل مجموعة بياناتك على السلسلة.",
+  "landing_step_consent": "حدّد قواعد موافقة دقيقة.",
+  "landing_step_earn": "اكسب STX عندما يشتري الباحثون الوصول."
 }
