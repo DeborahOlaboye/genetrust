@@ -34,6 +34,20 @@ jest.mock('../../../utils/errorUtils', () => ({
   },
 }));
 
+describe('ErrorDisplay — getErrorTitle', () => {
+  it('uses custom title prop when provided', () => {
+    const { getByText } = render(
+      <ErrorDisplay error={{ message: 'fail', code: 3001 }} title="Custom Title" />
+    );
+    expect(getByText('Custom Title')).toBeTruthy();
+  });
+
+  it('derives title from error code when default title is in use', () => {
+    const { getByText } = render(<ErrorDisplay error={{ message: 'fail', code: 3001 }} />);
+    expect(getByText('Connection Error')).toBeTruthy();
+  });
+});
+
 describe('ErrorDisplay — getSeverity', () => {
   it('defaults to error severity when no code and no severity prop', () => {
     const { getByTestId } = render(<ErrorDisplay error={{ message: 'oops' }} />);
