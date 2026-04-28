@@ -61,6 +61,7 @@ export default function UserDashboard() {
   const [walletAddress, setWalletAddress] = useState(null);
   const [error, setError] = useState(null);
 
+  const [showUploadWizard, setShowUploadWizard] = useState(false);
   const [newDesc, setNewDesc] = useState('');
   const [descError, setDescError] = useState('');
   const [newPrice, setNewPrice] = useState('');
