@@ -154,7 +154,7 @@
 ;;         ERR-INVALID-INPUT if data-id is zero. ERR-NOT-AUTHORIZED if caller is not the owner.
 ;; @requires Caller must be the dataset consent owner.
 (define-public (restrict-processing (data-id uint))
-    (let ((consent (unwrap! (map-get? consent-records { data-id: data-id }) ERR-NOT-FOUND)))
+    (let ((consent (unwrap! (map-get? consent-records { data-id: data-id }) ERR-CONSENT-NOT-FOUND)))
         (asserts! (> data-id u0) ERR-INVALID-INPUT)
         (asserts! (is-eq tx-sender (get owner consent)) ERR-NOT-AUTHORIZED)
         (map-set gdpr-records { data-id: data-id }
