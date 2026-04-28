@@ -1,15 +1,34 @@
-import React, { useEffect, useState } from 'react';
-
-const DESC_MIN = 5;
-const DESC_MAX = 200;
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import toast, { Toaster } from 'react-hot-toast';
+import { APP_CONFIG } from '../config/app.js';
 import { contractService } from '../services/contractService.js';
 import { walletService } from '../services/walletService.js';
 import Navigation from '../components/landing/Navigation.jsx';
-import { APP_CONFIG } from '../config/app.js';
-import toast, { Toaster } from 'react-hot-toast';
+import { ConsentManagementPanel } from '../components/consent/ConsentManagementPanel.jsx';
 import { DatasetUploadWizard } from '../components/upload/DatasetUploadWizard.jsx';
 import { WalletGate } from '../components/upload/WalletGate.jsx';
-import { ConsentManagementPanel } from '../components/consent/ConsentManagementPanel.jsx';
+
+const DESC_MIN = 10;
+const DESC_MAX = 200;
+const PRICE_MIN = 1;
+const PRICE_MAX = 9_999_999_999;
+const DEFAULT_ACCESS_LEVEL = 3;
+
+const TOAST_OPTIONS = {
+  duration: 4000,
+  style: { background: '#1a1a2e', color: '#fff', border: '1px solid rgba(139,92,246,0.3)' },
+  success: { iconTheme: { primary: '#8B5CF6', secondary: '#fff' } },
+  error: { iconTheme: { primary: '#ef4444', secondary: '#fff' } },
+};
+
+const DEMO_SAMPLE_DATA = {
+  variants: [
+    { chromosome: '1', position: 123456, reference: 'A', alternate: 'G', type: 'SNP', gene: 'BRCA1' },
+  ],
+  genes: [
+    { symbol: 'BRCA1', name: 'BRCA1 DNA Repair Associated', chromosome: '17', start: 43044295, end: 43125364 },
+  ],
+};
 
 const StatCard = ({ title, value, accent = 'purple' }) => (
   <div 
@@ -52,12 +71,30 @@ export default function UserDashboard() {
   const [walletAddress, setWalletAddress] = useState(null);
   const [error, setError] = useState(null);
 
+  const [showUploadWizard, setShowUploadWizard] = useState(false);
   const [newDesc, setNewDesc] = useState('');
   const [descError, setDescError] = useState('');
   const [newPrice, setNewPrice] = useState('');
-  const [newAccess, setNewAccess] = useState(3);
+  const [newAccess, setNewAccess] = useState(DEFAULT_ACCESS_LEVEL);
   const [selectedDataset, setSelectedDataset] = useState('');
   const [consentDatasetId, setConsentDatasetId] = useState(null);
+
+  const shortAddress = useMemo(
+    () => walletAddress ? `${walletAddress.slice(0, 8)}...${walletAddress.slice(-6)}` : '',
+    [walletAddress]
+  );
+
+  const handleDescChange = useCallback((e) => {
+    setNewDesc(e.target.value);
+    if (descError) setDescError('');
+  }, [descError]);
+
+  const handleToggleConsent = useCallback((datasetId) => {
+    setConsentDatasetId(prev => (prev === datasetId ? null : datasetId));
+  }, []);
+
+  const walletReady = walletConnected || !APP_CONFIG.USE_REAL_SDK;
+  const isBusy = loading || isFetching;
 
   // Connect wallet on mount if using real SDK
   useEffect(() => {
@@ -103,7 +140,7 @@ export default function UserDashboard() {
   }, []);
 
   // Handle wallet connection
-  const handleConnectWallet = async () => {
+  const handleConnectWallet = useCallback(async () => {
     const toastId = toast.loading('Connecting wallet...');
     try {
       setLoading(true);
@@ -124,9 +161,9 @@ export default function UserDashboard() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const handleCreateVault = async () => {
+  const handleCreateVault = useCallback(async () => {
     const trimmedDesc = newDesc.trim();
     if (!trimmedDesc) {
       setDescError('Description is required.');
@@ -153,14 +190,7 @@ export default function UserDashboard() {
     const toastId = toast.loading('Creating dataset...');
 
     try {
-      const sample = {
-        variants: [
-          { chromosome: '1', position: 123456, reference: 'A', alternate: 'G', type: 'SNP', gene: 'BRCA1' },
-        ],
-        genes: [{ symbol: 'BRCA1', name: 'BRCA1 DNA Repair Associated', chromosome: '17', start: 43044295, end: 43125364 }],
-      };
-
-      const result = await contractService.createVaultDataset({ sampleData: sample, description: trimmedDesc });
+      await contractService.createVaultDataset({ sampleData: DEMO_SAMPLE_DATA, description: trimmedDesc });
       const next = await contractService.listMyDatasets();
       setDatasets(next);
 
@@ -173,17 +203,17 @@ export default function UserDashboard() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [newDesc, datasets]);
 
-  const handleCreateListing = async () => {
+  const handleCreateListing = useCallback(async () => {
     if (!selectedDataset) {
       toast.error('Please select a dataset to list');
       return;
     }
 
     const parsedPrice = Number(newPrice);
-    if (!newPrice || isNaN(parsedPrice) || !Number.isInteger(parsedPrice) || parsedPrice < 1 || parsedPrice > 9_999_999_999) {
-      toast.error('Price must be a whole number between 1 and 9,999,999,999 microSTX');
+    if (!newPrice || isNaN(parsedPrice) || !Number.isInteger(parsedPrice) || parsedPrice < PRICE_MIN || parsedPrice > PRICE_MAX) {
+      toast.error(`Price must be a whole number between ${PRICE_MIN.toLocaleString()} and ${PRICE_MAX.toLocaleString()} microSTX`);
       return;
     }
 
@@ -213,17 +243,16 @@ export default function UserDashboard() {
       setMyListings(ls);
 
       toast.success('Listing created successfully!', { id: toastId });
-      // Clear form
       setNewPrice('');
       setSelectedDataset('');
-      setNewAccess(3);
+      setNewAccess(DEFAULT_ACCESS_LEVEL);
     } catch (e) {
       console.error(e);
       toast.error(e?.message || 'Failed to create listing', { id: toastId });
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedDataset, newPrice, newAccess, myListings, datasets]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0B0B1D] via-[#14102E] to-[#0B0B1D] text-white">
@@ -233,29 +262,7 @@ export default function UserDashboard() {
       >
         Skip to main content
       </a>
-      <Toaster
-        position="top-right"
-        toastOptions={{
-          duration: 4000,
-          style: {
-            background: '#1a1a2e',
-            color: '#fff',
-            border: '1px solid rgba(139,92,246,0.3)',
-          },
-          success: {
-            iconTheme: {
-              primary: '#8B5CF6',
-              secondary: '#fff',
-            },
-          },
-          error: {
-            iconTheme: {
-              primary: '#ef4444',
-              secondary: '#fff',
-            },
-          },
-        }}
-      />
+      <Toaster position="top-right" toastOptions={TOAST_OPTIONS} />
       <Navigation />
       <main id="main-content" className="max-w-7xl mx-auto px-6 lg:px-8 py-10 space-y-8">
 
@@ -279,6 +286,7 @@ export default function UserDashboard() {
             <button
               onClick={handleConnectWallet}
               disabled={loading}
+              aria-label="Connect your Stacks wallet"
               className="px-6 py-3 bg-gradient-to-r from-[#8B5CF6] to-[#F472B6] rounded-lg font-semibold disabled:opacity-60"
             >
               {loading ? 'Connecting...' : 'Connect Wallet'}
@@ -289,7 +297,7 @@ export default function UserDashboard() {
         {/* Connection Info */}
         {walletConnected && walletAddress && (
           <div className="p-4 rounded-xl bg-green-500/10 border border-green-500/20 text-green-400">
-            <strong>Wallet Connected:</strong> {walletAddress.slice(0, 8)}...{walletAddress.slice(-6)}
+            <strong>Wallet Connected:</strong> {shortAddress}
           </div>
         )}
 
@@ -324,7 +332,7 @@ export default function UserDashboard() {
           </div>
           {showUploadWizard && (
             <WalletGate
-              isConnected={walletConnected || !APP_CONFIG.USE_REAL_SDK}
+              isConnected={walletReady}
               onConnect={handleConnectWallet}
               connecting={loading}
             >
@@ -351,7 +359,7 @@ export default function UserDashboard() {
                   <input
                     id="dataset-description"
                     value={newDesc}
-                    onChange={e => { setNewDesc(e.target.value); if (descError) setDescError(''); }}
+                    onChange={handleDescChange}
                     className={`mt-1 w-full bg-[#14102E] border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]/40 text-white ${descError ? 'border-red-500/60' : 'border-[#8B5CF6]/20'}`}
                     placeholder="Enter dataset description..."
                     aria-required="true"
@@ -374,6 +382,7 @@ export default function UserDashboard() {
               <button
                 onClick={handleCreateVault}
                 disabled={loading || !newDesc.trim() || !!descError}
+                aria-label="Create new genetic dataset"
                 className="px-6 py-3 bg-gradient-to-r from-[#8B5CF6] to-[#F472B6] rounded-lg font-semibold disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 {loading ? 'Processing...' : 'Create Dataset'}
@@ -469,7 +478,7 @@ export default function UserDashboard() {
                       </div>
                       <button
                         type="button"
-                        onClick={() => setConsentDatasetId(consentDatasetId === ds.id ? null : ds.id)}
+                        onClick={() => handleToggleConsent(ds.id)}
                         style={{
                           padding: '0.3rem 0.65rem',
                           borderRadius: '0.4rem',
