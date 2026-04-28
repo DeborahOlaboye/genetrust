@@ -176,6 +176,16 @@
     (map-get? consent-records { data-id: data-id })
 )
 
+;; @notice Returns the principal that owns the consent record for a dataset.
+;; @param data-id The dataset ID to look up.
+;; @return Some(principal) if a consent record exists, none otherwise.
+(define-read-only (get-consent-owner (data-id uint))
+    (match (map-get? consent-records { data-id: data-id })
+        consent (some (get owner consent))
+        none
+    )
+)
+
 ;; @notice Returns the GDPR rights flags for a dataset.
 ;; @param data-id The dataset ID to look up.
 ;; @return Some(gdpr-record) if found, none if no GDPR rights have been invoked.
