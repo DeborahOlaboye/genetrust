@@ -281,7 +281,7 @@ export default function UserDashboard() {
         {/* Connection Info */}
         {walletConnected && walletAddress && (
           <div className="p-4 rounded-xl bg-green-500/10 border border-green-500/20 text-green-400">
-            <strong>Wallet Connected:</strong> {walletAddress.slice(0, 8)}...{walletAddress.slice(-6)}
+            <strong>Wallet Connected:</strong> {shortAddress}
           </div>
         )}
 
