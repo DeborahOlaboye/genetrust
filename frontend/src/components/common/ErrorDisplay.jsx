@@ -41,6 +41,9 @@ const ErrorDisplay = ({
         [ERROR_CODES.WALLET_INSUFFICIENT_BALANCE]: 'Insufficient Balance',
         [ERROR_CODES.WALLET_TRANSACTION_FAILED]: 'Transaction Failed',
         [ERROR_CODES.WALLET_NETWORK_MISMATCH]: 'Wrong Network',
+        [ERROR_CODES.RESOURCE_NOT_FOUND]: 'Not Found',
+        [ERROR_CODES.RESOURCE_ALREADY_EXISTS]: 'Already Exists',
+        [ERROR_CODES.RESOURCE_LIMIT_REACHED]: 'Limit Reached',
       };
       return errorTitles[error.code] || title;
     }
