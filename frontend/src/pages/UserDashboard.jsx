@@ -286,6 +286,7 @@ export default function UserDashboard() {
             <button
               onClick={handleConnectWallet}
               disabled={loading}
+              aria-label="Connect your Stacks wallet"
               className="px-6 py-3 bg-gradient-to-r from-[#8B5CF6] to-[#F472B6] rounded-lg font-semibold disabled:opacity-60"
             >
               {loading ? 'Connecting...' : 'Connect Wallet'}
