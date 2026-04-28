@@ -34,6 +34,10 @@ describe('components/common barrel export', () => {
     expect(LoadingSpinner.displayName).toBe('LoadingSpinner');
   });
 
+  it('LoadingSpinner has label prop defined in propTypes', () => {
+    expect(LoadingSpinner.propTypes).toHaveProperty('label');
+  });
+
   it('exports SkeletonLoader', () => {
     expect(SkeletonLoader).toBeDefined();
     expect(typeof SkeletonLoader).toBe('function');
