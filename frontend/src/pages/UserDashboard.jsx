@@ -188,14 +188,7 @@ export default function UserDashboard() {
     const toastId = toast.loading('Creating dataset...');
 
     try {
-      const sample = {
-        variants: [
-          { chromosome: '1', position: 123456, reference: 'A', alternate: 'G', type: 'SNP', gene: 'BRCA1' },
-        ],
-        genes: [{ symbol: 'BRCA1', name: 'BRCA1 DNA Repair Associated', chromosome: '17', start: 43044295, end: 43125364 }],
-      };
-
-      const result = await contractService.createVaultDataset({ sampleData: sample, description: trimmedDesc });
+      const result = await contractService.createVaultDataset({ sampleData: DEMO_SAMPLE_DATA, description: trimmedDesc });
       const next = await contractService.listMyDatasets();
       setDatasets(next);
 
