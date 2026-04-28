@@ -179,5 +179,8 @@
   "tx_id": "ID de transacción",
   "copy_to_clipboard": "Copiar al portapapeles",
   "copied": "¡Copiado!",
-  "view_on_explorer": "Ver en el explorador"
+  "view_on_explorer": "Ver en el explorador",
+  "banner_beta": "GeneTrust está actualmente en versión beta. Úsalo en mainnet bajo tu propio riesgo.",
+  "banner_testnet": "Estás conectado a Testnet. No hay fondos reales en riesgo.",
+  "banner_demo": "Ejecutándose en modo demo. Las llamadas a la blockchain son simuladas."
 }
