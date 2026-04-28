@@ -4,6 +4,7 @@ export { default as useAnalytics } from './useAnalytics';
 export { default as useLoadingState } from './useLoadingState';
 export { useOptimisticUpdate } from './useOptimisticUpdate';
 export { useOptimizedQuery } from './useOptimizedQuery';
+export { usePerformance } from './usePerformance';
 export { useTransactionStatus } from './useTransactionStatus';
 export { useTransactionRetry } from './useTransactionRetry';
 export { useWallet } from './useWallet';
