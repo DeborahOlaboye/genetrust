@@ -8,6 +8,7 @@ export { usePerformance } from './usePerformance';
 export { useResponsive } from './useResponsive';
 export { useKeyboardNavigation, useRovingTabIndex } from './useKeyboardNavigation';
 export { useTouch } from './useTouch';
+export { useBlockchainCache } from './useBlockchainCache';
 export { useTransactionStatus } from './useTransactionStatus';
 export { useTransactionRetry } from './useTransactionRetry';
 export { useWallet } from './useWallet';
