@@ -116,5 +116,14 @@
   "attestation_gene_variant": "متغير الجين",
   "attestation_aggregate": "إجمالي",
   "attestation_submit_success": "تم إرسال الإثبات بنجاح!",
-  "attestation_verify_success": "تم التحقق من الإثبات!"
+  "attestation_verify_success": "تم التحقق من الإثبات!",
+  "validation_required": "هذا الحقل مطلوب.",
+  "validation_min_length": "يجب أن يكون {{min}} أحرف على الأقل.",
+  "validation_max_length": "يجب أن يكون {{max}} حرفًا أو أقل.",
+  "validation_invalid_price": "يجب أن يكون السعر رقمًا صحيحًا بين {{min}} و{{max}} ميكروSTX.",
+  "validation_duplicate_description": "توجد بالفعل مجموعة بيانات بهذا الوصف.",
+  "validation_duplicate_listing": "توجد بالفعل قائمة لهذه المجموعة ومستوى الوصول.",
+  "validation_description_required": "الوصف مطلوب.",
+  "validation_dataset_required": "يرجى اختيار مجموعة بيانات.",
+  "validation_price_required": "السعر مطلوب."
 }

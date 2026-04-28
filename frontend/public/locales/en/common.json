@@ -116,5 +116,14 @@
   "attestation_gene_variant": "Gene Variant",
   "attestation_aggregate": "Aggregate",
   "attestation_submit_success": "Proof submitted successfully!",
-  "attestation_verify_success": "Proof verified!"
+  "attestation_verify_success": "Proof verified!",
+  "validation_required": "This field is required.",
+  "validation_min_length": "Must be at least {{min}} characters.",
+  "validation_max_length": "Must be {{max}} characters or fewer.",
+  "validation_invalid_price": "Price must be a whole number between {{min}} and {{max}} microSTX.",
+  "validation_duplicate_description": "A dataset with this description already exists.",
+  "validation_duplicate_listing": "A listing for this dataset and access level already exists.",
+  "validation_description_required": "Description is required.",
+  "validation_dataset_required": "Please select a dataset.",
+  "validation_price_required": "Price is required."
 }

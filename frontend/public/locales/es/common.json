@@ -116,5 +116,14 @@
   "attestation_gene_variant": "Variante génica",
   "attestation_aggregate": "Agregado",
   "attestation_submit_success": "¡Prueba enviada exitosamente!",
-  "attestation_verify_success": "¡Prueba verificada!"
+  "attestation_verify_success": "¡Prueba verificada!",
+  "validation_required": "Este campo es obligatorio.",
+  "validation_min_length": "Debe tener al menos {{min}} caracteres.",
+  "validation_max_length": "Debe tener {{max}} caracteres o menos.",
+  "validation_invalid_price": "El precio debe ser un número entero entre {{min}} y {{max}} microSTX.",
+  "validation_duplicate_description": "Ya existe un conjunto de datos con esta descripción.",
+  "validation_duplicate_listing": "Ya existe un listado para este conjunto de datos y nivel de acceso.",
+  "validation_description_required": "La descripción es obligatoria.",
+  "validation_dataset_required": "Por favor selecciona un conjunto de datos.",
+  "validation_price_required": "El precio es obligatorio."
 }
