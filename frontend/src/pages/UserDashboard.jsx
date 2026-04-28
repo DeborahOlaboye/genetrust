@@ -382,6 +382,7 @@ export default function UserDashboard() {
               <button
                 onClick={handleCreateVault}
                 disabled={loading || !newDesc.trim() || !!descError}
+                aria-label="Create new genetic dataset"
                 className="px-6 py-3 bg-gradient-to-r from-[#8B5CF6] to-[#F472B6] rounded-lg font-semibold disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 {loading ? 'Processing...' : 'Create Dataset'}
