@@ -40,4 +40,6 @@ SkeletonLoader.propTypes = {
   label: PropTypes.string,
 };
 
+SkeletonLoader.displayName = 'SkeletonLoader';
+
 export default SkeletonLoader;
