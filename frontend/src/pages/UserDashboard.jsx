@@ -244,7 +244,7 @@ export default function UserDashboard() {
       toast.success('Listing created successfully!', { id: toastId });
       setNewPrice('');
       setSelectedDataset('');
-      setNewAccess(3);
+      setNewAccess(DEFAULT_ACCESS_LEVEL);
     } catch (e) {
       console.error(e);
       toast.error(e?.message || 'Failed to create listing', { id: toastId });
