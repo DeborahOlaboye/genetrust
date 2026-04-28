@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-const LoadingSpinner = ({ size = 'md', className = '' }) => {
+const LoadingSpinner = ({ size = 'md', className = '', label = 'Loading...' }) => {
   const sizeClasses = {
     sm: 'h-4 w-4',
     md: 'h-8 w-8',
@@ -15,7 +15,7 @@ const LoadingSpinner = ({ size = 'md', className = '' }) => {
         className={`${sizeClasses[size]} animate-spin rounded-full border-4 border-solid border-blue-600 border-t-transparent`}
         role="status"
       >
-        <span className="sr-only">Loading...</span>
+        <span className="sr-only">{label}</span>
       </div>
     </div>
   );
@@ -24,6 +24,7 @@ const LoadingSpinner = ({ size = 'md', className = '' }) => {
 LoadingSpinner.propTypes = {
   size: PropTypes.oneOf(['sm', 'md', 'lg', 'xl']),
   className: PropTypes.string,
+  label: PropTypes.string,
 };
 
 export default LoadingSpinner;
