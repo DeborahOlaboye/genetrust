@@ -111,6 +111,33 @@
     )
 )
 
+;; @notice Renews the consent expiry for an existing consent record without changing any flags.
+;; @param data-id The dataset ID whose consent to renew (must be > 0 and have a record).
+;; @return ok(true) on success. ERR-CONSENT-NOT-FOUND if no record exists.
+;;         ERR-INVALID-INPUT if data-id is zero. ERR-NOT-AUTHORIZED if caller is not the owner.
+;;         ERR-CANNOT-MODIFY-ERASED if right-to-be-forgotten has been invoked.
+;; @requires Caller must be the existing consent record owner.
+(define-public (renew-consent (data-id uint))
+    (let ((consent (unwrap! (map-get? consent-records { data-id: data-id }) ERR-CONSENT-NOT-FOUND)))
+        (asserts! (> data-id u0) ERR-INVALID-INPUT)
+        (asserts! (is-eq tx-sender (get owner consent)) ERR-NOT-AUTHORIZED)
+        (asserts!
+            (not (default-to false
+                    (match (map-get? gdpr-records { data-id: data-id })
+                        gdpr (some (get right-to-be-forgotten gdpr))
+                        none
+                    )))
+            ERR-CANNOT-MODIFY-ERASED)
+        (map-set consent-records { data-id: data-id }
+            (merge consent {
+                expires-at: (+ stacks-block-height CONSENT-EXPIRY-BLOCKS),
+                updated-at: stacks-block-height
+            })
+        )
+        (ok true)
+    )
+)
+
 ;; @notice Flags this dataset with the GDPR right-to-be-forgotten.
 ;; @param data-id The dataset ID to flag (must be > 0 and have an existing consent record).
 ;; @return ok(true) on success. ERR-NOT-FOUND if no consent record exists.
