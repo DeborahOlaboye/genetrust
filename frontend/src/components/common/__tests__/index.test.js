@@ -16,6 +16,7 @@ describe('components/common barrel export', () => {
 
   it('exports ErrorBoundary', () => {
     expect(ErrorBoundary).toBeDefined();
+    expect(ErrorBoundary.displayName).toBe('ErrorBoundary');
   });
 
   it('exports ErrorDisplay', () => {
