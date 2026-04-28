@@ -125,5 +125,10 @@
   "validation_duplicate_listing": "Ya existe un listado para este conjunto de datos y nivel de acceso.",
   "validation_description_required": "La descripción es obligatoria.",
   "validation_dataset_required": "Por favor selecciona un conjunto de datos.",
-  "validation_price_required": "El precio es obligatorio."
+  "validation_price_required": "El precio es obligatorio.",
+  "jurisdiction_global": "Global (sin restricción regional)",
+  "jurisdiction_us": "Estados Unidos (HIPAA / CCPA)",
+  "jurisdiction_eu": "Unión Europea (GDPR)",
+  "jurisdiction_uk": "Reino Unido (UK GDPR)",
+  "jurisdiction_canada": "Canadá (PIPEDA)"
 }

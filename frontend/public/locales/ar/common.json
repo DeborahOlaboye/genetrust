@@ -125,5 +125,10 @@
   "validation_duplicate_listing": "توجد بالفعل قائمة لهذه المجموعة ومستوى الوصول.",
   "validation_description_required": "الوصف مطلوب.",
   "validation_dataset_required": "يرجى اختيار مجموعة بيانات.",
-  "validation_price_required": "السعر مطلوب."
+  "validation_price_required": "السعر مطلوب.",
+  "jurisdiction_global": "عالمي (بدون قيود إقليمية)",
+  "jurisdiction_us": "الولايات المتحدة (HIPAA / CCPA)",
+  "jurisdiction_eu": "الاتحاد الأوروبي (GDPR)",
+  "jurisdiction_uk": "المملكة المتحدة (UK GDPR)",
+  "jurisdiction_canada": "كندا (PIPEDA)"
 }
