@@ -241,29 +241,7 @@ export default function UserDashboard() {
       >
         Skip to main content
       </a>
-      <Toaster
-        position="top-right"
-        toastOptions={{
-          duration: 4000,
-          style: {
-            background: '#1a1a2e',
-            color: '#fff',
-            border: '1px solid rgba(139,92,246,0.3)',
-          },
-          success: {
-            iconTheme: {
-              primary: '#8B5CF6',
-              secondary: '#fff',
-            },
-          },
-          error: {
-            iconTheme: {
-              primary: '#ef4444',
-              secondary: '#fff',
-            },
-          },
-        }}
-      />
+      <Toaster position="top-right" toastOptions={TOAST_OPTIONS} />
       <Navigation />
       <main id="main-content" className="max-w-7xl mx-auto px-6 lg:px-8 py-10 space-y-8">
 
