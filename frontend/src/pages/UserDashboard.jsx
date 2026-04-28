@@ -69,6 +69,11 @@ export default function UserDashboard() {
   const [selectedDataset, setSelectedDataset] = useState('');
   const [consentDatasetId, setConsentDatasetId] = useState(null);
 
+  const shortAddress = useMemo(
+    () => walletAddress ? `${walletAddress.slice(0, 8)}...${walletAddress.slice(-6)}` : '',
+    [walletAddress]
+  );
+
   // Connect wallet on mount if using real SDK
   useEffect(() => {
     let mounted = true;
