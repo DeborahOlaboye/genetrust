@@ -23,7 +23,7 @@ const ErrorDisplay = ({
   const errorMessage = getUserFriendlyMessage(error);
   const errorCode = error?.code || (error?.response?.status ? `HTTP_${error.response.status}` : null);
   const errorDetails = error?.stack || error?.message || 'No additional details available';
-  const showExpand = process.env.NODE_ENV === 'development' && errorDetails;
+  const showExpand = (showDetails || process.env.NODE_ENV === 'development') && errorDetails;
 
   // Explicit title prop always wins; otherwise derive from error code.
   const getErrorTitle = () => {
