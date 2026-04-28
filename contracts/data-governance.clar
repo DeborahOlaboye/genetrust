@@ -7,10 +7,14 @@
 ;;         and invoke data subject rights: erasure, portability, and processing restriction.
 ;; @dev Deployed on Stacks mainnet at SP3KKFRRWQVJXEJCGM6ZB359EF01VRY86HW6CCD45.data-governance
 
-;; Errors
-(define-constant ERR-NOT-AUTHORIZED (err u401))
-(define-constant ERR-NOT-FOUND (err u404))
+;; Errors - Input Validation (400-409)
 (define-constant ERR-INVALID-INPUT (err u400))
+
+;; Errors - Authorization (410-414)
+(define-constant ERR-NOT-AUTHORIZED (err u410))
+
+;; Errors - Not Found (430-439)
+(define-constant ERR-NOT-FOUND (err u430))
 
 ;; @notice Jurisdiction identifiers mapped to uint codes for on-chain storage.
 ;;         Frontends should decode these to human-readable region labels.
