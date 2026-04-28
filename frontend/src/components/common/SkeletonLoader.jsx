@@ -8,10 +8,11 @@ const SkeletonLoader = ({
   count = 1,
   circle = false,
   rounded = 'md',
-  label = 'Loading content'
+  label = 'Loading content',
+  gap = '0.5rem',
 }) => {
   const elements = [];
-  
+
   for (let i = 0; i < count; i++) {
     elements.push(
       <div
@@ -20,7 +21,7 @@ const SkeletonLoader = ({
         style={{
           width,
           height: circle ? width : height,
-          marginBottom: i < count - 1 ? '0.5rem' : 0
+          marginBottom: i < count - 1 ? gap : 0,
         }}
         aria-hidden="true"
       />
@@ -38,6 +39,7 @@ SkeletonLoader.propTypes = {
   circle: PropTypes.bool,
   rounded: PropTypes.oneOf(['none', 'sm', 'md', 'lg', 'full']),
   label: PropTypes.string,
+  gap: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
 };
 
 SkeletonLoader.displayName = 'SkeletonLoader';
