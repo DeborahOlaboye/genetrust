@@ -470,7 +470,7 @@ export default function UserDashboard() {
                       </div>
                       <button
                         type="button"
-                        onClick={() => setConsentDatasetId(consentDatasetId === ds.id ? null : ds.id)}
+                        onClick={() => handleToggleConsent(ds.id)}
                         style={{
                           padding: '0.3rem 0.65rem',
                           borderRadius: '0.4rem',
