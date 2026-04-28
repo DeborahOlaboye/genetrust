@@ -15,7 +15,7 @@ export { usePerformance } from './usePerformance';
 export { default as useAnalytics } from './useAnalytics';
 
 // --- UI & Interaction ---
-export { useResponsive } from './useResponsive';
+export { useResponsive, BREAKPOINTS } from './useResponsive';
 export { useKeyboardNavigation, useRovingTabIndex } from './useKeyboardNavigation';
 export { useTouch } from './useTouch';
 
