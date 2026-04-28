@@ -90,13 +90,14 @@ const withLoadingState = <P extends object>(
 
     if (error) {
       return (
-        <ErrorComponent 
-          error={error} 
+        <ErrorComponent
+          error={error}
           onRetry={onRetry}
           onClose={onClose}
           title={errorTitle}
           showRetry={!!onRetry}
           showClose={!!onClose}
+          showDetails={process.env.NODE_ENV === 'development'}
         />
       );
     }
