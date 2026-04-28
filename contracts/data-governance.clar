@@ -89,6 +89,13 @@
             existing (asserts! (is-eq tx-sender (get owner existing)) ERR-NOT-AUTHORIZED)
             true
         )
+        (asserts!
+            (not (default-to false
+                    (match (map-get? gdpr-records { data-id: data-id })
+                        gdpr (some (get right-to-be-forgotten gdpr))
+                        none
+                    )))
+            ERR-CANNOT-MODIFY-ERASED)
         (map-set consent-records { data-id: data-id }
             {
                 owner: tx-sender,
