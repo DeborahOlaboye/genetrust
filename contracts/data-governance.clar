@@ -7,6 +7,14 @@
 ;;         and invoke data subject rights: erasure, portability, and processing restriction.
 ;; @dev Deployed on Stacks mainnet at SP3KKFRRWQVJXEJCGM6ZB359EF01VRY86HW6CCD45.data-governance
 
+;; Error code ranges mirror the rest of the contract suite:
+;;   400-409  Input validation
+;;   410-414  Authorization
+;;   430-439  Not found
+;;   440-449  Conflict / already exists
+;;   450-459  Gone / inactive
+;;   610-699  Business logic
+
 ;; Errors - Input Validation (400-409)
 (define-constant ERR-INVALID-INPUT (err u400))
 
