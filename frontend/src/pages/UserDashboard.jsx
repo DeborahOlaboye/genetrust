@@ -348,7 +348,7 @@ export default function UserDashboard() {
                   <input
                     id="dataset-description"
                     value={newDesc}
-                    onChange={e => { setNewDesc(e.target.value); if (descError) setDescError(''); }}
+                    onChange={handleDescChange}
                     className={`mt-1 w-full bg-[#14102E] border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]/40 text-white ${descError ? 'border-red-500/60' : 'border-[#8B5CF6]/20'}`}
                     placeholder="Enter dataset description..."
                     aria-required="true"
