@@ -184,8 +184,8 @@ export default function UserDashboard() {
     }
 
     const parsedPrice = Number(newPrice);
-    if (!newPrice || isNaN(parsedPrice) || !Number.isInteger(parsedPrice) || parsedPrice < 1 || parsedPrice > 9_999_999_999) {
-      toast.error('Price must be a whole number between 1 and 9,999,999,999 microSTX');
+    if (!newPrice || isNaN(parsedPrice) || !Number.isInteger(parsedPrice) || parsedPrice < PRICE_MIN || parsedPrice > PRICE_MAX) {
+      toast.error(`Price must be a whole number between ${PRICE_MIN.toLocaleString()} and ${PRICE_MAX.toLocaleString()} microSTX`);
       return;
     }
 
