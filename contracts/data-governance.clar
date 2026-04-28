@@ -212,3 +212,13 @@
         (ok false)
     )
 )
+
+;; @notice Checks whether data portability has been requested for a dataset.
+;; @param data-id The dataset ID to check.
+;; @return ok(true) if data-portability-requested is set, ok(false) otherwise.
+(define-read-only (is-portability-requested (data-id uint))
+    (match (map-get? gdpr-records { data-id: data-id })
+        gdpr (ok (get data-portability-requested gdpr))
+        (ok false)
+    )
+)
