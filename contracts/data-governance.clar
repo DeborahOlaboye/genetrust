@@ -15,6 +15,7 @@
 
 ;; Errors - Not Found (430-439)
 (define-constant ERR-NOT-FOUND (err u430))
+(define-constant ERR-CONSENT-NOT-FOUND (err u431))
 
 ;; @notice Jurisdiction identifiers mapped to uint codes for on-chain storage.
 ;;         Frontends should decode these to human-readable region labels.
