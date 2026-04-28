@@ -23,6 +23,9 @@
 ;; Errors - Gone / Inactive (450-459)
 (define-constant ERR-CONSENT-EXPIRED (err u453))
 
+;; Errors - Business Logic (610-699)
+(define-constant ERR-CANNOT-MODIFY-ERASED (err u612))
+
 ;; @notice Jurisdiction identifiers mapped to uint codes for on-chain storage.
 ;;         Frontends should decode these to human-readable region labels.
 (define-constant JURISDICTION-GLOBAL u0)  ;; No regional restriction
