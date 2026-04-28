@@ -130,5 +130,12 @@
   "jurisdiction_us": "United States (HIPAA / CCPA)",
   "jurisdiction_eu": "European Union (GDPR)",
   "jurisdiction_uk": "United Kingdom (UK GDPR)",
-  "jurisdiction_canada": "Canada (PIPEDA)"
+  "jurisdiction_canada": "Canada (PIPEDA)",
+  "subnet_status": "Subnet Status",
+  "subnet_processing": "Processing",
+  "subnet_settlement": "Settlement",
+  "subnet_idle": "Idle",
+  "subnet_syncing": "Syncing…",
+  "subnet_settlement_viewer": "Settlement Viewer",
+  "subnet_processor": "Data Processor"
 }
