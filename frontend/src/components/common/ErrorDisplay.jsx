@@ -50,10 +50,16 @@ const ErrorDisplay = ({
       // Map specific error codes to severity levels
       const errorSeverities = {
         [ERROR_CODES.NETWORK_OFFLINE]: 'warning',
+        [ERROR_CODES.NETWORK_TIMEOUT]: 'warning',
         [ERROR_CODES.API_UNAUTHORIZED]: 'warning',
         [ERROR_CODES.API_FORBIDDEN]: 'error',
         [ERROR_CODES.API_NOT_FOUND]: 'info',
+        [ERROR_CODES.API_SERVER_ERROR]: 'error',
+        [ERROR_CODES.WALLET_NOT_CONNECTED]: 'warning',
         [ERROR_CODES.WALLET_TRANSACTION_REJECTED]: 'info',
+        [ERROR_CODES.WALLET_INSUFFICIENT_BALANCE]: 'warning',
+        [ERROR_CODES.WALLET_TRANSACTION_FAILED]: 'error',
+        [ERROR_CODES.WALLET_NETWORK_MISMATCH]: 'warning',
       };
       
       return errorSeverities[error.code] || 'error';
