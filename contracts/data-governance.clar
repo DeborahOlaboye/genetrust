@@ -83,8 +83,10 @@
 ;; @param commercial-consent Whether commercial use of this dataset is permitted.
 ;; @param clinical-consent Whether clinical use of this dataset is permitted.
 ;; @param jurisdiction The regulatory jurisdiction code (0-4) governing this consent.
-;; @return ok(true) on success. ERR-INVALID-INPUT if data-id or jurisdiction is invalid.
-;;         ERR-NOT-AUTHORIZED if caller is not the existing record owner.
+;; @return ok(true) on success.
+;;         ERR-INVALID-INPUT (u400) if data-id is zero or jurisdiction code is out of range.
+;;         ERR-NOT-AUTHORIZED (u410) if caller is not the existing record owner.
+;;         ERR-CANNOT-MODIFY-ERASED (u612) if right-to-be-forgotten has been invoked.
 ;; @requires Caller must be the existing consent record owner (if a record exists).
 (define-public (set-consent
     (data-id uint)
