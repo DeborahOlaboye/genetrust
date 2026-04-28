@@ -81,6 +81,8 @@ const ErrorDisplay = ({
         [ERROR_CODES.AUTH_UNAUTHORIZED]: 'warning',
         [ERROR_CODES.AUTH_SESSION_EXPIRED]: 'warning',
         [ERROR_CODES.AUTH_PERMISSION_DENIED]: 'error',
+        [ERROR_CODES.UNKNOWN_ERROR]: 'error',
+        [ERROR_CODES.MAINTENANCE_MODE]: 'info',
       };
       
       return errorSeverities[error.code] || 'error';
