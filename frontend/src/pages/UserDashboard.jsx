@@ -74,6 +74,11 @@ export default function UserDashboard() {
     [walletAddress]
   );
 
+  const handleDescChange = useCallback((e) => {
+    setNewDesc(e.target.value);
+    if (descError) setDescError('');
+  }, [descError]);
+
   // Connect wallet on mount if using real SDK
   useEffect(() => {
     let mounted = true;
