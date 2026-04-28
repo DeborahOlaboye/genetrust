@@ -20,6 +20,9 @@ jest.mock('@mui/icons-material', () => ({
 jest.mock('../../../utils/errorUtils', () => ({
   getUserFriendlyMessage: (e) => e?.message || 'Unknown error',
   ERROR_CODES: {
+    AUTH_UNAUTHORIZED: 1001,
+    AUTH_SESSION_EXPIRED: 1002,
+    AUTH_PERMISSION_DENIED: 1003,
     NETWORK_OFFLINE: 3001,
     NETWORK_TIMEOUT: 3002,
     API_UNAUTHORIZED: 3004,
@@ -31,6 +34,9 @@ jest.mock('../../../utils/errorUtils', () => ({
     WALLET_INSUFFICIENT_BALANCE: 4003,
     WALLET_TRANSACTION_FAILED: 4004,
     WALLET_NETWORK_MISMATCH: 4005,
+    RESOURCE_NOT_FOUND: 5001,
+    RESOURCE_ALREADY_EXISTS: 5002,
+    RESOURCE_LIMIT_REACHED: 5003,
   },
 }));
 
