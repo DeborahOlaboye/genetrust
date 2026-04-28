@@ -10,10 +10,11 @@ const LoadingSpinner = ({ size = 'md', className = '', label = 'Loading...' }) =
   };
 
   return (
-    <div className={`flex items-center justify-center ${className}`}>
+    <div className={`flex items-center justify-center ${className}`} aria-live="polite">
       <div
         className={`${sizeClasses[size]} animate-spin rounded-full border-4 border-solid border-blue-600 border-t-transparent`}
         role="status"
+        aria-label={label}
       >
         <span className="sr-only">{label}</span>
       </div>
