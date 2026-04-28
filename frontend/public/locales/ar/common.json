@@ -30,5 +30,17 @@
   "wallet_connect_button": "ربط المحفظة",
   "wallet_transaction_pending": "المعاملة معلقة...",
   "wallet_transaction_success": "تم تأكيد المعاملة",
-  "wallet_transaction_failed": "فشلت المعاملة"
+  "wallet_transaction_failed": "فشلت المعاملة",
+  "dataset_register": "تسجيل مجموعة البيانات",
+  "dataset_description": "وصف مجموعة البيانات",
+  "dataset_description_placeholder": "أدخل وصف مجموعة البيانات...",
+  "dataset_access_level": "مستوى الوصول",
+  "dataset_access_basic": "المستوى 1 - أساسي",
+  "dataset_access_detailed": "المستوى 2 - مفصّل",
+  "dataset_access_full": "المستوى 3 - وصول كامل",
+  "dataset_price": "السعر (ميكروSTX)",
+  "dataset_create": "إنشاء مجموعة بيانات",
+  "dataset_create_success": "تم إنشاء مجموعة البيانات بنجاح!",
+  "dataset_create_failed": "فشل في إنشاء مجموعة البيانات",
+  "dataset_none": "لا توجد مجموعات بيانات حتى الآن."
 }

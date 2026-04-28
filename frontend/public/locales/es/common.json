@@ -30,5 +30,17 @@
   "wallet_connect_button": "Conectar billetera",
   "wallet_transaction_pending": "Transacción pendiente...",
   "wallet_transaction_success": "Transacción confirmada",
-  "wallet_transaction_failed": "Transacción fallida"
+  "wallet_transaction_failed": "Transacción fallida",
+  "dataset_register": "Registrar conjunto de datos",
+  "dataset_description": "Descripción del conjunto de datos",
+  "dataset_description_placeholder": "Ingresa la descripción del conjunto de datos...",
+  "dataset_access_level": "Nivel de acceso",
+  "dataset_access_basic": "Nivel 1 - Básico",
+  "dataset_access_detailed": "Nivel 2 - Detallado",
+  "dataset_access_full": "Nivel 3 - Acceso completo",
+  "dataset_price": "Precio (microSTX)",
+  "dataset_create": "Crear conjunto de datos",
+  "dataset_create_success": "¡Conjunto de datos creado exitosamente!",
+  "dataset_create_failed": "Error al crear el conjunto de datos",
+  "dataset_none": "Aún no hay conjuntos de datos."
 }

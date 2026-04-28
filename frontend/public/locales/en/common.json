@@ -30,5 +30,17 @@
   "wallet_connect_button": "Connect Wallet",
   "wallet_transaction_pending": "Transaction pending...",
   "wallet_transaction_success": "Transaction confirmed",
-  "wallet_transaction_failed": "Transaction failed"
+  "wallet_transaction_failed": "Transaction failed",
+  "dataset_register": "Register Dataset",
+  "dataset_description": "Dataset Description",
+  "dataset_description_placeholder": "Enter dataset description...",
+  "dataset_access_level": "Access Level",
+  "dataset_access_basic": "Level 1 - Basic",
+  "dataset_access_detailed": "Level 2 - Detailed",
+  "dataset_access_full": "Level 3 - Full Access",
+  "dataset_price": "Price (microSTX)",
+  "dataset_create": "Create Dataset",
+  "dataset_create_success": "Dataset created successfully!",
+  "dataset_create_failed": "Failed to create dataset",
+  "dataset_none": "No datasets yet."
 }
