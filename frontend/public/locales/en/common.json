@@ -137,5 +137,12 @@
   "subnet_idle": "Idle",
   "subnet_syncing": "Syncing…",
   "subnet_settlement_viewer": "Settlement Viewer",
-  "subnet_processor": "Data Processor"
+  "subnet_processor": "Data Processor",
+  "a11y_skip_to_main": "Skip to main content",
+  "a11y_loading": "Loading, please wait",
+  "a11y_close_dialog": "Close dialog",
+  "a11y_open_menu": "Open navigation menu",
+  "a11y_close_menu": "Close navigation menu",
+  "a11y_page_loaded": "Page loaded",
+  "a11y_error": "Error: {{message}}"
 }

@@ -137,5 +137,12 @@
   "subnet_idle": "خامل",
   "subnet_syncing": "جارٍ المزامنة…",
   "subnet_settlement_viewer": "عارض التسوية",
-  "subnet_processor": "معالج البيانات"
+  "subnet_processor": "معالج البيانات",
+  "a11y_skip_to_main": "تخطى إلى المحتوى الرئيسي",
+  "a11y_loading": "جارٍ التحميل، يرجى الانتظار",
+  "a11y_close_dialog": "إغلاق مربع الحوار",
+  "a11y_open_menu": "فتح قائمة التنقل",
+  "a11y_close_menu": "إغلاق قائمة التنقل",
+  "a11y_page_loaded": "تم تحميل الصفحة",
+  "a11y_error": "خطأ: {{message}}"
 }

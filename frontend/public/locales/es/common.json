@@ -137,5 +137,12 @@
   "subnet_idle": "Inactivo",
   "subnet_syncing": "Sincronizando…",
   "subnet_settlement_viewer": "Visor de liquidación",
-  "subnet_processor": "Procesador de datos"
+  "subnet_processor": "Procesador de datos",
+  "a11y_skip_to_main": "Ir al contenido principal",
+  "a11y_loading": "Cargando, por favor espera",
+  "a11y_close_dialog": "Cerrar diálogo",
+  "a11y_open_menu": "Abrir menú de navegación",
+  "a11y_close_menu": "Cerrar menú de navegación",
+  "a11y_page_loaded": "Página cargada",
+  "a11y_error": "Error: {{message}}"
 }
