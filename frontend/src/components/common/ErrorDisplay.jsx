@@ -89,8 +89,8 @@ const ErrorDisplay = ({
     setExpanded(!expanded);
   };
 
-  const currentSeverity = getSeverity();
-  const errorTitle = getErrorTitle();
+  const currentSeverity = React.useMemo(getSeverity, [severity, error]);
+  const errorTitle = React.useMemo(getErrorTitle, [title, error]);
 
   return (
     <Box
