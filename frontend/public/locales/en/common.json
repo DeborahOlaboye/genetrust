@@ -42,5 +42,15 @@
   "dataset_create": "Create Dataset",
   "dataset_create_success": "Dataset created successfully!",
   "dataset_create_failed": "Failed to create dataset",
-  "dataset_none": "No datasets yet."
+  "dataset_none": "No datasets yet.",
+  "listing_create": "Create Listing",
+  "listing_select_dataset": "Select Dataset",
+  "listing_select_placeholder": "Choose a dataset...",
+  "listing_price_placeholder": "e.g., 1000000 (1 STX)",
+  "listing_create_success": "Listing created successfully!",
+  "listing_create_failed": "Failed to create listing",
+  "listing_none": "No listings yet.",
+  "listing_purchase": "Purchase Access",
+  "listing_purchase_success": "Access granted!",
+  "listing_purchase_failed": "Purchase failed"
 }

@@ -42,5 +42,15 @@
   "dataset_create": "إنشاء مجموعة بيانات",
   "dataset_create_success": "تم إنشاء مجموعة البيانات بنجاح!",
   "dataset_create_failed": "فشل في إنشاء مجموعة البيانات",
-  "dataset_none": "لا توجد مجموعات بيانات حتى الآن."
+  "dataset_none": "لا توجد مجموعات بيانات حتى الآن.",
+  "listing_create": "إنشاء قائمة",
+  "listing_select_dataset": "اختر مجموعة البيانات",
+  "listing_select_placeholder": "اختر مجموعة بيانات...",
+  "listing_price_placeholder": "مثال: 1000000 (1 STX)",
+  "listing_create_success": "تم إنشاء القائمة بنجاح!",
+  "listing_create_failed": "فشل في إنشاء القائمة",
+  "listing_none": "لا توجد قوائم حتى الآن.",
+  "listing_purchase": "شراء الوصول",
+  "listing_purchase_success": "تم منح الوصول!",
+  "listing_purchase_failed": "فشل الشراء"
 }

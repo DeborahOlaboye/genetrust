@@ -42,5 +42,15 @@
   "dataset_create": "Crear conjunto de datos",
   "dataset_create_success": "¡Conjunto de datos creado exitosamente!",
   "dataset_create_failed": "Error al crear el conjunto de datos",
-  "dataset_none": "Aún no hay conjuntos de datos."
+  "dataset_none": "Aún no hay conjuntos de datos.",
+  "listing_create": "Crear listado",
+  "listing_select_dataset": "Seleccionar conjunto de datos",
+  "listing_select_placeholder": "Elige un conjunto de datos...",
+  "listing_price_placeholder": "Ej: 1000000 (1 STX)",
+  "listing_create_success": "¡Listado creado exitosamente!",
+  "listing_create_failed": "Error al crear el listado",
+  "listing_none": "Aún no hay listados.",
+  "listing_purchase": "Comprar acceso",
+  "listing_purchase_success": "¡Acceso concedido!",
+  "listing_purchase_failed": "Compra fallida"
 }
