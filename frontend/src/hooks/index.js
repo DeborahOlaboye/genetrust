@@ -17,7 +17,7 @@ export { default as useAnalytics } from './useAnalytics';
 // --- UI & Interaction ---
 export { useResponsive, BREAKPOINTS } from './useResponsive';
 export { useKeyboardNavigation, useRovingTabIndex } from './useKeyboardNavigation';
-export { useTouch } from './useTouch';
+export { useTouch, SWIPE_DIRECTION } from './useTouch';
 
 // --- Blockchain / Wallet ---
 export { useTransactionStatus } from './useTransactionStatus';
