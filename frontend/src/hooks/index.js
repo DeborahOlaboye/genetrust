@@ -7,6 +7,7 @@ export { useOptimizedQuery } from './useOptimizedQuery';
 export { usePerformance } from './usePerformance';
 export { useResponsive } from './useResponsive';
 export { useKeyboardNavigation, useRovingTabIndex } from './useKeyboardNavigation';
+export { useTouch } from './useTouch';
 export { useTransactionStatus } from './useTransactionStatus';
 export { useTransactionRetry } from './useTransactionRetry';
 export { useWallet } from './useWallet';
