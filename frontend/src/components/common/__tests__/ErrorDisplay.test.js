@@ -37,6 +37,8 @@ jest.mock('../../../utils/errorUtils', () => ({
     RESOURCE_NOT_FOUND: 5001,
     RESOURCE_ALREADY_EXISTS: 5002,
     RESOURCE_LIMIT_REACHED: 5003,
+    UNKNOWN_ERROR: 9001,
+    MAINTENANCE_MODE: 9003,
   },
 }));
 
@@ -127,5 +129,10 @@ describe('ErrorDisplay — getSeverity', () => {
   it('uses error severity for WALLET_TRANSACTION_FAILED', () => {
     const { getByTestId } = render(<ErrorDisplay error={{ message: 'tx failed', code: 4004 }} />);
     expect(getByTestId('alert').dataset.severity).toBe('error');
+  });
+
+  it('uses info severity for MAINTENANCE_MODE (9003)', () => {
+    const { getByTestId } = render(<ErrorDisplay error={{ message: 'down', code: 9003 }} />);
+    expect(getByTestId('alert').dataset.severity).toBe('info');
   });
 });
