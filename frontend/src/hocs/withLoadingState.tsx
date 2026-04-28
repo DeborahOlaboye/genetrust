@@ -46,15 +46,15 @@ const withLoadingState = <P extends object>(
         {text && <span className="ml-2 text-gray-600 dark:text-gray-400">{text}</span>}
       </div>
     ),
-    ErrorComponent = ({ 
-      error, 
-      onRetry, 
-      onClose, 
+    ErrorComponent = ({
+      error,
+      onRetry,
+      onClose,
       title,
       showDetails = true,
       showRetry = true,
       showClose = true,
-      severity,
+      severity = null,
       fullWidth = false
     }) => {
       return (
