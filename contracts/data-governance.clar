@@ -202,3 +202,13 @@
         (ok false)
     )
 )
+
+;; @notice Checks whether erasure has been requested for a dataset.
+;; @param data-id The dataset ID to check.
+;; @return ok(true) if right-to-be-forgotten is set, ok(false) otherwise.
+(define-read-only (is-erasure-requested (data-id uint))
+    (match (map-get? gdpr-records { data-id: data-id })
+        gdpr (ok (get right-to-be-forgotten gdpr))
+        (ok false)
+    )
+)
