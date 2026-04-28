@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 
 interface UseLoadingStateReturn {
   isLoading: boolean;
+  hasError: boolean;
   error: Error | null;
   startLoading: () => void;
   stopLoading: (error?: Error | null) => void;
@@ -48,6 +49,7 @@ const useLoadingState = (initialState: boolean = false): UseLoadingStateReturn =
 
   return {
     isLoading,
+    hasError: error !== null,
     error,
     startLoading,
     stopLoading,
