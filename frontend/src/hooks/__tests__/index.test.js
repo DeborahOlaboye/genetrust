@@ -1,6 +1,8 @@
 import {
   CACHE_TTL,
   BREAKPOINTS,
+  SWIPE_DIRECTION,
+  ANALYTICS_EVENTS,
   useErrorHandler,
   useAnalytics,
   useLoadingState,
@@ -60,6 +62,20 @@ describe('hooks barrel export', () => {
     expect(CACHE_TTL).toHaveProperty('SHORT');
     expect(CACHE_TTL).toHaveProperty('DEFAULT');
     expect(CACHE_TTL).toHaveProperty('LONG');
+  });
+
+  it('exports SWIPE_DIRECTION with LEFT/RIGHT/UP/DOWN keys', () => {
+    expect(SWIPE_DIRECTION).toBeDefined();
+    expect(SWIPE_DIRECTION).toHaveProperty('LEFT');
+    expect(SWIPE_DIRECTION).toHaveProperty('RIGHT');
+    expect(SWIPE_DIRECTION).toHaveProperty('UP');
+    expect(SWIPE_DIRECTION).toHaveProperty('DOWN');
+  });
+
+  it('exports ANALYTICS_EVENTS with standard event names', () => {
+    expect(ANALYTICS_EVENTS).toBeDefined();
+    expect(ANALYTICS_EVENTS).toHaveProperty('PAGE_VIEW');
+    expect(ANALYTICS_EVENTS).toHaveProperty('ERROR');
   });
 
   it('exports BREAKPOINTS as an object with mobile/tablet/laptop/desktop keys', () => {
