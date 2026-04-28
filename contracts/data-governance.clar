@@ -138,6 +138,30 @@
     )
 )
 
+;; @notice Updates only the jurisdiction code on an existing consent record.
+;; @param data-id The dataset ID to update.
+;; @param jurisdiction The new jurisdiction code (0-4).
+;; @return ok(true) on success. ERR-CONSENT-NOT-FOUND if no record. ERR-INVALID-INPUT if params invalid.
+;;         ERR-NOT-AUTHORIZED if not the owner. ERR-CANNOT-MODIFY-ERASED if erasure was requested.
+(define-public (update-jurisdiction (data-id uint) (jurisdiction uint))
+    (let ((consent (unwrap! (map-get? consent-records { data-id: data-id }) ERR-CONSENT-NOT-FOUND)))
+        (asserts! (> data-id u0) ERR-INVALID-INPUT)
+        (asserts! (<= jurisdiction JURISDICTION-CANADA) ERR-INVALID-INPUT)
+        (asserts! (is-eq tx-sender (get owner consent)) ERR-NOT-AUTHORIZED)
+        (asserts!
+            (not (default-to false
+                    (match (map-get? gdpr-records { data-id: data-id })
+                        gdpr (some (get right-to-be-forgotten gdpr))
+                        none
+                    )))
+            ERR-CANNOT-MODIFY-ERASED)
+        (map-set consent-records { data-id: data-id }
+            (merge consent { jurisdiction: jurisdiction, updated-at: stacks-block-height })
+        )
+        (ok true)
+    )
+)
+
 ;; @notice Flags this dataset with the GDPR right-to-be-forgotten.
 ;; @param data-id The dataset ID to flag (must be > 0 and have an existing consent record).
 ;; @return ok(true) on success. ERR-NOT-FOUND if no consent record exists.
