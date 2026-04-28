@@ -51,6 +51,7 @@ const ErrorDisplay = ({
         [ERROR_CODES.AUTH_UNAUTHORIZED]: 'Not Authorized',
         [ERROR_CODES.AUTH_SESSION_EXPIRED]: 'Session Expired',
         [ERROR_CODES.AUTH_PERMISSION_DENIED]: 'Permission Denied',
+        [ERROR_CODES.MAINTENANCE_MODE]: 'Maintenance in Progress',
       };
       return errorTitles[error.code] || title;
     }
