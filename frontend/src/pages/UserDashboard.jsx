@@ -177,7 +177,7 @@ export default function UserDashboard() {
     }
   }, [newDesc, datasets]);
 
-  const handleCreateListing = async () => {
+  const handleCreateListing = useCallback(async () => {
     if (!selectedDataset) {
       toast.error('Please select a dataset to list');
       return;
@@ -215,7 +215,6 @@ export default function UserDashboard() {
       setMyListings(ls);
 
       toast.success('Listing created successfully!', { id: toastId });
-      // Clear form
       setNewPrice('');
       setSelectedDataset('');
       setNewAccess(3);
@@ -225,7 +224,7 @@ export default function UserDashboard() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedDataset, newPrice, newAccess, myListings, datasets]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0B0B1D] via-[#14102E] to-[#0B0B1D] text-white">
