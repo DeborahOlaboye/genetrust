@@ -1,6 +1,7 @@
 // Hooks barrel exports
 export { default as useErrorHandler } from './useErrorHandler';
 export { default as useAnalytics } from './useAnalytics';
+export { default as useLoadingState } from './useLoadingState';
 export { useTransactionStatus } from './useTransactionStatus';
 export { useTransactionRetry } from './useTransactionRetry';
 export { useWallet } from './useWallet';
