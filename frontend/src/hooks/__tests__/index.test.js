@@ -6,6 +6,7 @@ import {
   useOptimizedQuery,
   usePerformance,
   useResponsive,
+  BREAKPOINTS,
   useKeyboardNavigation,
   useRovingTabIndex,
   useTouch,
@@ -50,5 +51,14 @@ describe('hooks barrel export', () => {
       expect(hook).toBeDefined();
       expect(typeof hook).toBe('function');
     });
+  });
+
+  it('exports BREAKPOINTS as an object with mobile/tablet/laptop/desktop keys', () => {
+    expect(BREAKPOINTS).toBeDefined();
+    expect(typeof BREAKPOINTS).toBe('object');
+    expect(BREAKPOINTS).toHaveProperty('mobile');
+    expect(BREAKPOINTS).toHaveProperty('tablet');
+    expect(BREAKPOINTS).toHaveProperty('laptop');
+    expect(BREAKPOINTS).toHaveProperty('desktop');
   });
 });
