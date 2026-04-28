@@ -13,6 +13,13 @@ const DESC_MAX = 200;
 const PRICE_MIN = 1;
 const PRICE_MAX = 9_999_999_999;
 
+const TOAST_OPTIONS = {
+  duration: 4000,
+  style: { background: '#1a1a2e', color: '#fff', border: '1px solid rgba(139,92,246,0.3)' },
+  success: { iconTheme: { primary: '#8B5CF6', secondary: '#fff' } },
+  error: { iconTheme: { primary: '#ef4444', secondary: '#fff' } },
+};
+
 const StatCard = ({ title, value, accent = 'purple' }) => (
   <div 
     className="p-4 rounded-xl border bg-[#14102E]/60 backdrop-blur-xl shadow-lg" 
