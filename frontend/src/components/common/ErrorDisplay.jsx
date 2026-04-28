@@ -237,9 +237,10 @@ ErrorDisplay.propTypes = {
   showClose: PropTypes.bool,
   
   /**
-   * Severity of the error ('error', 'warning', 'info', 'success')
+   * Explicit severity override. When null (default) severity is derived from
+   * the error code. Pass a value to force a specific severity level.
    */
-  severity: PropTypes.oneOf(['error', 'warning', 'info', 'success']),
+  severity: PropTypes.oneOf(['error', 'warning', 'info', 'success', null]),
   
   /**
    * Whether the component should take full width
