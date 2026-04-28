@@ -7,7 +7,7 @@ export { default as useLoadingState } from './useLoadingState';
 
 // --- Data & Caching ---
 export { useOptimisticUpdate } from './useOptimisticUpdate';
-export { useOptimizedQuery } from './useOptimizedQuery';
+export { useOptimizedQuery, QUERY_DEFAULTS } from './useOptimizedQuery';
 export { useBlockchainCache, CACHE_TTL } from './useBlockchainCache';
 
 // --- Performance & Analytics ---
