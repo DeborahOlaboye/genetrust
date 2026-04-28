@@ -159,5 +159,9 @@
   "page_title_researcher": "سوق الباحثين — GeneTrust",
   "page_title_upload": "رفع مجموعة البيانات — GeneTrust",
   "page_title_consent": "إعدادات الموافقة — GeneTrust",
-  "page_title_not_found": "الصفحة غير موجودة — GeneTrust"
+  "page_title_not_found": "الصفحة غير موجودة — GeneTrust",
+  "not_found_title": "404",
+  "not_found_heading": "الصفحة غير موجودة",
+  "not_found_description": "الصفحة التي تبحث عنها غير موجودة أو تم نقلها.",
+  "not_found_back_home": "العودة إلى الرئيسية"
 }

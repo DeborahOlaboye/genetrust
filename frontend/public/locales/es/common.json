@@ -159,5 +159,9 @@
   "page_title_researcher": "Mercado de investigadores — GeneTrust",
   "page_title_upload": "Subir conjunto de datos — GeneTrust",
   "page_title_consent": "Configuración de consentimiento — GeneTrust",
-  "page_title_not_found": "Página no encontrada — GeneTrust"
+  "page_title_not_found": "Página no encontrada — GeneTrust",
+  "not_found_title": "404",
+  "not_found_heading": "Página no encontrada",
+  "not_found_description": "La página que buscas no existe o ha sido movida.",
+  "not_found_back_home": "Volver al inicio"
 }
