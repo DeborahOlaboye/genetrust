@@ -12,7 +12,7 @@ export { useBlockchainCache, CACHE_TTL } from './useBlockchainCache';
 
 // --- Performance & Analytics ---
 export { usePerformance } from './usePerformance';
-export { default as useAnalytics } from './useAnalytics';
+export { default as useAnalytics, ANALYTICS_EVENTS } from './useAnalytics';
 
 // --- UI & Interaction ---
 export { useResponsive, BREAKPOINTS } from './useResponsive';
