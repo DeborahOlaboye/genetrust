@@ -46,9 +46,9 @@ const ErrorDisplay = ({
     return title;
   };
 
-  // Get a more specific severity based on error type
+  // Get severity from explicit prop first, then derive from error code, then fallback.
   const getSeverity = () => {
-    if (severity) return severity;
+    if (severity !== null && severity !== undefined) return severity;
     
     if (error?.code) {
       // Map specific error codes to severity levels
