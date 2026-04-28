@@ -75,5 +75,15 @@
   "error_transaction_rejected": "Rechazaste la transacción en tu billetera.",
   "error_insufficient_balance": "No tienes fondos suficientes para esta transacción.",
   "error_unknown": "Ocurrió un error inesperado. Inténtalo de nuevo.",
-  "error_maintenance": "Estamos en mantenimiento. Inténtalo de nuevo más tarde."
+  "error_maintenance": "Estamos en mantenimiento. Inténtalo de nuevo más tarde.",
+  "dashboard_title": "Panel de usuario",
+  "dashboard_stats": "Estadísticas del panel",
+  "dashboard_datasets": "Conjuntos de datos",
+  "dashboard_listings": "Listados",
+  "dashboard_mode": "Modo",
+  "dashboard_network": "Red",
+  "dashboard_quick_create": "Creación rápida de conjunto de datos",
+  "dashboard_my_datasets": "Tus conjuntos de datos",
+  "dashboard_my_listings": "Tus listados",
+  "dashboard_loading": "Cargando datos del panel…"
 }

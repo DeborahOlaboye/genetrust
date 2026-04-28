@@ -75,5 +75,15 @@
   "error_transaction_rejected": "You rejected the transaction in your wallet.",
   "error_insufficient_balance": "You do not have enough funds for this transaction.",
   "error_unknown": "An unexpected error occurred. Please try again.",
-  "error_maintenance": "We are currently under maintenance. Please try again later."
+  "error_maintenance": "We are currently under maintenance. Please try again later.",
+  "dashboard_title": "User Dashboard",
+  "dashboard_stats": "Dashboard Statistics",
+  "dashboard_datasets": "Datasets",
+  "dashboard_listings": "Listings",
+  "dashboard_mode": "Mode",
+  "dashboard_network": "Network",
+  "dashboard_quick_create": "Quick Create Dataset",
+  "dashboard_my_datasets": "Your Datasets",
+  "dashboard_my_listings": "Your Listings",
+  "dashboard_loading": "Loading dashboard data…"
 }

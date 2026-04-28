@@ -75,5 +75,15 @@
   "error_transaction_rejected": "رفضت المعاملة في محفظتك.",
   "error_insufficient_balance": "ليس لديك أموال كافية لهذه المعاملة.",
   "error_unknown": "حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.",
-  "error_maintenance": "نحن حاليًا في صيانة. يرجى المحاولة لاحقاً."
+  "error_maintenance": "نحن حاليًا في صيانة. يرجى المحاولة لاحقاً.",
+  "dashboard_title": "لوحة تحكم المستخدم",
+  "dashboard_stats": "إحصائيات لوحة التحكم",
+  "dashboard_datasets": "مجموعات البيانات",
+  "dashboard_listings": "القوائم",
+  "dashboard_mode": "الوضع",
+  "dashboard_network": "الشبكة",
+  "dashboard_quick_create": "إنشاء سريع لمجموعة البيانات",
+  "dashboard_my_datasets": "مجموعات بياناتك",
+  "dashboard_my_listings": "قوائمك",
+  "dashboard_loading": "جارٍ تحميل بيانات لوحة التحكم…"
 }
