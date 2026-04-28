@@ -1,6 +1,6 @@
 ;; data-governance.clar
 ;; @title GeneTrust Data Governance
-;; @version 1.0.0
+;; @version 1.1.0
 ;; @author GeneTrust
 ;; @notice Manages consent settings and GDPR rights for genetic datasets.
 ;;         Each dataset owner can set research, commercial, and clinical consent flags
