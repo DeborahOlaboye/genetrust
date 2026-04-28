@@ -182,5 +182,12 @@
   "view_on_explorer": "View on Explorer",
   "banner_beta": "GeneTrust is currently in beta. Use on mainnet at your own risk.",
   "banner_testnet": "You are connected to Testnet. No real funds are at risk.",
-  "banner_demo": "Running in demo mode. Blockchain calls are simulated."
+  "banner_demo": "Running in demo mode. Blockchain calls are simulated.",
+  "variants": "variants",
+  "genes": "genes",
+  "dataset_id": "Dataset #{{id}}",
+  "listing_id": "Listing #{{id}}",
+  "access_granted_tx": "Access Level {{level}} granted. TX: {{txId}}",
+  "block_height": "Block Height",
+  "expires_at_block": "Expires at block {{block}}"
 }
