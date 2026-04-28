@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
+import toast, { Toaster } from 'react-hot-toast';
+import { APP_CONFIG } from '../config/app.js';
 import { contractService } from '../services/contractService.js';
 import { walletService } from '../services/walletService.js';
 import Navigation from '../components/landing/Navigation.jsx';
-import { APP_CONFIG } from '../config/app.js';
-import toast, { Toaster } from 'react-hot-toast';
+import { ConsentManagementPanel } from '../components/consent/ConsentManagementPanel.jsx';
 import { DatasetUploadWizard } from '../components/upload/DatasetUploadWizard.jsx';
 import { WalletGate } from '../components/upload/WalletGate.jsx';
-import { ConsentManagementPanel } from '../components/consent/ConsentManagementPanel.jsx';
 
 const DESC_MIN = 10;
 const DESC_MAX = 200;
