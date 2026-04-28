@@ -5,7 +5,8 @@ import { Close as CloseIcon, Refresh as RefreshIcon, ReportProblem as ReportProb
 import { getUserFriendlyMessage, ERROR_CODES } from '../../utils/errorUtils';
 
 /**
- * ErrorDisplay - A component to display user-friendly error messages
+ * ErrorDisplay — renders a user-friendly error alert with optional retry and dismiss.
+ * Import from 'components/common' rather than this file directly.
  */
 const ErrorDisplay = ({
   error,
@@ -251,5 +252,7 @@ ErrorDisplay.propTypes = {
    */
   sx: PropTypes.object,
 };
+
+ErrorDisplay.displayName = 'ErrorDisplay';
 
 export default ErrorDisplay;

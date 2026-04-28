@@ -95,4 +95,6 @@ export const LazyImage = ({
   );
 };
 
+LazyImage.displayName = 'LazyImage';
+
 export default LazyImage;

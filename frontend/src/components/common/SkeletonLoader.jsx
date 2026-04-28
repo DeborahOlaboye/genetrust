@@ -1,15 +1,18 @@
+import React from 'react';
 import PropTypes from 'prop-types';
 
-const SkeletonLoader = ({ 
-  width = '100%', 
-  height = '1rem', 
+const SkeletonLoader = ({
+  width = '100%',
+  height = '1rem',
   className = '',
   count = 1,
   circle = false,
-  rounded = 'md'
+  rounded = 'md',
+  label = 'Loading content',
+  gap = '0.5rem',
 }) => {
   const elements = [];
-  
+
   for (let i = 0; i < count; i++) {
     elements.push(
       <div
@@ -18,14 +21,14 @@ const SkeletonLoader = ({
         style={{
           width,
           height: circle ? width : height,
-          marginBottom: i < count - 1 ? '0.5rem' : 0
+          marginBottom: i < count - 1 ? gap : 0,
         }}
         aria-hidden="true"
       />
     );
   }
 
-  return <>{elements}</>;
+  return <div role="status" aria-label={label}>{elements}</div>;
 };
 
 SkeletonLoader.propTypes = {
@@ -34,7 +37,11 @@ SkeletonLoader.propTypes = {
   className: PropTypes.string,
   count: PropTypes.number,
   circle: PropTypes.bool,
-  rounded: PropTypes.oneOf(['none', 'sm', 'md', 'lg', 'full'])
+  rounded: PropTypes.oneOf(['none', 'sm', 'md', 'lg', 'full']),
+  label: PropTypes.string,
+  gap: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
 };
+
+SkeletonLoader.displayName = 'SkeletonLoader';
 
 export default SkeletonLoader;
