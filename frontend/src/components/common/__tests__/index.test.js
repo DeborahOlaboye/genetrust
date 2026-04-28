@@ -11,6 +11,7 @@ describe('components/common barrel export', () => {
   it('exports Button', () => {
     expect(Button).toBeDefined();
     expect(typeof Button).toBe('function');
+    expect(Button.displayName).toBe('Button');
   });
 
   it('exports ErrorBoundary', () => {
