@@ -105,7 +105,7 @@ export default function UserDashboard() {
   }, []);
 
   // Handle wallet connection
-  const handleConnectWallet = async () => {
+  const handleConnectWallet = useCallback(async () => {
     const toastId = toast.loading('Connecting wallet...');
     try {
       setLoading(true);
@@ -126,7 +126,7 @@ export default function UserDashboard() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   const handleCreateVault = async () => {
     const trimmedDesc = newDesc.trim();
