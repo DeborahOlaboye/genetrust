@@ -163,5 +163,12 @@
   "not_found_title": "404",
   "not_found_heading": "Page not found",
   "not_found_description": "The page you're looking for doesn't exist or has been moved.",
-  "not_found_back_home": "Go back home"
+  "not_found_back_home": "Go back home",
+  "nav_open": "Open menu",
+  "nav_close": "Close menu",
+  "nav_user_dashboard": "User Dashboard",
+  "nav_researcher_dashboard": "Researcher Dashboard",
+  "nav_upload": "Upload Dataset",
+  "nav_consent": "Consent Settings",
+  "nav_landing": "Home"
 }

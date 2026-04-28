@@ -163,5 +163,12 @@
   "not_found_title": "404",
   "not_found_heading": "الصفحة غير موجودة",
   "not_found_description": "الصفحة التي تبحث عنها غير موجودة أو تم نقلها.",
-  "not_found_back_home": "العودة إلى الرئيسية"
+  "not_found_back_home": "العودة إلى الرئيسية",
+  "nav_open": "فتح القائمة",
+  "nav_close": "إغلاق القائمة",
+  "nav_user_dashboard": "لوحة تحكم المستخدم",
+  "nav_researcher_dashboard": "لوحة تحكم الباحثين",
+  "nav_upload": "رفع مجموعة البيانات",
+  "nav_consent": "إعدادات الموافقة",
+  "nav_landing": "الرئيسية"
 }

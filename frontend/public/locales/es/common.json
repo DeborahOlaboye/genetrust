@@ -163,5 +163,12 @@
   "not_found_title": "404",
   "not_found_heading": "Página no encontrada",
   "not_found_description": "La página que buscas no existe o ha sido movida.",
-  "not_found_back_home": "Volver al inicio"
+  "not_found_back_home": "Volver al inicio",
+  "nav_open": "Abrir menú",
+  "nav_close": "Cerrar menú",
+  "nav_user_dashboard": "Panel de usuario",
+  "nav_researcher_dashboard": "Panel de investigadores",
+  "nav_upload": "Subir conjunto de datos",
+  "nav_consent": "Configuración de consentimiento",
+  "nav_landing": "Inicio"
 }
