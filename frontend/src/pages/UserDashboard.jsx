@@ -10,6 +10,8 @@ import { WalletGate } from '../components/upload/WalletGate.jsx';
 
 const DESC_MIN = 10;
 const DESC_MAX = 200;
+const PRICE_MIN = 1;
+const PRICE_MAX = 9_999_999_999;
 
 const StatCard = ({ title, value, accent = 'purple' }) => (
   <div 
