@@ -153,5 +153,11 @@
   "landing_privacy_trust": "الخصوصية والثقة",
   "landing_step_register": "سجّل مجموعة بياناتك على السلسلة.",
   "landing_step_consent": "حدّد قواعد موافقة دقيقة.",
-  "landing_step_earn": "اكسب STX عندما يشتري الباحثون الوصول."
+  "landing_step_earn": "اكسب STX عندما يشتري الباحثون الوصول.",
+  "page_title_home": "GeneTrust — سوق البيانات الجينومية",
+  "page_title_dashboard": "لوحة التحكم — GeneTrust",
+  "page_title_researcher": "سوق الباحثين — GeneTrust",
+  "page_title_upload": "رفع مجموعة البيانات — GeneTrust",
+  "page_title_consent": "إعدادات الموافقة — GeneTrust",
+  "page_title_not_found": "الصفحة غير موجودة — GeneTrust"
 }

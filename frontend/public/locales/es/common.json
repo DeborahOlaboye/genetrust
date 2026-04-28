@@ -153,5 +153,11 @@
   "landing_privacy_trust": "Privacidad y confianza",
   "landing_step_register": "Registra tu conjunto de datos en la cadena.",
   "landing_step_consent": "Establece reglas de consentimiento detalladas.",
-  "landing_step_earn": "Gana STX cuando los investigadores compren acceso."
+  "landing_step_earn": "Gana STX cuando los investigadores compren acceso.",
+  "page_title_home": "GeneTrust — Mercado de datos genómicos",
+  "page_title_dashboard": "Panel — GeneTrust",
+  "page_title_researcher": "Mercado de investigadores — GeneTrust",
+  "page_title_upload": "Subir conjunto de datos — GeneTrust",
+  "page_title_consent": "Configuración de consentimiento — GeneTrust",
+  "page_title_not_found": "Página no encontrada — GeneTrust"
 }

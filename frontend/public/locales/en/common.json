@@ -153,5 +153,11 @@
   "landing_privacy_trust": "Privacy & Trust",
   "landing_step_register": "Register your dataset on-chain.",
   "landing_step_consent": "Set granular consent rules.",
-  "landing_step_earn": "Earn STX when researchers purchase access."
+  "landing_step_earn": "Earn STX when researchers purchase access.",
+  "page_title_home": "GeneTrust — Genomic Data Marketplace",
+  "page_title_dashboard": "Dashboard — GeneTrust",
+  "page_title_researcher": "Researcher Marketplace — GeneTrust",
+  "page_title_upload": "Upload Dataset — GeneTrust",
+  "page_title_consent": "Consent Settings — GeneTrust",
+  "page_title_not_found": "Page Not Found — GeneTrust"
 }
