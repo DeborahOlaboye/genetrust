@@ -1,6 +1,5 @@
 import React from 'react';
-import LoadingSpinner from '../components/common/LoadingSpinner';
-import ErrorDisplay from '../components/common/ErrorDisplay';
+import { LoadingSpinner, ErrorDisplay } from '../components/common';
 
 // Define a custom error type that extends the standard Error
 interface AppError extends Error {

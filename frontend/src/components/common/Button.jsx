@@ -100,4 +100,6 @@ Button.propTypes = {
   id: PropTypes.string,
 };
 
+Button.displayName = 'Button';
+
 export default Button;

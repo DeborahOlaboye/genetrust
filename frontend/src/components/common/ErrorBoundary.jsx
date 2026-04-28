@@ -136,4 +136,6 @@ ErrorBoundary.propTypes = {
   showReset: PropTypes.bool,
 };
 
+ErrorBoundary.displayName = 'ErrorBoundary';
+
 export default ErrorBoundary;

@@ -404,11 +404,11 @@ export function getUserFriendlyMessage(error, { includeRecovery = true } = {}) {
 }
 
 /**
- * Error boundary component for React
+ * Error boundary (functional) — listens to window error events.
+ * @deprecated Prefer the class-based ErrorBoundary from 'components/common'
+ *   which correctly catches render errors via componentDidCatch.
  * @example
- * <ErrorBoundary fallback={<ErrorFallback />}>
- *   <MyComponent />
- * </ErrorBoundary>
+ * import { ErrorBoundary } from '../components/common';
  */
 export const ErrorBoundary = ({ children, fallback }) => {
   const [hasError, setHasError] = React.useState(false);

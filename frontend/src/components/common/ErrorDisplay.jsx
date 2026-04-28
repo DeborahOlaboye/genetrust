@@ -5,11 +5,8 @@ import { Close as CloseIcon, Refresh as RefreshIcon, ReportProblem as ReportProb
 import { getUserFriendlyMessage, ERROR_CODES } from '../../utils/errorUtils';
 
 /**
- * ErrorDisplay — renders a user-friendly error alert.
- *
- * Severity and title are auto-derived from error.code when not explicitly
- * provided. Pass severity="error" (or any MUI severity) to override the
- * automatic mapping. Pass title to override the code-derived heading.
+ * ErrorDisplay — renders a user-friendly error alert with optional retry and dismiss.
+ * Import from 'components/common' rather than this file directly.
  */
 const ErrorDisplay = ({
   error,

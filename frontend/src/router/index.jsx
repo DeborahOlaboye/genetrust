@@ -1,7 +1,7 @@
 import { lazy, Suspense } from 'react';
 import { Routes, Route, BrowserRouter as Router } from 'react-router-dom';
 import { lazyWithRetry } from '../utils/lazyWithRetry';
-import LoadingSpinner from '../components/common/LoadingSpinner';
+import { LoadingSpinner } from '../components/common';
 
 // Lazy load components with retry
 const UserDashboard = lazyWithRetry(() => import('../pages/UserDashboard'));
