@@ -85,5 +85,16 @@
   "dashboard_quick_create": "Creación rápida de conjunto de datos",
   "dashboard_my_datasets": "Tus conjuntos de datos",
   "dashboard_my_listings": "Tus listados",
-  "dashboard_loading": "Cargando datos del panel…"
+  "dashboard_loading": "Cargando datos del panel…",
+  "upload_title": "Subir y registrar conjunto de datos",
+  "upload_step_file": "Seleccionar archivo",
+  "upload_step_metadata": "Metadatos",
+  "upload_step_confirm": "Confirmar",
+  "upload_step_success": "Completado",
+  "upload_drag_drop": "Arrastra y suelta un archivo, o haz clic para seleccionar",
+  "upload_file_selected": "Archivo seleccionado",
+  "upload_hashing": "Calculando hash…",
+  "upload_submitting": "Enviando a la blockchain…",
+  "upload_success": "¡Conjunto de datos registrado en la cadena!",
+  "upload_failed": "Error al subir. Inténtalo de nuevo."
 }

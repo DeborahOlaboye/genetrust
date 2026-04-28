@@ -85,5 +85,16 @@
   "dashboard_quick_create": "إنشاء سريع لمجموعة البيانات",
   "dashboard_my_datasets": "مجموعات بياناتك",
   "dashboard_my_listings": "قوائمك",
-  "dashboard_loading": "جارٍ تحميل بيانات لوحة التحكم…"
+  "dashboard_loading": "جارٍ تحميل بيانات لوحة التحكم…",
+  "upload_title": "رفع وتسجيل مجموعة البيانات",
+  "upload_step_file": "اختر الملف",
+  "upload_step_metadata": "البيانات الوصفية",
+  "upload_step_confirm": "تأكيد",
+  "upload_step_success": "مكتمل",
+  "upload_drag_drop": "اسحب وأفلت ملفًا، أو انقر للاختيار",
+  "upload_file_selected": "تم اختيار الملف",
+  "upload_hashing": "جارٍ حساب التجزئة…",
+  "upload_submitting": "جارٍ الإرسال إلى البلوك تشين…",
+  "upload_success": "تم تسجيل مجموعة البيانات على السلسلة!",
+  "upload_failed": "فشل الرفع. يرجى المحاولة مرة أخرى."
 }

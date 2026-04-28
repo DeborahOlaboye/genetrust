@@ -85,5 +85,16 @@
   "dashboard_quick_create": "Quick Create Dataset",
   "dashboard_my_datasets": "Your Datasets",
   "dashboard_my_listings": "Your Listings",
-  "dashboard_loading": "Loading dashboard data…"
+  "dashboard_loading": "Loading dashboard data…",
+  "upload_title": "Upload & Register Dataset",
+  "upload_step_file": "Select File",
+  "upload_step_metadata": "Metadata",
+  "upload_step_confirm": "Confirm",
+  "upload_step_success": "Complete",
+  "upload_drag_drop": "Drag & drop a file, or click to select",
+  "upload_file_selected": "File selected",
+  "upload_hashing": "Computing hash…",
+  "upload_submitting": "Submitting to blockchain…",
+  "upload_success": "Dataset registered on-chain!",
+  "upload_failed": "Upload failed. Please try again."
 }
