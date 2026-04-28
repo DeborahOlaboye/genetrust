@@ -12,8 +12,14 @@ import { useState, useCallback, useRef, useEffect } from 'react';
  * - Cache statistics
  */
 
-const DEFAULT_TTL = 60000; // 1 minute
-const CLEANUP_INTERVAL = 300000; // 5 minutes
+export const CACHE_TTL = {
+  SHORT: 30000,
+  DEFAULT: 60000,
+  LONG: 300000,
+};
+
+const DEFAULT_TTL = CACHE_TTL.DEFAULT;
+const CLEANUP_INTERVAL = CACHE_TTL.LONG;
 
 class BlockchainCache {
   constructor() {
