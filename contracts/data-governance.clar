@@ -242,3 +242,15 @@
         (ok false)
     )
 )
+
+;; @notice Returns true if any GDPR right has been invoked for a dataset.
+;; @param data-id The dataset ID to check.
+;; @return ok(true) if any flag is set, ok(false) if none are set or no record exists.
+(define-read-only (has-any-gdpr-flag (data-id uint))
+    (match (map-get? gdpr-records { data-id: data-id })
+        gdpr (ok (or (get right-to-be-forgotten gdpr)
+                     (get data-portability-requested gdpr)
+                     (get processing-restricted gdpr)))
+        (ok false)
+    )
+)
