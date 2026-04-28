@@ -74,6 +74,9 @@ const ErrorDisplay = ({
         [ERROR_CODES.RESOURCE_NOT_FOUND]: 'info',
         [ERROR_CODES.RESOURCE_ALREADY_EXISTS]: 'warning',
         [ERROR_CODES.RESOURCE_LIMIT_REACHED]: 'warning',
+        [ERROR_CODES.AUTH_UNAUTHORIZED]: 'warning',
+        [ERROR_CODES.AUTH_SESSION_EXPIRED]: 'warning',
+        [ERROR_CODES.AUTH_PERMISSION_DENIED]: 'error',
       };
       
       return errorSeverities[error.code] || 'error';
