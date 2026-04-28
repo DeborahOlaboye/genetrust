@@ -170,5 +170,14 @@
   "nav_researcher_dashboard": "لوحة تحكم الباحثين",
   "nav_upload": "رفع مجموعة البيانات",
   "nav_consent": "إعدادات الموافقة",
-  "nav_landing": "الرئيسية"
+  "nav_landing": "الرئيسية",
+  "network_mainnet": "الشبكة الرئيسية",
+  "network_testnet": "شبكة الاختبار",
+  "network_devnet": "شبكة التطوير",
+  "mode_real": "حقيقي",
+  "mode_mock": "عرض توضيحي",
+  "tx_id": "معرّف المعاملة",
+  "copy_to_clipboard": "نسخ إلى الحافظة",
+  "copied": "تم النسخ!",
+  "view_on_explorer": "عرض في المستعرض"
 }

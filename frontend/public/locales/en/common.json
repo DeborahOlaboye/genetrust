@@ -170,5 +170,14 @@
   "nav_researcher_dashboard": "Researcher Dashboard",
   "nav_upload": "Upload Dataset",
   "nav_consent": "Consent Settings",
-  "nav_landing": "Home"
+  "nav_landing": "Home",
+  "network_mainnet": "Mainnet",
+  "network_testnet": "Testnet",
+  "network_devnet": "Devnet",
+  "mode_real": "Real",
+  "mode_mock": "Demo",
+  "tx_id": "Transaction ID",
+  "copy_to_clipboard": "Copy to clipboard",
+  "copied": "Copied!",
+  "view_on_explorer": "View on Explorer"
 }

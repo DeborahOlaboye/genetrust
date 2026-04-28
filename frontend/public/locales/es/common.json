@@ -170,5 +170,14 @@
   "nav_researcher_dashboard": "Panel de investigadores",
   "nav_upload": "Subir conjunto de datos",
   "nav_consent": "Configuración de consentimiento",
-  "nav_landing": "Inicio"
+  "nav_landing": "Inicio",
+  "network_mainnet": "Mainnet",
+  "network_testnet": "Testnet",
+  "network_devnet": "Devnet",
+  "mode_real": "Real",
+  "mode_mock": "Demo",
+  "tx_id": "ID de transacción",
+  "copy_to_clipboard": "Copiar al portapapeles",
+  "copied": "¡Copiado!",
+  "view_on_explorer": "Ver en el explorador"
 }
