@@ -7,6 +7,8 @@
 ;;         and invoke data subject rights: erasure, portability, and processing restriction.
 ;; @dev Deployed on Stacks mainnet at SP3KKFRRWQVJXEJCGM6ZB359EF01VRY86HW6CCD45.data-governance
 
+(define-constant CONTRACT-VERSION "1.1.0")
+
 ;; Error code ranges mirror the rest of the contract suite:
 ;;   400-409  Input validation
 ;;   410-414  Authorization
