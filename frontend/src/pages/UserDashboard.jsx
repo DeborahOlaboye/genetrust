@@ -188,7 +188,7 @@ export default function UserDashboard() {
     const toastId = toast.loading('Creating dataset...');
 
     try {
-      const result = await contractService.createVaultDataset({ sampleData: DEMO_SAMPLE_DATA, description: trimmedDesc });
+      await contractService.createVaultDataset({ sampleData: DEMO_SAMPLE_DATA, description: trimmedDesc });
       const next = await contractService.listMyDatasets();
       setDatasets(next);
 
