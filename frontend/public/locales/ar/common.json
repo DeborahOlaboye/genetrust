@@ -105,5 +105,16 @@
   "marketplace_purchase_button": "شراء",
   "marketplace_purchasing": "جارٍ الشراء…",
   "marketplace_no_listings": "لا توجد قوائم متاحة.",
-  "marketplace_price_unit": "ميكروSTX"
+  "marketplace_price_unit": "ميكروSTX",
+  "attestation_title": "التصديقات",
+  "attestation_submit": "إرسال الإثبات",
+  "attestation_verify": "التحقق من الإثبات",
+  "attestation_proof_hash": "تجزئة الإثبات",
+  "attestation_proof_type": "نوع الإثبات",
+  "attestation_gene_presence": "وجود الجين",
+  "attestation_gene_absence": "غياب الجين",
+  "attestation_gene_variant": "متغير الجين",
+  "attestation_aggregate": "إجمالي",
+  "attestation_submit_success": "تم إرسال الإثبات بنجاح!",
+  "attestation_verify_success": "تم التحقق من الإثبات!"
 }

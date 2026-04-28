@@ -105,5 +105,16 @@
   "marketplace_purchase_button": "Comprar",
   "marketplace_purchasing": "Comprando…",
   "marketplace_no_listings": "No hay listados disponibles.",
-  "marketplace_price_unit": "uSTX"
+  "marketplace_price_unit": "uSTX",
+  "attestation_title": "Certificaciones",
+  "attestation_submit": "Enviar prueba",
+  "attestation_verify": "Verificar prueba",
+  "attestation_proof_hash": "Hash de prueba",
+  "attestation_proof_type": "Tipo de prueba",
+  "attestation_gene_presence": "Presencia de gen",
+  "attestation_gene_absence": "Ausencia de gen",
+  "attestation_gene_variant": "Variante génica",
+  "attestation_aggregate": "Agregado",
+  "attestation_submit_success": "¡Prueba enviada exitosamente!",
+  "attestation_verify_success": "¡Prueba verificada!"
 }
