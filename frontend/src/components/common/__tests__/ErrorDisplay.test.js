@@ -34,6 +34,15 @@ jest.mock('../../../utils/errorUtils', () => ({
   },
 }));
 
+describe('ErrorDisplay — handleRetry', () => {
+  it('calls onRetry when Try Again button is clicked', () => {
+    const onRetry = jest.fn();
+    const { getByText } = render(<ErrorDisplay error={{ message: 'fail' }} onRetry={onRetry} />);
+    getByText('Try Again').click();
+    expect(onRetry).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe('ErrorDisplay — getErrorTitle', () => {
   it('uses custom title prop when provided', () => {
     const { getByText } = render(
