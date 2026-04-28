@@ -3,21 +3,31 @@
 
 // --- Error & Loading ---
 export { default as useErrorHandler } from './useErrorHandler';
-export { default as useAnalytics } from './useAnalytics';
 export { default as useLoadingState } from './useLoadingState';
+
+// --- Data & Caching ---
 export { useOptimisticUpdate } from './useOptimisticUpdate';
 export { useOptimizedQuery } from './useOptimizedQuery';
+export { useBlockchainCache } from './useBlockchainCache';
+
+// --- Performance & Analytics ---
 export { usePerformance } from './usePerformance';
+export { default as useAnalytics } from './useAnalytics';
+
+// --- UI & Interaction ---
 export { useResponsive } from './useResponsive';
 export { useKeyboardNavigation, useRovingTabIndex } from './useKeyboardNavigation';
 export { useTouch } from './useTouch';
-export { useBlockchainCache } from './useBlockchainCache';
+
+// --- Blockchain / Wallet ---
 export { useTransactionStatus } from './useTransactionStatus';
 export { useTransactionRetry } from './useTransactionRetry';
 export { useWallet } from './useWallet';
 export { useMultiAccount } from './useMultiAccount';
 export { useSessionManager } from './useSessionManager';
 export { useTxBatch } from './useTxBatch';
+
+// --- Domain ---
 export { useDatasetUpload, STEPS, ACCESS_LEVELS } from './useDatasetUpload.js';
 export { useDatasetList } from './useDatasetList.js';
 export { useConsentPolicy, JURISDICTIONS, CONSENT_TYPES, DEFAULT_DURATION_BLOCKS } from './useConsentPolicy.js';
