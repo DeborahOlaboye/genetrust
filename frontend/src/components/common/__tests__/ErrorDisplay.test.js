@@ -118,4 +118,14 @@ describe('ErrorDisplay — getSeverity', () => {
     const { getByTestId } = render(<ErrorDisplay error={{ message: 'missing', code: 5001 }} />);
     expect(getByTestId('alert').dataset.severity).toBe('info');
   });
+
+  it('uses warning severity for WALLET_INSUFFICIENT_BALANCE', () => {
+    const { getByTestId } = render(<ErrorDisplay error={{ message: 'no funds', code: 4003 }} />);
+    expect(getByTestId('alert').dataset.severity).toBe('warning');
+  });
+
+  it('uses error severity for WALLET_TRANSACTION_FAILED', () => {
+    const { getByTestId } = render(<ErrorDisplay error={{ message: 'tx failed', code: 4004 }} />);
+    expect(getByTestId('alert').dataset.severity).toBe('error');
+  });
 });
