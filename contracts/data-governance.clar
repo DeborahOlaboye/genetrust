@@ -20,6 +20,9 @@
 ;; Errors - Conflict / Already Exists (440-449)
 (define-constant ERR-GDPR-FLAG-ALREADY-SET (err u445))
 
+;; Errors - Gone / Inactive (450-459)
+(define-constant ERR-CONSENT-EXPIRED (err u453))
+
 ;; @notice Jurisdiction identifiers mapped to uint codes for on-chain storage.
 ;;         Frontends should decode these to human-readable region labels.
 (define-constant JURISDICTION-GLOBAL u0)  ;; No regional restriction
