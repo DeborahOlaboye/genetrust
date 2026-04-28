@@ -274,4 +274,6 @@ ErrorDisplay.propTypes = {
   sx: PropTypes.object,
 };
 
+ErrorDisplay.displayName = 'ErrorDisplay';
+
 export default ErrorDisplay;
