@@ -1,4 +1,7 @@
-// Hooks barrel exports
+// Hooks barrel — import any hook from this single entry point.
+// Usage: import { useWallet, useDatasetList } from '../hooks';
+
+// --- Error & Loading ---
 export { default as useErrorHandler } from './useErrorHandler';
 export { default as useAnalytics } from './useAnalytics';
 export { default as useLoadingState } from './useLoadingState';
