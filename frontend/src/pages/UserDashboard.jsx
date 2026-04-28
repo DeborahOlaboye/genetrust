@@ -20,6 +20,15 @@ const TOAST_OPTIONS = {
   error: { iconTheme: { primary: '#ef4444', secondary: '#fff' } },
 };
 
+const DEMO_SAMPLE_DATA = {
+  variants: [
+    { chromosome: '1', position: 123456, reference: 'A', alternate: 'G', type: 'SNP', gene: 'BRCA1' },
+  ],
+  genes: [
+    { symbol: 'BRCA1', name: 'BRCA1 DNA Repair Associated', chromosome: '17', start: 43044295, end: 43125364 },
+  ],
+};
+
 const StatCard = ({ title, value, accent = 'purple' }) => (
   <div 
     className="p-4 rounded-xl border bg-[#14102E]/60 backdrop-blur-xl shadow-lg" 
