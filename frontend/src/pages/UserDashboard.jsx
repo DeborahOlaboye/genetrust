@@ -1,7 +1,4 @@
 import React, { useEffect, useState } from 'react';
-
-const DESC_MIN = 5;
-const DESC_MAX = 200;
 import { contractService } from '../services/contractService.js';
 import { walletService } from '../services/walletService.js';
 import Navigation from '../components/landing/Navigation.jsx';
@@ -10,6 +7,9 @@ import toast, { Toaster } from 'react-hot-toast';
 import { DatasetUploadWizard } from '../components/upload/DatasetUploadWizard.jsx';
 import { WalletGate } from '../components/upload/WalletGate.jsx';
 import { ConsentManagementPanel } from '../components/consent/ConsentManagementPanel.jsx';
+
+const DESC_MIN = 5;
+const DESC_MAX = 200;
 
 const StatCard = ({ title, value, accent = 'purple' }) => (
   <div 
