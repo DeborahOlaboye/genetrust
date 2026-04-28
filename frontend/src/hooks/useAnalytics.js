@@ -2,6 +2,16 @@ import { useEffect, useRef, useCallback } from 'react';
 import analyticsService from '../services/analytics/analyticsService';
 import { consentManager, ConsentCategories } from '../services/analytics/consentManager';
 
+export const ANALYTICS_EVENTS = {
+  PAGE_VIEW: 'page_view',
+  WALLET_CONNECT: 'wallet_connect',
+  DATASET_REGISTER: 'dataset_register',
+  LISTING_CREATE: 'listing_create',
+  LISTING_PURCHASE: 'listing_purchase',
+  CONSENT_UPDATE: 'consent_update',
+  ERROR: 'error',
+};
+
 /**
  * Custom hook for analytics functionality
  * @param {Object} config - Configuration for analytics
