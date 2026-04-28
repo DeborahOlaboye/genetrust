@@ -83,6 +83,8 @@ export default function UserDashboard() {
     setConsentDatasetId(prev => (prev === datasetId ? null : datasetId));
   }, []);
 
+  const walletReady = walletConnected || !APP_CONFIG.USE_REAL_SDK;
+
   // Connect wallet on mount if using real SDK
   useEffect(() => {
     let mounted = true;
