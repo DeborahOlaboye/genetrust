@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom/client';
 import { I18nextProvider } from 'react-i18next';
 import { ThemeProvider } from './theme/ThemeProvider.jsx';
 import { AppStateProvider } from './contexts/AppStateContext.jsx';
-import ErrorBoundary from './components/common/ErrorBoundary.jsx';
+import { ErrorBoundary } from './components/common';
 import { disableHoverOnTouch } from './utils/mobileOptimization.js';
 import * as serviceWorkerRegistration from './utils/serviceWorkerRegistration';
 import reportWebVitals from './reportWebVitals';
