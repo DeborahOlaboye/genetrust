@@ -186,6 +186,16 @@
     )
 )
 
+;; @notice Returns the block height at which consent expires for a dataset.
+;; @param data-id The dataset ID to look up.
+;; @return Some(uint) if a consent record exists, none otherwise.
+(define-read-only (get-consent-expiry (data-id uint))
+    (match (map-get? consent-records { data-id: data-id })
+        consent (some (get expires-at consent))
+        none
+    )
+)
+
 ;; @notice Returns the GDPR rights flags for a dataset.
 ;; @param data-id The dataset ID to look up.
 ;; @return Some(gdpr-record) if found, none if no GDPR rights have been invoked.
