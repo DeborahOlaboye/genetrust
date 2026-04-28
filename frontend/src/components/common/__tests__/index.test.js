@@ -39,4 +39,8 @@ describe('components/common barrel export', () => {
     expect(typeof SkeletonLoader).toBe('function');
     expect(SkeletonLoader.displayName).toBe('SkeletonLoader');
   });
+
+  it('SkeletonLoader has gap prop defined in propTypes', () => {
+    expect(SkeletonLoader.propTypes).toHaveProperty('gap');
+  });
 });
