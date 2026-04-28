@@ -216,8 +216,10 @@
 
 ;; @notice Flags this dataset with the GDPR processing-restriction right.
 ;; @param data-id The dataset ID to flag (must be > 0 and have an existing consent record).
-;; @return ok(true) on success. ERR-NOT-FOUND if no consent record exists.
-;;         ERR-INVALID-INPUT if data-id is zero. ERR-NOT-AUTHORIZED if caller is not the owner.
+;; @return ok(true) on success. ERR-CONSENT-NOT-FOUND (u431) if no consent record exists.
+;;         ERR-INVALID-INPUT (u400) if data-id is zero.
+;;         ERR-NOT-AUTHORIZED (u410) if caller is not the owner.
+;;         ERR-GDPR-FLAG-ALREADY-SET (u445) if the right was already invoked.
 ;; @requires Caller must be the dataset consent owner.
 (define-public (restrict-processing (data-id uint))
     (let ((consent (unwrap! (map-get? consent-records { data-id: data-id }) ERR-CONSENT-NOT-FOUND))
