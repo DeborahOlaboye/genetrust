@@ -12,6 +12,7 @@ const DESC_MIN = 10;
 const DESC_MAX = 200;
 const PRICE_MIN = 1;
 const PRICE_MAX = 9_999_999_999;
+const DEFAULT_ACCESS_LEVEL = 3;
 
 const TOAST_OPTIONS = {
   duration: 4000,
