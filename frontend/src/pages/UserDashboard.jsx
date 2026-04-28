@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import toast, { Toaster } from 'react-hot-toast';
 import { APP_CONFIG } from '../config/app.js';
 import { contractService } from '../services/contractService.js';
