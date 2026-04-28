@@ -48,6 +48,19 @@ describe('ErrorDisplay — getErrorTitle', () => {
   });
 });
 
+describe('ErrorDisplay — showDetails', () => {
+  const originalEnv = process.env.NODE_ENV;
+  afterEach(() => { process.env.NODE_ENV = originalEnv; });
+
+  it('shows expand button when showDetails=true regardless of NODE_ENV', () => {
+    process.env.NODE_ENV = 'production';
+    const { getByText } = render(
+      <ErrorDisplay error={{ message: 'fail', stack: 'stacktrace' }} showDetails />
+    );
+    expect(getByText('Show Details')).toBeTruthy();
+  });
+});
+
 describe('ErrorDisplay — getSeverity', () => {
   it('defaults to error severity when no code and no severity prop', () => {
     const { getByTestId } = render(<ErrorDisplay error={{ message: 'oops' }} />);
