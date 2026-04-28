@@ -128,7 +128,7 @@ export default function UserDashboard() {
     }
   }, []);
 
-  const handleCreateVault = async () => {
+  const handleCreateVault = useCallback(async () => {
     const trimmedDesc = newDesc.trim();
     if (!trimmedDesc) {
       setDescError('Description is required.');
@@ -175,7 +175,7 @@ export default function UserDashboard() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [newDesc, datasets]);
 
   const handleCreateListing = async () => {
     if (!selectedDataset) {
