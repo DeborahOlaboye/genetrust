@@ -94,6 +94,7 @@ export default function UserDashboard() {
   }, []);
 
   const walletReady = walletConnected || !APP_CONFIG.USE_REAL_SDK;
+  const isBusy = loading || isFetching;
 
   // Connect wallet on mount if using real SDK
   useEffect(() => {
