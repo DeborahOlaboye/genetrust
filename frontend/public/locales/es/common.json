@@ -96,5 +96,14 @@
   "upload_hashing": "Calculando hash…",
   "upload_submitting": "Enviando a la blockchain…",
   "upload_success": "¡Conjunto de datos registrado en la cadena!",
-  "upload_failed": "Error al subir. Inténtalo de nuevo."
+  "upload_failed": "Error al subir. Inténtalo de nuevo.",
+  "marketplace_title": "Mercado de investigadores",
+  "marketplace_subtitle": "Explora y compra acceso a conjuntos de datos genómicos en la cadena.",
+  "marketplace_listings_loaded": "{{count}} listado cargado",
+  "marketplace_listings_loaded_plural": "{{count}} listados cargados",
+  "marketplace_access_level": "Nivel de acceso",
+  "marketplace_purchase_button": "Comprar",
+  "marketplace_purchasing": "Comprando…",
+  "marketplace_no_listings": "No hay listados disponibles.",
+  "marketplace_price_unit": "uSTX"
 }

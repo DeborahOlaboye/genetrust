@@ -96,5 +96,14 @@
   "upload_hashing": "جارٍ حساب التجزئة…",
   "upload_submitting": "جارٍ الإرسال إلى البلوك تشين…",
   "upload_success": "تم تسجيل مجموعة البيانات على السلسلة!",
-  "upload_failed": "فشل الرفع. يرجى المحاولة مرة أخرى."
+  "upload_failed": "فشل الرفع. يرجى المحاولة مرة أخرى.",
+  "marketplace_title": "سوق الباحثين",
+  "marketplace_subtitle": "تصفح وشراء الوصول إلى مجموعات البيانات الجينومية على السلسلة.",
+  "marketplace_listings_loaded": "تم تحميل {{count}} قائمة",
+  "marketplace_listings_loaded_plural": "تم تحميل {{count}} قوائم",
+  "marketplace_access_level": "مستوى الوصول",
+  "marketplace_purchase_button": "شراء",
+  "marketplace_purchasing": "جارٍ الشراء…",
+  "marketplace_no_listings": "لا توجد قوائم متاحة.",
+  "marketplace_price_unit": "ميكروSTX"
 }

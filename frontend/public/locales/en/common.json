@@ -96,5 +96,14 @@
   "upload_hashing": "Computing hash…",
   "upload_submitting": "Submitting to blockchain…",
   "upload_success": "Dataset registered on-chain!",
-  "upload_failed": "Upload failed. Please try again."
+  "upload_failed": "Upload failed. Please try again.",
+  "marketplace_title": "Researcher Marketplace",
+  "marketplace_subtitle": "Browse and purchase access to genomic datasets listed on-chain.",
+  "marketplace_listings_loaded": "{{count}} listing loaded",
+  "marketplace_listings_loaded_plural": "{{count}} listings loaded",
+  "marketplace_access_level": "Access Level",
+  "marketplace_purchase_button": "Purchase",
+  "marketplace_purchasing": "Purchasing…",
+  "marketplace_no_listings": "No listings available.",
+  "marketplace_price_unit": "uSTX"
 }
