@@ -192,3 +192,13 @@
         (ok false)
     )
 )
+
+;; @notice Checks whether processing has been restricted for a dataset.
+;; @param data-id The dataset ID to check.
+;; @return ok(true) if processing-restricted is set, ok(false) otherwise.
+(define-read-only (is-processing-restricted (data-id uint))
+    (match (map-get? gdpr-records { data-id: data-id })
+        gdpr (ok (get processing-restricted gdpr))
+        (ok false)
+    )
+)
