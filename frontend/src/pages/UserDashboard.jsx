@@ -327,7 +327,7 @@ export default function UserDashboard() {
           </div>
           {showUploadWizard && (
             <WalletGate
-              isConnected={walletConnected || !APP_CONFIG.USE_REAL_SDK}
+              isConnected={walletReady}
               onConnect={handleConnectWallet}
               connecting={loading}
             >
