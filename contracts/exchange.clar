@@ -183,6 +183,16 @@
     (map-get? purchases { listing-id: listing-id, buyer: buyer })
 )
 
+;; @notice Returns true if the given listing exists and is active.
+;; @param listing-id The listing ID to check.
+;; @return ok(true) if the listing exists and is active, ok(false) otherwise.
+(define-read-only (is-listing-active (listing-id uint))
+    (match (map-get? listings { listing-id: listing-id })
+        listing (ok (get active listing))
+        (ok false)
+    )
+)
+
 ;; @notice Returns true if the given buyer has already purchased a specific listing.
 ;; @param listing-id The listing to check.
 ;; @param buyer The principal to check.
