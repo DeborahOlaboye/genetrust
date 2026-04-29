@@ -189,5 +189,10 @@
   "listing_id": "القائمة #{{id}}",
   "access_granted_tx": "تم منح مستوى الوصول {{level}}. TX: {{txId}}",
   "block_height": "ارتفاع الكتلة",
-  "expires_at_block": "تنتهي عند الكتلة {{block}}"
+  "expires_at_block": "تنتهي عند الكتلة {{block}}",
+  "search_placeholder": "بحث…",
+  "search_no_results": "لم يتم العثور على نتائج.",
+  "filter_by": "تصفية حسب",
+  "sort_by": "ترتيب حسب",
+  "clear_filters": "مسح الفلاتر"
 }

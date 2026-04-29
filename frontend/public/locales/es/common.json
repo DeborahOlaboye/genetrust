@@ -189,5 +189,10 @@
   "listing_id": "Listado #{{id}}",
   "access_granted_tx": "Nivel de acceso {{level}} concedido. TX: {{txId}}",
   "block_height": "Altura de bloque",
-  "expires_at_block": "Expira en el bloque {{block}}"
+  "expires_at_block": "Expira en el bloque {{block}}",
+  "search_placeholder": "Buscar…",
+  "search_no_results": "No se encontraron resultados.",
+  "filter_by": "Filtrar por",
+  "sort_by": "Ordenar por",
+  "clear_filters": "Limpiar filtros"
 }
