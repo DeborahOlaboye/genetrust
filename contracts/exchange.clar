@@ -26,9 +26,9 @@
 (define-constant ERR-LISTING-ALREADY-EXISTS (err u442))
 (define-constant ERR-DUPLICATE-PURCHASE (err u443))
 
-;; Errors - Precondition Failed (460-469)
-(define-constant ERR-INSUFFICIENT-ACCESS-LEVEL (err u621))
+;; Errors - Business Logic (610-699)
 (define-constant ERR-PRICE-MISMATCH (err u620))
+(define-constant ERR-INSUFFICIENT-ACCESS-LEVEL (err u621))
 
 ;; Errors - Server Errors (500-519)
 (define-constant ERR-PAYMENT-FAILED (err u500))
