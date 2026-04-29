@@ -143,7 +143,7 @@
         ;; Validate listing-id is positive
         (asserts! (> listing-id u0) ERR-INVALID-INPUT)
         ;; Check listing is active
-        (asserts! (get active listing) ERR-NOT-FOUND)
+        (asserts! (get active listing) ERR-LISTING-INACTIVE)
         ;; Prevent buyer from being the owner
         (asserts! (not (is-eq tx-sender owner)) ERR-INVALID-INPUT)
         ;; Validate desired-access-level is valid (1-3)
