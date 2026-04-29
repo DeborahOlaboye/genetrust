@@ -245,6 +245,16 @@
     (ok (var-get next-listing-id))
 )
 
+;; @notice Returns the current price of a listing in microSTX.
+;; @param listing-id The listing ID to look up.
+;; @return Some(uint) if the listing exists, none otherwise.
+(define-read-only (get-listing-price (listing-id uint))
+    (match (map-get? listings { listing-id: listing-id })
+        listing (some (get price listing))
+        none
+    )
+)
+
 ;; @notice Returns the owner principal of a listing.
 ;; @param listing-id The listing ID to look up.
 ;; @return Some(principal) if the listing exists, none otherwise.
