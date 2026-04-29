@@ -1,6 +1,6 @@
 ;; exchange.clar
 ;; @title GeneTrust Exchange
-;; @version 1.0.0
+;; @version 1.1.0
 ;; @author GeneTrust
 ;; @notice Marketplace for listing and purchasing access to genetic datasets.
 ;;         STX payments transfer directly from buyer to dataset owner with no intermediary.
