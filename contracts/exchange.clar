@@ -144,6 +144,8 @@
         (asserts! (get active listing) ERR-LISTING-INACTIVE)
         ;; Deactivate the listing
         (map-set listings { listing-id: listing-id } (merge listing { active: false }))
+        (print { event: "listing-cancelled", listing-id: listing-id, owner: tx-sender,
+                 block: stacks-block-height })
         (ok true)
     )
 )
