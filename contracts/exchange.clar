@@ -245,6 +245,16 @@
     (ok (var-get next-listing-id))
 )
 
+;; @notice Returns the owner principal of a listing.
+;; @param listing-id The listing ID to look up.
+;; @return Some(principal) if the listing exists, none otherwise.
+(define-read-only (get-listing-owner (listing-id uint))
+    (match (map-get? listings { listing-id: listing-id })
+        listing (some (get owner listing))
+        none
+    )
+)
+
 ;; @notice Returns the total number of listings ever created (including cancelled ones).
 ;; @return ok(uint) - the all-time listing creation count.
 (define-read-only (get-total-listings-created)
