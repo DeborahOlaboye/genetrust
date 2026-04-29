@@ -206,5 +206,10 @@
   "date_relative_hours_ago": "{{count}} hour ago",
   "date_relative_hours_ago_plural": "{{count}} hours ago",
   "date_relative_days_ago": "{{count}} day ago",
-  "date_relative_days_ago_plural": "{{count}} days ago"
+  "date_relative_days_ago_plural": "{{count}} days ago",
+  "theme_light": "Light",
+  "theme_dark": "Dark",
+  "theme_system": "System",
+  "theme_toggle": "Toggle theme",
+  "language_selector_label": "Select language"
 }

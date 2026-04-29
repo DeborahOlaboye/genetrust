@@ -206,5 +206,10 @@
   "date_relative_hours_ago": "hace {{count}} hora",
   "date_relative_hours_ago_plural": "hace {{count}} horas",
   "date_relative_days_ago": "hace {{count}} día",
-  "date_relative_days_ago_plural": "hace {{count}} días"
+  "date_relative_days_ago_plural": "hace {{count}} días",
+  "theme_light": "Claro",
+  "theme_dark": "Oscuro",
+  "theme_system": "Sistema",
+  "theme_toggle": "Cambiar tema",
+  "language_selector_label": "Seleccionar idioma"
 }

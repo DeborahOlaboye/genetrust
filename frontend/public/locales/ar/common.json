@@ -206,5 +206,10 @@
   "date_relative_hours_ago": "منذ {{count}} ساعة",
   "date_relative_hours_ago_plural": "منذ {{count}} ساعات",
   "date_relative_days_ago": "منذ {{count}} يوم",
-  "date_relative_days_ago_plural": "منذ {{count}} أيام"
+  "date_relative_days_ago_plural": "منذ {{count}} أيام",
+  "theme_light": "فاتح",
+  "theme_dark": "داكن",
+  "theme_system": "النظام",
+  "theme_toggle": "تبديل السمة",
+  "language_selector_label": "اختر اللغة"
 }
