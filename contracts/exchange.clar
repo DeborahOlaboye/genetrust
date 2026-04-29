@@ -119,7 +119,7 @@
         ;; Verify caller is the listing owner
         (asserts! (is-eq tx-sender (get owner listing)) ERR-NOT-OWNER)
         ;; Check listing is not already inactive
-        (asserts! (get active listing) ERR-NOT-FOUND)
+        (asserts! (get active listing) ERR-LISTING-INACTIVE)
         ;; Deactivate the listing
         (map-set listings { listing-id: listing-id } (merge listing { active: false }))
         (ok true)
