@@ -116,8 +116,9 @@
                 created-at: stacks-block-height
             }
         )
-        ;; Increment counter
+        ;; Increment counters
         (var-set next-listing-id (+ listing-id u1))
+        (var-set total-listings-created (+ (var-get total-listings-created) u1))
         (ok listing-id)
     )
 )
