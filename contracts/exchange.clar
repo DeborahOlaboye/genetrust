@@ -30,6 +30,7 @@
 (define-constant ERR-LISTING-INACTIVE (err u451))
 
 ;; Errors - Business Logic (610-699)
+(define-constant ERR-CANNOT-BUY-OWN-LISTING (err u614))
 (define-constant ERR-PRICE-MISMATCH (err u620))
 (define-constant ERR-INSUFFICIENT-ACCESS-LEVEL (err u621))
 
