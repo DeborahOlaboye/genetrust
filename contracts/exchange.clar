@@ -4,6 +4,8 @@
 ;; @author GeneTrust
 ;; @notice Marketplace for listing and purchasing access to genetic datasets.
 ;;         STX payments transfer directly from buyer to dataset owner with no intermediary.
+;;         Owners can create, price-update, and cancel listings. Each buyer may purchase
+;;         a listing exactly once. All state changes emit print events for indexers.
 ;; @dev Deployed on Stacks mainnet at SP3KKFRRWQVJXEJCGM6ZB359EF01VRY86HW6CCD45.exchange
 
 ;; Error code ranges (shared convention across the contract suite):
