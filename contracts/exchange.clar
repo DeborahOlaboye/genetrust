@@ -245,6 +245,12 @@
     (ok (var-get next-listing-id))
 )
 
+;; @notice Returns the total number of listings ever created (including cancelled ones).
+;; @return ok(uint) - the all-time listing creation count.
+(define-read-only (get-total-listings-created)
+    (ok (var-get total-listings-created))
+)
+
 ;; @notice Returns the deployed contract version string.
 (define-read-only (get-version)
     CONTRACT-VERSION
