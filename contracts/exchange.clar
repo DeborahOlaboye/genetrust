@@ -138,6 +138,23 @@
     )
 )
 
+;; Update the price of an active listing (owner only)
+;; @param listing-id: ID of the listing to update
+;; @param new-price: New price in microSTX (must be > 0)
+;; @returns: ok true on success, error otherwise
+(define-public (update-listing-price (listing-id uint) (new-price uint))
+    (let ((listing (unwrap! (map-get? listings { listing-id: listing-id }) ERR-LISTING-NOT-FOUND)))
+        (asserts! (> listing-id u0) ERR-INVALID-INPUT)
+        (asserts! (> new-price u0) ERR-INVALID-AMOUNT)
+        (asserts! (is-eq tx-sender (get owner listing)) ERR-NOT-OWNER)
+        (asserts! (get active listing) ERR-LISTING-INACTIVE)
+        (map-set listings { listing-id: listing-id }
+            (merge listing { price: new-price })
+        )
+        (ok true)
+    )
+)
+
 ;; Purchase access to a listed dataset - transfers STX to the owner
 ;; @param listing-id: ID of the listing to purchase
 ;; @param desired-access-level: Requested access level (must be <= listing access level)
