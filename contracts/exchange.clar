@@ -80,13 +80,14 @@
 
 ;; Create a marketplace listing for a dataset
 ;; @param data-id: ID of the dataset to list
-;; @param price: Price in microSTX (must be > 0)
-;; @param access-level: Access level offered (1-3)
-;; @param description: Listing description (10-200 chars)
-;; @returns: ok with listing-id on success, error otherwise
-;; @requires: data-id must be positive
-;; @requires: price must be positive
-;; @requires: access-level must be 1-3
+;; @param price: Price in microSTX (must be > 0).
+;; @param access-level: Access level offered (1-3).
+;; @param description: Listing description (10-200 chars).
+;; @returns ok(listing-id) on success.
+;;   ERR-INVALID-INPUT (u400) — data-id is zero.
+;;   ERR-INVALID-AMOUNT (u401) — price is zero.
+;;   ERR-INVALID-ACCESS-LEVEL (u406) — access-level not in 1-3.
+;;   ERR-INVALID-STRING-LENGTH (u407) — description outside 10-200 chars.
 (define-public (create-listing
     (data-id uint)
     (price uint)
