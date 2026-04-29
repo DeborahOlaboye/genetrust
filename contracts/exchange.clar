@@ -26,6 +26,9 @@
 (define-constant ERR-LISTING-ALREADY-EXISTS (err u442))
 (define-constant ERR-DUPLICATE-PURCHASE (err u443))
 
+;; Errors - Gone / Inactive (450-459)
+(define-constant ERR-LISTING-INACTIVE (err u451))
+
 ;; Errors - Business Logic (610-699)
 (define-constant ERR-PRICE-MISMATCH (err u620))
 (define-constant ERR-INSUFFICIENT-ACCESS-LEVEL (err u621))
