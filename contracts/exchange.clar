@@ -200,6 +200,9 @@
                 purchased-at: stacks-block-height
             }
         )
+        ;; Emit event for off-chain indexers
+        (print { event: "listing-purchased", listing-id: listing-id, buyer: tx-sender,
+                 access-level: desired-access-level, paid: price, block: stacks-block-height })
         ;; Return purchase confirmation
         (ok { listing-id: listing-id, access-level: desired-access-level, paid: price })
     )
