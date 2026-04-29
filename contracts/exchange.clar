@@ -116,6 +116,10 @@
                 created-at: stacks-block-height
             }
         )
+        ;; Emit event for off-chain indexers
+        (print { event: "listing-created", listing-id: listing-id, owner: tx-sender,
+                 data-id: data-id, price: price, access-level: access-level,
+                 block: stacks-block-height })
         ;; Increment counters
         (var-set next-listing-id (+ listing-id u1))
         (var-set total-listings-created (+ (var-get total-listings-created) u1))
