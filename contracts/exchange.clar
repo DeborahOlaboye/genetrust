@@ -209,3 +209,8 @@
 (define-read-only (get-next-listing-id)
     (ok (var-get next-listing-id))
 )
+
+;; @notice Returns the deployed contract version string.
+(define-read-only (get-version)
+    CONTRACT-VERSION
+)
