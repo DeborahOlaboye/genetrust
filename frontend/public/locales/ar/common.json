@@ -199,5 +199,12 @@
   "pagination_next": "التالي",
   "pagination_page": "صفحة {{current}} من {{total}}",
   "items_per_page": "عناصر لكل صفحة",
-  "showing_results": "عرض {{from}}–{{to}} من {{total}} نتيجة"
+  "showing_results": "عرض {{from}}–{{to}} من {{total}} نتيجة",
+  "date_relative_just_now": "الآن",
+  "date_relative_minutes_ago": "منذ {{count}} دقيقة",
+  "date_relative_minutes_ago_plural": "منذ {{count}} دقائق",
+  "date_relative_hours_ago": "منذ {{count}} ساعة",
+  "date_relative_hours_ago_plural": "منذ {{count}} ساعات",
+  "date_relative_days_ago": "منذ {{count}} يوم",
+  "date_relative_days_ago_plural": "منذ {{count}} أيام"
 }

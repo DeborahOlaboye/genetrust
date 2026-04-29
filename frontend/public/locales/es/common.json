@@ -199,5 +199,12 @@
   "pagination_next": "Siguiente",
   "pagination_page": "Página {{current}} de {{total}}",
   "items_per_page": "Elementos por página",
-  "showing_results": "Mostrando {{from}}–{{to}} de {{total}} resultados"
+  "showing_results": "Mostrando {{from}}–{{to}} de {{total}} resultados",
+  "date_relative_just_now": "justo ahora",
+  "date_relative_minutes_ago": "hace {{count}} minuto",
+  "date_relative_minutes_ago_plural": "hace {{count}} minutos",
+  "date_relative_hours_ago": "hace {{count}} hora",
+  "date_relative_hours_ago_plural": "hace {{count}} horas",
+  "date_relative_days_ago": "hace {{count}} día",
+  "date_relative_days_ago_plural": "hace {{count}} días"
 }
