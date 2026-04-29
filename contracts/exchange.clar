@@ -146,7 +146,7 @@
         ;; Check listing is active
         (asserts! (get active listing) ERR-LISTING-INACTIVE)
         ;; Prevent buyer from being the owner
-        (asserts! (not (is-eq tx-sender owner)) ERR-INVALID-INPUT)
+        (asserts! (not (is-eq tx-sender owner)) ERR-CANNOT-BUY-OWN-LISTING)
         ;; Validate desired-access-level is valid (1-3)
         (asserts! (and (>= desired-access-level u1) (<= desired-access-level u3)) ERR-INVALID-ACCESS-LEVEL)
         ;; Check requested access level does not exceed listing access level
