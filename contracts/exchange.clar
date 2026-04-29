@@ -147,6 +147,8 @@
         (asserts! (and (>= desired-access-level u1) (<= desired-access-level u3)) ERR-INVALID-ACCESS-LEVEL)
         ;; Check requested access level does not exceed listing access level
         (asserts! (<= desired-access-level (get access-level listing)) ERR-INSUFFICIENT-ACCESS-LEVEL)
+        ;; Prevent duplicate purchase — buyer cannot purchase the same listing twice
+        (asserts! (is-none (map-get? purchases { listing-id: listing-id, buyer: tx-sender })) ERR-DUPLICATE-PURCHASE)
         ;; Process payment
         (try! (stx-transfer? price tx-sender owner))
         ;; Record the purchase
