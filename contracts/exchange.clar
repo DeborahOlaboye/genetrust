@@ -163,6 +163,8 @@
         (map-set listings { listing-id: listing-id }
             (merge listing { price: new-price })
         )
+        (print { event: "listing-price-updated", listing-id: listing-id, owner: tx-sender,
+                 old-price: (get price listing), new-price: new-price, block: stacks-block-height })
         (ok true)
     )
 )
