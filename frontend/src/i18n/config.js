@@ -1,3 +1,7 @@
+// i18n configuration for GeneTrust.
+// All translations live in public/locales/{lng}/common.json.
+// Supported languages: en (English), es (Spanish), ar (Arabic — RTL).
+// Key count: ~230 keys per locale covering all app flows.
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
