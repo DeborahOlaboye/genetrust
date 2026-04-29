@@ -183,6 +183,14 @@
     (map-get? purchases { listing-id: listing-id, buyer: buyer })
 )
 
+;; @notice Returns true if the given buyer has already purchased a specific listing.
+;; @param listing-id The listing to check.
+;; @param buyer The principal to check.
+;; @return ok(true) if the buyer has an existing purchase record, ok(false) otherwise.
+(define-read-only (has-purchased (listing-id uint) (buyer principal))
+    (ok (is-some (map-get? purchases { listing-id: listing-id, buyer: buyer })))
+)
+
 ;; @notice Returns the next listing-id that will be assigned on the next create-listing call.
 ;; @dev Useful for frontends to predict listing-id before submitting a transaction.
 ;; @return ok(uint) - the next available listing-id.
