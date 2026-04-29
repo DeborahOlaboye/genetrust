@@ -245,6 +245,17 @@
     (ok (var-get next-listing-id))
 )
 
+;; @notice Returns the access level granted to a buyer on a specific listing.
+;; @param listing-id The listing that was purchased.
+;; @param buyer The principal who made the purchase.
+;; @return Some(uint) if the buyer purchased this listing, none otherwise.
+(define-read-only (get-purchase-access-level (listing-id uint) (buyer principal))
+    (match (map-get? purchases { listing-id: listing-id, buyer: buyer })
+        purchase (some (get access-level purchase))
+        none
+    )
+)
+
 ;; @notice Returns the current price of a listing in microSTX.
 ;; @param listing-id The listing ID to look up.
 ;; @return Some(uint) if the listing exists, none otherwise.
