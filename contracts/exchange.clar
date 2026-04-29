@@ -38,6 +38,8 @@
 (define-constant ERR-PAYMENT-FAILED (err u500))
 (define-constant ERR-TRANSACTION-FAILED (err u501))
 
+(define-constant CONTRACT-VERSION "1.1.0")
+
 ;; @notice Auto-incrementing counter for listing IDs. Starts at 1.
 (define-data-var next-listing-id uint u1)
 
