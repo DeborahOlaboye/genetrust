@@ -120,11 +120,13 @@
     )
 )
 
-;; Cancel a marketplace listing (owner only)
-;; @param listing-id: ID of the listing to cancel
-;; @returns: ok true on success, error otherwise
-;; @requires: Caller must be listing owner
-;; @requires: Listing must exist and be active
+;; Cancel a marketplace listing (owner only). Soft-deletes by setting active=false.
+;; @param listing-id: ID of the listing to cancel (must be > 0).
+;; @returns ok(true) on success.
+;;   ERR-LISTING-NOT-FOUND (u432) — listing does not exist.
+;;   ERR-INVALID-INPUT (u400) — listing-id is zero.
+;;   ERR-NOT-OWNER (u411) — caller is not the listing owner.
+;;   ERR-LISTING-INACTIVE (u451) — listing is already cancelled.
 (define-public (cancel-listing (listing-id uint))
     (let ((listing (unwrap! (map-get? listings { listing-id: listing-id }) ERR-LISTING-NOT-FOUND)))
         ;; Validate listing-id is positive
