@@ -6,6 +6,15 @@
 ;;         STX payments transfer directly from buyer to dataset owner with no intermediary.
 ;; @dev Deployed on Stacks mainnet at SP3KKFRRWQVJXEJCGM6ZB359EF01VRY86HW6CCD45.exchange
 
+;; Error code ranges (shared convention across the contract suite):
+;;   400-409  Input validation
+;;   410-414  Authorization
+;;   430-439  Not found
+;;   440-449  Conflict / already exists
+;;   450-459  Gone / inactive
+;;   500-519  Server / payment errors
+;;   610-699  Business logic
+
 ;; Errors - Input Validation (400-409)
 (define-constant ERR-INVALID-INPUT (err u400))
 (define-constant ERR-INVALID-AMOUNT (err u401))
