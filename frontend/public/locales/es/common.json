@@ -194,5 +194,10 @@
   "search_no_results": "No se encontraron resultados.",
   "filter_by": "Filtrar por",
   "sort_by": "Ordenar por",
-  "clear_filters": "Limpiar filtros"
+  "clear_filters": "Limpiar filtros",
+  "pagination_prev": "Anterior",
+  "pagination_next": "Siguiente",
+  "pagination_page": "Página {{current}} de {{total}}",
+  "items_per_page": "Elementos por página",
+  "showing_results": "Mostrando {{from}}–{{to}} de {{total}} resultados"
 }

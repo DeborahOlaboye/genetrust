@@ -194,5 +194,10 @@
   "search_no_results": "لم يتم العثور على نتائج.",
   "filter_by": "تصفية حسب",
   "sort_by": "ترتيب حسب",
-  "clear_filters": "مسح الفلاتر"
+  "clear_filters": "مسح الفلاتر",
+  "pagination_prev": "السابق",
+  "pagination_next": "التالي",
+  "pagination_page": "صفحة {{current}} من {{total}}",
+  "items_per_page": "عناصر لكل صفحة",
+  "showing_results": "عرض {{from}}–{{to}} من {{total}} نتيجة"
 }

@@ -194,5 +194,10 @@
   "search_no_results": "No results found.",
   "filter_by": "Filter by",
   "sort_by": "Sort by",
-  "clear_filters": "Clear filters"
+  "clear_filters": "Clear filters",
+  "pagination_prev": "Previous",
+  "pagination_next": "Next",
+  "pagination_page": "Page {{current}} of {{total}}",
+  "items_per_page": "Items per page",
+  "showing_results": "Showing {{from}}–{{to}} of {{total}} results"
 }
