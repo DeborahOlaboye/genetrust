@@ -272,6 +272,16 @@
     )
 )
 
+;; @notice Returns the dataset ID referenced by a listing.
+;; @param listing-id The listing ID to look up.
+;; @return Some(uint) if the listing exists, none otherwise.
+(define-read-only (get-listing-data-id (listing-id uint))
+    (match (map-get? listings { listing-id: listing-id })
+        listing (some (get data-id listing))
+        none
+    )
+)
+
 ;; @notice Returns the current price of a listing in microSTX.
 ;; @param listing-id The listing ID to look up.
 ;; @return Some(uint) if the listing exists, none otherwise.
