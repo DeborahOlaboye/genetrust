@@ -150,10 +150,15 @@
     )
 )
 
-;; Update the price of an active listing (owner only)
-;; @param listing-id: ID of the listing to update
-;; @param new-price: New price in microSTX (must be > 0)
-;; @returns: ok true on success, error otherwise
+;; Update the price of an active listing (owner only).
+;; @param listing-id: ID of the listing to update (must be > 0).
+;; @param new-price: New price in microSTX (must be > 0).
+;; @returns ok(true) on success.
+;;   ERR-LISTING-NOT-FOUND (u432) — listing does not exist.
+;;   ERR-INVALID-INPUT (u400) — listing-id is zero.
+;;   ERR-INVALID-AMOUNT (u401) — new-price is zero.
+;;   ERR-NOT-OWNER (u411) — caller is not the listing owner.
+;;   ERR-LISTING-INACTIVE (u451) — listing has been cancelled.
 (define-public (update-listing-price (listing-id uint) (new-price uint))
     (let ((listing (unwrap! (map-get? listings { listing-id: listing-id }) ERR-LISTING-NOT-FOUND)))
         (asserts! (> listing-id u0) ERR-INVALID-INPUT)
