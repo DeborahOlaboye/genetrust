@@ -223,5 +223,10 @@
   "confirm_deactivate_title": "Confirm Deactivation",
   "confirm_deactivate_message": "Are you sure you want to deactivate this dataset? It will no longer be accessible.",
   "confirm_erasure_title": "Confirm Erasure Request",
-  "confirm_erasure_message": "Invoking the right to erasure is permanent and cannot be reversed."
+  "confirm_erasure_message": "Invoking the right to erasure is permanent and cannot be reversed.",
+  "privacy_policy": "Privacy Policy",
+  "terms_of_service": "Terms of Service",
+  "contact_support": "Contact Support",
+  "docs": "Documentation",
+  "version": "Version {{version}}"
 }
