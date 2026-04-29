@@ -155,14 +155,17 @@
     )
 )
 
-;; Purchase access to a listed dataset - transfers STX to the owner
-;; @param listing-id: ID of the listing to purchase
-;; @param desired-access-level: Requested access level (must be <= listing access level)
-;; @returns: ok with purchase details on success, error otherwise
-;; @requires: Listing must exist and be active
-;; @requires: desired-access-level must be valid (1-3)
-;; @requires: desired-access-level must not exceed listing access level
-;; @requires: Payment must succeed
+;; Purchase access to a listed dataset — transfers STX to the listing owner.
+;; @param listing-id: ID of the listing to purchase (must be > 0).
+;; @param desired-access-level: Requested access level (1-3, must be <= listing access-level).
+;; @returns ok({ listing-id, access-level, paid }) on success.
+;;   ERR-LISTING-NOT-FOUND (u432) — listing does not exist.
+;;   ERR-LISTING-INACTIVE (u451) — listing has been cancelled.
+;;   ERR-CANNOT-BUY-OWN-LISTING (u614) — caller is the listing owner.
+;;   ERR-INVALID-ACCESS-LEVEL (u406) — desired-access-level not in 1-3.
+;;   ERR-INSUFFICIENT-ACCESS-LEVEL (u621) — desired level exceeds listing level.
+;;   ERR-DUPLICATE-PURCHASE (u443) — caller has already purchased this listing.
+;;   ERR-PAYMENT-FAILED (u500) — STX transfer failed.
 (define-public (purchase-listing (listing-id uint) (desired-access-level uint))
     (let (
         (listing (unwrap! (map-get? listings { listing-id: listing-id }) ERR-LISTING-NOT-FOUND))
