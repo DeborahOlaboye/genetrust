@@ -217,5 +217,11 @@
   "tooltip_collapse": "Collapse",
   "tooltip_info": "More info",
   "tooltip_delete": "Delete",
-  "tooltip_edit": "Edit"
+  "tooltip_edit": "Edit",
+  "confirm_delete_title": "Confirm Deletion",
+  "confirm_delete_message": "Are you sure you want to delete this? This action cannot be undone.",
+  "confirm_deactivate_title": "Confirm Deactivation",
+  "confirm_deactivate_message": "Are you sure you want to deactivate this dataset? It will no longer be accessible.",
+  "confirm_erasure_title": "Confirm Erasure Request",
+  "confirm_erasure_message": "Invoking the right to erasure is permanent and cannot be reversed."
 }

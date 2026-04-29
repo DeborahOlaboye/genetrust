@@ -217,5 +217,11 @@
   "tooltip_collapse": "Colapsar",
   "tooltip_info": "Más información",
   "tooltip_delete": "Eliminar",
-  "tooltip_edit": "Editar"
+  "tooltip_edit": "Editar",
+  "confirm_delete_title": "Confirmar eliminación",
+  "confirm_delete_message": "¿Estás seguro de que deseas eliminar esto? Esta acción no se puede deshacer.",
+  "confirm_deactivate_title": "Confirmar desactivación",
+  "confirm_deactivate_message": "¿Estás seguro de que deseas desactivar este conjunto de datos? Ya no será accesible.",
+  "confirm_erasure_title": "Confirmar solicitud de borrado",
+  "confirm_erasure_message": "Invocar el derecho al olvido es permanente y no se puede revertir."
 }

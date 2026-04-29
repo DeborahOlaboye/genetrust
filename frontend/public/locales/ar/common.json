@@ -217,5 +217,11 @@
   "tooltip_collapse": "طي",
   "tooltip_info": "مزيد من المعلومات",
   "tooltip_delete": "حذف",
-  "tooltip_edit": "تعديل"
+  "tooltip_edit": "تعديل",
+  "confirm_delete_title": "تأكيد الحذف",
+  "confirm_delete_message": "هل أنت متأكد أنك تريد حذف هذا؟ لا يمكن التراجع عن هذا الإجراء.",
+  "confirm_deactivate_title": "تأكيد إلغاء التنشيط",
+  "confirm_deactivate_message": "هل أنت متأكد أنك تريد تعطيل مجموعة البيانات هذه؟ لن يكون الوصول إليها ممكنًا بعد الآن.",
+  "confirm_erasure_title": "تأكيد طلب المسح",
+  "confirm_erasure_message": "استدعاء حق المسح دائم ولا يمكن التراجع عنه."
 }
