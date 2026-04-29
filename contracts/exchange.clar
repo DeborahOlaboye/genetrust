@@ -51,6 +51,8 @@
 
 ;; @notice Auto-incrementing counter for listing IDs. Starts at 1.
 (define-data-var next-listing-id uint u1)
+;; @notice Running total of all listings ever created (including cancelled).
+(define-data-var total-listings-created uint u0)
 
 ;; @notice Stores all marketplace listings keyed by listing-id.
 ;; @dev active flag is used for soft-cancellation; listings are never hard-deleted.
