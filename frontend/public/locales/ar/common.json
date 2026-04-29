@@ -211,5 +211,11 @@
   "theme_dark": "داكن",
   "theme_system": "النظام",
   "theme_toggle": "تبديل السمة",
-  "language_selector_label": "اختر اللغة"
+  "language_selector_label": "اختر اللغة",
+  "tooltip_copy": "نسخ",
+  "tooltip_expand": "توسيع",
+  "tooltip_collapse": "طي",
+  "tooltip_info": "مزيد من المعلومات",
+  "tooltip_delete": "حذف",
+  "tooltip_edit": "تعديل"
 }

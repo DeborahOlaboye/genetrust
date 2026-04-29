@@ -211,5 +211,11 @@
   "theme_dark": "Oscuro",
   "theme_system": "Sistema",
   "theme_toggle": "Cambiar tema",
-  "language_selector_label": "Seleccionar idioma"
+  "language_selector_label": "Seleccionar idioma",
+  "tooltip_copy": "Copiar",
+  "tooltip_expand": "Expandir",
+  "tooltip_collapse": "Colapsar",
+  "tooltip_info": "Más información",
+  "tooltip_delete": "Eliminar",
+  "tooltip_edit": "Editar"
 }
