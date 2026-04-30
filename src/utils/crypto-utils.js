@@ -107,15 +107,13 @@ export class CryptoUtils {
         }
 
         // Validate algorithm parameter
-        const validAlgorithms = ['sha256', 'sha512'];
-        if (!validAlgorithms.includes(algorithm)) {
-            throw new Error(`Invalid algorithm: ${algorithm}. Must be one of: ${validAlgorithms.join(', ')}`);
+        if (!this.VALID_ALGORITHMS.includes(algorithm)) {
+            throw new Error(`Invalid algorithm: ${algorithm}. Must be one of: ${this.VALID_ALGORITHMS.join(', ')}`);
         }
 
         // Validate encoding parameter
-        const validEncodings = ['hex', 'base64', 'buffer'];
-        if (!validEncodings.includes(encoding)) {
-            throw new Error(`Invalid encoding: ${encoding}. Must be one of: ${validEncodings.join(', ')}`);
+        if (!this.VALID_ENCODINGS.includes(encoding)) {
+            throw new Error(`Invalid encoding: ${encoding}. Must be one of: ${this.VALID_ENCODINGS.join(', ')}`);
         }
 
         const hmac = createHmac(algorithm, key).update(data).digest();
