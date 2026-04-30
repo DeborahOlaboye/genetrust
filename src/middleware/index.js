@@ -64,6 +64,7 @@ export {
     DatabaseError,
     NetworkError,
     PaymentError,
+    ErrorSeverity,
     createErrorHandler,
     errorHandler,
     devErrorHandler,
