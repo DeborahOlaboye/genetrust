@@ -132,8 +132,9 @@
                 created-at: stacks-block-height
             }
         )
-        ;; Increment counter
+        ;; Increment counters
         (var-set next-data-id (+ data-id u1))
+        (var-set total-datasets (+ (var-get total-datasets) u1))
         (ok data-id)
     )
 )
