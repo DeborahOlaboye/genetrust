@@ -299,8 +299,20 @@ export class RateLimiter {
     /**
      * Reset rate limit for a specific key
      * @param {string} key - Key to reset
+     * @throws {Error} If key is not provided or invalid
      */
     reset(key) {
+        // Validate key parameter
+        if (!key) {
+            throw new Error('Key must be provided');
+        }
+        if (typeof key !== 'string') {
+            throw new Error('Key must be a string');
+        }
+        if (key.length === 0) {
+            throw new Error('Key cannot be empty');
+        }
+
         this.cache.delete(key);
     }
 
