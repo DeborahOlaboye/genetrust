@@ -590,8 +590,8 @@ export class CryptoUtils {
         if (!Buffer.isBuffer(key)) {
             throw new Error('Key must be a Buffer');
         }
-        if (key.length !== 32) {
-            throw new Error('Key must be exactly 32 bytes for AES-256-GCM');
+        if (key.length !== this.AES_KEY_SIZE) {
+            throw new Error(`Key must be exactly ${this.AES_KEY_SIZE} bytes for AES-256-GCM`);
         }
 
         const actualIv = iv || randomBytes(16);
@@ -640,8 +640,8 @@ export class CryptoUtils {
         if (!Buffer.isBuffer(key)) {
             throw new Error('Key must be a Buffer');
         }
-        if (key.length !== 32) {
-            throw new Error('Key must be exactly 32 bytes for AES-256-GCM');
+        if (key.length !== this.AES_KEY_SIZE) {
+            throw new Error(`Key must be exactly ${this.AES_KEY_SIZE} bytes for AES-256-GCM`);
         }
 
         const { encrypted, iv, authTag } = encryptedData;
