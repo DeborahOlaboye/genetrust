@@ -143,8 +143,23 @@ export class RateLimiter {
      * @private
      * @param {string} key - Unique identifier
      * @returns {Object} Request count info
+     * @throws {Error} If key is not provided or invalid
      */
     getRequestCount(key) {
+        // Validate key parameter
+        if (!key) {
+            throw new Error('Key must be provided');
+        }
+        if (typeof key !== 'string') {
+            throw new Error('Key must be a string');
+        }
+        if (key.length === 0) {
+            throw new Error('Key cannot be empty');
+        }
+        if (key.length > 255) {
+            throw new Error('Key cannot exceed 255 characters');
+        }
+
         const now = Date.now();
         const windowStart = now - this.windowMs;
 
@@ -158,8 +173,15 @@ export class RateLimiter {
             };
         }
 
+        // Validate entry structure
+        if (!entry.requests || !Array.isArray(entry.requests)) {
+            entry.requests = [];
+        }
+
         // Filter out old requests (sliding window)
-        entry.requests = entry.requests.filter(timestamp => timestamp > windowStart);
+        entry.requests = entry.requests.filter(timestamp => {
+            return typeof timestamp === 'number' && timestamp > windowStart;
+        });
         entry.count = entry.requests.length;
 
         return entry;
