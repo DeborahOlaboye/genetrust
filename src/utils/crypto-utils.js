@@ -351,8 +351,20 @@ export class CryptoUtils {
      * @param {Object} metadata - Dataset metadata
      * @param {number} timestamp - Optional timestamp
      * @returns {string} Unique dataset ID
+     * @throws {Error} If ownerAddress is empty or not a string
+     * @throws {Error} If metadata is null or undefined
      */
     static generateDatasetId(ownerAddress, metadata, timestamp = null) {
+        // Validate ownerAddress parameter
+        if (typeof ownerAddress !== 'string' || ownerAddress.length === 0) {
+            throw new Error('Owner address must be a non-empty string');
+        }
+
+        // Validate metadata parameter
+        if (metadata === null || metadata === undefined) {
+            throw new Error('Metadata cannot be null or undefined');
+        }
+
         const components = [
             ownerAddress,
             JSON.stringify(metadata),
