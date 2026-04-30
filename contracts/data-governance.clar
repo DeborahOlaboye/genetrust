@@ -121,6 +121,10 @@
                 updated-at: stacks-block-height
             }
         )
+        (print { event: "consent-set", data-id: data-id, owner: tx-sender,
+                 research: research-consent, commercial: commercial-consent,
+                 clinical: clinical-consent, jurisdiction: jurisdiction,
+                 block: stacks-block-height })
         (ok true)
     )
 )
@@ -148,6 +152,9 @@
                 updated-at: stacks-block-height
             })
         )
+        (print { event: "consent-renewed", data-id: data-id, owner: tx-sender,
+                 new-expires-at: (+ stacks-block-height CONSENT-EXPIRY-BLOCKS),
+                 block: stacks-block-height })
         (ok true)
     )
 )
@@ -172,6 +179,9 @@
         (map-set consent-records { data-id: data-id }
             (merge consent { jurisdiction: jurisdiction, updated-at: stacks-block-height })
         )
+        (print { event: "jurisdiction-updated", data-id: data-id, owner: tx-sender,
+                 old-jurisdiction: (get jurisdiction consent), new-jurisdiction: jurisdiction,
+                 block: stacks-block-height })
         (ok true)
     )
 )
@@ -193,6 +203,8 @@
         (map-set gdpr-records { data-id: data-id }
             (merge gdpr { right-to-be-forgotten: true, updated-at: stacks-block-height })
         )
+        (print { event: "erasure-requested", data-id: data-id, owner: tx-sender,
+                 block: stacks-block-height })
         (ok true)
     )
 )
@@ -214,6 +226,8 @@
         (map-set gdpr-records { data-id: data-id }
             (merge gdpr { data-portability-requested: true, updated-at: stacks-block-height })
         )
+        (print { event: "portability-requested", data-id: data-id, owner: tx-sender,
+                 block: stacks-block-height })
         (ok true)
     )
 )
@@ -235,7 +249,8 @@
         (map-set gdpr-records { data-id: data-id }
             (merge gdpr { processing-restricted: true, updated-at: stacks-block-height })
         )
-        )
+        (print { event: "processing-restricted", data-id: data-id, owner: tx-sender,
+                 block: stacks-block-height })
         (ok true)
     )
 )
@@ -323,6 +338,32 @@
                      (get data-portability-requested gdpr)
                      (get processing-restricted gdpr)))
         (ok false)
+    )
+)
+
+;; @notice Returns the human-readable label for a jurisdiction code.
+;; @param jurisdiction The jurisdiction code (0-4).
+;; @return Some(string-utf8) label if code is valid, none otherwise.
+(define-read-only (get-jurisdiction-name (jurisdiction uint))
+    (if (is-eq jurisdiction JURISDICTION-GLOBAL) (some u"Global")
+    (if (is-eq jurisdiction JURISDICTION-US)     (some u"United States")
+    (if (is-eq jurisdiction JURISDICTION-EU)     (some u"European Union")
+    (if (is-eq jurisdiction JURISDICTION-UK)     (some u"United Kingdom")
+    (if (is-eq jurisdiction JURISDICTION-CANADA) (some u"Canada")
+    none)))))
+)
+
+;; @notice Returns a tuple of all three consent flags for a dataset.
+;; @param data-id The dataset ID to look up.
+;; @return Some(tuple) if consent record exists, none otherwise.
+(define-read-only (get-consent-flags (data-id uint))
+    (match (map-get? consent-records { data-id: data-id })
+        consent (some {
+            research: (get research-consent consent),
+            commercial: (get commercial-consent consent),
+            clinical: (get clinical-consent consent)
+        })
+        none
     )
 )
 

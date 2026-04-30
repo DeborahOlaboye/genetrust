@@ -9,10 +9,12 @@
 ;; Errors - Input Validation (400-409)
 (define-constant ERR-INVALID-INPUT (err u400))
 (define-constant ERR-INVALID-AMOUNT (err u401))
+(define-constant ERR-PRICE-TOO-HIGH (err u402))
 (define-constant ERR-INVALID-HASH (err u403))
 (define-constant ERR-INVALID-METADATA (err u404))
 (define-constant ERR-INVALID-ACCESS-LEVEL (err u406))
 (define-constant ERR-INVALID-STRING-LENGTH (err u407))
+(define-constant ERR-ZERO-HASH (err u408))
 
 ;; Errors - Authorization (410-414)
 (define-constant ERR-NOT-AUTHORIZED (err u410))
@@ -48,8 +50,17 @@
 ;; Access expires after ~30 days of blocks
 (define-constant ACCESS-EXPIRY-BLOCKS u8640)
 
+;; Price cap: 1 billion STX in microSTX to prevent absurd listings
+(define-constant MAX-PRICE u1000000000000000)
+
+;; Minimum storage URL length (e.g. "ipfs://a" is 8 chars)
+(define-constant MIN-URL-LENGTH u5)
+
 ;; Dataset counter
 (define-data-var next-data-id uint u1)
+
+;; Running total of all datasets ever registered (including deactivated ones)
+(define-data-var total-datasets uint u0)
 
 ;; @notice Primary storage map for all registered genetic datasets.
 ;;         Keyed by auto-incremented data-id. Owner is always tx-sender at registration time.
@@ -94,14 +105,18 @@
     (access-level uint)
     (price uint))
     (let ((data-id (var-get next-data-id)))
-        ;; Validate metadata hash
+        ;; Validate metadata hash is exactly 32 bytes
         (asserts! (is-eq (len metadata-hash) u32) ERR-INVALID-HASH)
-        ;; Validate storage URL is not empty and reasonable length
-        (asserts! (and (> (len storage-url) u0) (<= (len storage-url) u200)) ERR-INVALID-STRING-LENGTH)
+        ;; Validate metadata hash is not all-zero (meaningless sentinel)
+        (asserts! (not (is-eq metadata-hash 0x0000000000000000000000000000000000000000000000000000000000000000)) ERR-ZERO-HASH)
+        ;; Validate storage URL meets minimum length and does not exceed maximum
+        (asserts! (and (>= (len storage-url) MIN-URL-LENGTH) (<= (len storage-url) u200)) ERR-INVALID-STRING-LENGTH)
         ;; Validate description is not empty and reasonable length
         (asserts! (and (>= (len description) u10) (<= (len description) u200)) ERR-INVALID-STRING-LENGTH)
         ;; Validate price is positive
         (asserts! (> price u0) ERR-INVALID-AMOUNT)
+        ;; Validate price does not exceed the maximum cap
+        (asserts! (<= price MAX-PRICE) ERR-PRICE-TOO-HIGH)
         ;; Validate access-level is in valid range (1-3)
         (asserts! (and (>= access-level ACCESS-BASIC) (<= access-level ACCESS-FULL)) ERR-INVALID-ACCESS-LEVEL)
         ;; Create the dataset
@@ -117,8 +132,12 @@
                 created-at: stacks-block-height
             }
         )
-        ;; Increment counter
+        ;; Emit event for off-chain indexers
+        (print { event: "dataset-registered", data-id: data-id, owner: tx-sender,
+                 access-level: access-level, price: price, block: stacks-block-height })
+        ;; Increment counters
         (var-set next-data-id (+ data-id u1))
+        (var-set total-datasets (+ (var-get total-datasets) u1))
         (ok data-id)
     )
 )
@@ -137,12 +156,16 @@
         (asserts! (> data-id u0) ERR-INVALID-INPUT)
         ;; Prevent self-grant
         (asserts! (not (is-eq user tx-sender)) ERR-SELF-GRANT-NOT-ALLOWED)
+        ;; Prevent granting access to the contract itself
+        (asserts! (not (is-eq user (as-contract tx-sender))) ERR-INVALID-INPUT)
         ;; Verify caller is the dataset owner
         (asserts! (is-eq tx-sender (get owner dataset)) ERR-NOT-OWNER)
         ;; Verify dataset is active
         (asserts! (get is-active dataset) ERR-INACTIVE-DATASET)
-        ;; Validate access-level is in valid range
+        ;; Validate access-level is in valid range (1-3)
         (asserts! (and (>= access-level ACCESS-BASIC) (<= access-level ACCESS-FULL)) ERR-INVALID-ACCESS-LEVEL)
+        ;; Granted level cannot exceed the dataset's own access level
+        (asserts! (<= access-level (get access-level dataset)) ERR-INSUFFICIENT-ACCESS-LEVEL)
         ;; Check if access already exists
         (asserts! (is-none (map-get? access-rights { data-id: data-id, user: user })) ERR-DUPLICATE-ACCESS-GRANT)
         ;; Grant the access
@@ -153,6 +176,10 @@
                 granted-by: tx-sender
             }
         )
+        (print { event: "access-granted", data-id: data-id, user: user,
+                 access-level: access-level, granted-by: tx-sender,
+                 expires-at: (+ stacks-block-height ACCESS-EXPIRY-BLOCKS),
+                 block: stacks-block-height })
         (ok true)
     )
 )
@@ -175,6 +202,33 @@
         (asserts! (is-eq tx-sender (get owner dataset)) ERR-NOT-OWNER)
         ;; Delete the access right
         (map-delete access-rights { data-id: data-id, user: user })
+        (print { event: "access-revoked", data-id: data-id, user: user,
+                 revoked-by: tx-sender, block: stacks-block-height })
+        (ok true)
+    )
+)
+
+;; Update the access level of an existing grant (owner only)
+;; @param data-id: ID of the dataset
+;; @param user: Principal whose access level to update
+;; @param new-access-level: New access level (1-3, cannot exceed dataset level)
+;; @returns: ok true on success, error otherwise
+(define-public (update-access-level (data-id uint) (user principal) (new-access-level uint))
+    (let (
+        (dataset (unwrap! (map-get? datasets { data-id: data-id }) ERR-DATASET-NOT-FOUND))
+        (rights (unwrap! (map-get? access-rights { data-id: data-id, user: user }) ERR-ACCESS-RIGHT-NOT-FOUND))
+    )
+        (asserts! (> data-id u0) ERR-INVALID-INPUT)
+        (asserts! (is-eq tx-sender (get owner dataset)) ERR-NOT-OWNER)
+        (asserts! (get is-active dataset) ERR-INACTIVE-DATASET)
+        (asserts! (and (>= new-access-level ACCESS-BASIC) (<= new-access-level ACCESS-FULL)) ERR-INVALID-ACCESS-LEVEL)
+        (asserts! (<= new-access-level (get access-level dataset)) ERR-INSUFFICIENT-ACCESS-LEVEL)
+        (map-set access-rights { data-id: data-id, user: user }
+            (merge rights { access-level: new-access-level })
+        )
+        (print { event: "access-level-updated", data-id: data-id, user: user,
+                 old-level: (get access-level rights), new-level: new-access-level,
+                 updated-by: tx-sender, block: stacks-block-height })
         (ok true)
     )
 )
@@ -194,6 +248,114 @@
         (asserts! (get is-active dataset) ERR-INACTIVE-DATASET)
         ;; Deactivate the dataset
         (map-set datasets { data-id: data-id } (merge dataset { is-active: false }))
+        (print { event: "dataset-deactivated", data-id: data-id, owner: tx-sender,
+                 block: stacks-block-height })
+        (ok true)
+    )
+)
+
+;; Update the price of an active dataset (owner only)
+;; @param data-id: ID of the dataset
+;; @param new-price: New price in microSTX (must be > 0 and <= MAX-PRICE)
+;; @returns: ok true on success, error otherwise
+(define-public (update-dataset-price (data-id uint) (new-price uint))
+    (let ((dataset (unwrap! (map-get? datasets { data-id: data-id }) ERR-DATASET-NOT-FOUND)))
+        (asserts! (> data-id u0) ERR-INVALID-INPUT)
+        (asserts! (is-eq tx-sender (get owner dataset)) ERR-NOT-OWNER)
+        (asserts! (get is-active dataset) ERR-INACTIVE-DATASET)
+        (asserts! (> new-price u0) ERR-INVALID-AMOUNT)
+        (asserts! (<= new-price MAX-PRICE) ERR-PRICE-TOO-HIGH)
+        (map-set datasets { data-id: data-id } (merge dataset { price: new-price }))
+        (print { event: "dataset-price-updated", data-id: data-id, owner: tx-sender,
+                 old-price: (get price dataset), new-price: new-price, block: stacks-block-height })
+        (ok true)
+    )
+)
+
+;; Update the storage URL of an active dataset (owner only)
+;; @param data-id: ID of the dataset
+;; @param new-url: New storage URL (5-200 chars)
+;; @returns: ok true on success, error otherwise
+(define-public (update-storage-url (data-id uint) (new-url (string-utf8 200)))
+    (let ((dataset (unwrap! (map-get? datasets { data-id: data-id }) ERR-DATASET-NOT-FOUND)))
+        (asserts! (> data-id u0) ERR-INVALID-INPUT)
+        (asserts! (is-eq tx-sender (get owner dataset)) ERR-NOT-OWNER)
+        (asserts! (get is-active dataset) ERR-INACTIVE-DATASET)
+        (asserts! (and (>= (len new-url) MIN-URL-LENGTH) (<= (len new-url) u200)) ERR-INVALID-STRING-LENGTH)
+        (map-set datasets { data-id: data-id } (merge dataset { storage-url: new-url }))
+        (print { event: "dataset-url-updated", data-id: data-id, owner: tx-sender,
+                 block: stacks-block-height })
+        (ok true)
+    )
+)
+
+;; Update the description of an active dataset (owner only)
+;; @param data-id: ID of the dataset
+;; @param new-description: New description (10-200 chars)
+;; @returns: ok true on success, error otherwise
+(define-public (update-description (data-id uint) (new-description (string-utf8 200)))
+    (let ((dataset (unwrap! (map-get? datasets { data-id: data-id }) ERR-DATASET-NOT-FOUND)))
+        (asserts! (> data-id u0) ERR-INVALID-INPUT)
+        (asserts! (is-eq tx-sender (get owner dataset)) ERR-NOT-OWNER)
+        (asserts! (get is-active dataset) ERR-INACTIVE-DATASET)
+        (asserts! (and (>= (len new-description) u10) (<= (len new-description) u200)) ERR-INVALID-STRING-LENGTH)
+        (map-set datasets { data-id: data-id } (merge dataset { description: new-description }))
+        (print { event: "dataset-description-updated", data-id: data-id, owner: tx-sender,
+                 block: stacks-block-height })
+        (ok true)
+    )
+)
+
+;; Reactivate a previously deactivated dataset (owner only)
+;; @param data-id: ID of the dataset to reactivate
+;; @returns: ok true on success, error otherwise
+(define-public (reactivate-dataset (data-id uint))
+    (let ((dataset (unwrap! (map-get? datasets { data-id: data-id }) ERR-DATASET-NOT-FOUND)))
+        (asserts! (> data-id u0) ERR-INVALID-INPUT)
+        (asserts! (is-eq tx-sender (get owner dataset)) ERR-NOT-OWNER)
+        (asserts! (not (get is-active dataset)) ERR-ALREADY-EXISTS)
+        (map-set datasets { data-id: data-id } (merge dataset { is-active: true }))
+        (print { event: "dataset-reactivated", data-id: data-id, owner: tx-sender,
+                 block: stacks-block-height })
+        (ok true)
+    )
+)
+
+;; Transfer dataset ownership to a new principal (current owner only)
+;; @param data-id: ID of the dataset
+;; @param new-owner: Principal to transfer ownership to
+;; @returns: ok true on success, error otherwise
+(define-public (transfer-dataset-ownership (data-id uint) (new-owner principal))
+    (let ((dataset (unwrap! (map-get? datasets { data-id: data-id }) ERR-DATASET-NOT-FOUND)))
+        (asserts! (> data-id u0) ERR-INVALID-INPUT)
+        (asserts! (is-eq tx-sender (get owner dataset)) ERR-NOT-OWNER)
+        (asserts! (not (is-eq new-owner tx-sender)) ERR-INVALID-INPUT)
+        (asserts! (not (is-eq new-owner (as-contract tx-sender))) ERR-INVALID-INPUT)
+        (map-set datasets { data-id: data-id } (merge dataset { owner: new-owner }))
+        (print { event: "dataset-ownership-transferred", data-id: data-id,
+                 from: tx-sender, to: new-owner, block: stacks-block-height })
+        (ok true)
+    )
+)
+
+;; Extend an existing access grant by another ACCESS-EXPIRY-BLOCKS period (owner only)
+;; @param data-id: ID of the dataset
+;; @param user: Principal whose access to extend
+;; @returns: ok true on success, error otherwise
+(define-public (extend-access (data-id uint) (user principal))
+    (let (
+        (dataset (unwrap! (map-get? datasets { data-id: data-id }) ERR-DATASET-NOT-FOUND))
+        (rights (unwrap! (map-get? access-rights { data-id: data-id, user: user }) ERR-ACCESS-RIGHT-NOT-FOUND))
+    )
+        (asserts! (> data-id u0) ERR-INVALID-INPUT)
+        (asserts! (is-eq tx-sender (get owner dataset)) ERR-NOT-OWNER)
+        (asserts! (get is-active dataset) ERR-INACTIVE-DATASET)
+        (map-set access-rights { data-id: data-id, user: user }
+            (merge rights { expires-at: (+ stacks-block-height ACCESS-EXPIRY-BLOCKS) })
+        )
+        (print { event: "access-extended", data-id: data-id, user: user,
+                 new-expires-at: (+ stacks-block-height ACCESS-EXPIRY-BLOCKS),
+                 extended-by: tx-sender, block: stacks-block-height })
         (ok true)
     )
 )
@@ -229,4 +391,40 @@
 ;; @return ok(uint) - the next available data-id.
 (define-read-only (get-next-data-id)
     (ok (var-get next-data-id))
+)
+
+;; @notice Returns the owner principal of a dataset.
+;; @param data-id The dataset ID to look up.
+;; @return Some(principal) if dataset exists, none otherwise.
+(define-read-only (get-dataset-owner (data-id uint))
+    (match (map-get? datasets { data-id: data-id })
+        dataset (some (get owner dataset))
+        none
+    )
+)
+
+;; @notice Returns the total number of datasets ever registered (including deactivated).
+;; @return ok(uint) - the all-time dataset registration count.
+(define-read-only (get-total-datasets)
+    (ok (var-get total-datasets))
+)
+
+;; @notice Returns true if the given dataset exists and is active.
+;; @param data-id The dataset ID to check.
+;; @return ok(true) if active, ok(false) if inactive or not found.
+(define-read-only (is-dataset-active (data-id uint))
+    (match (map-get? datasets { data-id: data-id })
+        dataset (ok (get is-active dataset))
+        (ok false)
+    )
+)
+
+;; @notice Returns the current price of a dataset in microSTX.
+;; @param data-id The dataset ID to look up.
+;; @return Some(uint) if dataset exists, none otherwise.
+(define-read-only (get-dataset-price (data-id uint))
+    (match (map-get? datasets { data-id: data-id })
+        dataset (some (get price dataset))
+        none
+    )
 )

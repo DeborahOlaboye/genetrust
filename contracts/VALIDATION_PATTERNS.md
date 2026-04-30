@@ -23,10 +23,16 @@ Used when function arguments are invalid or out of acceptable ranges.
 ;; Validate non-empty hash
 (asserts! (is-eq (len hash) u32) ERR-INVALID-HASH)
 
+;; Validate hash is not all-zero (meaningless sentinel)
+(asserts! (not (is-eq hash 0x0000000000000000000000000000000000000000000000000000000000000000)) ERR-ZERO-HASH)
+
 ;; Validate amount is positive
 (asserts! (> amount u0) ERR-INVALID-AMOUNT)
 
-;; Validate string length bounds
+;; Validate amount does not exceed maximum cap
+(asserts! (<= amount MAX-PRICE) ERR-PRICE-TOO-HIGH)
+
+;; Validate string length bounds (including minimum URL length)
 (asserts! (and (>= (len s) MIN-LEN) (<= (len s) MAX-LEN)) ERR-INVALID-STRING-LENGTH)
 ```
 

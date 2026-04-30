@@ -35,6 +35,10 @@
 (define-constant ERR-VERIFIER-INACTIVE (err u503))
 (define-constant ERR-CONTRACT-PAUSED (err u511))
 
+;; Errors - Conflict (business logic)
+(define-constant ERR-ALREADY-VERIFIED (err u446))
+(define-constant ERR-DUPLICATE-VERIFIER-ADDRESS (err u447))
+
 ;; @notice Proof type identifiers for different genetic attestation categories.
 (define-constant PROOF-GENE-PRESENCE u1)  ;; Confirms a specific gene is present
 (define-constant PROOF-GENE-ABSENCE u2)   ;; Confirms a specific gene is absent
@@ -49,6 +53,12 @@
 (define-data-var next-verifier-id uint u1)
 ;; @notice Auto-incrementing counter for proof IDs. Starts at 1.
 (define-data-var next-proof-id uint u1)
+;; @notice Total number of verifiers ever registered (including deactivated).
+(define-data-var total-verifiers uint u0)
+;; @notice Total number of proofs ever submitted.
+(define-data-var total-proofs uint u0)
+;; @notice Total number of proofs that have been verified.
+(define-data-var total-verified-proofs uint u0)
 
 ;; @notice Registry of trusted verifiers such as medical labs or accredited institutions.
 ;;         Only the contract owner can add or deactivate verifiers.
@@ -105,8 +115,11 @@
                 added-at: stacks-block-height
             }
         )
-        ;; Increment counter
+        (print { event: "verifier-registered", verifier-id: verifier-id,
+                 address: verifier-address, registered-by: tx-sender, block: stacks-block-height })
+        ;; Increment counters
         (var-set next-verifier-id (+ verifier-id u1))
+        (var-set total-verifiers (+ (var-get total-verifiers) u1))
         (ok verifier-id)
     )
 )
@@ -161,7 +174,7 @@
         (asserts! (is-eq (len proof-hash) u32) ERR-INVALID-HASH)
         ;; Validate parameters is not empty and within bounds
         (asserts! (and (> (len parameters) u0) (<= (len parameters) u256)) ERR-INVALID-BUFFER-SIZE)
-        ;; Validate metadata length
+        ;; Validate metadata length (0-200 chars; empty metadata is allowed)
         (asserts! (<= (len metadata) u200) ERR-INVALID-STRING-LENGTH)
         ;; Create the proof
         (map-set proofs { proof-id: proof-id }
@@ -177,8 +190,11 @@
                 metadata: metadata
             }
         )
-        ;; Increment counter
+        (print { event: "proof-registered", proof-id: proof-id, data-id: data-id,
+                 proof-type: proof-type, creator: tx-sender, block: stacks-block-height })
+        ;; Increment counters
         (var-set next-proof-id (+ proof-id u1))
+        (var-set total-proofs (+ (var-get total-proofs) u1))
         (ok proof-id)
     )
 )
@@ -198,9 +214,14 @@
         (asserts! (> verifier-id u0) ERR-INVALID-INPUT)
         (asserts! (get active v) ERR-VERIFIER-INACTIVE)
         (asserts! (is-eq tx-sender (get address v)) ERR-NOT-AUTHORIZED)
+        ;; Prevent re-verifying an already-verified proof
+        (asserts! (not (get verified proof)) ERR-ALREADY-VERIFIED)
         (map-set proofs { proof-id: proof-id }
             (merge proof { verified: true, verifier-id: (some verifier-id) })
         )
+        (print { event: "proof-verified", proof-id: proof-id, verifier-id: verifier-id,
+                 verifier-address: tx-sender, block: stacks-block-height })
+        (var-set total-verified-proofs (+ (var-get total-verified-proofs) u1))
         (ok true)
     )
 )
@@ -247,4 +268,42 @@
 ;; @return ok(uint) - the next available proof-id.
 (define-read-only (get-next-proof-id)
     (ok (var-get next-proof-id))
+)
+
+;; @notice Returns the total number of proofs ever submitted.
+;; @return ok(uint) - the all-time proof submission count.
+(define-read-only (get-total-proofs)
+    (ok (var-get total-proofs))
+)
+
+;; @notice Returns the total number of proofs that have been verified.
+;; @return ok(uint) - the all-time verified proof count.
+(define-read-only (get-total-verified-proofs)
+    (ok (var-get total-verified-proofs))
+)
+
+;; @notice Returns the total number of verifiers ever registered.
+;; @return ok(uint) - the all-time verifier registration count.
+(define-read-only (get-total-verifiers)
+    (ok (var-get total-verifiers))
+)
+
+;; @notice Returns true if a verifier is registered and currently active.
+;; @param verifier-id The verifier ID to check.
+;; @return ok(true) if active, ok(false) if inactive or not found.
+(define-read-only (is-active-verifier (verifier-id uint))
+    (match (map-get? verifiers { verifier-id: verifier-id })
+        v (ok (get active v))
+        (ok false)
+    )
+)
+
+;; @notice Returns the address of a registered verifier.
+;; @param verifier-id The verifier ID to look up.
+;; @return Some(principal) if found, none otherwise.
+(define-read-only (get-verifier-address (verifier-id uint))
+    (match (map-get? verifiers { verifier-id: verifier-id })
+        v (some (get address v))
+        none
+    )
 )

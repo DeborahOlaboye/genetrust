@@ -20,6 +20,7 @@
 ;; Errors - Input Validation (400-409)
 (define-constant ERR-INVALID-INPUT (err u400))
 (define-constant ERR-INVALID-AMOUNT (err u401))
+(define-constant ERR-PRICE-TOO-HIGH (err u402))
 (define-constant ERR-INVALID-ACCESS-LEVEL (err u406))
 (define-constant ERR-INVALID-STRING-LENGTH (err u407))
 
@@ -51,10 +52,15 @@
 
 (define-constant CONTRACT-VERSION "1.1.0")
 
+;; Price cap: 1 billion STX in microSTX to prevent absurd listings
+(define-constant MAX-PRICE u1000000000000000)
+
 ;; @notice Auto-incrementing counter for listing IDs. Starts at 1.
 (define-data-var next-listing-id uint u1)
 ;; @notice Running total of all listings ever created (including cancelled).
 (define-data-var total-listings-created uint u0)
+;; @notice Running total of all completed purchases.
+(define-data-var total-purchases-completed uint u0)
 
 ;; @notice Stores all marketplace listings keyed by listing-id.
 ;; @dev active flag is used for soft-cancellation; listings are never hard-deleted.
@@ -102,6 +108,8 @@
         (asserts! (> data-id u0) ERR-INVALID-INPUT)
         ;; Validate price is positive
         (asserts! (> price u0) ERR-INVALID-AMOUNT)
+        ;; Validate price does not exceed maximum cap
+        (asserts! (<= price MAX-PRICE) ERR-PRICE-TOO-HIGH)
         ;; Validate access-level is in valid range (1-3)
         (asserts! (and (>= access-level u1) (<= access-level u3)) ERR-INVALID-ACCESS-LEVEL)
         ;; Validate description length (10-200 chars)
@@ -165,6 +173,7 @@
     (let ((listing (unwrap! (map-get? listings { listing-id: listing-id }) ERR-LISTING-NOT-FOUND)))
         (asserts! (> listing-id u0) ERR-INVALID-INPUT)
         (asserts! (> new-price u0) ERR-INVALID-AMOUNT)
+        (asserts! (<= new-price MAX-PRICE) ERR-PRICE-TOO-HIGH)
         (asserts! (is-eq tx-sender (get owner listing)) ERR-NOT-OWNER)
         (asserts! (get active listing) ERR-LISTING-INACTIVE)
         (map-set listings { listing-id: listing-id }
@@ -218,8 +227,29 @@
         ;; Emit event for off-chain indexers
         (print { event: "listing-purchased", listing-id: listing-id, buyer: tx-sender,
                  access-level: desired-access-level, paid: price, block: stacks-block-height })
+        ;; Increment global purchase counter
+        (var-set total-purchases-completed (+ (var-get total-purchases-completed) u1))
         ;; Return purchase confirmation
         (ok { listing-id: listing-id, access-level: desired-access-level, paid: price })
+    )
+)
+
+;; Update the description of an active listing (owner only)
+;; @param listing-id: ID of the listing
+;; @param new-description: New description (10-200 chars)
+;; @returns: ok true on success, error otherwise
+(define-public (update-listing-description (listing-id uint) (new-description (string-utf8 200)))
+    (let ((listing (unwrap! (map-get? listings { listing-id: listing-id }) ERR-LISTING-NOT-FOUND)))
+        (asserts! (> listing-id u0) ERR-INVALID-INPUT)
+        (asserts! (is-eq tx-sender (get owner listing)) ERR-NOT-OWNER)
+        (asserts! (get active listing) ERR-LISTING-INACTIVE)
+        (asserts! (and (>= (len new-description) u10) (<= (len new-description) u200)) ERR-INVALID-STRING-LENGTH)
+        (map-set listings { listing-id: listing-id }
+            (merge listing { description: new-description })
+        )
+        (print { event: "listing-description-updated", listing-id: listing-id, owner: tx-sender,
+                 block: stacks-block-height })
+        (ok true)
     )
 )
 
@@ -308,6 +338,32 @@
 ;; @return ok(uint) - the all-time listing creation count.
 (define-read-only (get-total-listings-created)
     (ok (var-get total-listings-created))
+)
+
+;; @notice Returns the total number of completed purchases across all listings.
+;; @return ok(uint) - the all-time purchase count.
+(define-read-only (get-total-purchases-completed)
+    (ok (var-get total-purchases-completed))
+)
+
+;; @notice Returns the access level offered by a listing.
+;; @param listing-id The listing to check.
+;; @return Some(uint) if listing exists, none otherwise.
+(define-read-only (get-listing-access-level (listing-id uint))
+    (match (map-get? listings { listing-id: listing-id })
+        listing (some (get access-level listing))
+        none
+    )
+)
+
+;; @notice Returns the data-id associated with a listing.
+;; @param listing-id The listing to look up.
+;; @return Some(uint) if listing exists, none otherwise. Alias for get-listing-data-id.
+(define-read-only (get-listing-dataset-id (listing-id uint))
+    (match (map-get? listings { listing-id: listing-id })
+        listing (some (get data-id listing))
+        none
+    )
 )
 
 ;; @notice Returns the deployed contract version string.

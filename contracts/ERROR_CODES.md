@@ -4,9 +4,10 @@
 
 ### 400 - Bad Request (Invalid Input)
 - `ERR-INVALID-INPUT (u400)`: Generic invalid input error
-- `ERR-INVALID-AMOUNT (u401)`: Invalid amount (negative, zero, or exceeds limits)
-- `ERR-INVALID-ADDRESS (u402)`: Invalid principal/address format
+- `ERR-INVALID-AMOUNT (u401)`: Invalid amount (zero or negative)
+- `ERR-PRICE-TOO-HIGH (u402)`: Price exceeds MAX-PRICE cap (1 000 000 000 000 000 microSTX)
 - `ERR-INVALID-HASH (u403)`: Invalid hash format (incorrect length or format)
+- `ERR-ZERO-HASH (u408)`: Metadata hash is all-zero bytes (meaningless sentinel value)
 - `ERR-INVALID-METADATA (u404)`: Invalid metadata format
 - `ERR-INVALID-PROOF-TYPE (u405)`: Proof type not supported
 - `ERR-INVALID-ACCESS-LEVEL (u406)`: Access level out of valid range
@@ -42,7 +43,9 @@
 - `ERR-LISTING-ALREADY-EXISTS (u442)`: Listing already created for this dataset
 - `ERR-DUPLICATE-PURCHASE (u443)`: Duplicate purchase attempt
 - `ERR-DUPLICATE-ACCESS-GRANT (u444)`: Access already granted for this user
-- `ERR-STATE-CONFLICT (u445)`: State conflict - operation cannot proceed
+- `ERR-GDPR-FLAG-ALREADY-SET (u445)`: GDPR right has already been invoked for this dataset
+- `ERR-ALREADY-VERIFIED (u446)`: Proof has already been verified; re-verification blocked
+- `ERR-DUPLICATE-VERIFIER-ADDRESS (u447)`: Verifier address already registered
 
 ### 410 - Gone
 - `ERR-INACTIVE-DATASET (u450)`: Dataset is inactive or deleted
