@@ -234,34 +234,65 @@ export class RateLimiter {
      */
     middleware() {
         return (req, res, next) => {
-            const key = this.keyGenerator(req);
-            const entry = this.getRequestCount(key);
-
-            // Add rate limit headers
-            res.set({
-                'X-RateLimit-Limit': this.max,
-                'X-RateLimit-Remaining': Math.max(0, this.max - entry.count),
-                'X-RateLimit-Reset': new Date(entry.resetTime).toISOString()
-            });
-
-            // Check if rate limit exceeded
-            if (entry.count >= this.max) {
-                res.status(429).json({
-                    error: 'Rate limit exceeded',
-                    message: this.message,
-                    retryAfter: Math.ceil((entry.resetTime - Date.now()) / 1000)
-                });
-                return;
-            }
-
-            // Update count after response to check status
-            res.on('finish', () => {
-                if (this.shouldCountRequest(req, res)) {
-                    this.updateRequestCount(key, entry);
+            try {
+                // Validate Express objects
+                if (!req || typeof req !== 'object') {
+                    return next(new Error('Invalid request object'));
                 }
-            });
+                if (!res || typeof res !== 'object') {
+                    return next(new Error('Invalid response object'));
+                }
+                if (typeof next !== 'function') {
+                    throw new Error('Next function must be provided');
+                }
 
-            next();
+                const key = this.keyGenerator(req);
+                const entry = this.getRequestCount(key);
+
+                // Add rate limit headers with validation
+                try {
+                    res.set({
+                        'X-RateLimit-Limit': this.max,
+                        'X-RateLimit-Remaining': Math.max(0, this.max - entry.count),
+                        'X-RateLimit-Reset': new Date(entry.resetTime).toISOString()
+                    });
+                } catch (headerError) {
+                    // Continue even if headers fail
+                    console.warn('Failed to set rate limit headers:', headerError.message);
+                }
+
+                // Check if rate limit exceeded
+                if (entry.count >= this.max) {
+                    const retryAfter = Math.max(1, Math.ceil((entry.resetTime - Date.now()) / 1000));
+                    
+                    // Ensure response hasn't been sent yet
+                    if (!res.headersSent) {
+                        res.status(429).json({
+                            error: 'Rate limit exceeded',
+                            message: this.message,
+                            retryAfter
+                        });
+                    }
+                    return;
+                }
+
+                // Update count after response to check status
+                res.on('finish', () => {
+                    try {
+                        if (this.shouldCountRequest(req, res)) {
+                            this.updateRequestCount(key, entry);
+                        }
+                    } catch (updateError) {
+                        // Log error but don't crash
+                        console.warn('Failed to update rate limit count:', updateError.message);
+                    }
+                });
+
+                next();
+            } catch (error) {
+                // Pass errors to Express error handler
+                next(error);
+            }
         };
     }
 
