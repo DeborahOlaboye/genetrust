@@ -281,6 +281,21 @@
     )
 )
 
+;; Reactivate a previously deactivated dataset (owner only)
+;; @param data-id: ID of the dataset to reactivate
+;; @returns: ok true on success, error otherwise
+(define-public (reactivate-dataset (data-id uint))
+    (let ((dataset (unwrap! (map-get? datasets { data-id: data-id }) ERR-DATASET-NOT-FOUND)))
+        (asserts! (> data-id u0) ERR-INVALID-INPUT)
+        (asserts! (is-eq tx-sender (get owner dataset)) ERR-NOT-OWNER)
+        (asserts! (not (get is-active dataset)) ERR-ALREADY-EXISTS)
+        (map-set datasets { data-id: data-id } (merge dataset { is-active: true }))
+        (print { event: "dataset-reactivated", data-id: data-id, owner: tx-sender,
+                 block: stacks-block-height })
+        (ok true)
+    )
+)
+
 ;; @notice Returns all stored fields for a given dataset.
 ;; @param data-id The dataset ID to look up.
 ;; @return Some(dataset) if found, none otherwise.
