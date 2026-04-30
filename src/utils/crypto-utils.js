@@ -151,8 +151,24 @@ export class CryptoUtils {
      * @param {number} length - Salt length in bytes
      * @param {string} encoding - Output encoding
      * @returns {string|Buffer} Generated salt
+     * @throws {Error} If length is not a positive integer
+     * @throws {Error} If encoding is not supported
      */
     static generateSalt(length = 16, encoding = 'hex') {
+        // Validate length parameter
+        if (!Number.isInteger(length) || length <= 0) {
+            throw new Error('Length must be a positive integer');
+        }
+        if (length > 1024) {
+            throw new Error('Length exceeds maximum allowed value of 1024');
+        }
+
+        // Validate encoding parameter
+        const validEncodings = ['hex', 'base64', 'buffer'];
+        if (!validEncodings.includes(encoding)) {
+            throw new Error(`Invalid encoding: ${encoding}. Must be one of: ${validEncodings.join(', ')}`);
+        }
+
         const salt = randomBytes(length);
         
         switch (encoding) {
@@ -162,8 +178,6 @@ export class CryptoUtils {
                 return salt.toString('base64');
             case 'buffer':
                 return salt;
-            default:
-                throw new Error(`Unsupported encoding: ${encoding}`);
         }
     }
 
