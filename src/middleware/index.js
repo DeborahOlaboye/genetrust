@@ -34,5 +34,24 @@ export {
     default as rateLimitMonitorClass
 } from './rateLimitMonitor.js';
 
+export {
+    RateLimitHealth,
+    HealthStatus,
+    createHealthCheckMiddleware,
+    defaultHealthChecker,
+    default as rateLimitHealth
+} from './rateLimitHealth.js';
+
+export {
+    validateRateLimiterOptions,
+    validateExpressRequest,
+    validateExpressResponse,
+    validateRateLimitKey,
+    validateRateLimitEntry,
+    defaultRateLimiterOptions,
+    RateLimitCategories,
+    RateLimitPresets
+} from './rateLimiterTypes.js';
+
 // Other middleware
 export { default as requestLogger } from './requestLogger.js';
