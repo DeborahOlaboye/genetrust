@@ -327,6 +327,9 @@ export class ConflictError extends AppError {
  * @param {Object} [options.logger] - Custom logger instance
  * @param {Function} [options.customHandler] - Custom error handler function
  * @param {Object} [options.errorMappings] - Custom error type to status code mappings
+ * @param {Function} [options.onError] - Callback function called on each error
+ * @param {Function} [options.beforeResponse] - Callback called before sending error response
+ * @param {Function} [options.afterResponse] - Callback called after sending error response
  * 
  * @returns {Function} Express error handling middleware
  * 
@@ -336,6 +339,10 @@ export class ConflictError extends AppError {
  *   includeStackTrace: process.env.NODE_ENV === 'development',
  *   errorMappings: {
  *     'CustomError': 418
+ *   },
+ *   onError: (error, req) => {
+ *     // Custom error monitoring
+ *     analytics.track('error', { type: error.errorType });
  *   }
  * });
  * app.use(errorHandler);
@@ -346,7 +353,10 @@ export function createErrorHandler(options = {}) {
         includeStackTrace = false,
         logger = console,
         customHandler = null,
-        errorMappings = {}
+        errorMappings = {},
+        onError = null,
+        beforeResponse = null,
+        afterResponse = null
     } = options;
 
     /**
@@ -358,6 +368,15 @@ export function createErrorHandler(options = {}) {
      * @param {Function} next - Express next function
      */
     return function errorHandler(err, req, res, next) {
+        // Call onError callback if provided
+        if (onError) {
+            try {
+                onError(err, req);
+            } catch (callbackError) {
+                logger.error('Error in onError callback:', callbackError);
+            }
+        }
+
         // Use custom handler if provided
         if (customHandler) {
             const handled = customHandler(err, req, res, next);
@@ -417,13 +436,41 @@ export function createErrorHandler(options = {}) {
             errorResponse.error.details = err.details;
         }
 
+        // Add severity if available
+        if (err.severity) {
+            errorResponse.error.severity = err.severity;
+        }
+
+        // Add context if available
+        if (err.context && Object.keys(err.context).length > 0) {
+            errorResponse.error.context = err.context;
+        }
+
         // Add request ID if available
         if (req.id) {
             errorResponse.error.requestId = req.id;
         }
 
+        // Call beforeResponse callback if provided
+        if (beforeResponse) {
+            try {
+                beforeResponse(errorResponse, req, res);
+            } catch (callbackError) {
+                logger.error('Error in beforeResponse callback:', callbackError);
+            }
+        }
+
         // Send error response
         res.status(statusCode).json(errorResponse);
+
+        // Call afterResponse callback if provided
+        if (afterResponse) {
+            try {
+                afterResponse(errorResponse, req, res);
+            } catch (callbackError) {
+                logger.error('Error in afterResponse callback:', callbackError);
+            }
+        }
     };
 }
 
