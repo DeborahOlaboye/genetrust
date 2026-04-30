@@ -18,6 +18,18 @@ export class CryptoUtils {
     static MAX_ITERATIONS = 10000000;
     static MIN_ITERATIONS = 10000;
     static AES_KEY_SIZE = 32;
+
+    /**
+     * Validate encoding parameter
+     * @private
+     * @param {string} encoding - Encoding to validate
+     * @throws {Error} If encoding is not supported
+     */
+    static _validateEncoding(encoding) {
+        if (!this.VALID_ENCODINGS.includes(encoding)) {
+            throw new Error(`Invalid encoding: ${encoding}. Must be one of: ${this.VALID_ENCODINGS.join(', ')}`);
+        }
+    }
     
     /**
      * Generate a cryptographically secure random key
