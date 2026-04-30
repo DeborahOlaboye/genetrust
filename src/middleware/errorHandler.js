@@ -99,7 +99,27 @@ export class AppError extends Error {
          */
         this.isOperational = true;
         
+        /**
+         * Error context for tracking request information
+         * @type {Object}
+         */
+        this.context = {};
+        
         Error.captureStackTrace(this, this.constructor);
+    }
+
+    /**
+     * Add context to the error
+     * 
+     * @param {Object} context - Context information to add
+     * @returns {AppError} This error instance for chaining
+     * 
+     * @example
+     * error.addContext({ userId: '123', action: 'delete' });
+     */
+    addContext(context) {
+        this.context = { ...this.context, ...context };
+        return this;
     }
 
     /**
