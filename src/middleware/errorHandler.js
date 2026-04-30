@@ -255,7 +255,7 @@ export class NotFoundError extends AppError {
      * throw new NotFoundError('User not found', 'User', '123');
      */
     constructor(message = 'Resource not found', resource, resourceId) {
-        super(message, 404, 'NOT_FOUND', { resource, resourceId });
+        super(message, 404, 'NOT_FOUND', { resource, resourceId }, 'low');
     }
 }
 
