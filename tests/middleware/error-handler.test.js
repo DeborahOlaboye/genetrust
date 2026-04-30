@@ -413,3 +413,44 @@ describe('ErrorSeverity', () => {
         expect(ErrorSeverity.CRITICAL).toBe('critical');
     });
 });
+
+describe('aggregateErrors', () => {
+    it('should aggregate multiple errors into single error', () => {
+        const errors = [
+            new ValidationError('Email invalid'),
+            new ValidationError('Age required')
+        ];
+        
+        const aggregated = aggregateErrors(errors, 'Validation failed');
+        
+        expect(aggregated).toBeInstanceOf(AppError);
+        expect(aggregated.message).toBe('Validation failed');
+        expect(aggregated.errorType).toBe('AGGREGATE_ERROR');
+        expect(aggregated.details.errors).toHaveLength(2);
+    });
+
+    it('should use default message when not provided', () => {
+        const errors = [new Error('Error 1')];
+        
+        const aggregated = aggregateErrors(errors);
+        
+        expect(aggregated.message).toBe('Multiple errors occurred');
+    });
+
+    it('should determine highest severity from errors', () => {
+        const errors = [
+            new ValidationError('Low severity error'),
+            new DatabaseError('High severity error')
+        ];
+        
+        const aggregated = aggregateErrors(errors);
+        
+        expect(aggregated.severity).toBe('high');
+    });
+
+    it('should handle empty array', () => {
+        const aggregated = aggregateErrors([]);
+        
+        expect(aggregated.details.errors).toHaveLength(0);
+    });
+});
