@@ -108,6 +108,8 @@
         (asserts! (> data-id u0) ERR-INVALID-INPUT)
         ;; Validate price is positive
         (asserts! (> price u0) ERR-INVALID-AMOUNT)
+        ;; Validate price does not exceed maximum cap
+        (asserts! (<= price MAX-PRICE) ERR-PRICE-TOO-HIGH)
         ;; Validate access-level is in valid range (1-3)
         (asserts! (and (>= access-level u1) (<= access-level u3)) ERR-INVALID-ACCESS-LEVEL)
         ;; Validate description length (10-200 chars)
