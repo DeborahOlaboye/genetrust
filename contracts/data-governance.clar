@@ -121,6 +121,10 @@
                 updated-at: stacks-block-height
             }
         )
+        (print { event: "consent-set", data-id: data-id, owner: tx-sender,
+                 research: research-consent, commercial: commercial-consent,
+                 clinical: clinical-consent, jurisdiction: jurisdiction,
+                 block: stacks-block-height })
         (ok true)
     )
 )
