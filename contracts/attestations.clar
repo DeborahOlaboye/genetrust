@@ -35,6 +35,10 @@
 (define-constant ERR-VERIFIER-INACTIVE (err u503))
 (define-constant ERR-CONTRACT-PAUSED (err u511))
 
+;; Errors - Conflict (business logic)
+(define-constant ERR-ALREADY-VERIFIED (err u446))
+(define-constant ERR-DUPLICATE-VERIFIER-ADDRESS (err u447))
+
 ;; @notice Proof type identifiers for different genetic attestation categories.
 (define-constant PROOF-GENE-PRESENCE u1)  ;; Confirms a specific gene is present
 (define-constant PROOF-GENE-ABSENCE u2)   ;; Confirms a specific gene is absent
