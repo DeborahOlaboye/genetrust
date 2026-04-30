@@ -189,8 +189,45 @@ export class CryptoUtils {
      * @param {number} keyLength - Desired key length in bytes
      * @param {string} digest - Hash function ('sha256', 'sha512')
      * @returns {Buffer} Derived key
+     * @throws {Error} If password is empty or not a string
+     * @throws {Error} If salt is null/undefined
+     * @throws {Error} If iterations is below minimum safe value
+     * @throws {Error} If keyLength is not a positive integer
+     * @throws {Error} If digest is not supported
      */
     static deriveKey(password, salt, iterations = 100000, keyLength = 32, digest = 'sha256') {
+        // Validate password parameter
+        if (typeof password !== 'string' || password.length === 0) {
+            throw new Error('Password must be a non-empty string');
+        }
+
+        // Validate salt parameter
+        if (salt === null || salt === undefined) {
+            throw new Error('Salt cannot be null or undefined');
+        }
+
+        // Validate iterations parameter (minimum 10000 for security)
+        if (!Number.isInteger(iterations) || iterations < 10000) {
+            throw new Error('Iterations must be at least 10000 for security');
+        }
+        if (iterations > 10000000) {
+            throw new Error('Iterations exceeds maximum allowed value of 10000000');
+        }
+
+        // Validate keyLength parameter
+        if (!Number.isInteger(keyLength) || keyLength <= 0) {
+            throw new Error('Key length must be a positive integer');
+        }
+        if (keyLength > 1024) {
+            throw new Error('Key length exceeds maximum allowed value of 1024');
+        }
+
+        // Validate digest parameter
+        const validDigests = ['sha256', 'sha512'];
+        if (!validDigests.includes(digest)) {
+            throw new Error(`Invalid digest: ${digest}. Must be one of: ${validDigests.join(', ')}`);
+        }
+
         return pbkdf2Sync(password, salt, iterations, keyLength, digest);
     }
 
