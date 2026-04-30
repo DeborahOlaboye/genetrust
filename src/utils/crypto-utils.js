@@ -32,14 +32,13 @@ export class CryptoUtils {
         if (!Number.isInteger(length) || length <= 0) {
             throw new Error('Length must be a positive integer');
         }
-        if (length > 1024) {
-            throw new Error('Length exceeds maximum allowed value of 1024');
+        if (length > this.MAX_KEY_LENGTH) {
+            throw new Error(`Length exceeds maximum allowed value of ${this.MAX_KEY_LENGTH}`);
         }
 
         // Validate encoding parameter
-        const validEncodings = ['hex', 'base64', 'buffer'];
-        if (!validEncodings.includes(encoding)) {
-            throw new Error(`Invalid encoding: ${encoding}. Must be one of: ${validEncodings.join(', ')}`);
+        if (!this.VALID_ENCODINGS.includes(encoding)) {
+            throw new Error(`Invalid encoding: ${encoding}. Must be one of: ${this.VALID_ENCODINGS.join(', ')}`);
         }
 
         const key = randomBytes(length);
