@@ -367,3 +367,39 @@
 (define-read-only (get-next-data-id)
     (ok (var-get next-data-id))
 )
+
+;; @notice Returns the owner principal of a dataset.
+;; @param data-id The dataset ID to look up.
+;; @return Some(principal) if dataset exists, none otherwise.
+(define-read-only (get-dataset-owner (data-id uint))
+    (match (map-get? datasets { data-id: data-id })
+        dataset (some (get owner dataset))
+        none
+    )
+)
+
+;; @notice Returns the total number of datasets ever registered (including deactivated).
+;; @return ok(uint) - the all-time dataset registration count.
+(define-read-only (get-total-datasets)
+    (ok (var-get total-datasets))
+)
+
+;; @notice Returns true if the given dataset exists and is active.
+;; @param data-id The dataset ID to check.
+;; @return ok(true) if active, ok(false) if inactive or not found.
+(define-read-only (is-dataset-active (data-id uint))
+    (match (map-get? datasets { data-id: data-id })
+        dataset (ok (get is-active dataset))
+        (ok false)
+    )
+)
+
+;; @notice Returns the current price of a dataset in microSTX.
+;; @param data-id The dataset ID to look up.
+;; @return Some(uint) if dataset exists, none otherwise.
+(define-read-only (get-dataset-price (data-id uint))
+    (match (map-get? datasets { data-id: data-id })
+        dataset (some (get price dataset))
+        none
+    )
+)
