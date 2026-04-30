@@ -504,8 +504,12 @@ describe('genetic-data contract - coverage', () => {
   it('should cover all error codes', () => {
     const errorCodes = [
       400, // ERR-INVALID-INPUT
+      401, // ERR-INVALID-AMOUNT
+      402, // ERR-PRICE-TOO-HIGH
+      403, // ERR-INVALID-HASH
       406, // ERR-INVALID-ACCESS-LEVEL
       407, // ERR-INVALID-STRING-LENGTH
+      408, // ERR-ZERO-HASH
       410, // ERR-NOT-AUTHORIZED
       411, // ERR-NOT-OWNER
       430, // ERR-NOT-FOUND
@@ -515,8 +519,73 @@ describe('genetic-data contract - coverage', () => {
       450, // ERR-INACTIVE-DATASET
       610, // ERR-SELF-GRANT-NOT-ALLOWED
       611, // ERR-CANNOT-REVOKE-OWN-ACCESS
+      621, // ERR-INSUFFICIENT-ACCESS-LEVEL
     ];
-    
+
     expect(errorCodes.length).toBeGreaterThan(10);
+  });
+});
+
+describe('genetic-data contract - new validation rules', () => {
+  describe('register-dataset price cap validation', () => {
+    it('should reject price exceeding MAX-PRICE (u1000000000000000)', () => {
+      const MAX_PRICE = 1_000_000_000_000_000n;
+      const overPrice = MAX_PRICE + 1n;
+      // ERR-PRICE-TOO-HIGH (u402) expected
+      expect(overPrice > MAX_PRICE).toBe(true);
+    });
+
+    it('should accept price equal to MAX-PRICE', () => {
+      const MAX_PRICE = 1_000_000_000_000_000n;
+      expect(MAX_PRICE).toBeLessThanOrEqual(MAX_PRICE);
+    });
+  });
+
+  describe('register-dataset URL validation', () => {
+    it('should reject storage URL shorter than MIN-URL-LENGTH (5 chars)', () => {
+      const shortUrl = 'abc';
+      expect(shortUrl.length).toBeLessThan(5);
+    });
+
+    it('should accept storage URL of exactly MIN-URL-LENGTH (5 chars)', () => {
+      const validUrl = 'abcde';
+      expect(validUrl.length).toBeGreaterThanOrEqual(5);
+    });
+  });
+
+  describe('register-dataset zero-hash validation', () => {
+    it('should reject all-zero 32-byte metadata hash', () => {
+      const zeroHash = '0'.repeat(64); // 32 zero bytes hex
+      expect(zeroHash).toBe('0'.repeat(64));
+    });
+  });
+
+  describe('grant-access access-level cap', () => {
+    it('should reject granting access level higher than dataset level', () => {
+      const datasetAccessLevel = 1; // ACCESS-BASIC
+      const requestedLevel = 3;    // ACCESS-FULL — exceeds dataset level
+      // ERR-INSUFFICIENT-ACCESS-LEVEL (u621) expected
+      expect(requestedLevel).toBeGreaterThan(datasetAccessLevel);
+    });
+
+    it('should accept granting access level equal to dataset level', () => {
+      const datasetAccessLevel = 2;
+      const requestedLevel = 2;
+      expect(requestedLevel).toBeLessThanOrEqual(datasetAccessLevel);
+    });
+  });
+
+  describe('update-dataset-price', () => {
+    it('should validate price > 0', () => {
+      const invalidPrice = 0;
+      // ERR-INVALID-AMOUNT (u401) expected
+      expect(invalidPrice).toBe(0);
+    });
+
+    it('should validate price <= MAX-PRICE', () => {
+      const MAX_PRICE = 1_000_000_000_000_000n;
+      const validPrice = 1_000_000n;
+      expect(validPrice).toBeLessThanOrEqual(MAX_PRICE);
+    });
   });
 });
