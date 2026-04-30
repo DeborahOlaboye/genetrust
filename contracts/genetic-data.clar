@@ -247,6 +247,23 @@
     )
 )
 
+;; Update the storage URL of an active dataset (owner only)
+;; @param data-id: ID of the dataset
+;; @param new-url: New storage URL (5-200 chars)
+;; @returns: ok true on success, error otherwise
+(define-public (update-storage-url (data-id uint) (new-url (string-utf8 200)))
+    (let ((dataset (unwrap! (map-get? datasets { data-id: data-id }) ERR-DATASET-NOT-FOUND)))
+        (asserts! (> data-id u0) ERR-INVALID-INPUT)
+        (asserts! (is-eq tx-sender (get owner dataset)) ERR-NOT-OWNER)
+        (asserts! (get is-active dataset) ERR-INACTIVE-DATASET)
+        (asserts! (and (>= (len new-url) MIN-URL-LENGTH) (<= (len new-url) u200)) ERR-INVALID-STRING-LENGTH)
+        (map-set datasets { data-id: data-id } (merge dataset { storage-url: new-url }))
+        (print { event: "dataset-url-updated", data-id: data-id, owner: tx-sender,
+                 block: stacks-block-height })
+        (ok true)
+    )
+)
+
 ;; @notice Returns all stored fields for a given dataset.
 ;; @param data-id The dataset ID to look up.
 ;; @return Some(dataset) if found, none otherwise.
