@@ -152,6 +152,9 @@
                 updated-at: stacks-block-height
             })
         )
+        (print { event: "consent-renewed", data-id: data-id, owner: tx-sender,
+                 new-expires-at: (+ stacks-block-height CONSENT-EXPIRY-BLOCKS),
+                 block: stacks-block-height })
         (ok true)
     )
 )
