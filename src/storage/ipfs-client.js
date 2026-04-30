@@ -6,10 +6,75 @@ import { Buffer } from 'buffer';
 import { profiler } from '../utils/performance-profiler.js';
 
 /**
- * IPFS client for genetic data storage
- * Provides encrypted storage and retrieval capabilities
+ * IPFS client for genetic data storage and retrieval
+ * 
+ * Provides a robust interface for IPFS operations including file upload,
+ * download, pinning, and batch processing. Includes connection management,
+ * performance optimization, retry logic, and comprehensive metrics tracking.
+ * Designed specifically for handling encrypted genetic data with privacy
+ * and reliability requirements.
+ * 
+ * @class IPFSClient
+ * @description IPFS integration for decentralized genetic data storage
+ * @version 2.0.0
+ * @since 1.0.0
+ * @author GeneTrust Development Team
+ * 
+ * @example
+ * // Basic IPFS client initialization
+ * const ipfs = new IPFSClient();
+ * 
+ * @example
+ * // Custom IPFS configuration
+ * const ipfs = new IPFSClient({
+ *   host: 'ipfs.infura.io',
+ *   port: 5001,
+ *   protocol: 'https',
+ *   timeout: 60000,
+ *   maxConcurrentUploads: 10
+ * });
+ * 
+ * @example
+ * // Upload genetic data
+ * const result = await ipfs.uploadData(encryptedData, {
+ *   pin: true,
+ *   wrapWithDirectory: true
+ * });
  */
 export class IPFSClient {
+    /**
+     * Creates a new IPFS client instance
+     * 
+     * @constructor
+     * @param {Object} [options={}] - Configuration options
+     * @param {string} [options.host='localhost'] - IPFS node host
+     * @param {number} [options.port=5001] - IPFS node port
+     * @param {string} [options.protocol='http'] - Connection protocol ('http' or 'https')
+     * @param {number} [options.timeout=30000] - Request timeout in milliseconds
+     * @param {number} [options.maxConcurrentUploads=5] - Maximum concurrent uploads
+     * @param {number} [options.batchSize=10] - Batch operation size
+     * @param {number} [options.retryAttempts=3] - Number of retry attempts for failed operations
+     * @param {string} [options.auth] - Authentication header for remote IPFS nodes
+     * @param {Object} [options.headers] - Additional HTTP headers
+     * 
+     * @throws {Error} When IPFS client initialization fails
+     * @throws {Error} When invalid configuration is provided
+     * 
+     * @returns {IPFSClient} New IPFS client instance
+     * 
+     * @example
+     * // Create client with default settings
+     * const client = new IPFSClient();
+     * 
+     * @example
+     * // Create client for remote IPFS node
+     * const client = new IPFSClient({
+     *   host: 'ipfs.infura.io',
+     *   port: 5001,
+     *   protocol: 'https',
+     *   auth: 'Basic ' + btoa('projectId:projectSecret')
+     * });
+     */
     constructor(options = {}) {
         // Default IPFS configuration
         this.config = {
