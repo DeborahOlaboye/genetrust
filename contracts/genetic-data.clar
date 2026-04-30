@@ -105,14 +105,18 @@
     (access-level uint)
     (price uint))
     (let ((data-id (var-get next-data-id)))
-        ;; Validate metadata hash
+        ;; Validate metadata hash is exactly 32 bytes
         (asserts! (is-eq (len metadata-hash) u32) ERR-INVALID-HASH)
-        ;; Validate storage URL is not empty and reasonable length
-        (asserts! (and (> (len storage-url) u0) (<= (len storage-url) u200)) ERR-INVALID-STRING-LENGTH)
+        ;; Validate metadata hash is not all-zero (meaningless sentinel)
+        (asserts! (not (is-eq metadata-hash 0x0000000000000000000000000000000000000000000000000000000000000000)) ERR-ZERO-HASH)
+        ;; Validate storage URL meets minimum length and does not exceed maximum
+        (asserts! (and (>= (len storage-url) MIN-URL-LENGTH) (<= (len storage-url) u200)) ERR-INVALID-STRING-LENGTH)
         ;; Validate description is not empty and reasonable length
         (asserts! (and (>= (len description) u10) (<= (len description) u200)) ERR-INVALID-STRING-LENGTH)
         ;; Validate price is positive
         (asserts! (> price u0) ERR-INVALID-AMOUNT)
+        ;; Validate price does not exceed the maximum cap
+        (asserts! (<= price MAX-PRICE) ERR-PRICE-TOO-HIGH)
         ;; Validate access-level is in valid range (1-3)
         (asserts! (and (>= access-level ACCESS-BASIC) (<= access-level ACCESS-FULL)) ERR-INVALID-ACCESS-LEVEL)
         ;; Create the dataset
