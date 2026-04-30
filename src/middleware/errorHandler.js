@@ -154,6 +154,8 @@ export class AppError extends Error {
             errorType: this.errorType,
             details: this.details,
             timestamp: this.timestamp,
+            severity: this.severity,
+            context: this.context,
             stack: process.env.NODE_ENV === 'development' ? this.stack : undefined
         };
     }
