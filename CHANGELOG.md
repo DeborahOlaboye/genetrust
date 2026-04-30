@@ -10,6 +10,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Rate limiting middleware system (Issue Two)
+  - Sliding window algorithm with LRU cache for memory efficiency
+  - Category-based configuration for auth, sensitive data, marketplace endpoints
+  - Express.js integration with automatic route detection
+  - Real-time monitoring and metrics collection
+  - Pre-configured limiters for different endpoint types
+  - Comprehensive test suite and documentation
+  - Usage examples and best practices guide
 - Comprehensive input validation for CryptoUtils class (Issue One)
   - Added validation to all 20+ cryptographic methods
   - Added security constants for validation limits
