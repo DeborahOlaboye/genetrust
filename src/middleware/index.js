@@ -63,6 +63,7 @@ export {
     ConflictError,
     DatabaseError,
     NetworkError,
+    PaymentError,
     createErrorHandler,
     errorHandler,
     devErrorHandler,
