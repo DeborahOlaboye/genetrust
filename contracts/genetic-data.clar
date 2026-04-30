@@ -264,6 +264,23 @@
     )
 )
 
+;; Update the description of an active dataset (owner only)
+;; @param data-id: ID of the dataset
+;; @param new-description: New description (10-200 chars)
+;; @returns: ok true on success, error otherwise
+(define-public (update-description (data-id uint) (new-description (string-utf8 200)))
+    (let ((dataset (unwrap! (map-get? datasets { data-id: data-id }) ERR-DATASET-NOT-FOUND)))
+        (asserts! (> data-id u0) ERR-INVALID-INPUT)
+        (asserts! (is-eq tx-sender (get owner dataset)) ERR-NOT-OWNER)
+        (asserts! (get is-active dataset) ERR-INACTIVE-DATASET)
+        (asserts! (and (>= (len new-description) u10) (<= (len new-description) u200)) ERR-INVALID-STRING-LENGTH)
+        (map-set datasets { data-id: data-id } (merge dataset { description: new-description }))
+        (print { event: "dataset-description-updated", data-id: data-id, owner: tx-sender,
+                 block: stacks-block-height })
+        (ok true)
+    )
+)
+
 ;; @notice Returns all stored fields for a given dataset.
 ;; @param data-id The dataset ID to look up.
 ;; @return Some(dataset) if found, none otherwise.
