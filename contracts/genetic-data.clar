@@ -153,6 +153,8 @@
         (asserts! (> data-id u0) ERR-INVALID-INPUT)
         ;; Prevent self-grant
         (asserts! (not (is-eq user tx-sender)) ERR-SELF-GRANT-NOT-ALLOWED)
+        ;; Prevent granting access to the contract itself
+        (asserts! (not (is-eq user (as-contract tx-sender))) ERR-INVALID-INPUT)
         ;; Verify caller is the dataset owner
         (asserts! (is-eq tx-sender (get owner dataset)) ERR-NOT-OWNER)
         ;; Verify dataset is active
