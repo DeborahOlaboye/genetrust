@@ -143,6 +143,42 @@ export class AppError extends Error {
     }
 
     /**
+     * Add recovery action to the error
+     * 
+     * @param {Function} action - Recovery action function
+     * @returns {AppError} This error instance for chaining
+     * 
+     * @example
+     * error.addRecoveryAction(() => {
+     *   // Retry the operation
+     * });
+     */
+    addRecoveryAction(action) {
+        this.recoveryAction = action;
+        return this;
+    }
+
+    /**
+     * Execute recovery action if available
+     * 
+     * @async
+     * @returns {Promise<*>} Result of recovery action or null
+     * 
+     * @example
+     * const result = await error.tryRecover();
+     */
+    async tryRecover() {
+        if (this.recoveryAction && typeof this.recoveryAction === 'function') {
+            try {
+                return await this.recoveryAction();
+            } catch (recoveryError) {
+                return null;
+            }
+        }
+        return null;
+    }
+
+    /**
      * Convert error to JSON format
      * 
      * @returns {Object} Error object in JSON format
