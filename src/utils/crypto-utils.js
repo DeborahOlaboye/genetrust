@@ -208,26 +208,25 @@ export class CryptoUtils {
             throw new Error('Salt cannot be null or undefined');
         }
 
-        // Validate iterations parameter (minimum 10000 for security)
-        if (!Number.isInteger(iterations) || iterations < 10000) {
-            throw new Error('Iterations must be at least 10000 for security');
+        // Validate iterations parameter
+        if (!Number.isInteger(iterations) || iterations < this.MIN_ITERATIONS) {
+            throw new Error(`Iterations must be at least ${this.MIN_ITERATIONS} for security`);
         }
-        if (iterations > 10000000) {
-            throw new Error('Iterations exceeds maximum allowed value of 10000000');
+        if (iterations > this.MAX_ITERATIONS) {
+            throw new Error(`Iterations exceeds maximum allowed value of ${this.MAX_ITERATIONS}`);
         }
 
         // Validate keyLength parameter
         if (!Number.isInteger(keyLength) || keyLength <= 0) {
             throw new Error('Key length must be a positive integer');
         }
-        if (keyLength > 1024) {
-            throw new Error('Key length exceeds maximum allowed value of 1024');
+        if (keyLength > this.MAX_KEY_LENGTH) {
+            throw new Error(`Key length exceeds maximum allowed value of ${this.MAX_KEY_LENGTH}`);
         }
 
         // Validate digest parameter
-        const validDigests = ['sha256', 'sha512'];
-        if (!validDigests.includes(digest)) {
-            throw new Error(`Invalid digest: ${digest}. Must be one of: ${validDigests.join(', ')}`);
+        if (!this.VALID_DIGESTS.includes(digest)) {
+            throw new Error(`Invalid digest: ${digest}. Must be one of: ${this.VALID_DIGESTS.join(', ')}`);
         }
 
         return pbkdf2Sync(password, salt, iterations, keyLength, digest);
