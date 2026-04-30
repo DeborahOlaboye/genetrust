@@ -87,8 +87,33 @@ export class CryptoUtils {
      * @param {string} algorithm - Hash algorithm ('sha256', 'sha512')
      * @param {string} encoding - Output encoding
      * @returns {string|Buffer} HMAC value
+     * @throws {Error} If data or key is null/undefined
+     * @throws {Error} If algorithm is not supported
+     * @throws {Error} If encoding is not supported
      */
     static generateHMAC(data, key, algorithm = 'sha256', encoding = 'hex') {
+        // Validate data parameter
+        if (data === null || data === undefined) {
+            throw new Error('Data cannot be null or undefined');
+        }
+
+        // Validate key parameter
+        if (key === null || key === undefined) {
+            throw new Error('Key cannot be null or undefined');
+        }
+
+        // Validate algorithm parameter
+        const validAlgorithms = ['sha256', 'sha512'];
+        if (!validAlgorithms.includes(algorithm)) {
+            throw new Error(`Invalid algorithm: ${algorithm}. Must be one of: ${validAlgorithms.join(', ')}`);
+        }
+
+        // Validate encoding parameter
+        const validEncodings = ['hex', 'base64', 'buffer'];
+        if (!validEncodings.includes(encoding)) {
+            throw new Error(`Invalid encoding: ${encoding}. Must be one of: ${validEncodings.join(', ')}`);
+        }
+
         const hmac = createHmac(algorithm, key).update(data).digest();
         
         switch (encoding) {
