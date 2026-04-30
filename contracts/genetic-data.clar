@@ -296,6 +296,23 @@
     )
 )
 
+;; Transfer dataset ownership to a new principal (current owner only)
+;; @param data-id: ID of the dataset
+;; @param new-owner: Principal to transfer ownership to
+;; @returns: ok true on success, error otherwise
+(define-public (transfer-dataset-ownership (data-id uint) (new-owner principal))
+    (let ((dataset (unwrap! (map-get? datasets { data-id: data-id }) ERR-DATASET-NOT-FOUND)))
+        (asserts! (> data-id u0) ERR-INVALID-INPUT)
+        (asserts! (is-eq tx-sender (get owner dataset)) ERR-NOT-OWNER)
+        (asserts! (not (is-eq new-owner tx-sender)) ERR-INVALID-INPUT)
+        (asserts! (not (is-eq new-owner (as-contract tx-sender))) ERR-INVALID-INPUT)
+        (map-set datasets { data-id: data-id } (merge dataset { owner: new-owner }))
+        (print { event: "dataset-ownership-transferred", data-id: data-id,
+                 from: tx-sender, to: new-owner, block: stacks-block-height })
+        (ok true)
+    )
+)
+
 ;; @notice Returns all stored fields for a given dataset.
 ;; @param data-id The dataset ID to look up.
 ;; @return Some(dataset) if found, none otherwise.
