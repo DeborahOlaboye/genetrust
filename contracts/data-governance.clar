@@ -226,6 +226,8 @@
         (map-set gdpr-records { data-id: data-id }
             (merge gdpr { data-portability-requested: true, updated-at: stacks-block-height })
         )
+        (print { event: "portability-requested", data-id: data-id, owner: tx-sender,
+                 block: stacks-block-height })
         (ok true)
     )
 )
