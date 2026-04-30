@@ -68,13 +68,12 @@ export class CryptoUtils {
         }
 
         // Validate encoding parameter
-        const validEncodings = ['hex', 'base64', 'buffer'];
-        if (!validEncodings.includes(encoding)) {
-            throw new Error(`Invalid encoding: ${encoding}. Must be one of: ${validEncodings.join(', ')}`);
+        if (!this.VALID_ENCODINGS.includes(encoding)) {
+            throw new Error(`Invalid encoding: ${encoding}. Must be one of: ${this.VALID_ENCODINGS.join(', ')}`);
         }
 
         const hash = createHash('sha256').update(data).digest();
-        
+
         switch (encoding) {
             case 'hex':
                 return hash.toString('hex');
@@ -82,8 +81,6 @@ export class CryptoUtils {
                 return hash.toString('base64');
             case 'buffer':
                 return hash;
-            default:
-                throw new Error(`Unsupported encoding: ${encoding}`);
         }
     }
 
