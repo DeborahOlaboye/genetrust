@@ -674,3 +674,33 @@ export function notFoundHandler(req, res) {
         }
     });
 }
+
+/**
+ * Aggregate multiple errors into a single error response
+ * 
+ * @function aggregateErrors
+ * 
+ * @param {Array<Error>} errors - Array of errors to aggregate
+ * @param {string} [message='Multiple errors occurred'] - Aggregate error message
+ * @returns {AppError} Aggregated error
+ * 
+ * @example
+ * const errors = [new Error('Error 1'), new Error('Error 2')];
+ * const aggregated = aggregateErrors(errors, 'Validation failed');
+ */
+export function aggregateErrors(errors, message = 'Multiple errors occurred') {
+    const errorDetails = errors.map(err => ({
+        message: err.message,
+        type: err.errorType || err.constructor?.name || 'Error',
+        severity: err.severity || 'medium'
+    }));
+
+    const highestSeverity = errors.reduce((max, err) => {
+        const severityOrder = ['low', 'medium', 'high', 'critical'];
+        const currentIndex = severityOrder.indexOf(err.severity) || 1;
+        const maxIndex = severityOrder.indexOf(max) || 1;
+        return currentIndex > maxIndex ? err.severity : max;
+    }, 'low');
+
+    return new AppError(message, 400, 'AGGREGATE_ERROR', { errors: errorDetails }, highestSeverity);
+}
