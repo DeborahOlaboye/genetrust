@@ -815,8 +815,20 @@ export class CryptoUtils {
      * @param {any} data - Data to sign
      * @param {string|Buffer} privateKey - Private key for signing
      * @returns {string} Generated signature
+     * @throws {Error} If data is undefined
+     * @throws {Error} If privateKey is null/undefined
      */
     static signData(data, privateKey) {
+        // Validate data parameter
+        if (data === undefined) {
+            throw new Error('Data cannot be undefined');
+        }
+
+        // Validate privateKey parameter
+        if (privateKey === null || privateKey === undefined) {
+            throw new Error('Private key cannot be null or undefined');
+        }
+
         const dataString = typeof data === 'string' ? data : JSON.stringify(data);
         return this.generateHMAC(dataString, privateKey, 'sha256', 'hex');
     }
@@ -827,11 +839,29 @@ export class CryptoUtils {
      * @param {string} signature - Signature to verify
      * @param {string|Buffer} publicKey - Public key for verification
      * @returns {boolean} True if signature is valid
+     * @throws {Error} If data is undefined
+     * @throws {Error} If signature is empty or not a string
+     * @throws {Error} If publicKey is null/undefined
      */
     static verifySignature(data, signature, publicKey) {
+        // Validate data parameter
+        if (data === undefined) {
+            throw new Error('Data cannot be undefined');
+        }
+
+        // Validate signature parameter
+        if (typeof signature !== 'string' || signature.length === 0) {
+            throw new Error('Signature must be a non-empty string');
+        }
+
+        // Validate publicKey parameter
+        if (publicKey === null || publicKey === undefined) {
+            throw new Error('Public key cannot be null or undefined');
+        }
+
         const dataString = typeof data === 'string' ? data : JSON.stringify(data);
         const expectedSignature = this.generateHMAC(dataString, publicKey, 'sha256', 'hex');
-        
+
         return this.timingSafeEqual(signature, expectedSignature);
     }
 }
