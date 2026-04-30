@@ -10,6 +10,14 @@ import { pbkdf2Sync } from 'crypto';
  * Cryptographic utilities for secure operations
  */
 export class CryptoUtils {
+    // Constants for validation
+    static VALID_ENCODINGS = ['hex', 'base64', 'buffer'];
+    static VALID_ALGORITHMS = ['sha256', 'sha512'];
+    static VALID_DIGESTS = ['sha256', 'sha512'];
+    static MAX_KEY_LENGTH = 1024;
+    static MAX_ITERATIONS = 10000000;
+    static MIN_ITERATIONS = 10000;
+    static AES_KEY_SIZE = 32;
     
     /**
      * Generate a cryptographically secure random key
