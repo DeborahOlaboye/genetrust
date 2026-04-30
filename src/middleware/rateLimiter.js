@@ -73,12 +73,24 @@ export class RateLimiter {
             throw new Error('cacheMax must be a positive number');
         }
 
+        // Performance optimization: pre-allocate common arrays
+        this._tempArray = [];
+        this._lastCleanup = Date.now();
+        this._cleanupInterval = Math.min(this.windowMs / 10, 60000); // Cleanup every 10% of window or 1 minute
+
         // Use LRU cache to store request counts with automatic cleanup
         this.cache = new LRUCache({
             max: cacheMax, // Maximum number of entries
             ttl: this.windowMs, // Time to live
             updateAgeOnGet: true,
-            allowStale: false
+            allowStale: false,
+            // Performance optimization
+            dispose: (value, key) => {
+                // Clean up large arrays when entries are disposed
+                if (value && value.requests && value.requests.length > 100) {
+                    value.requests.length = 0;
+                }
+            }
         });
     }
 
