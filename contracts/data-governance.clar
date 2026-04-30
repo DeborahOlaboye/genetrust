@@ -235,7 +235,6 @@
         (map-set gdpr-records { data-id: data-id }
             (merge gdpr { processing-restricted: true, updated-at: stacks-block-height })
         )
-        )
         (ok true)
     )
 )
