@@ -179,6 +179,9 @@
         (map-set consent-records { data-id: data-id }
             (merge consent { jurisdiction: jurisdiction, updated-at: stacks-block-height })
         )
+        (print { event: "jurisdiction-updated", data-id: data-id, owner: tx-sender,
+                 old-jurisdiction: (get jurisdiction consent), new-jurisdiction: jurisdiction,
+                 block: stacks-block-height })
         (ok true)
     )
 )
