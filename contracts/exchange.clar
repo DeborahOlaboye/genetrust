@@ -234,6 +234,25 @@
     )
 )
 
+;; Update the description of an active listing (owner only)
+;; @param listing-id: ID of the listing
+;; @param new-description: New description (10-200 chars)
+;; @returns: ok true on success, error otherwise
+(define-public (update-listing-description (listing-id uint) (new-description (string-utf8 200)))
+    (let ((listing (unwrap! (map-get? listings { listing-id: listing-id }) ERR-LISTING-NOT-FOUND)))
+        (asserts! (> listing-id u0) ERR-INVALID-INPUT)
+        (asserts! (is-eq tx-sender (get owner listing)) ERR-NOT-OWNER)
+        (asserts! (get active listing) ERR-LISTING-INACTIVE)
+        (asserts! (and (>= (len new-description) u10) (<= (len new-description) u200)) ERR-INVALID-STRING-LENGTH)
+        (map-set listings { listing-id: listing-id }
+            (merge listing { description: new-description })
+        )
+        (print { event: "listing-description-updated", listing-id: listing-id, owner: tx-sender,
+                 block: stacks-block-height })
+        (ok true)
+    )
+)
+
 ;; @notice Returns all stored fields for a given listing.
 ;; @param listing-id The listing ID to look up.
 ;; @return Some(listing) if found, none otherwise. Check active field before use.
