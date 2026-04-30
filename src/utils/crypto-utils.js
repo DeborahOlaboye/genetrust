@@ -413,8 +413,18 @@ export class CryptoUtils {
      * @param {number} length - Nonce length in bytes
      * @param {boolean} includeTimestamp - Include timestamp for uniqueness
      * @returns {string} Generated nonce
+     * @throws {Error} If length is not a positive integer
+     * @throws {Error} If length exceeds maximum safe value
      */
     static generateNonce(length = 16, includeTimestamp = true) {
+        // Validate length parameter
+        if (!Number.isInteger(length) || length <= 0) {
+            throw new Error('Length must be a positive integer');
+        }
+        if (length > 1024) {
+            throw new Error('Length exceeds maximum allowed value of 1024');
+        }
+
         const randomPart = randomBytes(length).toString('hex');
         
         if (includeTimestamp) {
