@@ -249,6 +249,8 @@
         (map-set gdpr-records { data-id: data-id }
             (merge gdpr { processing-restricted: true, updated-at: stacks-block-height })
         )
+        (print { event: "processing-restricted", data-id: data-id, owner: tx-sender,
+                 block: stacks-block-height })
         (ok true)
     )
 )
