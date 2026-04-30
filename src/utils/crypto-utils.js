@@ -440,8 +440,20 @@ export class CryptoUtils {
      * @param {any} value - Value to commit to
      * @param {string} nonce - Random nonce
      * @returns {Object} Commitment and decommitment data
+     * @throws {Error} If value is undefined
+     * @throws {Error} If nonce is not a string when provided
      */
     static createCommitment(value, nonce = null) {
+        // Validate value parameter
+        if (value === undefined) {
+            throw new Error('Value cannot be undefined');
+        }
+
+        // Validate nonce parameter if provided
+        if (nonce !== null && typeof nonce !== 'string') {
+            throw new Error('Nonce must be a string when provided');
+        }
+
         const actualNonce = nonce || this.generateNonce();
         const valueString = typeof value === 'string' ? value : JSON.stringify(value);
         const commitment = this.generateHash(`${valueString}${actualNonce}`);
