@@ -53,6 +53,12 @@
 (define-data-var next-verifier-id uint u1)
 ;; @notice Auto-incrementing counter for proof IDs. Starts at 1.
 (define-data-var next-proof-id uint u1)
+;; @notice Total number of verifiers ever registered (including deactivated).
+(define-data-var total-verifiers uint u0)
+;; @notice Total number of proofs ever submitted.
+(define-data-var total-proofs uint u0)
+;; @notice Total number of proofs that have been verified.
+(define-data-var total-verified-proofs uint u0)
 
 ;; @notice Registry of trusted verifiers such as medical labs or accredited institutions.
 ;;         Only the contract owner can add or deactivate verifiers.
