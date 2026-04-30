@@ -183,7 +183,7 @@ export class ValidationError extends AppError {
      * });
      */
     constructor(message, validationErrors = {}) {
-        super(message, 400, 'VALIDATION_ERROR', { validationErrors });
+        super(message, 400, 'VALIDATION_ERROR', { validationErrors }, 'low');
     }
 }
 
