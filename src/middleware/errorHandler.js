@@ -205,7 +205,7 @@ export class AuthenticationError extends AppError {
      * throw new AuthenticationError('Invalid credentials');
      */
     constructor(message = 'Authentication failed') {
-        super(message, 401, 'AUTHENTICATION_ERROR');
+        super(message, 401, 'AUTHENTICATION_ERROR', {}, 'medium');
     }
 }
 
