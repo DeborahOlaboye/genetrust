@@ -174,7 +174,7 @@
         (asserts! (is-eq (len proof-hash) u32) ERR-INVALID-HASH)
         ;; Validate parameters is not empty and within bounds
         (asserts! (and (> (len parameters) u0) (<= (len parameters) u256)) ERR-INVALID-BUFFER-SIZE)
-        ;; Validate metadata length
+        ;; Validate metadata length (0-200 chars; empty metadata is allowed)
         (asserts! (<= (len metadata) u200) ERR-INVALID-STRING-LENGTH)
         ;; Create the proof
         (map-set proofs { proof-id: proof-id }
@@ -190,8 +190,11 @@
                 metadata: metadata
             }
         )
-        ;; Increment counter
+        (print { event: "proof-registered", proof-id: proof-id, data-id: data-id,
+                 proof-type: proof-type, creator: tx-sender, block: stacks-block-height })
+        ;; Increment counters
         (var-set next-proof-id (+ proof-id u1))
+        (var-set total-proofs (+ (var-get total-proofs) u1))
         (ok proof-id)
     )
 )
