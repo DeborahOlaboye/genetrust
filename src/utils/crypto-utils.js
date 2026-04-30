@@ -500,8 +500,23 @@ export class CryptoUtils {
      * @param {string} data - Data to create proof for
      * @param {number} difficulty - Number of leading zeros required
      * @returns {Object} Proof of work result
+     * @throws {Error} If data is not a string
+     * @throws {Error} If difficulty is out of safe range
      */
     static generateProofOfWork(data, difficulty = 4) {
+        // Validate data parameter
+        if (typeof data !== 'string') {
+            throw new Error('Data must be a string');
+        }
+
+        // Validate difficulty parameter
+        if (!Number.isInteger(difficulty) || difficulty < 1) {
+            throw new Error('Difficulty must be a positive integer');
+        }
+        if (difficulty > 8) {
+            throw new Error('Difficulty exceeds maximum allowed value of 8 to prevent excessive computation');
+        }
+
         const target = '0'.repeat(difficulty);
         let nonce = 0;
         let hash;
@@ -523,8 +538,26 @@ export class CryptoUtils {
      * Verify proof of work
      * @param {Object} proof - Proof of work object
      * @returns {boolean} True if proof is valid
+     * @throws {Error} If proof is null or undefined
+     * @throws {Error} If proof is missing required properties
      */
     static verifyProofOfWork(proof) {
+        // Validate proof parameter
+        if (proof === null || proof === undefined) {
+            throw new Error('Proof cannot be null or undefined');
+        }
+        if (typeof proof !== 'object') {
+            throw new Error('Proof must be an object');
+        }
+
+        // Validate required properties
+        const requiredProps = ['data', 'nonce', 'hash', 'difficulty'];
+        for (const prop of requiredProps) {
+            if (!(prop in proof)) {
+                throw new Error(`Proof is missing required property: ${prop}`);
+            }
+        }
+
         try {
             const { data, nonce, hash, difficulty } = proof;
             const target = '0'.repeat(difficulty);
