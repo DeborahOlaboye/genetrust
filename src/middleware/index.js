@@ -69,7 +69,8 @@ export {
     errorHandler,
     devErrorHandler,
     asyncHandler,
-    notFoundHandler
+    notFoundHandler,
+    aggregateErrors
 } from './errorHandler.js';
 
 // Other middleware
