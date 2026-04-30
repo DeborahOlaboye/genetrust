@@ -330,6 +330,8 @@ export class ConflictError extends AppError {
  * @param {Function} [options.onError] - Callback function called on each error
  * @param {Function} [options.beforeResponse] - Callback called before sending error response
  * @param {Function} [options.afterResponse] - Callback called after sending error response
+ * @param {Object} [options.translations] - Translation object for error messages
+ * @param {string} [options.defaultLocale='en'] - Default locale for error messages
  * 
  * @returns {Function} Express error handling middleware
  * 
@@ -340,9 +342,9 @@ export class ConflictError extends AppError {
  *   errorMappings: {
  *     'CustomError': 418
  *   },
- *   onError: (error, req) => {
- *     // Custom error monitoring
- *     analytics.track('error', { type: error.errorType });
+ *   translations: {
+ *     en: { 'NOT_FOUND': 'Resource not found' },
+ *     es: { 'NOT_FOUND': 'Recurso no encontrado' }
  *   }
  * });
  * app.use(errorHandler);
@@ -356,8 +358,32 @@ export function createErrorHandler(options = {}) {
         errorMappings = {},
         onError = null,
         beforeResponse = null,
-        afterResponse = null
+        afterResponse = null,
+        translations = {},
+        defaultLocale = 'en'
     } = options;
+
+    /**
+     * Get localized error message
+     * 
+     * @param {string} message - Original error message
+     * @param {string} errorType - Error type for translation lookup
+     * @param {Object} req - Express request object
+     * @returns {string} Localized or original error message
+     */
+    function getLocalizedMessage(message, errorType, req) {
+        const locale = req.headers['accept-language']?.split(',')[0] || defaultLocale;
+        
+        if (translations[locale] && translations[locale][errorType]) {
+            return translations[locale][errorType];
+        }
+        
+        if (translations[defaultLocale] && translations[defaultLocale][errorType]) {
+            return translations[defaultLocale][errorType];
+        }
+        
+        return message;
+    }
 
     /**
      * Express error handling middleware
@@ -413,11 +439,16 @@ export function createErrorHandler(options = {}) {
             }
         }
 
+        // Get localized message if translations available
+        const message = Object.keys(translations).length > 0
+            ? getLocalizedMessage(err.message, errorType, req)
+            : (err.message || 'An unexpected error occurred');
+
         // Prepare error response
         const errorResponse = {
             success: false,
             error: {
-                message: err.message || 'An unexpected error occurred',
+                message,
                 type: errorType,
                 statusCode,
                 timestamp: Date.now(),
@@ -449,6 +480,12 @@ export function createErrorHandler(options = {}) {
         // Add request ID if available
         if (req.id) {
             errorResponse.error.requestId = req.id;
+        }
+
+        // Add locale if translations were used
+        if (Object.keys(translations).length > 0) {
+            const locale = req.headers['accept-language']?.split(',')[0] || defaultLocale;
+            errorResponse.error.locale = locale;
         }
 
         // Call beforeResponse callback if provided
