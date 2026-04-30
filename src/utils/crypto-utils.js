@@ -276,11 +276,23 @@ export class CryptoUtils {
      * @param {Object} geneticData - Genetic data object
      * @param {Object} options - Fingerprinting options
      * @returns {string} Data fingerprint
+     * @throws {Error} If geneticData is null or undefined
+     * @throws {Error} If options is not an object
      */
     static createDataFingerprint(geneticData, options = {}) {
+        // Validate geneticData parameter
+        if (geneticData === null || geneticData === undefined) {
+            throw new Error('Genetic data cannot be null or undefined');
+        }
+
+        // Validate options parameter
+        if (typeof options !== 'object' || options === null) {
+            throw new Error('Options must be an object');
+        }
+
         const fingerprintData = {
             structure: this._extractStructuralFingerprint(geneticData),
-            content: options.includeContent ? 
+            content: options.includeContent ?
                 this._extractContentFingerprint(geneticData) : null,
             timestamp: options.includeTimestamp ? Date.now() : null,
             version: options.version || '1.0'
