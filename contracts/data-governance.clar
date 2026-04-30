@@ -341,6 +341,32 @@
     )
 )
 
+;; @notice Returns the human-readable label for a jurisdiction code.
+;; @param jurisdiction The jurisdiction code (0-4).
+;; @return Some(string-utf8) label if code is valid, none otherwise.
+(define-read-only (get-jurisdiction-name (jurisdiction uint))
+    (if (is-eq jurisdiction JURISDICTION-GLOBAL) (some u"Global")
+    (if (is-eq jurisdiction JURISDICTION-US)     (some u"United States")
+    (if (is-eq jurisdiction JURISDICTION-EU)     (some u"European Union")
+    (if (is-eq jurisdiction JURISDICTION-UK)     (some u"United Kingdom")
+    (if (is-eq jurisdiction JURISDICTION-CANADA) (some u"Canada")
+    none)))))
+)
+
+;; @notice Returns a tuple of all three consent flags for a dataset.
+;; @param data-id The dataset ID to look up.
+;; @return Some(tuple) if consent record exists, none otherwise.
+(define-read-only (get-consent-flags (data-id uint))
+    (match (map-get? consent-records { data-id: data-id })
+        consent (some {
+            research: (get research-consent consent),
+            commercial: (get commercial-consent consent),
+            clinical: (get clinical-consent consent)
+        })
+        none
+    )
+)
+
 ;; @notice Returns the deployed contract version string.
 ;; @return The CONTRACT-VERSION constant value.
 (define-read-only (get-version)
