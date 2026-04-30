@@ -214,9 +214,14 @@
         (asserts! (> verifier-id u0) ERR-INVALID-INPUT)
         (asserts! (get active v) ERR-VERIFIER-INACTIVE)
         (asserts! (is-eq tx-sender (get address v)) ERR-NOT-AUTHORIZED)
+        ;; Prevent re-verifying an already-verified proof
+        (asserts! (not (get verified proof)) ERR-ALREADY-VERIFIED)
         (map-set proofs { proof-id: proof-id }
             (merge proof { verified: true, verifier-id: (some verifier-id) })
         )
+        (print { event: "proof-verified", proof-id: proof-id, verifier-id: verifier-id,
+                 verifier-address: tx-sender, block: stacks-block-height })
+        (var-set total-verified-proofs (+ (var-get total-verified-proofs) u1))
         (ok true)
     )
 )
