@@ -282,7 +282,7 @@ export class RateLimitError extends AppError {
      * });
      */
     constructor(message = 'Rate limit exceeded', rateLimitInfo = {}) {
-        super(message, 429, 'RATE_LIMIT_ERROR', { rateLimitInfo });
+        super(message, 429, 'RATE_LIMIT_ERROR', { rateLimitInfo }, 'low');
     }
 }
 
