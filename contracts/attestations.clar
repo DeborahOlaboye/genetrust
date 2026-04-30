@@ -269,3 +269,41 @@
 (define-read-only (get-next-proof-id)
     (ok (var-get next-proof-id))
 )
+
+;; @notice Returns the total number of proofs ever submitted.
+;; @return ok(uint) - the all-time proof submission count.
+(define-read-only (get-total-proofs)
+    (ok (var-get total-proofs))
+)
+
+;; @notice Returns the total number of proofs that have been verified.
+;; @return ok(uint) - the all-time verified proof count.
+(define-read-only (get-total-verified-proofs)
+    (ok (var-get total-verified-proofs))
+)
+
+;; @notice Returns the total number of verifiers ever registered.
+;; @return ok(uint) - the all-time verifier registration count.
+(define-read-only (get-total-verifiers)
+    (ok (var-get total-verifiers))
+)
+
+;; @notice Returns true if a verifier is registered and currently active.
+;; @param verifier-id The verifier ID to check.
+;; @return ok(true) if active, ok(false) if inactive or not found.
+(define-read-only (is-active-verifier (verifier-id uint))
+    (match (map-get? verifiers { verifier-id: verifier-id })
+        v (ok (get active v))
+        (ok false)
+    )
+)
+
+;; @notice Returns the address of a registered verifier.
+;; @param verifier-id The verifier ID to look up.
+;; @return Some(principal) if found, none otherwise.
+(define-read-only (get-verifier-address (verifier-id uint))
+    (match (map-get? verifiers { verifier-id: verifier-id })
+        v (some (get address v))
+        none
+    )
+)
