@@ -237,12 +237,37 @@ export class CryptoUtils {
      * @param {string} separator - Separator between inputs
      * @param {string} encoding - Output encoding
      * @returns {string|Buffer} Combined hash
+     * @throws {Error} If inputs is not an array
+     * @throws {Error} If separator is not a string
+     * @throws {Error} If encoding is not supported
      */
     static generateCombinedHash(inputs, separator = '|', encoding = 'hex') {
-        const combined = inputs.map(input => 
+        // Validate inputs parameter
+        if (!Array.isArray(inputs)) {
+            throw new Error('Inputs must be an array');
+        }
+        if (inputs.length === 0) {
+            throw new Error('Inputs array cannot be empty');
+        }
+        if (inputs.length > 10000) {
+            throw new Error('Inputs array exceeds maximum allowed length of 10000');
+        }
+
+        // Validate separator parameter
+        if (typeof separator !== 'string') {
+            throw new Error('Separator must be a string');
+        }
+
+        // Validate encoding parameter
+        const validEncodings = ['hex', 'base64', 'buffer'];
+        if (!validEncodings.includes(encoding)) {
+            throw new Error(`Invalid encoding: ${encoding}. Must be one of: ${validEncodings.join(', ')}`);
+        }
+
+        const combined = inputs.map(input =>
             typeof input === 'string' ? input : JSON.stringify(input)
         ).join(separator);
-        
+
         return this.generateHash(combined, encoding);
     }
 
