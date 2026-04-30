@@ -51,8 +51,21 @@ export class CryptoUtils {
      * @param {string|Buffer} data - Data to hash
      * @param {string} encoding - Output encoding ('hex', 'base64', 'buffer')
      * @returns {string|Buffer} Hash value
+     * @throws {Error} If data is null or undefined
+     * @throws {Error} If encoding is not supported
      */
     static generateHash(data, encoding = 'hex') {
+        // Validate data parameter
+        if (data === null || data === undefined) {
+            throw new Error('Data cannot be null or undefined');
+        }
+
+        // Validate encoding parameter
+        const validEncodings = ['hex', 'base64', 'buffer'];
+        if (!validEncodings.includes(encoding)) {
+            throw new Error(`Invalid encoding: ${encoding}. Must be one of: ${validEncodings.join(', ')}`);
+        }
+
         const hash = createHash('sha256').update(data).digest();
         
         switch (encoding) {
