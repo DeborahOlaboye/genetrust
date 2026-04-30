@@ -61,6 +61,8 @@ export {
     NotFoundError,
     RateLimitError,
     ConflictError,
+    DatabaseError,
+    NetworkError,
     createErrorHandler,
     errorHandler,
     devErrorHandler,
