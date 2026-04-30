@@ -309,7 +309,59 @@ export class ConflictError extends AppError {
      * });
      */
     constructor(message = 'Resource conflict', conflictDetails = {}) {
-        super(message, 409, 'CONFLICT_ERROR', { conflictDetails });
+        super(message, 409, 'CONFLICT_ERROR', { conflictDetails }, 'medium');
+    }
+}
+
+/**
+ * Database error for database-related failures
+ * 
+ * @class DatabaseError
+ * @extends AppError
+ * @description Error for database operations
+ */
+export class DatabaseError extends AppError {
+    /**
+     * Creates a new database error
+     * 
+     * @constructor
+     * @param {string} message - Error message
+     * @param {Object} [databaseDetails={}] - Database operation details
+     * 
+     * @example
+     * throw new DatabaseError('Query failed', {
+     *   query: 'SELECT * FROM users',
+     *   error: 'Connection timeout'
+     * });
+     */
+    constructor(message = 'Database operation failed', databaseDetails = {}) {
+        super(message, 500, 'DATABASE_ERROR', { databaseDetails }, 'high');
+    }
+}
+
+/**
+ * Network error for network-related failures
+ * 
+ * @class NetworkError
+ * @extends AppError
+ * @description Error for network operations
+ */
+export class NetworkError extends AppError {
+    /**
+     * Creates a new network error
+     * 
+     * @constructor
+     * @param {string} message - Error message
+     * @param {Object} [networkDetails={}] - Network operation details
+     * 
+     * @example
+     * throw new NetworkError('Request failed', {
+     *   url: 'https://api.example.com',
+     *   status: 503
+     * });
+     */
+    constructor(message = 'Network request failed', networkDetails = {}) {
+        super(message, 503, 'NETWORK_ERROR', { networkDetails }, 'medium');
     }
 }
 
