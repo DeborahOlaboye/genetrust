@@ -192,6 +192,7 @@ export class AppError extends Error {
             timestamp: this.timestamp,
             severity: this.severity,
             context: this.context,
+            hasRecoveryAction: !!this.recoveryAction,
             stack: process.env.NODE_ENV === 'development' ? this.stack : undefined
         };
     }
