@@ -202,6 +202,8 @@
         (asserts! (is-eq tx-sender (get owner dataset)) ERR-NOT-OWNER)
         ;; Delete the access right
         (map-delete access-rights { data-id: data-id, user: user })
+        (print { event: "access-revoked", data-id: data-id, user: user,
+                 revoked-by: tx-sender, block: stacks-block-height })
         (ok true)
     )
 )
