@@ -366,6 +366,50 @@ export class RateLimiter {
      */
     clear() {
         this.cache.clear();
+        this._tempArray.length = 0;
+        this._lastCleanup = Date.now();
+    }
+
+    /**
+     * Perform periodic cleanup of expired entries
+     * @private
+     */
+    _performCleanup() {
+        const now = Date.now();
+        
+        // Only cleanup if enough time has passed
+        if (now - this._lastCleanup < this._cleanupInterval) {
+            return;
+        }
+
+        // Clean up temporary array
+        if (this._tempArray.length > 1000) {
+            this._tempArray.length = 0;
+        }
+
+        // Force cache cleanup
+        if (typeof this.cache.purgeStale === 'function') {
+            this.cache.purgeStale();
+        }
+
+        this._lastCleanup = now;
+    }
+
+    /**
+     * Get cache statistics
+     * @returns {Object} Cache performance metrics
+     */
+    getCacheStats() {
+        return {
+            size: this.cache.size || 0,
+            maxSize: this.cache.max || 0,
+            itemCount: this.cache.itemCount || 0,
+            hitRate: this.cache.calculatedSize ? 
+                ((this.cache.calculatedSize - this.cache.size) / this.cache.calculatedSize * 100).toFixed(2) + '%' : 
+                '0%',
+            lastCleanup: this._lastCleanup,
+            cleanupInterval: this._cleanupInterval
+        };
     }
 }
 
