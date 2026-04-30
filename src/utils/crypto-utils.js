@@ -43,8 +43,6 @@ export class CryptoUtils {
                 return key.toString('base64');
             case 'buffer':
                 return key;
-            default:
-                throw new Error(`Unsupported encoding: ${encoding}`);
         }
     }
 
