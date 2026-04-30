@@ -203,6 +203,8 @@
         (map-set gdpr-records { data-id: data-id }
             (merge gdpr { right-to-be-forgotten: true, updated-at: stacks-block-height })
         )
+        (print { event: "erasure-requested", data-id: data-id, owner: tx-sender,
+                 block: stacks-block-height })
         (ok true)
     )
 )
