@@ -320,16 +320,32 @@ export class RateLimiter {
      * Get current stats for a key
      * @param {string} key - Key to check
      * @returns {Object|null} Rate limit stats
+     * @throws {Error} If key is not provided or invalid
      */
     getStats(key) {
+        // Validate key parameter
+        if (!key) {
+            throw new Error('Key must be provided');
+        }
+        if (typeof key !== 'string') {
+            throw new Error('Key must be a string');
+        }
+        if (key.length === 0) {
+            throw new Error('Key cannot be empty');
+        }
+
         const entry = this.cache.get(key);
         if (!entry) return null;
 
+        // Validate entry structure
+        const count = typeof entry.count === 'number' ? entry.count : 0;
+        const resetTime = typeof entry.resetTime === 'number' ? entry.resetTime : Date.now() + this.windowMs;
+
         return {
-            count: entry.count,
-            remaining: Math.max(0, this.max - entry.count),
-            resetTime: entry.resetTime,
-            resetIn: Math.max(0, entry.resetTime - Date.now())
+            count: Math.max(0, count),
+            remaining: Math.max(0, this.max - count),
+            resetTime,
+            resetIn: Math.max(0, resetTime - Date.now())
         };
     }
 
