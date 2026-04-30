@@ -340,6 +340,12 @@
     (ok (var-get total-listings-created))
 )
 
+;; @notice Returns the total number of completed purchases across all listings.
+;; @return ok(uint) - the all-time purchase count.
+(define-read-only (get-total-purchases-completed)
+    (ok (var-get total-purchases-completed))
+)
+
 ;; @notice Returns the deployed contract version string.
 (define-read-only (get-version)
     CONTRACT-VERSION
