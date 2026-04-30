@@ -176,6 +176,10 @@
                 granted-by: tx-sender
             }
         )
+        (print { event: "access-granted", data-id: data-id, user: user,
+                 access-level: access-level, granted-by: tx-sender,
+                 expires-at: (+ stacks-block-height ACCESS-EXPIRY-BLOCKS),
+                 block: stacks-block-height })
         (ok true)
     )
 )
