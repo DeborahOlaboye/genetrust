@@ -87,15 +87,25 @@ export class RateLimiter {
      * @private
      * @param {Object} req - Express request object
      * @returns {string} Unique key for rate limiting
+     * @throws {Error} If req is not an object
      */
     defaultKeyGenerator(req) {
+        // Validate request object
+        if (!req || typeof req !== 'object') {
+            throw new Error('Request object must be provided');
+        }
+
         // Try to get real IP behind proxies
         const ip = req.ip || 
                   req.connection?.remoteAddress || 
                   req.socket?.remoteAddress ||
                   (req.connection?.socket ? req.connection.socket.remoteAddress : null) ||
                   'unknown';
-        return ip;
+        
+        // Sanitize IP to prevent injection
+        const sanitizedIp = String(ip).replace(/[^a-fA-F0-9.:]/g, '').substring(0, 45);
+        
+        return sanitizedIp || 'unknown';
     }
 
     /**
