@@ -366,6 +366,32 @@ export class NetworkError extends AppError {
 }
 
 /**
+ * Payment error for payment-related failures
+ * 
+ * @class PaymentError
+ * @extends AppError
+ * @description Error for payment operations
+ */
+export class PaymentError extends AppError {
+    /**
+     * Creates a new payment error
+     * 
+     * @constructor
+     * @param {string} message - Error message
+     * @param {Object} [paymentDetails={}] - Payment operation details
+     * 
+     * @example
+     * throw new PaymentError('Payment failed', {
+     *   transactionId: 'tx_123',
+     *   reason: 'Insufficient funds'
+     * });
+     */
+    constructor(message = 'Payment operation failed', paymentDetails = {}) {
+        super(message, 402, 'PAYMENT_ERROR', { paymentDetails }, 'high');
+    }
+}
+
+/**
  * Error handler middleware factory
  * 
  * Creates an Express error handling middleware with configurable options
