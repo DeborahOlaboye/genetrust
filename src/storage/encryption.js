@@ -6,10 +6,73 @@ import { profiler } from '../utils/performance-profiler.js';
 import { Worker } from 'worker_threads';
 
 /**
- * Encryption utilities for genetic data storage
- * Implements multi-tier encryption for granular access control
+ * Encryption utilities for genetic data storage and privacy
+ * 
+ * Implements multi-tier encryption system for granular access control
+ * of genetic data. Supports different encryption levels based on access
+ * permissions, ensuring that sensitive genetic information is protected
+ * while allowing controlled sharing with appropriate parties.
+ * 
+ * @class EncryptionManager
+ * @description Multi-tier encryption for genetic data privacy
+ * @version 2.0.0
+ * @since 1.0.0
+ * @author GeneTrust Development Team
+ * 
+ * @example
+ * // Create encryption manager
+ * const encryption = new EncryptionManager({
+ *   algorithm: 'aes-256-gcm',
+ *   keyDerivationIterations: 100000
+ * });
+ * 
+ * @example
+ * // Encrypt genetic data with access levels
+ * const encrypted = await encryption.encryptGeneticData(
+ *   geneticData,
+ *   'master-password',
+ *   { accessLevels: [1, 2, 3] }
+ * );
+ * 
+ * @example
+ * // Decrypt with specific access level
+ * const decrypted = await encryption.decryptGeneticData(
+ *   encrypted,
+ *   'master-password',
+ *   2 // Access level 2
+ * );
  */
 export class EncryptionManager {
+    /**
+     * Creates a new EncryptionManager instance
+     * 
+     * @constructor
+     * @param {Object} [options={}] - Configuration options
+     * @param {string} [options.algorithm='aes-256-gcm'] - Default encryption algorithm
+     * @param {number} [options.keyDerivationIterations=100000] - PBKDF2 iterations for key derivation
+     * @param {number} [options.saltLength=32] - Salt length in bytes
+     * @param {number} [options.ivLength=16] - Initialization vector length in bytes
+     * @param {number} [options.tagLength=16] - Authentication tag length in bytes
+     * @param {boolean} [options.useWorkerThreads=true] - Use worker threads for performance
+     * @param {number} [options.maxWorkerPoolSize=4] - Maximum worker thread pool size
+     * 
+     * @throws {Error} When encryption algorithm is not supported
+     * @throws {Error} When configuration parameters are invalid
+     * 
+     * @returns {EncryptionManager} New encryption manager instance
+     * 
+     * @example
+     * // Basic encryption manager
+     * const encryption = new EncryptionManager();
+     * 
+     * @example
+     * // Custom configuration
+     * const encryption = new EncryptionManager({
+     *   algorithm: 'aes-256-gcm',
+     *   keyDerivationIterations: 200000,
+     *   useWorkerThreads: true
+     * });
+     */
     constructor(options = {}) {
         this.config = {
             algorithm: options.algorithm || 'aes-256-gcm',
@@ -29,11 +92,75 @@ export class EncryptionManager {
     }
 
     /**
-     * Encrypt genetic data with multi-tier access control and performance optimization
-     * @param {Object} geneticData - Raw genetic data
-     * @param {string} masterPassword - Master password for encryption
-     * @param {Object} accessConfig - Access level configuration
-     * @returns {Promise<Object>} Encrypted data with access keys
+     * Encrypt genetic data with multi-tier access control
+     * 
+     * Encrypts genetic data using a tiered approach where different access levels
+     * receive different encryption keys. This allows granular control over what
+     * data can be accessed by different parties while maintaining security.
+     * Uses AES-GCM for authenticated encryption with performance optimizations.
+     * 
+     * @async
+     * @method encryptGeneticData
+     * 
+     * @param {Object} geneticData - Raw genetic data to encrypt
+     * @param {string} geneticData.dnaSequence - DNA sequence data
+     * @param {string} geneticData.metadata - Metadata about the genetic data
+     * @param {Object} [geneticData.variants] - Genetic variants information
+     * @param {Object} [geneticData.phenotypes] - Phenotype data
+     * @param {string} masterPassword - Master password for key derivation
+     * @param {Object} [accessConfig={}] - Access level configuration
+     * @param {Array<number>} [accessConfig.accessLevels=[1,2,3]] - Access levels to create
+     * @param {Object} [accessConfig.dataMapping] - Custom data tier mapping
+     * @param {boolean} [accessConfig.compress=true] - Compress encrypted data
+     * @param {string} [accessConfig.description] - Description for encrypted data
+     * 
+     * @returns {Promise<Object>} Encrypted data with access keys and metadata
+     * @returns {string} returns.dataHash - Hash of the original data for integrity
+     * @returns {Object} returns.encryptedTiers - Encrypted data tiers by access level
+     * @returns {Object} returns.accessKeys - Access keys for each level
+     * @returns {Object} returns.metadata - Encryption metadata
+     * @returns {string} returns.metadata.algorithm - Encryption algorithm used
+     * @returns {number} returns.metadata.timestamp - Encryption timestamp
+     * @returns {Array<number>} returns.metadata.accessLevels - Available access levels
+     * 
+     * @throws {Error} When genetic data is invalid or missing
+     * @throws {Error} When master password is empty or invalid
+     * @throws {Error} When access configuration is invalid
+     * @throws {Error} When encryption fails due to cryptographic errors
+     * @throws {Error} When data tiering fails
+     * 
+     * @example
+     * // Basic encryption with all access levels
+     * const encrypted = await encryption.encryptGeneticData(
+     *   { dnaSequence: 'ATCG...', metadata: 'Sample 001' },
+     *   'secure-password'
+     * );
+     * 
+     * @example
+     * // Custom access levels
+     * const encrypted = await encryption.encryptGeneticData(
+     *   geneticData,
+     *   'password',
+     *   {
+     *     accessLevels: [1, 3], // Only basic and full access
+     *     compress: true,
+     *     description: 'Research sample data'
+     *   }
+     * );
+     * 
+     * @example
+     * // Custom data mapping
+     * const encrypted = await encryption.encryptGeneticData(
+     *   geneticData,
+     *   'password',
+     *   {
+     *     dataMapping: {
+     *       1: ['metadata'], // Level 1: metadata only
+     *       2: ['metadata', 'variants'], // Level 2: metadata + variants
+     *       3: ['all'] // Level 3: all data
+     *     }
+     *   }
+     * );
      */
     async encryptGeneticData(geneticData, masterPassword, accessConfig = {}) {
         const dataSize = JSON.stringify(geneticData).length;

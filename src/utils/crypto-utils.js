@@ -8,22 +8,98 @@ import { pbkdf2Sync } from 'crypto';
 
 /**
  * Cryptographic utilities for secure operations
+ * 
+ * Provides a comprehensive suite of cryptographic functions for secure
+ * key generation, hashing, encryption, and data validation in the GeneTrust
+ * platform. All methods include input validation and use cryptographically
+ * secure random number generation.
+ * 
+ * @class CryptoUtils
+ * @description Security-focused utility class for cryptographic operations
+ * @version 2.0.0
+ * @since 1.0.0
+ * 
+ * @example
+ * // Generate a secure key
+ * const key = CryptoUtils.generateSecureKey(32, 'hex');
+ * 
+ * @example
+ * // Hash sensitive data
+ * const hash = CryptoUtils.generateHash('sensitive-data', 'hex');
+ * 
+ * @example
+ * // Encrypt/decrypt data
+ * const encrypted = CryptoUtils.encryptAESGCM('data', key);
+ * const decrypted = CryptoUtils.decryptAESGCM(encrypted, key);
  */
 export class CryptoUtils {
-    // Constants for validation
+    /**
+     * Supported output encodings for cryptographic operations
+     * @readonly
+     * @type {string[]}
+     * @default ['hex', 'base64', 'buffer']
+     */
     static VALID_ENCODINGS = ['hex', 'base64', 'buffer'];
+    
+    /**
+     * Supported hash algorithms for HMAC operations
+     * @readonly
+     * @type {string[]}
+     * @default ['sha256', 'sha512']
+     */
     static VALID_ALGORITHMS = ['sha256', 'sha512'];
+    
+    /**
+     * Supported digest algorithms for hashing operations
+     * @readonly
+     * @type {string[]}
+     * @default ['sha256', 'sha512']
+     */
     static VALID_DIGESTS = ['sha256', 'sha512'];
+    
+    /**
+     * Maximum allowed key length in bytes for security
+     * @readonly
+     * @type {number}
+     * @default 1024
+     */
     static MAX_KEY_LENGTH = 1024;
+    
+    /**
+     * Maximum number of iterations for key derivation
+     * @readonly
+     * @type {number}
+     * @default 10000000
+     */
     static MAX_ITERATIONS = 10000000;
+    
+    /**
+     * Minimum number of iterations for key derivation (security requirement)
+     * @readonly
+     * @type {number}
+     * @default 10000
+     */
     static MIN_ITERATIONS = 10000;
+    
+    /**
+     * AES key size in bytes for AES-256-GCM encryption
+     * @readonly
+     * @type {number}
+     * @default 32
+     */
     static AES_KEY_SIZE = 32;
 
     /**
-     * Validate encoding parameter
+     * Validate encoding parameter against supported encodings
+     * 
      * @private
-     * @param {string} encoding - Encoding to validate
-     * @throws {Error} If encoding is not supported
+     * @static
+     * @method _validateEncoding
+     * @param {string} encoding - Encoding to validate ('hex', 'base64', 'buffer')
+     * 
+     * @throws {Error} When encoding is not in VALID_ENCODINGS list
+     * 
+     * @returns {void}
      */
     static _validateEncoding(encoding) {
         if (!this.VALID_ENCODINGS.includes(encoding)) {
@@ -33,11 +109,34 @@ export class CryptoUtils {
     
     /**
      * Generate a cryptographically secure random key
-     * @param {number} length - Key length in bytes
-     * @param {string} encoding - Output encoding ('hex', 'base64', 'buffer')
-     * @returns {string|Buffer} Generated key
-     * @throws {Error} If length is not a positive integer
-     * @throws {Error} If encoding is not supported
+     * 
+     * Uses Node.js crypto.randomBytes() for cryptographically secure random
+     * number generation. Suitable for generating encryption keys, tokens,
+     * and other security-sensitive values.
+     * 
+     * @static
+     * @method generateSecureKey
+     * 
+     * @param {number} [length=32] - Key length in bytes (1-1024)
+     * @param {string} [encoding='hex'] - Output encoding ('hex', 'base64', 'buffer')
+     * 
+     * @returns {string|Buffer} Generated key in specified encoding
+     * 
+     * @throws {Error} When length is not a positive integer
+     * @throws {Error} When length exceeds MAX_KEY_LENGTH
+     * @throws {Error} When encoding is not supported
+     * 
+     * @example
+     * // Generate 32-byte hex key
+     * const hexKey = CryptoUtils.generateSecureKey(32, 'hex');
+     * 
+     * @example
+     * // Generate 64-byte base64 key
+     * const base64Key = CryptoUtils.generateSecureKey(64, 'base64');
+     * 
+     * @example
+     * // Generate raw buffer key
+     * const bufferKey = CryptoUtils.generateSecureKey(16, 'buffer');
      */
     static generateSecureKey(length = 32, encoding = 'hex') {
         // Validate length parameter
@@ -65,11 +164,30 @@ export class CryptoUtils {
 
     /**
      * Generate a secure hash using SHA-256
+     * 
+     * Creates a cryptographic hash of the input data using SHA-256.
+     * Suitable for password hashing, data integrity verification, and
+     * creating deterministic identifiers from input data.
+     * 
+     * @static
+     * @method generateHash
+     * 
      * @param {string|Buffer} data - Data to hash
-     * @param {string} encoding - Output encoding ('hex', 'base64', 'buffer')
-     * @returns {string|Buffer} Hash value
-     * @throws {Error} If data is null or undefined
-     * @throws {Error} If encoding is not supported
+     * @param {string} [encoding='hex'] - Output encoding ('hex', 'base64', 'buffer')
+     * 
+     * @returns {string|Buffer} SHA-256 hash value in specified encoding
+     * 
+     * @throws {Error} When data is null or undefined
+     * @throws {Error} When encoding is not supported
+     * 
+     * @example
+     * // Hash a string
+     * const hash = CryptoUtils.generateHash('sensitive-data', 'hex');
+     * 
+     * @example
+     * // Hash a buffer
+     * const buffer = Buffer.from('binary-data');
+     * const hash = CryptoUtils.generateHash(buffer, 'base64');
      */
     static generateHash(data, encoding = 'hex') {
         // Validate data parameter

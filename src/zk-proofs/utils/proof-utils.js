@@ -6,14 +6,59 @@ import { createHash, randomBytes } from 'crypto';
 
 /**
  * Utility functions for zero-knowledge proof operations
+ * 
+ * Provides shared utility functions across all proof generators and verifiers
+ * for data conversion, validation, hashing, and formatting. Includes functions
+ * for buffer operations, genetic data validation, and cryptographic operations
+ * specifically designed for ZK proof generation and verification.
+ * 
+ * @class ProofUtils
+ * @description Shared utilities for zero-knowledge proof operations
+ * @version 2.0.0
+ * @since 1.0.0
+ * @author GeneTrust Development Team
+ * 
+ * @example
+ * // Convert string to fixed-size buffer
+ * const buffer = ProofUtils.stringToFixedBuffer('hello', 32);
+ * 
+ * @example
+ * // Validate genetic data
+ * const validation = ProofUtils.validateGeneticData(geneticData);
+ * if (!validation.valid) {
+ *   console.error('Invalid data:', validation.errors);
+ * }
+ * 
+ * @example
+ * // Generate random nonce
+ * const nonce = ProofUtils.generateNonce(32);
  */
 export class ProofUtils {
-    
     /**
-     * Convert a string to a fixed-size buffer (32 bytes for hashes)
+     * Convert a string to a fixed-size buffer
+     * 
+     * Uses SHA-256 hashing to create a deterministic buffer of the specified
+     * size from the input string. Useful for creating consistent byte arrays
+     * from string identifiers for use in ZK proofs.
+     * 
+     * @static
+     * @method stringToFixedBuffer
+     * 
      * @param {string} input - Input string to convert
-     * @param {number} size - Target buffer size (default 32)
-     * @returns {Buffer} Fixed-size buffer
+     * @param {number} [size=32] - Target buffer size in bytes
+     * 
+     * @returns {Buffer} Fixed-size buffer containing hashed input
+     * 
+     * @throws {Error} When input is not a string
+     * @throws {Error} When size is not a positive number
+     * 
+     * @example
+     * // Create 32-byte buffer from string
+     * const buffer = ProofUtils.stringToFixedBuffer('gene-123', 32);
+ * 
+     * @example
+     * // Create 64-byte buffer
+     * const largeBuffer = ProofUtils.stringToFixedBuffer('data-id', 64);
      */
     static stringToFixedBuffer(input, size = 32) {
         const hash = createHash('sha256').update(input).digest();
@@ -24,8 +69,24 @@ export class ProofUtils {
 
     /**
      * Convert a buffer to an array format expected by Clarity contracts
-     * @param {Buffer} buffer - Input buffer
-     * @returns {Array<number>} Array of bytes
+     * 
+     * Converts a Node.js Buffer object to a plain JavaScript array of
+     * numbers representing the bytes. This format is required for
+     * interacting with Clarity smart contracts on the Stacks blockchain.
+     * 
+     * @static
+     * @method bufferToArray
+     * 
+     * @param {Buffer} buffer - Input buffer to convert
+     * 
+     * @returns {Array<number>} Array of byte values (0-255)
+     * 
+     * @throws {Error} When buffer is not a Buffer object
+     * 
+     * @example
+     * const buffer = Buffer.from([1, 2, 3, 4]);
+     * const array = ProofUtils.bufferToArray(buffer);
+     * // Result: [1, 2, 3, 4]
      */
     static bufferToArray(buffer) {
         return Array.from(buffer);
@@ -33,17 +94,54 @@ export class ProofUtils {
 
     /**
      * Convert an array back to a buffer
-     * @param {Array<number>} array - Array of bytes
-     * @returns {Buffer} Buffer object
+     * 
+     * Converts a plain JavaScript array of byte values back to a Node.js
+     * Buffer object. This is the inverse operation of bufferToArray and
+     * is useful when processing data received from smart contracts.
+     * 
+     * @static
+     * @method arrayToBuffer
+     * 
+     * @param {Array<number>} array - Array of byte values (0-255)
+     * 
+     * @returns {Buffer} Buffer object containing the byte data
+     * 
+     * @throws {Error} When array is not an array
+     * @throws {Error} When array contains invalid byte values
+     * 
+     * @example
+     * const array = [1, 2, 3, 4];
+     * const buffer = ProofUtils.arrayToBuffer(array);
+     * // Result: Buffer([1, 2, 3, 4])
      */
     static arrayToBuffer(array) {
         return Buffer.from(array);
     }
 
     /**
-     * Generate a secure random nonce
-     * @param {number} size - Size in bytes (default 32)
-     * @returns {Array<number>} Random nonce as array
+     * Generate a cryptographically secure random nonce
+     * 
+     * Creates a random nonce using Node.js crypto.randomBytes() for
+     * use in ZK proof generation. Nonces are essential for ensuring
+     * uniqueness and preventing replay attacks in cryptographic operations.
+     * 
+     * @static
+     * @method generateNonce
+     * 
+     * @param {number} [size=32] - Size of nonce in bytes
+     * 
+     * @returns {Array<number>} Random nonce as array of byte values
+     * 
+     * @throws {Error} When size is not a positive number
+     * @throws {Error} When size exceeds maximum allowed value
+     * 
+     * @example
+     * // Generate 32-byte nonce
+     * const nonce = ProofUtils.generateNonce(32);
+     * 
+     * @example
+     * // Generate 64-byte nonce for higher security
+     * const largeNonce = ProofUtils.generateNonce(64);
      */
     static generateNonce(size = 32) {
         return Array.from(randomBytes(size));

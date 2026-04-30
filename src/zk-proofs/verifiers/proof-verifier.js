@@ -6,25 +6,130 @@ import { createHash } from 'crypto';
 import { ProofUtils } from '../utils/proof-utils.js';
 
 /**
- * Verifies zero-knowledge proofs for genetic data
- * Handles all proof types defined in verification.clar
+ * Zero-knowledge proof verifier for genetic data operations
+ * 
+ * Provides client-side verification of zero-knowledge proofs before submitting
+ * to blockchain for gas efficiency. Supports all proof types defined in the
+ * verification contract including gene presence, absence, variant, and aggregate
+ * proofs. Includes comprehensive validation and error reporting.
+ * 
+ * @class ProofVerifier
+ * @description Client-side ZK proof verification for genetic data
+ * @version 2.0.0
+ * @since 1.0.0
+ * @author GeneTrust Development Team
+ * 
+ * @example
+ * // Create proof verifier
+ * const verifier = new ProofVerifier();
+ * 
+ * @example
+ * // Verify a gene presence proof
+ * const result = await verifier.verifyProof(proof, {
+ *   geneTarget: 'BRCA1',
+ *   dataHash: '0x123...'
+ * });
+ * 
+ * @example
+ * // Verify with options
+ * const result = await verifier.verifyProof(proof, publicInputs, {
+ *   strictMode: true,
+ *   checkTimestamps: true
+ * });
  */
 export class ProofVerifier {
+    /**
+     * Proof type identifiers matching verification.clar contract
+     * @readonly
+     * @type {Object}
+     * @property {number} GENE_PRESENCE - Gene presence proof (1)
+     * @property {number} GENE_ABSENCE - Gene absence proof (2)
+     * @property {number} GENE_VARIANT - Gene variant proof (3)
+     * @property {number} AGGREGATE - Aggregate proof (4)
+     */
+    static PROOF_TYPES = {
+        GENE_PRESENCE: 1,
+        GENE_ABSENCE: 2,
+        GENE_VARIANT: 3,
+        AGGREGATE: 4
+    };
+
+    /**
+     * Creates a new ProofVerifier instance
+     * 
+     * @constructor
+     * @returns {ProofVerifier} New proof verifier instance
+     * 
+     * @example
+     * const verifier = new ProofVerifier();
+     */
     constructor() {
-        this.PROOF_TYPES = {
-            GENE_PRESENCE: 1,
-            GENE_ABSENCE: 2,
-            GENE_VARIANT: 3,
-            AGGREGATE: 4
-        };
+        this.PROOF_TYPES = ProofVerifier.PROOF_TYPES;
     }
 
     /**
-     * Verify a proof of any type
+     * Verify a zero-knowledge proof of any supported type
+     * 
+     * Performs comprehensive verification of ZK proofs including structural
+     * validation, cryptographic verification, and consistency checks. Routes
+     * to appropriate verifier based on proof type and returns detailed results.
+     * 
+     * @async
+     * @method verifyProof
+     * 
      * @param {Object} proof - The proof object to verify
+     * @param {number} proof.proofType - Type of proof (1-4)
+     * @param {string} proof.proofHash - Hash of the proof data
+     * @param {Object} proof.parameters - Proof parameters for verification
+     * @param {Object} proof.metadata - Proof metadata including timestamp
      * @param {Object} publicInputs - The public inputs that should match the proof
-     * @param {Object} options - Verification options
-     * @returns {Promise<Object>} Verification result with details
+     * @param {string} [publicInputs.geneTarget] - Target gene for presence/absence proofs
+     * @param {string} [publicInputs.dataHash] - Hash of the underlying genetic data
+     * @param {Object} [publicInputs.variantInfo] - Variant information for variant proofs
+     * @param {Array<Object>} [publicInputs.subProofs] - Sub-proofs for aggregate proofs
+     * @param {Object} [options={}] - Verification options
+     * @param {boolean} [options.strictMode=false] - Enable strict validation mode
+     * @param {boolean} [options.checkTimestamps=true] - Verify proof timestamps
+     * @param {number} [options.maxAge=3600000] - Maximum proof age in milliseconds
+     * @param {boolean} [options.validateParameters=true] - Validate proof parameters
+     * @param {string} [options.expectedAlgorithm] - Expected proof algorithm
+     * 
+     * @returns {Promise<Object>} Verification result with detailed information
+     * @returns {boolean} returns.valid - Whether the proof is valid
+     * @returns {string} returns.proofType - Type of proof that was verified
+     * @returns {string} returns.verificationTime - Time taken to verify in milliseconds
+     * @returns {Object} returns.details - Detailed verification results
+     * @returns {Array<string>} returns.errors - List of validation errors (if any)
+     * @returns {Array<string>} returns.warnings - List of warnings (if any)
+     * @returns {Object} returns.metadata - Additional verification metadata
+     * 
+     * @throws {Error} When proof structure is invalid
+     * @throws {Error} When proof type is not supported
+     * @throws {Error} When public inputs are missing or invalid
+     * @throws {Error} When verification process fails
+     * 
+     * @example
+     * // Basic verification
+     * const result = await verifier.verifyProof(proof, {
+     *   geneTarget: 'BRCA1',
+     *   dataHash: '0x123abc...'
+     * });
+     * 
+     * @example
+     * // Verification with options
+     * const result = await verifier.verifyProof(proof, publicInputs, {
+     *   strictMode: true,
+     *   checkTimestamps: true,
+     *   maxAge: 1800000 // 30 minutes
+     * });
+     * 
+     * @example
+     * // Handle verification result
+     * if (result.valid) {
+     *   console.log('Proof verified successfully');
+     * } else {
+     *   console.error('Verification failed:', result.errors);
+     * }
      */
     async verifyProof(proof, publicInputs, options = {}) {
         try {

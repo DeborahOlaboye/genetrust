@@ -3,17 +3,76 @@
 
 /**
  * Phase 2 Configuration Manager
- * Centralizes all configuration for ZK proofs, IPFS storage, and contract integration
+ * 
+ * Centralizes all configuration settings for Phase 2 components including
+ * zero-knowledge proofs, IPFS storage, and smart contract integration.
+ * Provides environment-specific configurations and validation for all GeneTrust
+ * platform components.
+ * 
+ * @class Phase2Config
+ * @description Configuration manager for Phase 2 GeneTrust components
+ * @version 2.0.0
+ * @since 1.0.0
+ * @author GeneTrust Development Team
+ * 
+ * @example
+ * // Create development configuration
+ * const config = new Phase2Config('development');
+ * 
+ * @example
+ * // Create production configuration
+ * const config = new Phase2Config('production');
+ * 
+ * @example
+ * // Load from environment variables
+ * const config = Phase2Config.fromEnvironment();
+ * 
+ * @example
+ * // Get IPFS configuration
+ * const ipfsConfig = config.getIPFSConfig();
  */
 export class Phase2Config {
+    /**
+     * Supported environments for configuration
+     * @readonly
+     * @type {string[]}
+     * @default ['development', 'testnet', 'mainnet']
+     */
+    static SUPPORTED_ENVIRONMENTS = ['development', 'testnet', 'mainnet'];
+
+    /**
+     * Creates a new Phase2Config instance
+     * 
+     * @constructor
+     * @param {string} [environment='development'] - Target environment ('development', 'testnet', 'mainnet')
+     * 
+     * @throws {Error} When environment is not supported
+     * 
+     * @returns {Phase2Config} New configuration instance
+     * 
+     * @example
+     * const devConfig = new Phase2Config('development');
+     * const prodConfig = new Phase2Config('mainnet');
+     */
     constructor(environment = 'development') {
+        if (!Phase2Config.SUPPORTED_ENVIRONMENTS.includes(environment)) {
+            throw new Error(`Unsupported environment: ${environment}. Supported: ${Phase2Config.SUPPORTED_ENVIRONMENTS.join(', ')}`);
+        }
+        
         this.environment = environment;
         this._initializeConfig();
     }
 
     /**
      * Initialize configuration based on environment
+     * 
+     * Sets up configuration object with environment-specific settings for
+     * ZK proofs, IPFS storage, smart contracts, and other platform components.
+     * 
      * @private
+     * @method _initializeConfig
+     * 
+     * @returns {void}
      */
     _initializeConfig() {
         // Base configuration

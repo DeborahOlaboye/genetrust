@@ -1,3 +1,27 @@
+/**
+ * Winston-based logging utility for GeneTrust platform
+ * 
+ * Provides structured logging with multiple levels, file rotation,
+ * and environment-specific configuration. Supports both development
+ * and production logging scenarios with appropriate formatting.
+ * 
+ * @fileoverview Logging utility with Winston and daily rotation
+ * @version 2.0.0
+ * @since 1.0.0
+ * @author GeneTrust Development Team
+ * 
+ * @example
+ * // Basic logging
+ * import { logger } from './logger.js';
+ * logger.info('Application started');
+ * logger.error('Error occurred', { error: err });
+ * 
+ * @example
+ * // Contextual logging
+ * logger.debug('Processing request', { requestId, userId });
+ * logger.warn('Rate limit approaching', { currentRate, limit });
+ */
+
 import winston from 'winston';
 import 'winston-daily-rotate-file';
 import path from 'path';
@@ -7,7 +31,17 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Define log levels
+/**
+ * Winston log levels configuration
+ * Defines priority levels for log messages
+ * @readonly
+ * @type {Object}
+ * @property {number} error - Error level (0)
+ * @property {number} warn - Warning level (1)
+ * @property {number} info - Info level (2)
+ * @property {number} http - HTTP level (3)
+ * @property {number} debug - Debug level (4)
+ */
 const levels = {
   error: 0,
   warn: 1,
@@ -16,7 +50,17 @@ const levels = {
   debug: 4,
 };
 
-// Define log colors
+/**
+ * Console color configuration for log levels
+ * Maps log levels to terminal colors for better readability
+ * @readonly
+ * @type {Object}
+ * @property {string} error - Red color for errors
+ * @property {string} warn - Yellow color for warnings
+ * @property {string} info - Green color for info messages
+ * @property {string} http - Magenta color for HTTP logs
+ * @property {string} debug - Blue color for debug messages
+ */
 const colors = {
   error: 'red',
   warn: 'yellow',
@@ -28,7 +72,13 @@ const colors = {
 // Add colors to winston
 winston.addColors(colors);
 
-// Define log format
+/**
+ * Winston log format configuration
+ * Combines timestamp, colorization, and custom formatting
+ * for consistent log output across all transports
+ * 
+ * @type {winston.Logform.Format}
+ */
 const format = winston.format.combine(
   winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss:ms' }),
   winston.format.colorize({ all: true }),
@@ -37,7 +87,13 @@ const format = winston.format.combine(
   ),
 );
 
-// Define transports
+/**
+ * Winston transport configuration
+ * Defines where log messages are written (console and files)
+ * Includes daily rotation for file logs with size limits
+ * 
+ * @type {winston.transport[]}
+ */
 const transports = [
   // Console transport
   new winston.transports.Console({

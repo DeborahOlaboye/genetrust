@@ -8,9 +8,63 @@ import { profiler } from '../utils/performance-profiler.js';
 
 /**
  * Storage manager for genetic data
- * Provides high-level interface for encrypted storage and retrieval
+ * 
+ * Provides a high-level interface for encrypted storage and retrieval of
+ * genetic data using IPFS for distributed storage and encryption for privacy.
+ * Includes performance optimizations like caching, batch operations, and
+ * compression for efficient data management.
+ * 
+ * @class StorageManager
+ * @description Orchestration layer for secure genetic data storage
+ * @version 2.0.0
+ * @since 1.0.0
+ * 
+ * @example
+ * // Basic storage manager initialization
+ * const storage = new StorageManager();
+ * 
+ * @example
+ * // Custom configuration
+ * const storage = new StorageManager({
+ *   ipfs: { host: 'localhost', port: 5001 },
+ *   encryption: { algorithm: 'aes-256-gcm' },
+ *   autoPin: true,
+ *   compressionEnabled: true,
+ *   cacheSize: 200
+ * });
+ * 
+ * @example
+ * // Store genetic data
+ * const result = await storage.storeGeneticData(geneticData, 'password', {
+ *   ownerAddress: '0x123...',
+ *   accessLevel: 2
+ * });
  */
 export class StorageManager {
+    /**
+     * Creates a new StorageManager instance
+     * 
+     * @constructor
+     * @param {Object} [options={}] - Configuration options
+     * @param {Object} [options.ipfs={}] - IPFS client configuration
+     * @param {string} [options.ipfs.host='localhost'] - IPFS host
+     * @param {number} [options.ipfs.port=5001] - IPFS port
+     * @param {string} [options.ipfs.protocol='http'] - IPFS protocol
+     * @param {Object} [options.encryption={}] - Encryption configuration
+     * @param {string} [options.encryption.algorithm='aes-256-gcm'] - Encryption algorithm
+     * @param {number} [options.encryption.keyDerivationIterations=100000] - PBKDF2 iterations
+     * @param {number} [options.defaultAccessLevel=1] - Default access level for stored data
+     * @param {boolean} [options.autoPin=true] - Automatically pin data to IPFS
+     * @param {boolean} [options.compressionEnabled=true] - Enable data compression
+     * @param {boolean} [options.cacheEnabled=true] - Enable performance caching
+     * @param {number} [options.cacheSize=100] - Maximum number of cached datasets
+     * @param {number} [options.batchSize=10] - Batch operation size
+     * 
+     * @throws {Error} When IPFS client initialization fails
+     * @throws {Error} When encryption manager initialization fails
+     * 
+     * @returns {StorageManager} New StorageManager instance
+     */
     constructor(options = {}) {
         this.config = {
             ipfsConfig: options.ipfs || {},
@@ -46,11 +100,62 @@ export class StorageManager {
     }
 
     /**
-     * Store genetic data with encryption and IPFS storage (optimized)
-     * @param {Object} geneticData - Raw genetic data
-     * @param {string} password - Encryption password
-     * @param {Object} options - Storage options
+     * Store genetic data with encryption and IPFS storage
+     * 
+     * Encrypts the genetic data using the provided password, uploads it to IPFS,
+     * and returns storage information including URLs and access metadata. Includes
+     * performance optimizations like compression, caching, and batch processing.
+     * 
+     * @async
+     * @method storeGeneticData
+     * 
+     * @param {Object} geneticData - Raw genetic data to store
+     * @param {string} geneticData.dnaSequence - DNA sequence data
+     * @param {string} geneticData.metadata - Metadata about the genetic data
+     * @param {Object} [geneticData.variants] - Genetic variants information
+     * @param {string} password - Encryption password for data security
+     * @param {Object} [options={}] - Additional storage options
+     * @param {string} [options.ownerAddress] - Owner's blockchain address
+     * @param {number} [options.accessLevel] - Access level (1-5, higher = more restrictive)
+     * @param {boolean} [options.compress] - Override compression setting
+     * @param {boolean} [options.pin] - Override pinning setting
+     * @param {string} [options.description] - Description of the data
+     * @param {Array<string>} [options.tags] - Tags for categorization
+     * 
      * @returns {Promise<Object>} Storage result with URLs and access information
+     * @returns {string} returns.ipfsHash - IPFS hash of stored data
+     * @returns {string} returns.encryptionKey - Encrypted key (for sharing)
+     * @returns {string} returns.accessUrl - URL to access the data
+     * @returns {Object} returns.metadata - Storage metadata
+     * @returns {number} returns.size - Size of stored data in bytes
+     * @returns {string} returns.timestamp - Storage timestamp
+     * 
+     * @throws {Error} When genetic data is invalid or missing
+     * @throws {Error} When password is empty or invalid
+     * @throws {Error} When encryption fails
+     * @throws {Error} When IPFS upload fails
+     * @throws {Error} When pinning fails (if enabled)
+     * 
+     * @example
+     * // Store basic genetic data
+     * const result = await storage.storeGeneticData(
+     *   { dnaSequence: 'ATCG...', metadata: 'Sample 001' },
+     *   'secure-password',
+     *   { ownerAddress: '0x123...', accessLevel: 2 }
+     * );
+     * 
+     * @example
+     * // Store with custom options
+     * const result = await storage.storeGeneticData(
+     *   geneticData,
+     *   'password',
+     *   {
+     *     compress: true,
+     *     pin: true,
+     *     description: 'Research sample',
+     *     tags: ['research', 'genomics']
+     *   }
+     * );
      */
     async storeGeneticData(geneticData, password, options = {}) {
         const dataSize = JSON.stringify(geneticData).length;

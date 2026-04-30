@@ -11,9 +11,50 @@ import { profiler } from './utils/performance-profiler.js';
 
 /**
  * Main GeneTrust SDK Class
- * Provides a unified interface for all GeneTrust functionality
+ * 
+ * Provides a unified interface for all GeneTrust functionality including
+ * zero-knowledge proofs, secure storage, smart contract integration, and
+ * cryptographic utilities.
+ * 
+ * @class GeneTrust
+ * @description High-level SDK interface for genetic data management on blockchain
+ * @version 2.0.0
+ * @since 1.0.0
+ * 
+ * @example
+ * // Basic initialization
+ * const genetrust = new GeneTrust();
+ * 
+ * @example
+ * // Custom configuration
+ * const genetrust = new GeneTrust({
+ *   config: customConfig,
+ *   enablePerformanceMonitoring: true
+ * });
+ * 
+ * @example
+ * // Environment-based initialization
+ * const genetrust = new GeneTrust({
+ *   config: Phase2Config.fromEnvironment()
+ * });
  */
 export class GeneTrust {
+    /**
+     * Creates a new GeneTrust SDK instance
+     * 
+     * @constructor
+     * @param {Object} [options={}] - Configuration options
+     * @param {Phase2Config} [options.config] - Phase2 configuration instance
+     * @param {boolean} [options.enablePerformanceMonitoring=false] - Enable performance monitoring
+     * @param {Object} [options.storage] - Storage configuration overrides
+     * @param {Object} [options.zkProofs] - Zero-knowledge proof configuration overrides
+     * @param {Object} [options.contracts] - Smart contract configuration overrides
+     * @param {Object} [options.utilities] - Utility configuration overrides
+     * 
+     * @throws {Error} When configuration validation fails
+     * 
+     * @returns {GeneTrust} New GeneTrust SDK instance
+     */
     constructor(options = {}) {
         // Initialize configuration
         this.config = options.config || Phase2Config.fromEnvironment();
@@ -33,7 +74,21 @@ export class GeneTrust {
 
     /**
      * Initialize all SDK components with performance optimizations
+     * 
+     * Sets up storage, zero-knowledge proofs, contract integration, and utilities
+     * with the provided configuration and performance settings.
+     * 
      * @private
+     * @method _initializeComponents
+     * @param {Object} options - Initialization options
+     * @param {Object} options.storage - Storage configuration overrides
+     * @param {Object} options.zkProofs - ZK proof configuration overrides
+     * @param {Object} options.contracts - Contract configuration overrides
+     * @param {Object} options.utilities - Utility configuration overrides
+     * 
+     * @returns {void}
+     * 
+     * @throws {Error} When component initialization fails
      */
     _initializeComponents(options) {
         // Storage stack with performance config

@@ -6,20 +6,164 @@ import { createHash } from 'crypto';
 import { ProofUtils } from '../utils/proof-utils.js';
 
 /**
- * Generates zero-knowledge proofs for specific gene variants
- * Proof Type: PROOF-TYPE-GENE-VARIANT (u3 in contract)
+ * Generates zero-knowledge proofs for specific gene variant verification
+ * 
+ * This class enables privacy-preserving verification that specific genetic
+ * variants exist within genetic data without revealing the full genetic sequence
+ * or other variants. Uses ZK-SNARK technology to create cryptographic proofs
+ * that can be verified on-chain while maintaining complete data privacy.
+ * Particularly useful for medical research and personalized medicine applications.
+ * 
+ * @class GeneVariantProofGenerator
+ * @description ZK-SNARK proof generation for gene variant verification
+ * @version 2.0.0
+ * @since 1.0.0
+ * @author GeneTrust Development Team
+ * 
+ * @example
+ * // Create proof generator
+ * const generator = new GeneVariantProofGenerator();
+ * 
+ * @example
+ * // Generate proof for BRCA1 variant
+ * const proof = await generator.generateVariantProof(
+ *   geneticData,
+ *   {
+ *     gene: 'BRCA1',
+ *     position: 185,
+ *     refAllele: 'A',
+ *     altAllele: 'G',
+ *     rsId: 'rs80357713'
+ *   },
+ *   { includeMetadata: true }
+ * );
+ * 
+ * @example
+ * // Verify proof on blockchain
+ * const isValid = await contract.verifyProof(proof);
  */
 export class GeneVariantProofGenerator {
+    /**
+     * Proof type identifier for gene variant proofs
+     * Corresponds to PROOF-TYPE-GENE-VARIANT (u3) in verification.clar
+     * @readonly
+     * @type {number}
+     * @default 3
+     */
+    static PROOF_TYPE = 3;
+
+    /**
+     * Creates a new GeneVariantProofGenerator instance
+     * 
+     * @constructor
+     * @returns {GeneVariantProofGenerator} New proof generator instance
+     * 
+     * @example
+     * const generator = new GeneVariantProofGenerator();
+     */
     constructor() {
-        this.proofType = 3; // PROOF-TYPE-GENE-VARIANT from verification.clar
+        this.proofType = GeneVariantProofGenerator.PROOF_TYPE;
     }
 
     /**
-     * Generate a proof for a specific gene variant
+     * Generate a zero-knowledge proof for a specific gene variant
+     * 
+     * Creates a cryptographic proof that demonstrates the presence of a specific
+     * genetic variant in the genetic data without revealing any other information
+     * about the genetic sequence or other variants. The proof can be verified on-chain
+     * while maintaining complete privacy of the underlying genetic data.
+     * 
+     * @async
+     * @method generateVariantProof
+     * 
      * @param {Object} geneticData - The full genetic dataset
-     * @param {Object} targetVariant - The variant to prove (gene, position, allele)
-     * @param {Object} options - Additional options for proof generation
-     * @returns {Promise<Object>} Proof object with hash and parameters
+     * @param {string} geneticData.dnaSequence - DNA sequence string
+     * @param {string} geneticData.metadata - Metadata about the genetic data
+     * @param {Object} [geneticData.variants] - Genetic variants information
+     * @param {Object} targetVariant - The variant to prove existence of
+     * @param {string} targetVariant.gene - Gene name (e.g., "BRCA1", "APOE", "CFTR")
+     * @param {number} targetVariant.position - Genomic position (1-based)
+     * @param {string} targetVariant.refAllele - Reference allele
+     * @param {string} targetVariant.altAllele - Alternative allele
+     * @param {string} [targetVariant.rsId] - rsID from dbSNP database
+     * @param {string} [targetVariant.type] - Variant type (SNP, INDEL, CNV, etc.)
+     * @param {Object} [options={}] - Additional options for proof generation
+     * @param {boolean} [options.includeMetadata=false] - Include variant metadata in proof
+     * @param {number} [options.securityLevel=128] - Security level for proof generation
+     * @param {boolean} [options.compressProof=true] - Compress proof for efficiency
+     * @param {string} [options.description] - Optional description for the proof
+     * @param {boolean} [options.validateReference=true] - Validate against reference genome
+     * 
+     * @returns {Promise<Object>} Complete proof object with verification data
+     * @returns {number} returns.proofType - Type identifier (3 for gene variant)
+     * @returns {string} returns.proofHash - Hash of the proof for on-chain storage
+     * @returns {Object} returns.parameters - Proof parameters for verification
+     * @returns {Object} returns.metadata - Proof metadata and information
+     * @returns {Object} returns.metadata.targetVariant - The variant that was proven
+     * @returns {string} returns.metadata.targetVariant.gene - Gene name
+     * @returns {number} returns.metadata.targetVariant.position - Genomic position
+     * @returns {string} returns.metadata.targetVariant.rsId - rsID if available
+     * @returns {string} returns.metadata.targetVariant.type - Variant type
+     * @returns {number} returns.metadata.timestamp - Proof generation timestamp
+     * @returns {string} returns.metadata.version - Proof format version
+     * 
+     * @throws {Error} When genetic data is invalid or missing required fields
+     * @throws {Error} When targetVariant is incomplete or invalid
+     * @throws {Error} When variant is not found in genetic data
+     * @throws {Error} When proof generation fails due to cryptographic errors
+     * @throws {Error} When witness generation fails
+     * @throws {Error} When proof formatting fails
+     * 
+     * @example
+     * // Basic variant proof generation
+     * const proof = await generator.generateVariantProof(
+     *   { dnaSequence: 'ATCG...', metadata: 'Sample 001' },
+     *   {
+     *     gene: 'BRCA1',
+     *     position: 185,
+     *     refAllele: 'A',
+     *     altAllele: 'G',
+     *     rsId: 'rs80357713'
+     *   }
+     * );
+     * 
+     * @example
+     * // Advanced proof with options
+     * const proof = await generator.generateVariantProof(
+     *   geneticData,
+     *   {
+     *     gene: 'APOE',
+     *     position: 526,
+     *     refAllele: 'C',
+     *     altAllele: 'T',
+     *     rsId: 'rs429358',
+     *     type: 'SNP'
+     *   },
+     *   {
+     *     includeMetadata: true,
+     *     securityLevel: 256,
+     *     description: 'APOE e4 allele verification'
+     *   }
+     * );
+     * 
+     * @example
+     * // Proof for clinical research
+     * const researchProof = await generator.generateVariantProof(
+     *   patientGeneticData,
+     *   {
+     *     gene: 'CFTR',
+     *     position: 350,
+     *     refAllele: 'G',
+     *     altAllele: 'A',
+     *     rsId: 'rs113993960',
+     *     type: 'SNP'
+     *   },
+     *   {
+     *     securityLevel: 256,
+     *     compressProof: false,
+     *     description: 'Cystic fibrosis deltaF508 mutation'
+     *   }
+     * );
      */
     async generateVariantProof(geneticData, targetVariant, options = {}) {
         try {
