@@ -173,6 +173,7 @@
     (let ((listing (unwrap! (map-get? listings { listing-id: listing-id }) ERR-LISTING-NOT-FOUND)))
         (asserts! (> listing-id u0) ERR-INVALID-INPUT)
         (asserts! (> new-price u0) ERR-INVALID-AMOUNT)
+        (asserts! (<= new-price MAX-PRICE) ERR-PRICE-TOO-HIGH)
         (asserts! (is-eq tx-sender (get owner listing)) ERR-NOT-OWNER)
         (asserts! (get active listing) ERR-LISTING-INACTIVE)
         (map-set listings { listing-id: listing-id }
