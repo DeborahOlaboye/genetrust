@@ -114,8 +114,17 @@ export class RateLimiter {
      * @param {Object} req - Express request object
      * @param {Object} res - Express response object
      * @returns {boolean} Whether to count this request
+     * @throws {Error} If req or res is not provided
      */
     shouldCountRequest(req, res) {
+        // Validate parameters
+        if (!req || typeof req !== 'object') {
+            throw new Error('Request object must be provided');
+        }
+        if (!res || typeof res !== 'object') {
+            throw new Error('Response object must be provided');
+        }
+
         // Skip successful requests if configured
         if (this.skipSuccessfulRequests && res.statusCode >= 200 && res.statusCode < 300) {
             return false;
