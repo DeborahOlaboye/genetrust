@@ -749,9 +749,19 @@ export class CryptoUtils {
      * Generate a merkle tree root from an array of hashes
      * @param {Array<string>} hashes - Array of hash values
      * @returns {string} Merkle root hash
+     * @throws {Error} If hashes is not an array
+     * @throws {Error} If hashes array exceeds maximum size
      */
     static generateMerkleRoot(hashes) {
-        if (!hashes || hashes.length === 0) {
+        // Validate hashes parameter
+        if (!Array.isArray(hashes)) {
+            throw new Error('Hashes must be an array');
+        }
+        if (hashes.length > 100000) {
+            throw new Error('Hashes array exceeds maximum allowed size of 100000');
+        }
+
+        if (hashes.length === 0) {
             return this.generateHash('');
         }
 
@@ -779,12 +789,21 @@ export class CryptoUtils {
      * @param {string} a - First string
      * @param {string} b - Second string
      * @returns {boolean} True if strings are equal
+     * @throws {Error} If a or b is not a string
      */
     static timingSafeEqual(a, b) {
+        // Validate parameters
+        if (typeof a !== 'string') {
+            throw new Error('First argument must be a string');
+        }
+        if (typeof b !== 'string') {
+            throw new Error('Second argument must be a string');
+        }
+
         try {
             const bufferA = Buffer.from(a);
             const bufferB = Buffer.from(b);
-            
+
             return timingSafeEqual(bufferA, bufferB);
         } catch (error) {
             return false;
