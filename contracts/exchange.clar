@@ -227,6 +227,8 @@
         ;; Emit event for off-chain indexers
         (print { event: "listing-purchased", listing-id: listing-id, buyer: tx-sender,
                  access-level: desired-access-level, paid: price, block: stacks-block-height })
+        ;; Increment global purchase counter
+        (var-set total-purchases-completed (+ (var-get total-purchases-completed) u1))
         ;; Return purchase confirmation
         (ok { listing-id: listing-id, access-level: desired-access-level, paid: price })
     )
