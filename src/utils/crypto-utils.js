@@ -123,8 +123,6 @@ export class CryptoUtils {
                 return hmac.toString('base64');
             case 'buffer':
                 return hmac;
-            default:
-                throw new Error(`Unsupported encoding: ${encoding}`);
         }
     }
 
