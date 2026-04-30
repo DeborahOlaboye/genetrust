@@ -667,3 +667,73 @@ describe('data-governance - fetch-usage-record and fetch-access-log', () => {
     expect(result).toBeSome(expect.anything());
   });
 });
+
+describe('data-governance - new helpers and fixes', () => {
+  describe('get-jurisdiction-name', () => {
+    it('should return Global for jurisdiction 0', () => {
+      const { result } = simnet.callReadOnlyFn(
+        'data-governance',
+        'get-jurisdiction-name',
+        [Cl.uint(0)],
+        deployer,
+      );
+      expect(result).toBeSome(expect.anything());
+    });
+
+    it('should return none for invalid jurisdiction code', () => {
+      const { result } = simnet.callReadOnlyFn(
+        'data-governance',
+        'get-jurisdiction-name',
+        [Cl.uint(99)],
+        deployer,
+      );
+      expect(result).toBeNone();
+    });
+  });
+
+  describe('get-consent-flags', () => {
+    it('should return none when no consent record exists', () => {
+      const { result } = simnet.callReadOnlyFn(
+        'data-governance',
+        'get-consent-flags',
+        [Cl.uint(99999)],
+        deployer,
+      );
+      expect(result).toBeNone();
+    });
+
+    it('should return consent flags after set-consent', () => {
+      simnet.callPublicFn(
+        'data-governance',
+        'set-consent',
+        [Cl.uint(1001), Cl.bool(true), Cl.bool(false), Cl.bool(true), Cl.uint(2)],
+        deployer,
+      );
+      const { result } = simnet.callReadOnlyFn(
+        'data-governance',
+        'get-consent-flags',
+        [Cl.uint(1001)],
+        deployer,
+      );
+      expect(result).toBeSome(expect.anything());
+    });
+  });
+
+  describe('restrict-processing structural fix', () => {
+    it('should return ok(true) on successful processing restriction', () => {
+      simnet.callPublicFn(
+        'data-governance',
+        'set-consent',
+        [Cl.uint(2001), Cl.bool(true), Cl.bool(true), Cl.bool(true), Cl.uint(0)],
+        deployer,
+      );
+      const { result } = simnet.callPublicFn(
+        'data-governance',
+        'restrict-processing',
+        [Cl.uint(2001)],
+        deployer,
+      );
+      expect(result).toBeOk(Cl.bool(true));
+    });
+  });
+});
