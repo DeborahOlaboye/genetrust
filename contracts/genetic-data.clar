@@ -229,6 +229,24 @@
     )
 )
 
+;; Update the price of an active dataset (owner only)
+;; @param data-id: ID of the dataset
+;; @param new-price: New price in microSTX (must be > 0 and <= MAX-PRICE)
+;; @returns: ok true on success, error otherwise
+(define-public (update-dataset-price (data-id uint) (new-price uint))
+    (let ((dataset (unwrap! (map-get? datasets { data-id: data-id }) ERR-DATASET-NOT-FOUND)))
+        (asserts! (> data-id u0) ERR-INVALID-INPUT)
+        (asserts! (is-eq tx-sender (get owner dataset)) ERR-NOT-OWNER)
+        (asserts! (get is-active dataset) ERR-INACTIVE-DATASET)
+        (asserts! (> new-price u0) ERR-INVALID-AMOUNT)
+        (asserts! (<= new-price MAX-PRICE) ERR-PRICE-TOO-HIGH)
+        (map-set datasets { data-id: data-id } (merge dataset { price: new-price }))
+        (print { event: "dataset-price-updated", data-id: data-id, owner: tx-sender,
+                 old-price: (get price dataset), new-price: new-price, block: stacks-block-height })
+        (ok true)
+    )
+)
+
 ;; @notice Returns all stored fields for a given dataset.
 ;; @param data-id The dataset ID to look up.
 ;; @return Some(dataset) if found, none otherwise.
