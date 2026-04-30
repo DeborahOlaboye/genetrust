@@ -36,6 +36,19 @@
  */
 
 /**
+ * Error severity levels for categorizing error importance
+ * 
+ * @readonly
+ * @enum {string}
+ */
+export const ErrorSeverity = {
+    LOW: 'low',
+    MEDIUM: 'medium',
+    HIGH: 'high',
+    CRITICAL: 'critical'
+};
+
+/**
  * Base application error class
  * 
  * Extends the native Error class with additional properties for
@@ -59,14 +72,15 @@ export class AppError extends Error {
      * @param {number} [statusCode=500] - HTTP status code
      * @param {string} [errorType='INTERNAL_ERROR'] - Error type identifier
      * @param {Object} [details={}] - Additional error details
+     * @param {string} [severity='medium'] - Error severity level
      * 
      * @example
      * const error = new AppError('User not found', 404, 'NOT_FOUND', {
      *   userId: '123',
      *   resource: 'User'
-     * });
+     * }, 'low');
      */
-    constructor(message, statusCode = 500, errorType = 'INTERNAL_ERROR', details = {}) {
+    constructor(message, statusCode = 500, errorType = 'INTERNAL_ERROR', details = {}, severity = 'medium') {
         super(message);
         
         /**
@@ -104,6 +118,12 @@ export class AppError extends Error {
          * @type {Object}
          */
         this.context = {};
+        
+        /**
+         * Error severity level
+         * @type {string}
+         */
+        this.severity = severity;
         
         Error.captureStackTrace(this, this.constructor);
     }
