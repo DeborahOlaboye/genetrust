@@ -20,7 +20,8 @@ import {
     errorHandler,
     devErrorHandler,
     asyncHandler,
-    notFoundHandler
+    notFoundHandler,
+    aggregateErrors
 } from '../../src/middleware/errorHandler.js';
 
 describe('AppError', () => {
