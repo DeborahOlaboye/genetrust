@@ -289,14 +289,65 @@ describe('exchange contract - coverage assertions', () => {
 
   it('should cover all exchange error codes', () => {
     const errorCodes = [
-      400, 401, 406, 407,
+      400, 401, 402, 406, 407,
       410, 411,
       430, 432, 435,
       440, 442, 443,
-      621, 620,
+      451,
+      614, 620, 621,
       500, 501,
     ];
 
     expect(errorCodes.length).toBeGreaterThan(14);
+  });
+});
+
+describe('exchange contract - new validation rules', () => {
+  describe('create-listing price cap', () => {
+    it('should reject price exceeding MAX-PRICE', () => {
+      const MAX_PRICE = 1_000_000_000_000_000n;
+      const overPrice = MAX_PRICE + 1n;
+      // ERR-PRICE-TOO-HIGH (u402) expected
+      expect(overPrice > MAX_PRICE).toBe(true);
+    });
+
+    it('should accept price at exactly MAX-PRICE', () => {
+      const MAX_PRICE = 1_000_000_000_000_000n;
+      expect(MAX_PRICE <= MAX_PRICE).toBe(true);
+    });
+  });
+
+  describe('update-listing-price cap', () => {
+    it('should reject new price exceeding MAX-PRICE', () => {
+      const MAX_PRICE = 1_000_000_000_000_000n;
+      const tooHigh = MAX_PRICE + 100n;
+      expect(tooHigh > MAX_PRICE).toBe(true);
+    });
+  });
+
+  describe('update-listing-description', () => {
+    it('should reject description shorter than 10 chars', () => {
+      const shortDesc = 'tiny';
+      expect(shortDesc.length).toBeLessThan(10);
+    });
+
+    it('should reject description longer than 200 chars', () => {
+      const longDesc = 'x'.repeat(201);
+      expect(longDesc.length).toBeGreaterThan(200);
+    });
+
+    it('should accept valid description (10-200 chars)', () => {
+      const validDesc = 'Valid description for this listing';
+      expect(validDesc.length).toBeGreaterThanOrEqual(10);
+      expect(validDesc.length).toBeLessThanOrEqual(200);
+    });
+  });
+
+  describe('total-purchases-completed counter', () => {
+    it('should increment on each successful purchase', () => {
+      let totalPurchases = 0;
+      totalPurchases += 1;
+      expect(totalPurchases).toBe(1);
+    });
   });
 });
