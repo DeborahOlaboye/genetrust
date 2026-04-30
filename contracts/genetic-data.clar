@@ -50,8 +50,17 @@
 ;; Access expires after ~30 days of blocks
 (define-constant ACCESS-EXPIRY-BLOCKS u8640)
 
+;; Price cap: 1 billion STX in microSTX to prevent absurd listings
+(define-constant MAX-PRICE u1000000000000000)
+
+;; Minimum storage URL length (e.g. "ipfs://a" is 8 chars)
+(define-constant MIN-URL-LENGTH u5)
+
 ;; Dataset counter
 (define-data-var next-data-id uint u1)
+
+;; Running total of all datasets ever registered (including deactivated ones)
+(define-data-var total-datasets uint u0)
 
 ;; @notice Primary storage map for all registered genetic datasets.
 ;;         Keyed by auto-incremented data-id. Owner is always tx-sender at registration time.
