@@ -10,6 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Comprehensive input validation for CryptoUtils class (Issue One)
+  - Added validation to all 20+ cryptographic methods
+  - Added security constants for validation limits
+  - Added comprehensive test suite for validation
+  - Added validation documentation
 - Comprehensive NatSpec documentation across all four Clarity smart contracts
 - Deployment workflow scripts: `deploy-testnet.sh`, `deploy-mainnet.sh`, `deploy-simnet.sh`
 - Pre-deployment validation script (`pre-deploy-check.sh`) with 8-point checklist
