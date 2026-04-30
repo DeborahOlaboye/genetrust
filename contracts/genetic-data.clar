@@ -9,10 +9,12 @@
 ;; Errors - Input Validation (400-409)
 (define-constant ERR-INVALID-INPUT (err u400))
 (define-constant ERR-INVALID-AMOUNT (err u401))
+(define-constant ERR-PRICE-TOO-HIGH (err u402))
 (define-constant ERR-INVALID-HASH (err u403))
 (define-constant ERR-INVALID-METADATA (err u404))
 (define-constant ERR-INVALID-ACCESS-LEVEL (err u406))
 (define-constant ERR-INVALID-STRING-LENGTH (err u407))
+(define-constant ERR-ZERO-HASH (err u408))
 
 ;; Errors - Authorization (410-414)
 (define-constant ERR-NOT-AUTHORIZED (err u410))
