@@ -7,19 +7,159 @@ import { ProofUtils } from '../utils/proof-utils.js';
 
 /**
  * Generates zero-knowledge proofs for aggregate genetic statistics
- * Proof Type: PROOF-TYPE-AGGREGATE (u4 in contract)
+ * 
+ * This class enables privacy-preserving verification of statistical properties
+ * of genetic data without revealing any individual genetic information. Uses
+ * ZK-SNARK technology to create cryptographic proofs that can be verified
+ * on-chain while maintaining complete privacy of the underlying data.
+ * Particularly useful for research studies and population-level analysis.
+ * 
+ * @class AggregateProofGenerator
+ * @description ZK-SNARK proof generation for aggregate genetic statistics
+ * @version 2.0.0
+ * @since 1.0.0
+ * @author GeneTrust Development Team
+ * 
+ * @example
+ * // Create proof generator
+ * const generator = new AggregateProofGenerator();
+ * 
+ * @example
+ * // Generate proof for mean statistic
+ * const proof = await generator.generateAggregateProof(
+ *   geneticData,
+ *   {
+ *     type: 'statistical',
+ *     statistic: 'mean',
+ *     target: 'geneExpression',
+ *   },
+ *   { includeMetadata: true }
+ * );
+ * 
+ * @example
+ * // Verify proof on blockchain
+ * const isValid = await contract.verifyProof(proof);
  */
 export class AggregateProofGenerator {
+    /**
+     * Proof type identifier for aggregate proofs
+     * Corresponds to PROOF-TYPE-AGGREGATE (u4) in verification.clar
+     * @readonly
+     * @type {number}
+     * @default 4
+     */
+    static PROOF_TYPE = 4;
+
+    /**
+     * Creates a new AggregateProofGenerator instance
+     * 
+     * @constructor
+     * @returns {AggregateProofGenerator} New proof generator instance
+     * 
+     * @example
+     * const generator = new AggregateProofGenerator();
+     */
     constructor() {
-        this.proofType = 4; // PROOF-TYPE-AGGREGATE from verification.clar
+        this.proofType = AggregateProofGenerator.PROOF_TYPE;
     }
 
     /**
-     * Generate a proof for aggregate genetic statistics
+     * Generate a zero-knowledge proof for aggregate genetic statistics
+     * 
+     * Creates a cryptographic proof that demonstrates statistical properties
+     * of the genetic data without revealing any individual-level information.
+     * The proof can be verified on-chain while maintaining complete privacy
+     * of the underlying genetic data.
+     * 
+     * @async
+     * @method generateAggregateProof
+     * 
      * @param {Object} geneticData - The full genetic dataset
+     * @param {string} geneticData.dnaSequence - DNA sequence string
+     * @param {string} geneticData.metadata - Metadata about the genetic data
+     * @param {Object} [geneticData.variants] - Genetic variants information
+     * @param {Object} [geneticData.genes] - Genes information
      * @param {Object} aggregateQuery - The statistical query to prove
-     * @param {Object} options - Additional options for proof generation
-     * @returns {Promise<Object>} Proof object with hash and parameters
+     * @param {string} aggregateQuery.type - Query type ('statistical', 'frequency', 'correlation')
+     * @param {string} aggregateQuery.statistic - Statistic type ('mean', 'median', 'variance', 'count', 'sum')
+     * @param {string} aggregateQuery.target - Target data field or gene
+     * @param {Object} [aggregateQuery.filters] - Optional filters for the data
+     * @param {Object} [aggregateQuery.groupBy] - Optional grouping parameters
+     * @param {Object} [options={}] - Additional options for proof generation
+     * @param {boolean} [options.includeMetadata=false] - Include query metadata in proof
+     * @param {number} [options.securityLevel=128] - Security level for proof generation
+     * @param {boolean} [options.compressProof=true] - Compress proof for efficiency
+     * @param {string} [options.description] - Optional description for the proof
+     * @param {boolean} [options.validateData=true] - Validate data before processing
+     * 
+     * @returns {Promise<Object>} Complete proof object with verification data
+     * @returns {number} returns.proofType - Type identifier (4 for aggregate)
+     * @returns {string} returns.proofHash - Hash of the proof for on-chain storage
+     * @returns {Object} returns.parameters - Proof parameters for verification
+     * @returns {Object} returns.metadata - Proof metadata and information
+     * @returns {string} returns.metadata.queryType - Type of query that was proven
+     * @returns {string} returns.metadata.statisticType - Statistic type
+     * @returns {Object} returns.metadata.result - Computed statistic result
+     * @returns {number} returns.metadata.timestamp - Proof generation timestamp
+     * @returns {string} returns.metadata.version - Proof format version
+     * 
+     * @throws {Error} When genetic data is invalid or missing required fields
+     * @throws {Error} When aggregateQuery is incomplete or invalid
+     * @throws {Error} When statistic computation fails
+     * @throws {Error} When proof generation fails due to cryptographic errors
+     * @throws {Error} When witness generation fails
+     * @throws {Error} When proof formatting fails
+     * 
+     * @example
+     * // Basic mean statistic proof
+     * const proof = await generator.generateAggregateProof(
+     *   { dnaSequence: 'ATCG...', metadata: 'Sample 001' },
+     *   {
+     *     type: 'statistical',
+     *     statistic: 'mean',
+     *     target: 'geneExpression'
+     *   }
+     * );
+     * 
+     * @example
+     * // Advanced frequency query with filters
+     * const proof = await generator.generateAggregateProof(
+     *   geneticData,
+     *   {
+     *     type: 'frequency',
+     *     statistic: 'count',
+     *     target: 'BRCA1',
+     *     filters: {
+     *       minExpression: 0.5,
+     *       maxExpression: 2.0
+     *     }
+     *   },
+     *   {
+     *     includeMetadata: true,
+     *     securityLevel: 256,
+     *     description: 'BRCA1 expression frequency analysis'
+     *   }
+     * );
+     * 
+     * @example
+     * // Correlation analysis proof
+     * const proof = await generator.generateAggregateProof(
+     *   populationGeneticData,
+     *   {
+     *     type: 'correlation',
+     *     statistic: 'correlation',
+     *     target: 'geneExpression',
+     *     groupBy: {
+     *       field: 'chromosome',
+     *       values: ['chr1', 'chr2', 'chr3']
+     *     }
+     *   },
+     *   {
+     *     securityLevel: 256,
+     *     compressProof: false,
+     *     description: 'Chromosomal correlation analysis'
+     *   }
+     * );
      */
     async generateAggregateProof(geneticData, aggregateQuery, options = {}) {
         try {
