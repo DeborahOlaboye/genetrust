@@ -572,11 +572,27 @@ export class CryptoUtils {
     /**
      * Encrypt data with AES-GCM
      * @param {string} data - Data to encrypt
-     * @param {Buffer} key - Encryption key
+     * @param {Buffer} key - Encryption key (must be 32 bytes for AES-256)
      * @param {Buffer} iv - Initialization vector
      * @returns {Object} Encrypted data with authentication tag
+     * @throws {Error} If data is not a string
+     * @throws {Error} If key is not a Buffer
+     * @throws {Error} If key length is not 32 bytes
      */
     static encryptAESGCM(data, key, iv = null) {
+        // Validate data parameter
+        if (typeof data !== 'string') {
+            throw new Error('Data must be a string');
+        }
+
+        // Validate key parameter
+        if (!Buffer.isBuffer(key)) {
+            throw new Error('Key must be a Buffer');
+        }
+        if (key.length !== 32) {
+            throw new Error('Key must be exactly 32 bytes for AES-256-GCM');
+        }
+
         const actualIv = iv || randomBytes(16);
         const cipher = createCipheriv('aes-256-gcm', key, actualIv);
         
@@ -595,10 +611,38 @@ export class CryptoUtils {
     /**
      * Decrypt data with AES-GCM
      * @param {Object} encryptedData - Encrypted data object
-     * @param {Buffer} key - Decryption key
+     * @param {Buffer} key - Decryption key (must be 32 bytes for AES-256)
      * @returns {string} Decrypted data
+     * @throws {Error} If encryptedData is null/undefined
+     * @throws {Error} If encryptedData is missing required properties
+     * @throws {Error} If key is not a Buffer
+     * @throws {Error} If key length is not 32 bytes
      */
     static decryptAESGCM(encryptedData, key) {
+        // Validate encryptedData parameter
+        if (encryptedData === null || encryptedData === undefined) {
+            throw new Error('Encrypted data cannot be null or undefined');
+        }
+        if (typeof encryptedData !== 'object') {
+            throw new Error('Encrypted data must be an object');
+        }
+
+        // Validate required properties
+        const requiredProps = ['encrypted', 'iv', 'authTag'];
+        for (const prop of requiredProps) {
+            if (!(prop in encryptedData)) {
+                throw new Error(`Encrypted data is missing required property: ${prop}`);
+            }
+        }
+
+        // Validate key parameter
+        if (!Buffer.isBuffer(key)) {
+            throw new Error('Key must be a Buffer');
+        }
+        if (key.length !== 32) {
+            throw new Error('Key must be exactly 32 bytes for AES-256-GCM');
+        }
+
         const { encrypted, iv, authTag } = encryptedData;
         
         const decipher = createDecipheriv('aes-256-gcm', key, Buffer.from(iv, 'hex'));
