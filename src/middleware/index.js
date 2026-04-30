@@ -53,5 +53,25 @@ export {
     RateLimitPresets
 } from './rateLimiterTypes.js';
 
+export {
+    AppError,
+    ValidationError,
+    AuthenticationError,
+    AuthorizationError,
+    NotFoundError,
+    RateLimitError,
+    ConflictError,
+    DatabaseError,
+    NetworkError,
+    PaymentError,
+    ErrorSeverity,
+    createErrorHandler,
+    errorHandler,
+    devErrorHandler,
+    asyncHandler,
+    notFoundHandler,
+    aggregateErrors
+} from './errorHandler.js';
+
 // Other middleware
 export { default as requestLogger } from './requestLogger.js';
