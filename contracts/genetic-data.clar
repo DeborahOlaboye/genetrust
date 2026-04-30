@@ -157,8 +157,10 @@
         (asserts! (is-eq tx-sender (get owner dataset)) ERR-NOT-OWNER)
         ;; Verify dataset is active
         (asserts! (get is-active dataset) ERR-INACTIVE-DATASET)
-        ;; Validate access-level is in valid range
+        ;; Validate access-level is in valid range (1-3)
         (asserts! (and (>= access-level ACCESS-BASIC) (<= access-level ACCESS-FULL)) ERR-INVALID-ACCESS-LEVEL)
+        ;; Granted level cannot exceed the dataset's own access level
+        (asserts! (<= access-level (get access-level dataset)) ERR-INSUFFICIENT-ACCESS-LEVEL)
         ;; Check if access already exists
         (asserts! (is-none (map-get? access-rights { data-id: data-id, user: user })) ERR-DUPLICATE-ACCESS-GRANT)
         ;; Grant the access
