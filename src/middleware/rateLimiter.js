@@ -1,24 +1,113 @@
 /**
  * Rate limiting middleware for Express.js
- * Protects API endpoints from abuse by limiting request frequency
+ * 
+ * Protects API endpoints from abuse by limiting request frequency using a
+ * sliding window algorithm with LRU cache for memory efficiency. Includes
+ * comprehensive input validation, performance optimizations, and monitoring
+ * capabilities.
+ * 
+ * @fileoverview Express.js rate limiting middleware with sliding window algorithm
+ * @version 2.0.0
+ * @since 1.0.0
+ * @author GeneTrust Development Team
+ * 
+ * @example
+ * // Basic rate limiting
+ * import { RateLimiter } from './rateLimiter.js';
+ * const limiter = new RateLimiter({ max: 100, windowMs: 15 * 60 * 1000 });
+ * app.use(limiter.middleware());
+ * 
+ * @example
+ * // Custom key generation
+ * const limiter = new RateLimiter({
+ *   keyGenerator: (req) => req.user?.id || req.ip,
+ *   max: 50,
+ *   windowMs: 60000
+ * });
  */
 
 import { LRUCache } from 'lru-cache';
 
 /**
  * Rate limiter class using sliding window algorithm
+ * 
+ * Implements a memory-efficient rate limiting solution using a sliding window
+ * approach with LRU cache for automatic cleanup. Provides configurable limits,
+ * custom key generation, and comprehensive monitoring capabilities.
+ * 
+ * @class RateLimiter
+ * @description Sliding window rate limiter with LRU cache
+ * @version 2.0.0
+ * @since 1.0.0
+ * 
+ * @example
+ * // Create a rate limiter for API endpoints
+ * const apiLimiter = new RateLimiter({
+ *   windowMs: 15 * 60 * 1000, // 15 minutes
+ *   max: 100, // 100 requests per window
+ *   message: 'Too many API requests, please try again later'
+ * });
+ * 
+ * @example
+ * // Rate limiter for authentication endpoints
+ * const authLimiter = new RateLimiter({
+ *   windowMs: 15 * 60 * 1000,
+ *   max: 5,
+ *   skipSuccessfulRequests: true,
+ *   message: 'Too many authentication attempts'
+ * });
  */
 export class RateLimiter {
     /**
-     * Create a new rate limiter
-     * @param {Object} options - Configuration options
-     * @param {number} options.windowMs - Time window in milliseconds (default: 15 minutes)
-     * @param {number} options.max - Maximum requests per window (default: 100)
-     * @param {string} options.message - Error message when rate limited
-     * @param {boolean} options.skipSuccessfulRequests - Don't count successful requests
-     * @param {boolean} options.skipFailedRequests - Don't count failed requests
-     * @param {Function} options.keyGenerator - Function to generate unique keys
-     * @param {boolean} options.debug - Enable debug logging
+     * Create a new rate limiter instance
+     * 
+     * Initializes a rate limiter with configurable options for time window,
+     * request limits, and behavior. Uses sliding window algorithm with LRU cache
+     * for efficient memory management and automatic cleanup.
+     * 
+     * @constructor
+     * @param {Object} [options={}] - Configuration options
+     * @param {number} [options.windowMs=900000] - Time window in milliseconds (15 minutes default, max 24 hours)
+     * @param {number} [options.max=100] - Maximum requests per window (1-1,000,000)
+     * @param {string} [options.message='Too many requests, please try again later'] - Error message when rate limited
+     * @param {boolean} [options.skipSuccessfulRequests=false] - Don't count successful requests (2xx status codes)
+     * @param {boolean} [options.skipFailedRequests=false] - Don't count failed requests (4xx/5xx status codes)
+     * @param {Function} [options.keyGenerator] - Function to generate unique keys from requests
+     * @param {boolean} [options.debug=false] - Enable debug logging for troubleshooting
+     * @param {number} [options.cacheMax=10000] - Maximum cache entries for memory management
+     * 
+     * @param {Function} [options.keyGenerator] - Custom key generator function
+     * @param {Object} request - Express request object
+     * @param {string} request.ip - Client IP address
+     * @param {string} [request.user.id] - User ID for user-based limiting
+     * @returns {string} Unique key for rate limiting
+     * 
+     * @throws {Error} When windowMs is not a positive number or exceeds 24 hours
+     * @throws {Error} When max is not a positive number or exceeds 1,000,000
+     * @throws {Error} When message is not a non-empty string
+     * @throws {Error} When boolean options are not boolean values
+     * @throws {Error} When keyGenerator is not a function
+     * @throws {Error} When cacheMax is not a positive number
+     * 
+     * @returns {RateLimiter} New RateLimiter instance
+     * 
+     * @example
+     * // Create rate limiter with custom settings
+     * const limiter = new RateLimiter({
+     *   windowMs: 5 * 60 * 1000, // 5 minutes
+     *   max: 50,
+     *   message: 'Rate limit exceeded. Please try again in 5 minutes.',
+     *   debug: process.env.NODE_ENV === 'development'
+     * });
+     * 
+     * @example
+     * // Rate limiter with custom key generation
+     * const userLimiter = new RateLimiter({
+     *   windowMs: 60 * 60 * 1000, // 1 hour
+     *   max: 1000,
+     *   keyGenerator: (req) => req.user?.id || req.ip,
+     *   skipSuccessfulRequests: true
+     * });
      */
     constructor(options = {}) {
         // Validate windowMs parameter
