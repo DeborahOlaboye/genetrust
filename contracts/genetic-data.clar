@@ -208,6 +208,31 @@
     )
 )
 
+;; Update the access level of an existing grant (owner only)
+;; @param data-id: ID of the dataset
+;; @param user: Principal whose access level to update
+;; @param new-access-level: New access level (1-3, cannot exceed dataset level)
+;; @returns: ok true on success, error otherwise
+(define-public (update-access-level (data-id uint) (user principal) (new-access-level uint))
+    (let (
+        (dataset (unwrap! (map-get? datasets { data-id: data-id }) ERR-DATASET-NOT-FOUND))
+        (rights (unwrap! (map-get? access-rights { data-id: data-id, user: user }) ERR-ACCESS-RIGHT-NOT-FOUND))
+    )
+        (asserts! (> data-id u0) ERR-INVALID-INPUT)
+        (asserts! (is-eq tx-sender (get owner dataset)) ERR-NOT-OWNER)
+        (asserts! (get is-active dataset) ERR-INACTIVE-DATASET)
+        (asserts! (and (>= new-access-level ACCESS-BASIC) (<= new-access-level ACCESS-FULL)) ERR-INVALID-ACCESS-LEVEL)
+        (asserts! (<= new-access-level (get access-level dataset)) ERR-INSUFFICIENT-ACCESS-LEVEL)
+        (map-set access-rights { data-id: data-id, user: user }
+            (merge rights { access-level: new-access-level })
+        )
+        (print { event: "access-level-updated", data-id: data-id, user: user,
+                 old-level: (get access-level rights), new-level: new-access-level,
+                 updated-by: tx-sender, block: stacks-block-height })
+        (ok true)
+    )
+)
+
 ;; Deactivate a dataset (owner only)
 ;; @param data-id: ID of the dataset to deactivate
 ;; @returns: ok true on success, error otherwise
