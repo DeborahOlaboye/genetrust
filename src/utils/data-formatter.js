@@ -5,18 +5,115 @@
 import { profiler } from './performance-profiler.js';
 
 /**
- * Data formatting utilities for genetic data processing
- * Optimized for large datasets with streaming and chunking support
+ * Data formatting utilities for genetic data processing and standardization
+ * 
+ * Provides comprehensive data formatting capabilities for genetic data including
+ * conversion between different formats, validation, optimization for large datasets,
+ * and streaming/chunking support. Ensures data consistency across the GeneTrust
+ * platform while maintaining performance with memory-efficient processing.
+ * 
+ * @class DataFormatter
+ * @description Genetic data formatting and standardization utilities
+ * @version 2.0.0
+ * @since 1.0.0
+ * @author GeneTrust Development Team
+ * 
+ * @example
+ * // Format genetic data for storage
+ * const formatted = await DataFormatter.formatForStorage(rawData, {
+ *   version: '2.0.0',
+ *   compression: true
+ * });
+ * 
+ * @example
+ * // Convert between formats
+ * const vcfData = await DataFormatter.convertToVCF(geneticData);
+ * const jsonData = await DataFormatter.convertToJSON(vcfData);
+ * 
+ * @example
+ * // Validate genetic data format
+ * const validation = DataFormatter.validateGeneticData(data);
+ * if (!validation.valid) {
+ *   console.error('Validation errors:', validation.errors);
+ * }
  */
 export class DataFormatter {
-    static CHUNK_SIZE = 10000; // Process in chunks of 10k items
-    static MEMORY_THRESHOLD = 100 * 1024 * 1024; // 100MB memory threshold
+    /**
+     * Chunk size for processing large datasets
+     * @readonly
+     * @type {number}
+     * @default 10000
+     */
+    static CHUNK_SIZE = 10000;
+    
+    /**
+     * Memory threshold for switching to chunked processing
+     * @readonly
+     * @type {number}
+     * @default 104857600 (100MB)
+     */
+    static MEMORY_THRESHOLD = 100 * 1024 * 1024;
     
     /**
      * Format genetic data for storage with performance optimization
-     * @param {Object} rawData - Raw genetic data
-     * @param {Object} options - Formatting options
-     * @returns {Promise<Object>} Formatted data
+     * 
+     * Processes raw genetic data into a standardized format suitable for
+     * storage in the GeneTrust platform. Includes metadata extraction, variant
+     * formatting, gene processing, and memory-efficient chunked processing for
+     * large datasets.
+     * 
+     * @static
+     * @async
+     * @method formatForStorage
+     * 
+     * @param {Object} rawData - Raw genetic data to format
+     * @param {string} [rawData.dnaSequence] - DNA sequence string
+     * @param {Array<Object>} [rawData.variants] - Genetic variants array
+     * @param {Array<Object>} [rawData.genes] - Genes array
+     * @param {Array<Object>} [rawData.sequences] - Sequences array
+     * @param {Object} [rawData.metadata] - Existing metadata
+     * @param {Object} [options={}] - Formatting options
+     * @param {string} [options.version='1.0.0'] - Format version to use
+     * @param {boolean} [options.compression=false] - Enable data compression
+     * @param {boolean} [options.validate=true] - Validate data during formatting
+     * @param {string} [options.outputFormat='standard'] - Output format type
+     * @param {Object} [options.customFields] - Custom field mappings
+     * @param {boolean} [options.includeTimestamps=true] - Include processing timestamps
+     * 
+     * @returns {Promise<Object>} Formatted data ready for storage
+     * @returns {Object} returns.metadata - Extracted and standardized metadata
+     * @returns {string} returns.formatVersion - Format version used
+     * @returns {number} returns.processedAt - Processing timestamp
+     * @returns {Array<Object>} returns.variants - Formatted variants array
+     * @returns {Array<Object>} returns.genes - Formatted genes array
+     * @returns {Array<Object>} returns.sequences - Formatted sequences array
+     * @returns {Object} returns.statistics - Processing statistics
+     * 
+     * @throws {Error} When raw data is invalid or missing required fields
+     * @throws {Error} When formatting fails due to data structure issues
+     * @throws {Error} When memory limits are exceeded during processing
+     * 
+     * @example
+     * // Basic formatting
+     * const formatted = await DataFormatter.formatForStorage(rawData);
+     * 
+     * @example
+     * // Advanced formatting with options
+     * const formatted = await DataFormatter.formatForStorage(rawData, {
+     *   version: '2.0.0',
+     *   compression: true,
+     *   validate: true,
+     *   outputFormat: 'research'
+     * });
+     * 
+     * @example
+     * // Format with custom field mappings
+     * const formatted = await DataFormatter.formatForStorage(rawData, {
+     *   customFields: {
+     *     patientId: 'subject_id',
+     *     sampleDate: 'collection_date'
+     *   }
+     * });
      */
     static async formatForStorage(rawData, options = {}) {
         profiler.start('formatForStorage', { dataSize: JSON.stringify(rawData).length });
