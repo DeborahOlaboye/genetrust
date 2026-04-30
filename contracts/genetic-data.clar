@@ -223,6 +223,8 @@
         (asserts! (get is-active dataset) ERR-INACTIVE-DATASET)
         ;; Deactivate the dataset
         (map-set datasets { data-id: data-id } (merge dataset { is-active: false }))
+        (print { event: "dataset-deactivated", data-id: data-id, owner: tx-sender,
+                 block: stacks-block-height })
         (ok true)
     )
 )
