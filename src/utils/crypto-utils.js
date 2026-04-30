@@ -471,12 +471,24 @@ export class CryptoUtils {
      * @param {any} value - Claimed value
      * @param {string} nonce - Nonce used in commitment
      * @returns {boolean} True if commitment is valid
+     * @throws {Error} If commitment is empty or not a string
+     * @throws {Error} If nonce is not a string
      */
     static verifyCommitment(commitment, value, nonce) {
+        // Validate commitment parameter
+        if (typeof commitment !== 'string' || commitment.length === 0) {
+            throw new Error('Commitment must be a non-empty string');
+        }
+
+        // Validate nonce parameter
+        if (typeof nonce !== 'string' || nonce.length === 0) {
+            throw new Error('Nonce must be a non-empty string');
+        }
+
         try {
             const valueString = typeof value === 'string' ? value : JSON.stringify(value);
             const computedCommitment = this.generateHash(`${valueString}${nonce}`);
-            
+
             return commitment === computedCommitment;
         } catch (error) {
             return false;
