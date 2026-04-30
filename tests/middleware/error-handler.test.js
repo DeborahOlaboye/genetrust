@@ -346,3 +346,69 @@ describe('notFoundHandler', () => {
         );
     });
 });
+
+describe('DatabaseError', () => {
+    it('should create database error with default message', () => {
+        const error = new DatabaseError();
+        expect(error.message).toBe('Database operation failed');
+        expect(error.statusCode).toBe(500);
+        expect(error.errorType).toBe('DATABASE_ERROR');
+        expect(error.severity).toBe('high');
+    });
+
+    it('should include database details in error', () => {
+        const databaseDetails = {
+            query: 'SELECT * FROM users',
+            error: 'Connection timeout'
+        };
+        const error = new DatabaseError('Query failed', databaseDetails);
+        expect(error.details.databaseDetails).toEqual(databaseDetails);
+    });
+});
+
+describe('NetworkError', () => {
+    it('should create network error with default message', () => {
+        const error = new NetworkError();
+        expect(error.message).toBe('Network request failed');
+        expect(error.statusCode).toBe(503);
+        expect(error.errorType).toBe('NETWORK_ERROR');
+        expect(error.severity).toBe('medium');
+    });
+
+    it('should include network details in error', () => {
+        const networkDetails = {
+            url: 'https://api.example.com',
+            status: 503
+        };
+        const error = new NetworkError('Request failed', networkDetails);
+        expect(error.details.networkDetails).toEqual(networkDetails);
+    });
+});
+
+describe('PaymentError', () => {
+    it('should create payment error with default message', () => {
+        const error = new PaymentError();
+        expect(error.message).toBe('Payment operation failed');
+        expect(error.statusCode).toBe(402);
+        expect(error.errorType).toBe('PAYMENT_ERROR');
+        expect(error.severity).toBe('high');
+    });
+
+    it('should include payment details in error', () => {
+        const paymentDetails = {
+            transactionId: 'tx_123',
+            reason: 'Insufficient funds'
+        };
+        const error = new PaymentError('Payment failed', paymentDetails);
+        expect(error.details.paymentDetails).toEqual(paymentDetails);
+    });
+});
+
+describe('ErrorSeverity', () => {
+    it('should have all severity levels', () => {
+        expect(ErrorSeverity.LOW).toBe('low');
+        expect(ErrorSeverity.MEDIUM).toBe('medium');
+        expect(ErrorSeverity.HIGH).toBe('high');
+        expect(ErrorSeverity.CRITICAL).toBe('critical');
+    });
+});
