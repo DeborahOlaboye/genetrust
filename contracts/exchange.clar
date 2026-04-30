@@ -346,6 +346,26 @@
     (ok (var-get total-purchases-completed))
 )
 
+;; @notice Returns the access level offered by a listing.
+;; @param listing-id The listing to check.
+;; @return Some(uint) if listing exists, none otherwise.
+(define-read-only (get-listing-access-level (listing-id uint))
+    (match (map-get? listings { listing-id: listing-id })
+        listing (some (get access-level listing))
+        none
+    )
+)
+
+;; @notice Returns the data-id associated with a listing.
+;; @param listing-id The listing to look up.
+;; @return Some(uint) if listing exists, none otherwise. Alias for get-listing-data-id.
+(define-read-only (get-listing-dataset-id (listing-id uint))
+    (match (map-get? listings { listing-id: listing-id })
+        listing (some (get data-id listing))
+        none
+    )
+)
+
 ;; @notice Returns the deployed contract version string.
 (define-read-only (get-version)
     CONTRACT-VERSION
