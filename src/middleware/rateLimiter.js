@@ -20,16 +20,62 @@ export class RateLimiter {
      * @param {Function} options.keyGenerator - Function to generate unique keys
      */
     constructor(options = {}) {
+        // Validate windowMs parameter
+        if (options.windowMs !== undefined) {
+            if (typeof options.windowMs !== 'number' || options.windowMs <= 0) {
+                throw new Error('windowMs must be a positive number');
+            }
+            if (options.windowMs > 24 * 60 * 60 * 1000) {
+                throw new Error('windowMs cannot exceed 24 hours');
+            }
+        }
         this.windowMs = options.windowMs || 15 * 60 * 1000; // 15 minutes
+
+        // Validate max parameter
+        if (options.max !== undefined) {
+            if (typeof options.max !== 'number' || options.max <= 0) {
+                throw new Error('max must be a positive number');
+            }
+            if (options.max > 1000000) {
+                throw new Error('max cannot exceed 1,000,000 requests');
+            }
+        }
         this.max = options.max || 100;
+
+        // Validate message parameter
+        if (options.message !== undefined) {
+            if (typeof options.message !== 'string' || options.message.length === 0) {
+                throw new Error('message must be a non-empty string');
+            }
+        }
         this.message = options.message || 'Too many requests, please try again later';
+
+        // Validate boolean parameters
+        if (options.skipSuccessfulRequests !== undefined && typeof options.skipSuccessfulRequests !== 'boolean') {
+            throw new Error('skipSuccessfulRequests must be a boolean');
+        }
         this.skipSuccessfulRequests = options.skipSuccessfulRequests || false;
+
+        if (options.skipFailedRequests !== undefined && typeof options.skipFailedRequests !== 'boolean') {
+            throw new Error('skipFailedRequests must be a boolean');
+        }
         this.skipFailedRequests = options.skipFailedRequests || false;
+
+        // Validate keyGenerator parameter
+        if (options.keyGenerator !== undefined && typeof options.keyGenerator !== 'function') {
+            throw new Error('keyGenerator must be a function');
+        }
         this.keyGenerator = options.keyGenerator || this.defaultKeyGenerator;
+
+        // Validate cache options
+        const cacheMax = options.cacheMax || 10000;
+        if (typeof cacheMax !== 'number' || cacheMax <= 0) {
+            throw new Error('cacheMax must be a positive number');
+        }
 
         // Use LRU cache to store request counts with automatic cleanup
         this.cache = new LRUCache({
-            max: 10000, // Maximum number of entries
+            max: cacheMax, // Maximum number of entries
             ttl: this.windowMs, // Time to live
             updateAgeOnGet: true,
             allowStale: false
