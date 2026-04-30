@@ -192,10 +192,39 @@ export class RateLimiter {
      * @private
      * @param {string} key - Unique identifier
      * @param {Object} entry - Request entry
+     * @throws {Error} If parameters are invalid
      */
     updateRequestCount(key, entry) {
-        entry.requests.push(Date.now());
+        // Validate key parameter
+        if (!key || typeof key !== 'string' || key.length === 0) {
+            throw new Error('Valid key must be provided');
+        }
+
+        // Validate entry parameter
+        if (!entry || typeof entry !== 'object') {
+            throw new Error('Entry must be an object');
+        }
+        if (!entry.requests || !Array.isArray(entry.requests)) {
+            entry.requests = [];
+        }
+
+        const timestamp = Date.now();
+        
+        // Limit request history to prevent memory issues
+        if (entry.requests.length >= this.max * 2) {
+            // Keep only recent requests
+            const cutoff = timestamp - this.windowMs;
+            entry.requests = entry.requests.filter(t => t > cutoff);
+        }
+
+        entry.requests.push(timestamp);
         entry.count = entry.requests.length;
+        
+        // Validate count before caching
+        if (entry.count < 0 || entry.count > this.max * 10) {
+            throw new Error('Invalid request count detected');
+        }
+
         this.cache.set(key, entry);
     }
 
