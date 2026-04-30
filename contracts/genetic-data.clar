@@ -132,6 +132,9 @@
                 created-at: stacks-block-height
             }
         )
+        ;; Emit event for off-chain indexers
+        (print { event: "dataset-registered", data-id: data-id, owner: tx-sender,
+                 access-level: access-level, price: price, block: stacks-block-height })
         ;; Increment counters
         (var-set next-data-id (+ data-id u1))
         (var-set total-datasets (+ (var-get total-datasets) u1))
