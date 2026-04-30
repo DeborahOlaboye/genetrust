@@ -231,7 +231,7 @@ export class AuthorizationError extends AppError {
      * });
      */
     constructor(message = 'Insufficient permissions', requiredPermissions = {}) {
-        super(message, 403, 'AUTHORIZATION_ERROR', { requiredPermissions });
+        super(message, 403, 'AUTHORIZATION_ERROR', { requiredPermissions }, 'medium');
     }
 }
 
