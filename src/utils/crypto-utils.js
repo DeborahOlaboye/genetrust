@@ -78,9 +78,7 @@ export class CryptoUtils {
         }
 
         // Validate encoding parameter
-        if (!this.VALID_ENCODINGS.includes(encoding)) {
-            throw new Error(`Invalid encoding: ${encoding}. Must be one of: ${this.VALID_ENCODINGS.join(', ')}`);
-        }
+        this._validateEncoding(encoding);
 
         const hash = createHash('sha256').update(data).digest();
 
