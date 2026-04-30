@@ -18,6 +18,7 @@ export class RateLimiter {
      * @param {boolean} options.skipSuccessfulRequests - Don't count successful requests
      * @param {boolean} options.skipFailedRequests - Don't count failed requests
      * @param {Function} options.keyGenerator - Function to generate unique keys
+     * @param {boolean} options.debug - Enable debug logging
      */
     constructor(options = {}) {
         // Validate windowMs parameter
@@ -72,6 +73,12 @@ export class RateLimiter {
         if (typeof cacheMax !== 'number' || cacheMax <= 0) {
             throw new Error('cacheMax must be a positive number');
         }
+
+        // Validate debug option
+        if (options.debug !== undefined && typeof options.debug !== 'boolean') {
+            throw new Error('debug must be a boolean');
+        }
+        this.debug = options.debug || false;
 
         // Performance optimization: pre-allocate common arrays
         this._tempArray = [];
@@ -260,6 +267,11 @@ export class RateLimiter {
 
                 const key = this.keyGenerator(req);
                 const entry = this.getRequestCount(key);
+
+                // Debug logging
+                if (this.debug) {
+                    console.debug(`RateLimiter[${key}]: ${entry.count}/${this.max} requests`);
+                }
 
                 // Add rate limit headers with validation
                 try {
