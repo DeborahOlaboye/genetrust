@@ -659,8 +659,26 @@ export class CryptoUtils {
      * @param {number} length - Key length
      * @param {string} prefix - Optional prefix
      * @returns {string} Generated API key
+     * @throws {Error} If length is not a positive integer
+     * @throws {Error} If prefix is not a string when provided
      */
     static generateApiKey(length = 32, prefix = 'gc') {
+        // Validate length parameter
+        if (!Number.isInteger(length) || length <= 0) {
+            throw new Error('Length must be a positive integer');
+        }
+        if (length < 16) {
+            throw new Error('Length must be at least 16 bytes for security');
+        }
+        if (length > 128) {
+            throw new Error('Length exceeds maximum allowed value of 128');
+        }
+
+        // Validate prefix parameter
+        if (prefix !== null && prefix !== undefined && typeof prefix !== 'string') {
+            throw new Error('Prefix must be a string when provided');
+        }
+
         const randomPart = this.generateSecureKey(length, 'hex');
         return prefix ? `${prefix}_${randomPart}` : randomPart;
     }
@@ -692,9 +710,20 @@ export class CryptoUtils {
      * Calculate entropy of data
      * @param {string|Buffer} data - Data to analyze
      * @returns {number} Shannon entropy
+     * @throws {Error} If data is null or undefined
+     * @throws {Error} If data is empty
      */
     static calculateEntropy(data) {
+        // Validate data parameter
+        if (data === null || data === undefined) {
+            throw new Error('Data cannot be null or undefined');
+        }
+
         const bytes = Buffer.isBuffer(data) ? data : Buffer.from(data);
+
+        if (bytes.length === 0) {
+            throw new Error('Data cannot be empty');
+        }
         const counts = new Array(256).fill(0);
         
         // Count byte frequencies
