@@ -115,8 +115,11 @@
                 added-at: stacks-block-height
             }
         )
-        ;; Increment counter
+        (print { event: "verifier-registered", verifier-id: verifier-id,
+                 address: verifier-address, registered-by: tx-sender, block: stacks-block-height })
+        ;; Increment counters
         (var-set next-verifier-id (+ verifier-id u1))
+        (var-set total-verifiers (+ (var-get total-verifiers) u1))
         (ok verifier-id)
     )
 )
