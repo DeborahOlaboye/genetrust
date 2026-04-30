@@ -294,6 +294,8 @@ export class RateLimiter {
                         if (this.shouldCountRequest(req, res)) {
                             this.updateRequestCount(key, entry);
                         }
+                        // Perform periodic cleanup
+                        this._performCleanup();
                     } catch (updateError) {
                         // Log error but don't crash
                         console.warn('Failed to update rate limit count:', updateError.message);
