@@ -1,12 +1,103 @@
 // Contract integration factory and client exports for GeneTrust SDK
 // Minimal implementations that forward to provided stacksApi adapter
 
+/**
+ * Client for interacting with the Genetic Data smart contract
+ * 
+ * Provides a simplified interface for registering genetic data, verifying
+ * access rights, and managing genetic data records on the blockchain.
+ * Forwards all operations to the provided stacksApi adapter for actual
+ * blockchain interactions.
+ * 
+ * @class GeneticDataClient
+ * @description Smart contract client for genetic data management
+ * @version 2.0.0
+ * @since 1.0.0
+ * @author GeneTrust Development Team
+ * 
+ * @example
+ * // Create genetic data client
+ * const client = new GeneticDataClient(
+ *   'SP123...contract-address',
+ *   'genetic-data',
+ *   stacksApi
+ * );
+ * 
+ * @example
+ * // Register genetic data
+ * const result = await client.registerGeneticData({
+ *   dataId: 'data-123',
+ *   price: 1000000,
+ *   accessLevel: 2,
+ *   metadataHash: '0xabc...',
+ *   storageUrl: 'ipfs://Qm...'
+ * }, senderAddress);
+ */
 export class GeneticDataClient {
+  /**
+   * Creates a new GeneticDataClient instance
+   * 
+   * @constructor
+   * @param {string} contractAddress - The contract address on Stacks blockchain
+   * @param {string} contractName - The contract name
+   * @param {Object} stacksApi - Stacks API adapter for blockchain interactions
+   * @param {Function} stacksApi.callContractFunction - Function to call contract functions
+   * @param {Function} stacksApi.callReadOnlyFunction - Function to call read-only functions
+   * 
+   * @throws {Error} When contractAddress is invalid
+   * @throws {Error} When contractName is empty
+   * @throws {Error} When stacksApi is missing required methods
+   * 
+   * @returns {GeneticDataClient} New client instance
+   * 
+   * @example
+   * const client = new GeneticDataClient(
+   *   'SP1234567890abcdef1234567890abcdef12345678',
+   *   'genetic-data',
+   *   stacksApi
+   * );
+   */
   constructor(contractAddress, contractName, stacksApi) {
     this.address = contractAddress;
     this.name = contractName;
     this.api = stacksApi;
   }
+  /**
+   * Register genetic data on the blockchain
+   * 
+   * Submits a transaction to register genetic data with the smart contract,
+   * including pricing, access level, metadata hash, and storage information.
+   * 
+   * @async
+   * @method registerGeneticData
+   * 
+   * @param {Object} data - Genetic data registration information
+   * @param {string} data.dataId - Unique identifier for the genetic data
+   * @param {number} data.price - Price in microSTX for data access
+   * @param {number} data.accessLevel - Access level (1-3, higher = more restrictive)
+   * @param {string} data.metadataHash - Hash of the data metadata
+   * @param {string} data.storageUrl - URL where data is stored (e.g., IPFS)
+   * @param {string} [data.description] - Description of the genetic data
+   * @param {string} senderAddress - Address of the sender registering the data
+   * 
+   * @returns {Promise<Object>} Registration result
+   * @returns {string} returns.txId - Transaction ID of the registration
+   * @returns {string} returns.dataId - The data ID that was registered
+   * 
+   * @throws {Error} When data is missing required fields
+   * @throws {Error} When senderAddress is invalid
+   * @throws {Error} When contract call fails
+   * 
+   * @example
+   * const result = await client.registerGeneticData({
+   *   dataId: 'sample-001',
+   *   price: 1000000, // 1 STX
+   *   accessLevel: 2,
+   *   metadataHash: '0x123abc...',
+   *   storageUrl: 'ipfs://QmHash...',
+   *   description: 'BRCA gene mutation sample'
+   * }, 'SP123...sender');
+   */
   async registerGeneticData(data, senderAddress) {
     const args = [
       data.dataId,
@@ -25,6 +116,33 @@ export class GeneticDataClient {
     });
     return { txId: res.txid, dataId: data.dataId };
   }
+  /**
+   * Verify access rights for a user to genetic data
+   * 
+   * Checks if a specific user has access rights to view or use
+   * particular genetic data based on the smart contract's access control rules.
+   * 
+   * @async
+   * @method verifyAccessRights
+   * 
+   * @param {string} dataId - Unique identifier for the genetic data
+   * @param {string} userAddress - Blockchain address of the user to check
+   * 
+   * @returns {Promise<boolean>} True if user has access rights, false otherwise
+   * 
+   * @throws {Error} When dataId is empty or invalid
+   * @throws {Error} When userAddress is invalid
+   * @throws {Error} When read-only contract call fails
+   * 
+   * @example
+   * const hasAccess = await client.verifyAccessRights(
+   *   'sample-001',
+   *   'SP456...user'
+   * );
+   * if (hasAccess) {
+   *   console.log('User has access to genetic data');
+   * }
+   */
   async verifyAccessRights(dataId, userAddress) {
     const res = await this.api.callReadOnlyFunction(
       this.address,
