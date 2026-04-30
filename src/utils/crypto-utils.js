@@ -383,12 +383,25 @@ export class CryptoUtils {
      * @param {string} expectedChecksum - Expected checksum
      * @param {string} algorithm - Hash algorithm
      * @returns {boolean} True if data is intact
+     * @throws {Error} If expectedChecksum is empty or not a string
+     * @throws {Error} If algorithm is not supported
      */
     static validateDataIntegrity(data, expectedChecksum, algorithm = 'sha256') {
+        // Validate expectedChecksum parameter
+        if (typeof expectedChecksum !== 'string' || expectedChecksum.length === 0) {
+            throw new Error('Expected checksum must be a non-empty string');
+        }
+
+        // Validate algorithm parameter
+        const validAlgorithms = ['sha256', 'sha512'];
+        if (!validAlgorithms.includes(algorithm)) {
+            throw new Error(`Invalid algorithm: ${algorithm}. Must be one of: ${validAlgorithms.join(', ')}`);
+        }
+
         try {
             const dataString = typeof data === 'string' ? data : JSON.stringify(data);
             const computedChecksum = createHash(algorithm).update(dataString).digest('hex');
-            
+
             return computedChecksum === expectedChecksum;
         } catch (error) {
             return false;
