@@ -313,6 +313,28 @@
     )
 )
 
+;; Extend an existing access grant by another ACCESS-EXPIRY-BLOCKS period (owner only)
+;; @param data-id: ID of the dataset
+;; @param user: Principal whose access to extend
+;; @returns: ok true on success, error otherwise
+(define-public (extend-access (data-id uint) (user principal))
+    (let (
+        (dataset (unwrap! (map-get? datasets { data-id: data-id }) ERR-DATASET-NOT-FOUND))
+        (rights (unwrap! (map-get? access-rights { data-id: data-id, user: user }) ERR-ACCESS-RIGHT-NOT-FOUND))
+    )
+        (asserts! (> data-id u0) ERR-INVALID-INPUT)
+        (asserts! (is-eq tx-sender (get owner dataset)) ERR-NOT-OWNER)
+        (asserts! (get is-active dataset) ERR-INACTIVE-DATASET)
+        (map-set access-rights { data-id: data-id, user: user }
+            (merge rights { expires-at: (+ stacks-block-height ACCESS-EXPIRY-BLOCKS) })
+        )
+        (print { event: "access-extended", data-id: data-id, user: user,
+                 new-expires-at: (+ stacks-block-height ACCESS-EXPIRY-BLOCKS),
+                 extended-by: tx-sender, block: stacks-block-height })
+        (ok true)
+    )
+)
+
 ;; @notice Returns all stored fields for a given dataset.
 ;; @param data-id The dataset ID to look up.
 ;; @return Some(dataset) if found, none otherwise.
