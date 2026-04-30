@@ -6,20 +6,125 @@ import { createHash } from 'crypto';
 import { ProofUtils } from '../utils/proof-utils.js';
 
 /**
- * Generates zero-knowledge proofs for gene presence
- * Proof Type: PROOF-TYPE-GENE-PRESENCE (u1 in contract)
+ * Generates zero-knowledge proofs for gene presence verification
+ * 
+ * This class enables privacy-preserving verification that a specific gene
+ * exists within genetic data without revealing the full genetic sequence.
+ * Uses ZK-SNARK technology to create cryptographic proofs that can be
+ * verified on-chain while maintaining complete data privacy.
+ * 
+ * @class GenePresenceProofGenerator
+ * @description ZK-SNARK proof generation for gene presence verification
+ * @version 2.0.0
+ * @since 1.0.0
+ * @author GeneTrust Development Team
+ * 
+ * @example
+ * // Create proof generator
+ * const generator = new GenePresenceProofGenerator();
+ * 
+ * @example
+ * // Generate proof for BRCA1 gene presence
+ * const proof = await generator.generatePresenceProof(
+ *   geneticData,
+ *   'BRCA1',
+ *   { includeMetadata: true }
+ * );
+ * 
+ * @example
+ * // Verify proof on blockchain
+ * const isValid = await contract.verifyProof(proof);
  */
 export class GenePresenceProofGenerator {
+    /**
+     * Proof type identifier for gene presence proofs
+     * Corresponds to PROOF-TYPE-GENE-PRESENCE (u1) in verification.clar
+     * @readonly
+     * @type {number}
+     * @default 1
+     */
+    static PROOF_TYPE = 1;
+
+    /**
+     * Creates a new GenePresenceProofGenerator instance
+     * 
+     * @constructor
+     * @returns {GenePresenceProofGenerator} New proof generator instance
+     * 
+     * @example
+     * const generator = new GenePresenceProofGenerator();
+     */
     constructor() {
-        this.proofType = 1; // PROOF-TYPE-GENE-PRESENCE from verification.clar
+        this.proofType = GenePresenceProofGenerator.PROOF_TYPE;
     }
 
     /**
-     * Generate a proof that a specific gene is present in the genetic data
+     * Generate a zero-knowledge proof for gene presence
+     * 
+     * Creates a cryptographic proof that demonstrates the presence of a specific
+     * gene in the genetic data without revealing any other information about the
+     * genetic sequence. The proof can be verified on-chain while maintaining
+     * complete privacy of the underlying genetic data.
+     * 
+     * @async
+     * @method generatePresenceProof
+     * 
      * @param {Object} geneticData - The full genetic dataset
-     * @param {string} targetGene - The gene to prove presence of (e.g., "BRCA1", "APOE")
-     * @param {Object} options - Additional options for proof generation
-     * @returns {Promise<Object>} Proof object with hash and parameters
+     * @param {string} geneticData.dnaSequence - DNA sequence string
+     * @param {string} geneticData.metadata - Metadata about the genetic data
+     * @param {Object} [geneticData.variants] - Genetic variants information
+     * @param {string} targetGene - The gene to prove presence of (e.g., "BRCA1", "APOE", "CFTR")
+     * @param {Object} [options={}] - Additional options for proof generation
+     * @param {boolean} [options.includeMetadata=false] - Include metadata in proof
+     * @param {number} [options.securityLevel=128] - Security level for proof generation
+     * @param {boolean} [options.compressProof=true] - Compress proof for efficiency
+     * @param {string} [options.description] - Optional description for the proof
+     * 
+     * @returns {Promise<Object>} Complete proof object with verification data
+     * @returns {number} returns.proofType - Type identifier (1 for gene presence)
+     * @returns {string} returns.proofHash - Hash of the proof for on-chain storage
+     * @returns {Object} returns.parameters - Proof parameters for verification
+     * @returns {Object} returns.metadata - Proof metadata and information
+     * @returns {string} returns.metadata.targetGene - The gene that was proven present
+     * @returns {number} returns.metadata.timestamp - Proof generation timestamp
+     * @returns {string} returns.metadata.version - Proof format version
+     * 
+     * @throws {Error} When genetic data is invalid or missing required fields
+     * @throws {Error} When targetGene is empty or invalid
+     * @throws {Error} When proof generation fails due to cryptographic errors
+     * @throws {Error} When witness generation fails
+     * @throws {Error} When proof formatting fails
+     * 
+     * @example
+     * // Basic proof generation
+     * const proof = await generator.generatePresenceProof(
+     *   { dnaSequence: 'ATCG...', metadata: 'Sample 001' },
+     *   'BRCA1'
+     * );
+     * 
+     * @example
+     * // Advanced proof with options
+     * const proof = await generator.generatePresenceProof(
+     *   geneticData,
+     *   'APOE',
+     *   {
+     *     includeMetadata: true,
+     *     securityLevel: 256,
+     *     description: 'APOE gene presence verification'
+     *   }
+     * );
+     * 
+     * @example
+     * // Proof for medical research
+     * const researchProof = await generator.generatePresenceProof(
+     *   patientGeneticData,
+     *   'CFTR',
+     *   {
+     *     securityLevel: 256,
+     *     compressProof: false,
+     *     description: 'Cystic fibrosis gene verification'
+     *   }
+     * );
      */
     async generatePresenceProof(geneticData, targetGene, options = {}) {
         try {
