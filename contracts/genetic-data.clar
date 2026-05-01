@@ -174,32 +174,47 @@
 )
 
 ;; Grant access to a user (owner only)
-;; @param data-id: ID of the dataset
-;; @param user: Principal to grant access to
-;; @param access-level: Access level to grant (1-3)
+;; @param data-id: ID of the dataset to grant access to
+;; @param user: Principal to grant access to (must not be caller)
+;; @param access-level: Access level to grant (1=basic, 2=detailed, 3=full)
 ;; @returns: ok true on success, error otherwise
 ;; @requires: Caller must be dataset owner
-;; @requires: User cannot be the caller
+;; @requires: User cannot be the caller (no self-grant)
+;; @requires: User cannot be the contract itself
 ;; @requires: Dataset must exist and be active
+;; @requires: Access-level must be 1-3 and <= dataset's own access level
+;; @requires: Access must not already exist for this user on this dataset
 (define-public (grant-access (data-id uint) (user principal) (access-level uint))
     (let ((dataset (unwrap! (map-get? datasets { data-id: data-id }) ERR-DATASET-NOT-FOUND)))
-        ;; Validate data-id is positive
+        ;; VALIDATION PHASE 1: Input validation
+        ;; Check data-id is positive
         (asserts! (> data-id u0) ERR-INVALID-INPUT)
-        ;; Prevent self-grant
+        
+        ;; VALIDATION PHASE 2: Principal validation
+        ;; Prevent self-grant (user cannot be the caller)
         (asserts! (not (is-eq user tx-sender)) ERR-SELF-GRANT-NOT-ALLOWED)
         ;; Prevent granting access to the contract itself
         (asserts! (not (is-eq user (as-contract tx-sender))) ERR-INVALID-INPUT)
+        
+        ;; VALIDATION PHASE 3: Authorization validation
         ;; Verify caller is the dataset owner
         (asserts! (is-eq tx-sender (get owner dataset)) ERR-NOT-OWNER)
-        ;; Verify dataset is active
+        
+        ;; VALIDATION PHASE 4: Resource state validation
+        ;; Verify dataset is active (not deactivated)
         (asserts! (get is-active dataset) ERR-INACTIVE-DATASET)
-        ;; Validate access-level is in valid range (1-3)
+        
+        ;; VALIDATION PHASE 5: Access level validation
+        ;; Check access level is within valid range (1-3)
         (asserts! (and (>= access-level ACCESS-BASIC) (<= access-level ACCESS-FULL)) ERR-INVALID-ACCESS-LEVEL)
-        ;; Granted level cannot exceed the dataset's own access level
+        ;; Ensure granted level does not exceed dataset's maximum access level
         (asserts! (<= access-level (get access-level dataset)) ERR-INSUFFICIENT-ACCESS-LEVEL)
-        ;; Check if access already exists
+        
+        ;; VALIDATION PHASE 6: Duplicate prevention validation
+        ;; Check if access already exists for this user on this dataset
         (asserts! (is-none (map-get? access-rights { data-id: data-id, user: user })) ERR-DUPLICATE-ACCESS-GRANT)
-        ;; Grant the access
+        
+        ;; All validations passed - grant access
         (map-set access-rights { data-id: data-id, user: user }
             {
                 access-level: access-level,
