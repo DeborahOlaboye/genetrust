@@ -1,6 +1,6 @@
 ;; exchange.clar
 ;; @title GeneTrust Exchange
-;; @version 1.1.0
+;; @version 1.2.0
 ;; @author GeneTrust
 ;; @notice Marketplace for listing and purchasing access to genetic datasets.
 ;;         STX payments transfer directly from buyer to dataset owner with no intermediary.
@@ -51,7 +51,7 @@
 (define-constant ERR-PAYMENT-FAILED (err u500))
 (define-constant ERR-TRANSACTION-FAILED (err u501))
 
-(define-constant CONTRACT-VERSION "1.1.0")
+(define-constant CONTRACT-VERSION "1.2.0")
 
 ;; Price cap: 1 billion STX in microSTX to prevent absurd listings
 (define-constant MAX-PRICE u1000000000000000)
