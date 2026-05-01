@@ -397,6 +397,27 @@
     )
 )
 
+;; @notice Returns the block height at which any GDPR record was last updated.
+;; @param data-id The dataset ID to look up.
+;; @return Some(uint) if a GDPR record exists, none otherwise.
+(define-read-only (get-gdpr-updated-at (data-id uint))
+    (match (map-get? gdpr-records { data-id: data-id })
+        gdpr (some (get updated-at gdpr))
+        none
+    )
+)
+
+;; @notice Returns true if right-to-be-forgotten has been invoked for a dataset.
+;; @dev Alias for is-erasure-requested with a more explicit name for contract consumers.
+;; @param data-id The dataset ID to check.
+;; @return ok(true) if erasure was requested, ok(false) otherwise.
+(define-read-only (has-erasure-been-requested (data-id uint))
+    (match (map-get? gdpr-records { data-id: data-id })
+        gdpr (ok (get right-to-be-forgotten gdpr))
+        (ok false)
+    )
+)
+
 ;; @notice Returns the deployed contract version string.
 ;; @return The CONTRACT-VERSION constant value.
 (define-read-only (get-version)
