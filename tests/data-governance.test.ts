@@ -807,3 +807,57 @@ describe('data-governance - is-consent-expired and timestamp helpers', () => {
     expect(result).toBeSome(Cl.uint(2));
   });
 });
+
+describe('data-governance - get-consent-summary and gdpr helpers (simnet)', () => {
+  it('get-consent-summary returns none when no consent record exists', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'data-governance',
+      'get-consent-summary',
+      [Cl.uint(77777)],
+      deployer,
+    );
+    expect(result).toBeNone();
+  });
+
+  it('get-consent-summary returns tuple with is-valid field after set-consent', () => {
+    simnet.callPublicFn(
+      'data-governance',
+      'set-consent',
+      [Cl.uint(6001), Cl.bool(true), Cl.bool(true), Cl.bool(false), Cl.uint(3)],
+      deployer,
+    );
+    const { result } = simnet.callReadOnlyFn(
+      'data-governance',
+      'get-consent-summary',
+      [Cl.uint(6001)],
+      deployer,
+    );
+    expect(result).toBeSome(expect.anything());
+  });
+
+  it('has-erasure-been-requested returns false when no erasure invoked', () => {
+    simnet.callPublicFn(
+      'data-governance',
+      'set-consent',
+      [Cl.uint(7001), Cl.bool(true), Cl.bool(false), Cl.bool(false), Cl.uint(0)],
+      deployer,
+    );
+    const { result } = simnet.callReadOnlyFn(
+      'data-governance',
+      'has-erasure-been-requested',
+      [Cl.uint(7001)],
+      deployer,
+    );
+    expect(result).toBeOk(Cl.bool(false));
+  });
+
+  it('get-gdpr-updated-at returns none when no GDPR rights invoked', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'data-governance',
+      'get-gdpr-updated-at',
+      [Cl.uint(55555)],
+      deployer,
+    );
+    expect(result).toBeNone();
+  });
+});
