@@ -367,6 +367,36 @@
     )
 )
 
+;; @notice Returns true if a consent record exists but has already expired.
+;; @param data-id The dataset ID to check.
+;; @return ok(true) if expired, ok(false) if valid or no record exists.
+(define-read-only (is-consent-expired (data-id uint))
+    (match (map-get? consent-records { data-id: data-id })
+        consent (ok (>= stacks-block-height (get expires-at consent)))
+        (ok false)
+    )
+)
+
+;; @notice Returns the block height at which the consent record was last updated.
+;; @param data-id The dataset ID to look up.
+;; @return Some(uint) if consent record exists, none otherwise.
+(define-read-only (get-consent-updated-at (data-id uint))
+    (match (map-get? consent-records { data-id: data-id })
+        consent (some (get updated-at consent))
+        none
+    )
+)
+
+;; @notice Returns the jurisdiction code for a dataset's consent record.
+;; @param data-id The dataset ID to look up.
+;; @return Some(uint) if consent record exists, none otherwise.
+(define-read-only (get-consent-jurisdiction (data-id uint))
+    (match (map-get? consent-records { data-id: data-id })
+        consent (some (get jurisdiction consent))
+        none
+    )
+)
+
 ;; @notice Returns the deployed contract version string.
 ;; @return The CONTRACT-VERSION constant value.
 (define-read-only (get-version)
