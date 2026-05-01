@@ -385,3 +385,19 @@
         none
     )
 )
+
+;; @notice Returns a summary snapshot of key proof fields.
+;; @param proof-id The proof ID to summarise.
+;; @return Some(tuple) with data-id, proof-type, verified flag, creator, and created-at.
+(define-read-only (get-proof-summary (proof-id uint))
+    (match (map-get? proofs { proof-id: proof-id })
+        proof (some {
+            data-id: (get data-id proof),
+            proof-type: (get proof-type proof),
+            verified: (get verified proof),
+            creator: (get creator proof),
+            created-at: (get created-at proof)
+        })
+        none
+    )
+)
