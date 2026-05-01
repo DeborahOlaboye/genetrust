@@ -406,6 +406,28 @@
     )
 )
 
+;; @notice Returns the amount paid by a buyer for a specific listing purchase.
+;; @param listing-id The purchased listing ID.
+;; @param buyer The principal who made the purchase.
+;; @return Some(uint) if purchase record exists, none otherwise.
+(define-read-only (get-purchase-paid-amount (listing-id uint) (buyer principal))
+    (match (map-get? purchases { listing-id: listing-id, buyer: buyer })
+        purchase (some (get paid purchase))
+        none
+    )
+)
+
+;; @notice Returns the block height at which a purchase was completed.
+;; @param listing-id The purchased listing ID.
+;; @param buyer The principal who made the purchase.
+;; @return Some(uint) if purchase record exists, none otherwise.
+(define-read-only (get-purchase-timestamp (listing-id uint) (buyer principal))
+    (match (map-get? purchases { listing-id: listing-id, buyer: buyer })
+        purchase (some (get purchased-at purchase))
+        none
+    )
+)
+
 ;; @notice Returns the deployed contract version string.
 (define-read-only (get-version)
     CONTRACT-VERSION
