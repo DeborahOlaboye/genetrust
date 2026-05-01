@@ -1,8 +1,10 @@
 ;; attestations.clar
 ;; @title GeneTrust Attestations
-;; @version 1.0.0
+;; @version 1.1.0
 ;; @author GeneTrust
 ;; @notice Registry for zero-knowledge attestation proofs on genetic datasets.
+;; @changelog v1.1.0 — ERR-ALREADY-VERIFIED guard, total counters, print events on all
+;;            state changes, comprehensive read helpers including summary, proof, and verifier helpers.
 ;;         Trusted verifiers (e.g. medical labs) can register proofs and mark them as verified
 ;;         without exposing the underlying raw genetic data.
 ;; @dev Deployed on Stacks mainnet at SP3KKFRRWQVJXEJCGM6ZB359EF01VRY86HW6CCD45.attestations
