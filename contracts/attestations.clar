@@ -365,3 +365,23 @@
         none
     )
 )
+
+;; @notice Returns the block height at which a proof was submitted.
+;; @param proof-id The proof ID to look up.
+;; @return Some(uint) if proof exists, none otherwise.
+(define-read-only (get-proof-created-at (proof-id uint))
+    (match (map-get? proofs { proof-id: proof-id })
+        proof (some (get created-at proof))
+        none
+    )
+)
+
+;; @notice Returns the metadata string attached to a proof.
+;; @param proof-id The proof ID to look up.
+;; @return Some(string-utf8) if proof exists, none otherwise.
+(define-read-only (get-proof-metadata (proof-id uint))
+    (match (map-get? proofs { proof-id: proof-id })
+        proof (some (get metadata proof))
+        none
+    )
+)
