@@ -292,3 +292,21 @@ Create tests for boundary conditions:
 - [ERROR_CODES.md](ERROR_CODES.md) - All error codes
 - [VALIDATION_PATTERNS.md](VALIDATION_PATTERNS.md) - Validation patterns
 - [ERROR_RECOVERY.md](ERROR_RECOVERY.md) - Error recovery strategies
+
+## Hardened Validation Rules (Phase 6)
+
+### Price Sanitization
+All price inputs must pass two checks:
+1. `price > 0` — zero prices are meaningless and blocked by `ERR-INVALID-AMOUNT (u401)`
+2. `price <= MAX-PRICE` — prices above `u1000000000000000` (1 quadrillion microSTX) are blocked by `ERR-PRICE-TOO-HIGH (u402)` to prevent uint-range exploitation
+
+### Metadata Hash Sanitization
+The 32-byte `metadata-hash` field must pass two checks:
+1. `len(hash) == 32` — enforced by type system but also checked explicitly
+2. `hash != 0x000...000` — all-zero hash is a sentinel/placeholder and is rejected with `ERR-ZERO-HASH (u408)`
+
+### Storage URL Sanitization
+Storage URLs must be at least `MIN-URL-LENGTH` (5) characters. This eliminates single-char or empty URL registrations while remaining flexible for various URL schemes (ipfs://, ar://, https://).
+
+### Access Level Cap Sanitization
+When granting access, the requested level cannot exceed the dataset's own configured level. This prevents owners from accidentally granting more access than the dataset is classified for.
