@@ -281,3 +281,56 @@ describe('exchange - price cap and new functions (simnet)', () => {
     expect(result).toBeErr(Cl.uint(401));
   });
 });
+
+describe('exchange - snapshot helpers (simnet)', () => {
+  it('get-listing-summary returns structured tuple for existing listing', () => {
+    simnet.callPublicFn(
+      'exchange',
+      'create-listing',
+      [
+        Cl.uint(1),
+        Cl.uint(500000),
+        Cl.uint(2),
+        Cl.stringUtf8('Listing summary test entry here'),
+      ],
+      deployer,
+    );
+    const { result } = simnet.callReadOnlyFn(
+      'exchange',
+      'get-listing-summary',
+      [Cl.uint(1)],
+      deployer,
+    );
+    expect(result).toBeSome(expect.anything());
+  });
+
+  it('get-listing-summary returns none for non-existent listing', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'exchange',
+      'get-listing-summary',
+      [Cl.uint(99999)],
+      deployer,
+    );
+    expect(result).toBeNone();
+  });
+
+  it('get-listing-is-active returns false for non-existent listing', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'exchange',
+      'get-listing-is-active',
+      [Cl.uint(88888)],
+      deployer,
+    );
+    expect(result).toBeOk(Cl.bool(false));
+  });
+
+  it('get-total-purchases-completed starts at zero', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'exchange',
+      'get-total-purchases-completed',
+      [],
+      deployer,
+    );
+    expect(result).toBeOk(Cl.uint(0));
+  });
+});
