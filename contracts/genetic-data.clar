@@ -235,18 +235,25 @@
 ;; @param user: Principal whose access to revoke
 ;; @returns: ok true on success, error otherwise
 ;; @requires: Caller must be dataset owner
-;; @requires: User cannot be the caller
+;; @requires: User cannot be the caller (no self-revoke)
 ;; @requires: Dataset must exist
+;; @requires: Access grant must exist for this user
 (define-public (revoke-access (data-id uint) (user principal))
     (let ((dataset (unwrap! (map-get? datasets { data-id: data-id }) ERR-DATASET-NOT-FOUND))
           (access (unwrap! (map-get? access-rights { data-id: data-id, user: user }) ERR-ACCESS-RIGHT-NOT-FOUND)))
-        ;; Validate data-id is positive
+        ;; VALIDATION PHASE 1: Input validation
+        ;; Check data-id is positive
         (asserts! (> data-id u0) ERR-INVALID-INPUT)
-        ;; Prevent self-revoke
+        
+        ;; VALIDATION PHASE 2: Principal validation
+        ;; Prevent self-revoke (cannot revoke own access)
         (asserts! (not (is-eq user tx-sender)) ERR-CANNOT-REVOKE-OWN-ACCESS)
+        
+        ;; VALIDATION PHASE 3: Authorization validation
         ;; Verify caller is the dataset owner
         (asserts! (is-eq tx-sender (get owner dataset)) ERR-NOT-OWNER)
-        ;; Delete the access right
+        
+        ;; All validations passed - delete the access right
         (map-delete access-rights { data-id: data-id, user: user })
         (print { event: "access-revoked", data-id: data-id, user: user,
                  revoked-by: tx-sender, block: stacks-block-height })
