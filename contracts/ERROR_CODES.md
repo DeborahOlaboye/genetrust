@@ -112,3 +112,98 @@
 - Include error code in function documentation
 - Update this file when adding new error codes
 - Group related errors in similar ranges
+
+## Validation Error Code Usage Examples
+
+### ERR-INVALID-AMOUNT (u401) Usage
+Used when:
+- Amount is zero: `(asserts! (> amount u0) ERR-INVALID-AMOUNT)`
+- Amount exceeds maximum: `(asserts! (<= amount MAX-PRICE) ERR-PRICE-TOO-HIGH)`
+- Amount is negative: Not directly possible in Clarity (unsigned integers)
+
+### ERR-INVALID-HASH (u403) Usage
+Used when:
+- Hash length is not 32 bytes: `(asserts! (is-eq (len hash) u32) ERR-INVALID-HASH)`
+- Hash format is incorrect
+- Hash is missing or malformed
+
+### ERR-ZERO-HASH (u408) Usage
+Used when:
+- Hash is all zero bytes: `(asserts! (not (is-eq hash 0x00...)) ERR-ZERO-HASH)`
+- Hash is a meaningless sentinel value
+
+### ERR-INVALID-STRING-LENGTH (u407) Usage
+Used when:
+- String is empty: `(asserts! (> (len description) u0) ERR-INVALID-STRING-LENGTH)`
+- String exceeds maximum: `(asserts! (<= (len description) u200) ERR-INVALID-STRING-LENGTH)`
+- String is below minimum: `(asserts! (>= (len name) u1) ERR-INVALID-STRING-LENGTH)`
+
+### ERR-INVALID-ACCESS-LEVEL (u406) Usage
+Used when:
+- Level is out of range (1-3): `(asserts! (and (>= level u1) (<= level u3)) ERR-INVALID-ACCESS-LEVEL)`
+- Level is zero: `(asserts! (> level u0) ERR-INVALID-ACCESS-LEVEL)`
+- Level exceeds valid maximum
+
+### ERR-NOT-OWNER (u411) Usage
+Used when:
+- Caller is not the dataset owner: `(asserts! (is-eq tx-sender owner) ERR-NOT-OWNER)`
+- Caller is not the resource owner
+- Caller lacks ownership permission
+
+### ERR-DUPLICATE-ACCESS-GRANT (u444) Usage
+Used when:
+- Access already exists: `(asserts! (is-none (map-get? access-rights {...})) ERR-DUPLICATE-ACCESS-GRANT)`
+- User already has access to resource
+- Grant would create a duplicate entry
+
+### ERR-INACTIVE-DATASET (u450) Usage
+Used when:
+- Dataset is deactivated: `(asserts! (get is-active dataset) ERR-INACTIVE-DATASET)`
+- Dataset is marked as deleted (soft delete)
+- Dataset cannot be operated on
+
+### ERR-DATASET-NOT-FOUND (u431) Usage
+Used when:
+- Dataset ID does not exist: `(unwrap! (map-get? datasets {...}) ERR-DATASET-NOT-FOUND)`
+- Map lookup returns none
+- Resource has been hard-deleted
+
+## Validation Pattern Examples
+
+### Complete Input Validation (Multi-step)
+```clarity
+(define-public (register-dataset
+    (metadata-hash (buff 32))
+    (storage-url (string-utf8 200))
+    (description (string-utf8 200))
+    (access-level uint)
+    (price uint))
+    (begin
+        ;; Step 1: Hash validation
+        (asserts! (is-eq (len metadata-hash) u32) ERR-INVALID-HASH)
+        (asserts! (not (is-eq metadata-hash 0x00...)) ERR-ZERO-HASH)
+        ;; Step 2: URL validation
+        (asserts! (>= (len storage-url) MIN-URL-LENGTH) ERR-INVALID-STRING-LENGTH)
+        (asserts! (<= (len storage-url) MAX-URL-LENGTH) ERR-INVALID-STRING-LENGTH)
+        ;; Step 3: Description validation
+        (asserts! (> (len description) u0) ERR-INVALID-STRING-LENGTH)
+        ;; Step 4: Access level validation
+        (asserts! (and (>= access-level u1) (<= access-level u3)) ERR-INVALID-ACCESS-LEVEL)
+        ;; Step 5: Price validation
+        (asserts! (> price u0) ERR-INVALID-AMOUNT)
+        (asserts! (<= price MAX-PRICE) ERR-PRICE-TOO-HIGH)
+        ;; Steps continue...
+    )
+)
+```
+
+### Authorization Validation Pattern
+```clarity
+(let ((dataset (unwrap! (map-get? datasets {...}) ERR-DATASET-NOT-FOUND)))
+    ;; Verify caller is owner
+    (asserts! (is-eq tx-sender (get owner dataset)) ERR-NOT-OWNER)
+    ;; Verify dataset is active
+    (asserts! (get is-active dataset) ERR-INACTIVE-DATASET)
+    ;; Proceed with operation...
+)
+```
