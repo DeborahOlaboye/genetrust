@@ -139,6 +139,8 @@
         (asserts! (get active v) ERR-VERIFIER-INACTIVE)
         ;; Deactivate the verifier
         (map-set verifiers { verifier-id: verifier-id } (merge v { active: false }))
+        (print { event: "verifier-deactivated", verifier-id: verifier-id,
+                 deactivated-by: tx-sender, block: stacks-block-height })
         (ok true)
     )
 )
