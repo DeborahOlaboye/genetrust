@@ -157,3 +157,69 @@
          (is-buffer-size-valid params u1 u256)
          (is-string-length-valid meta u0 u200))
 )
+
+;; Validate timestamp is in future (value > current block height)
+(define-read-only (is-in-future (timestamp-block uint))
+    (> timestamp-block stacks-block-height)
+)
+
+;; Validate timestamp is current or future
+(define-read-only (is-current-or-future (timestamp-block uint))
+    (>= timestamp-block stacks-block-height)
+)
+
+;; Validate that two uints are different
+(define-read-only (not-equal (val1 uint) (val2 uint))
+    (not (is-eq val1 val2))
+)
+
+;; Validate uint is exactly a specific value
+(define-read-only (is-exact-match (actual uint) (expected uint))
+    (is-eq actual expected)
+)
+
+;; Validate price does not exceed MAX-PRICE constant
+(define-read-only (price-within-cap (price uint) (max-price uint))
+    (<= price max-price)
+)
+
+;; Validate amount is within acceptable range with minimum and maximum
+(define-read-only (amount-in-bounds (amount uint) (min-amount uint) (max-amount uint))
+    (and (>= amount min-amount) (<= amount max-amount))
+)
+
+;; Validate string is not empty and within max length
+(define-read-only (validate-string-presence (s (string-utf8 400)) (max-len uint))
+    (and (> (len s) u0) (<= (len s) max-len))
+)
+
+;; Validate that both conditions are true (safety check)
+(define-read-only (both-true (cond1 bool) (cond2 bool))
+    (and cond1 cond2)
+)
+
+;; Validate that either condition is true
+(define-read-only (either-true (cond1 bool) (cond2 bool))
+    (or cond1 cond2)
+)
+
+;; Validate buffer exists and is not all zeros
+(define-read-only (is-non-zero-buffer (buf (buff 32)))
+    (and (> (len buf) u0)
+         (not (is-eq buf 0x0000000000000000000000000000000000000000000000000000000000000000)))
+)
+
+;; Validate hash is valid length and not all zeros
+(define-read-only (is-valid-metadata-hash (h (buff 32)))
+    (is-non-zero-buffer h)
+)
+
+;; Validate multiple conditions all pass
+(define-read-only (all-conditions-pass (c1 bool) (c2 bool) (c3 bool))
+    (and c1 c2 c3)
+)
+
+;; Validate all four conditions pass
+(define-read-only (all-four-conditions-pass (c1 bool) (c2 bool) (c3 bool) (c4 bool))
+    (and c1 c2 c3 c4)
+)

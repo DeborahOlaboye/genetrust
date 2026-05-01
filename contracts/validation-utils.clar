@@ -1,5 +1,11 @@
 ;; validation-utils.clar
-;; Reusable validation functions for GeneTrust contracts
+;; @title Reusable Validation Functions for GeneTrust Contracts
+;; @version 1.2.0
+;; @author GeneTrust
+;; @notice Comprehensive validation utility library with standardized error codes,
+;;         validation functions, and composite validators for all contract inputs.
+;; @dev This module provides a centralized location for all validation logic,
+;;      ensuring consistency and maintainability across GeneTrust contracts.
 
 ;; Error codes for validation
 (define-constant ERR-INVALID-AMOUNT (err u401))
@@ -7,6 +13,9 @@
 (define-constant ERR-INVALID-HASH (err u403))
 (define-constant ERR-INVALID-STRING-LENGTH (err u407))
 (define-constant ERR-INVALID-BUFFER-SIZE (err u408))
+(define-constant ERR-INVALID-UINT-BOUNDS (err u400))
+(define-constant ERR-ZERO-VALUE (err u401))
+(define-constant ERR-NEGATIVE-VALUE (err u401))
 
 ;; Validation constants
 (define-constant MIN-DESCRIPTION-LENGTH u10)
@@ -164,5 +173,86 @@
         (try! (validate-buffer-size parameters u1 u256))
         (try! (validate-string-length metadata u0 u200))
         (ok true)
+    )
+)
+
+;; Validate that a uint is strictly positive (> 0)
+(define-read-only (validate-positive-uint (value uint))
+    (if (> value u0)
+        (ok true)
+        (err ERR-ZERO-VALUE)
+    )
+)
+
+;; Validate that a uint falls within a specific range [min, max] inclusive
+(define-read-only (validate-uint-range (value uint) (min-val uint) (max-val uint))
+    (if (and (>= value min-val) (<= value max-val))
+        (ok true)
+        (err ERR-INVALID-UINT-BOUNDS)
+    )
+)
+
+;; Validate buffer is not empty
+(define-read-only (validate-buffer-not-empty (buf (buff 256)))
+    (if (> (len buf) u0)
+        (ok true)
+        (err ERR-INVALID-BUFFER-SIZE)
+    )
+)
+
+;; Validate that a hash is not all zero bytes (meaningless sentinel)
+(define-read-only (validate-hash-not-zero (hash (buff 32)))
+    (if (not (is-eq hash 0x0000000000000000000000000000000000000000000000000000000000000000))
+        (ok true)
+        (err u408) ;; ERR-ZERO-HASH
+    )
+)
+
+;; Validate that two principals are different
+(define-read-only (validate-principals-differ (principal1 principal) (principal2 principal))
+    (if (not (is-eq principal1 principal2))
+        (ok true)
+        (err u610) ;; ERR-SELF-GRANT-NOT-ALLOWED
+    )
+)
+
+;; Validate that a principal is not the contract itself
+(define-read-only (validate-principal-not-contract (address principal))
+    (if (not (is-eq address (as-contract tx-sender)))
+        (ok true)
+        (err ERR-INVALID-ADDRESS)
+    )
+)
+
+;; Validate price is within acceptable range and not zero
+(define-read-only (validate-price-strict (price uint))
+    (begin
+        (try! (validate-positive-uint price))
+        (if (<= price MAX-PRICE)
+            (ok true)
+            (err u402) ;; ERR-PRICE-TOO-HIGH
+        )
+    )
+)
+
+;; Validate access level and that it's within bounds
+(define-read-only (validate-access-level-strict (level uint))
+    (begin
+        (try! (validate-positive-uint level))
+        (if (<= level u3)
+            (ok true)
+            (err u406) ;; ERR-INVALID-ACCESS-LEVEL
+        )
+    )
+)
+
+;; Validate description exists and has appropriate length
+(define-read-only (validate-description-strict (description (string-utf8 200)))
+    (let ((len (len description)))
+        (begin
+            (asserts! (> len u0) u407) ;; ERR-INVALID-STRING-LENGTH (empty)
+            (asserts! (<= len u200) u407) ;; ERR-INVALID-STRING-LENGTH (too long)
+            (ok true)
+        )
     )
 )

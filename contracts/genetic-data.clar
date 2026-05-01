@@ -100,12 +100,17 @@
 )
 
 ;; Register a new dataset
-;; @param metadata-hash: 32-byte hash of dataset metadata
-;; @param storage-url: URL where dataset is stored (5-200 chars)
-;; @param description: Dataset description (10-200 chars)
+;; @param metadata-hash: 32-byte hash of dataset metadata (must not be all zeros)
+;; @param storage-url: URL where dataset is stored (5-200 chars, non-empty)
+;; @param description: Dataset description (10-200 chars, non-empty)
 ;; @param access-level: Access level (1=basic, 2=detailed, 3=full)
-;; @param price: Price in microSTX (must be > 0)
+;; @param price: Price in microSTX (must be > 0 and <= MAX-PRICE)
 ;; @returns: ok with data-id on success, error otherwise
+;; @requires: metadata-hash must be exactly 32 bytes and not zero-filled
+;; @requires: storage-url must be between 5 and 200 characters
+;; @requires: description must be between 10 and 200 characters
+;; @requires: access-level must be 1, 2, or 3
+;; @requires: price must be positive and not exceed MAX-PRICE constant
 (define-public (register-dataset
     (metadata-hash (buff 32))
     (storage-url (string-utf8 200))
@@ -113,21 +118,39 @@
     (access-level uint)
     (price uint))
     (let ((data-id (var-get next-data-id)))
-        ;; Validate metadata hash is exactly 32 bytes
+        ;; VALIDATION PHASE 1: Metadata hash validation
+        ;; Check hash is exactly 32 bytes
         (asserts! (is-eq (len metadata-hash) u32) ERR-INVALID-HASH)
-        ;; Validate metadata hash is not all-zero (meaningless sentinel)
+        ;; Check hash is not all-zero (meaningless sentinel value)
         (asserts! (not (is-eq metadata-hash 0x0000000000000000000000000000000000000000000000000000000000000000)) ERR-ZERO-HASH)
-        ;; Validate storage URL meets minimum length and does not exceed maximum
-        (asserts! (and (>= (len storage-url) MIN-URL-LENGTH) (<= (len storage-url) u200)) ERR-INVALID-STRING-LENGTH)
-        ;; Validate description is not empty and reasonable length
-        (asserts! (and (>= (len description) u10) (<= (len description) u200)) ERR-INVALID-STRING-LENGTH)
-        ;; Validate price is positive
-        (asserts! (> price u0) ERR-INVALID-AMOUNT)
-        ;; Validate price does not exceed the maximum cap
-        (asserts! (<= price MAX-PRICE) ERR-PRICE-TOO-HIGH)
-        ;; Validate access-level is in valid range (1-3)
+        
+        ;; VALIDATION PHASE 2: Storage URL validation
+        ;; Check URL is not empty
+        (asserts! (> (len storage-url) u0) ERR-INVALID-STRING-LENGTH)
+        ;; Check URL meets minimum length requirement
+        (asserts! (>= (len storage-url) MIN-URL-LENGTH) ERR-INVALID-STRING-LENGTH)
+        ;; Check URL does not exceed maximum length
+        (asserts! (<= (len storage-url) u200) ERR-INVALID-STRING-LENGTH)
+        
+        ;; VALIDATION PHASE 3: Description validation
+        ;; Check description is not empty
+        (asserts! (> (len description) u0) ERR-INVALID-STRING-LENGTH)
+        ;; Check description meets minimum length requirement
+        (asserts! (>= (len description) u10) ERR-INVALID-STRING-LENGTH)
+        ;; Check description does not exceed maximum length
+        (asserts! (<= (len description) u200) ERR-INVALID-STRING-LENGTH)
+        
+        ;; VALIDATION PHASE 4: Access level validation
+        ;; Check access level is >= 1 and <= 3
         (asserts! (and (>= access-level ACCESS-BASIC) (<= access-level ACCESS-FULL)) ERR-INVALID-ACCESS-LEVEL)
-        ;; Create the dataset
+        
+        ;; VALIDATION PHASE 5: Price validation
+        ;; Check price is positive (> 0)
+        (asserts! (> price u0) ERR-INVALID-AMOUNT)
+        ;; Check price does not exceed maximum cap
+        (asserts! (<= price MAX-PRICE) ERR-PRICE-TOO-HIGH)
+        
+        ;; All validations passed - proceed with dataset creation
         (map-set datasets { data-id: data-id }
             {
                 owner: tx-sender,
@@ -151,32 +174,47 @@
 )
 
 ;; Grant access to a user (owner only)
-;; @param data-id: ID of the dataset
-;; @param user: Principal to grant access to
-;; @param access-level: Access level to grant (1-3)
+;; @param data-id: ID of the dataset to grant access to
+;; @param user: Principal to grant access to (must not be caller)
+;; @param access-level: Access level to grant (1=basic, 2=detailed, 3=full)
 ;; @returns: ok true on success, error otherwise
 ;; @requires: Caller must be dataset owner
-;; @requires: User cannot be the caller
+;; @requires: User cannot be the caller (no self-grant)
+;; @requires: User cannot be the contract itself
 ;; @requires: Dataset must exist and be active
+;; @requires: Access-level must be 1-3 and <= dataset's own access level
+;; @requires: Access must not already exist for this user on this dataset
 (define-public (grant-access (data-id uint) (user principal) (access-level uint))
     (let ((dataset (unwrap! (map-get? datasets { data-id: data-id }) ERR-DATASET-NOT-FOUND)))
-        ;; Validate data-id is positive
+        ;; VALIDATION PHASE 1: Input validation
+        ;; Check data-id is positive
         (asserts! (> data-id u0) ERR-INVALID-INPUT)
-        ;; Prevent self-grant
+        
+        ;; VALIDATION PHASE 2: Principal validation
+        ;; Prevent self-grant (user cannot be the caller)
         (asserts! (not (is-eq user tx-sender)) ERR-SELF-GRANT-NOT-ALLOWED)
         ;; Prevent granting access to the contract itself
         (asserts! (not (is-eq user (as-contract tx-sender))) ERR-INVALID-INPUT)
+        
+        ;; VALIDATION PHASE 3: Authorization validation
         ;; Verify caller is the dataset owner
         (asserts! (is-eq tx-sender (get owner dataset)) ERR-NOT-OWNER)
-        ;; Verify dataset is active
+        
+        ;; VALIDATION PHASE 4: Resource state validation
+        ;; Verify dataset is active (not deactivated)
         (asserts! (get is-active dataset) ERR-INACTIVE-DATASET)
-        ;; Validate access-level is in valid range (1-3)
+        
+        ;; VALIDATION PHASE 5: Access level validation
+        ;; Check access level is within valid range (1-3)
         (asserts! (and (>= access-level ACCESS-BASIC) (<= access-level ACCESS-FULL)) ERR-INVALID-ACCESS-LEVEL)
-        ;; Granted level cannot exceed the dataset's own access level
+        ;; Ensure granted level does not exceed dataset's maximum access level
         (asserts! (<= access-level (get access-level dataset)) ERR-INSUFFICIENT-ACCESS-LEVEL)
-        ;; Check if access already exists
+        
+        ;; VALIDATION PHASE 6: Duplicate prevention validation
+        ;; Check if access already exists for this user on this dataset
         (asserts! (is-none (map-get? access-rights { data-id: data-id, user: user })) ERR-DUPLICATE-ACCESS-GRANT)
-        ;; Grant the access
+        
+        ;; All validations passed - grant access
         (map-set access-rights { data-id: data-id, user: user }
             {
                 access-level: access-level,
@@ -197,18 +235,25 @@
 ;; @param user: Principal whose access to revoke
 ;; @returns: ok true on success, error otherwise
 ;; @requires: Caller must be dataset owner
-;; @requires: User cannot be the caller
+;; @requires: User cannot be the caller (no self-revoke)
 ;; @requires: Dataset must exist
+;; @requires: Access grant must exist for this user
 (define-public (revoke-access (data-id uint) (user principal))
     (let ((dataset (unwrap! (map-get? datasets { data-id: data-id }) ERR-DATASET-NOT-FOUND))
           (access (unwrap! (map-get? access-rights { data-id: data-id, user: user }) ERR-ACCESS-RIGHT-NOT-FOUND)))
-        ;; Validate data-id is positive
+        ;; VALIDATION PHASE 1: Input validation
+        ;; Check data-id is positive
         (asserts! (> data-id u0) ERR-INVALID-INPUT)
-        ;; Prevent self-revoke
+        
+        ;; VALIDATION PHASE 2: Principal validation
+        ;; Prevent self-revoke (cannot revoke own access)
         (asserts! (not (is-eq user tx-sender)) ERR-CANNOT-REVOKE-OWN-ACCESS)
+        
+        ;; VALIDATION PHASE 3: Authorization validation
         ;; Verify caller is the dataset owner
         (asserts! (is-eq tx-sender (get owner dataset)) ERR-NOT-OWNER)
-        ;; Delete the access right
+        
+        ;; All validations passed - delete the access right
         (map-delete access-rights { data-id: data-id, user: user })
         (print { event: "access-revoked", data-id: data-id, user: user,
                  revoked-by: tx-sender, block: stacks-block-height })
@@ -561,5 +606,77 @@
             created-at: (get created-at dataset)
         })
         none
+    )
+)
+
+;; @notice Helper: Validate dataset exists, is active, and caller is owner
+;; @param data-id: ID to validate  
+;; @param caller: Principal to check ownership
+;; @return: ok with dataset if all checks pass, error otherwise
+;; @dev Combines multiple validation checks for DRY principle
+(define-read-only (validate-ownable-active-dataset (data-id uint) (caller principal))
+    (let ((dataset (map-get? datasets { data-id: data-id })))
+        (match dataset
+            dataset-rec (begin
+                (asserts! (get is-active dataset-rec) ERR-INACTIVE-DATASET)
+                (asserts! (is-eq (get owner dataset-rec) caller) ERR-NOT-OWNER)
+                (ok dataset-rec)
+            )
+            ERR-DATASET-NOT-FOUND
+        )
+    )
+)
+
+;; @notice Helper: Verify data ID is strictly positive and valid
+;; @param data-id: ID to validate
+;; @return: ok(true) if valid, error otherwise
+;; @dev Guards against zero and negative values in arithmetic operations
+(define-read-only (validate-data-id (data-id uint))
+    (if (> data-id u0)
+        (ok true)
+        ERR-INVALID-INPUT
+    )
+)
+
+;; @notice Helper: Validate all inputs for dataset registration
+;; @dev Performs comprehensive input validation before dataset creation
+;; @return: ok(true) if all inputs are valid
+(define-read-only (validate-dataset-registration-complete
+    (metadata-hash (buff 32))
+    (storage-url (string-utf8 200))
+    (description (string-utf8 200))
+    (access-level uint)
+    (price uint))
+    (begin
+        ;; Validate metadata hash
+        (asserts! (is-eq (len metadata-hash) u32) ERR-INVALID-HASH)
+        (asserts! (not (is-eq metadata-hash 0x0000000000000000000000000000000000000000000000000000000000000000)) ERR-ZERO-HASH)
+        ;; Validate storage URL
+        (asserts! (> (len storage-url) u0) ERR-INVALID-STRING-LENGTH)
+        (asserts! (>= (len storage-url) MIN-URL-LENGTH) ERR-INVALID-STRING-LENGTH)
+        (asserts! (<= (len storage-url) u200) ERR-INVALID-STRING-LENGTH)
+        ;; Validate description
+        (asserts! (> (len description) u0) ERR-INVALID-STRING-LENGTH)
+        (asserts! (>= (len description) u10) ERR-INVALID-STRING-LENGTH)
+        (asserts! (<= (len description) u200) ERR-INVALID-STRING-LENGTH)
+        ;; Validate access level
+        (asserts! (and (>= access-level ACCESS-BASIC) (<= access-level ACCESS-FULL)) ERR-INVALID-ACCESS-LEVEL)
+        ;; Validate price
+        (asserts! (> price u0) ERR-INVALID-AMOUNT)
+        (asserts! (<= price MAX-PRICE) ERR-PRICE-TOO-HIGH)
+        (ok true)
+    )
+)
+
+;; @notice Helper: Check if any access record exists for user on dataset
+;; @param data-id: Dataset ID
+;; @param user: User principal
+;; @return: ok true if any access exists (expired or not), ok false otherwise
+(define-read-only (has-any-access (data-id uint) (user principal))
+    (let ((access (map-get? access-rights { data-id: data-id, user: user })))
+        (match access
+            _ (ok true)
+            (ok false)
+        )
     )
 )

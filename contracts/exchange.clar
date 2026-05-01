@@ -93,13 +93,14 @@
 )
 
 ;; Create a marketplace listing for a dataset
-;; @param data-id: ID of the dataset to list
-;; @param price: Price in microSTX (must be > 0).
-;; @param access-level: Access level offered (1-3).
-;; @param description: Listing description (10-200 chars).
+;; @param data-id: ID of dataset to list (must be > 0)
+;; @param price: Price in microSTX (must be > 0 and <= MAX-PRICE)
+;; @param access-level: Access level offered (1-3 inclusive)
+;; @param description: Listing description (10-200 chars)
 ;; @returns ok(listing-id) on success.
 ;;   ERR-INVALID-INPUT (u400) — data-id is zero.
 ;;   ERR-INVALID-AMOUNT (u401) — price is zero.
+;;   ERR-PRICE-TOO-HIGH (u402) — price exceeds MAX-PRICE.
 ;;   ERR-INVALID-ACCESS-LEVEL (u406) — access-level not in 1-3.
 ;;   ERR-INVALID-STRING-LENGTH (u407) — description outside 10-200 chars.
 (define-public (create-listing
@@ -108,17 +109,25 @@
     (access-level uint)
     (description (string-utf8 200)))
     (let ((listing-id (var-get next-listing-id)))
-        ;; Validate data-id is positive
+        ;; VALIDATION PHASE 1: Dataset ID validation
+        ;; Check data-id is positive (> 0)
         (asserts! (> data-id u0) ERR-INVALID-INPUT)
-        ;; Validate price is positive
+        
+        ;; VALIDATION PHASE 2: Price validation
+        ;; Check price is positive (> 0)
         (asserts! (> price u0) ERR-INVALID-AMOUNT)
-        ;; Validate price does not exceed maximum cap
+        ;; Check price does not exceed maximum cap
         (asserts! (<= price MAX-PRICE) ERR-PRICE-TOO-HIGH)
-        ;; Validate access-level is in valid range (1-3)
+        
+        ;; VALIDATION PHASE 3: Access level validation
+        ;; Check access level is within range (1-3)
         (asserts! (and (>= access-level u1) (<= access-level u3)) ERR-INVALID-ACCESS-LEVEL)
-        ;; Validate description length (10-200 chars)
+        
+        ;; VALIDATION PHASE 4: Description validation
+        ;; Check description meets length requirements (10-200 chars)
         (asserts! (and (>= (len description) u10) (<= (len description) u200)) ERR-INVALID-STRING-LENGTH)
-        ;; Create the listing
+        
+        ;; All validations passed - create the listing
         (map-set listings { listing-id: listing-id }
             {
                 owner: tx-sender,
@@ -499,4 +508,97 @@
 ;; @notice Returns the deployed contract version string.
 (define-read-only (get-version)
     CONTRACT-VERSION
+)
+
+;; @notice Helper: Validate listing exists and is active
+;; @param listing-id: ID to validate
+;; @return: ok with listing if valid, error otherwise
+;; @dev Prevents operations on inactive or non-existent listings
+(define-read-only (validate-active-listing (listing-id uint))
+    (let ((listing (map-get? listings { listing-id: listing-id })))
+        (match listing
+            listing-rec (if (get active listing-rec)
+                (ok listing-rec)
+                ERR-LISTING-INACTIVE
+            )
+            ERR-LISTING-NOT-FOUND
+        )
+    )
+)
+
+;; @notice Helper: Validate listing exists and caller is owner
+;; @param listing-id: ID to validate
+;; @param caller: Principal to check ownership
+;; @return: ok with listing if valid, error otherwise
+(define-read-only (validate-listing-ownership (listing-id uint) (caller principal))
+    (let ((listing (map-get? listings { listing-id: listing-id })))
+        (match listing
+            listing-rec (if (is-eq (get owner listing-rec) caller)
+                (ok listing-rec)
+                ERR-NOT-OWNER
+            )
+            ERR-LISTING-NOT-FOUND
+        )
+    )
+)
+
+;; @notice Helper: Validate purchase exists for listing and buyer
+;; @param listing-id: Listing ID
+;; @param buyer: Buyer principal
+;; @return: ok with purchase if exists, error otherwise
+(define-read-only (validate-purchase-exists (listing-id uint) (buyer principal))
+    (let ((purchase (map-get? purchases { listing-id: listing-id, buyer: buyer })))
+        (match purchase
+            purchase-rec (ok purchase-rec)
+            ERR-PURCHASE-NOT-FOUND
+        )
+    )
+)
+
+;; @notice Helper: Validate all inputs for listing creation
+;; @dev Performs comprehensive input validation before listing creation
+;; @return: ok(true) if all inputs are valid
+(define-read-only (validate-listing-creation-complete
+    (data-id uint)
+    (price uint)
+    (access-level uint)
+    (description (string-utf8 200)))
+    (begin
+        ;; Validate data-id is positive
+        (asserts! (> data-id u0) ERR-INVALID-INPUT)
+        ;; Validate price
+        (asserts! (> price u0) ERR-INVALID-AMOUNT)
+        (asserts! (<= price MAX-PRICE) ERR-PRICE-TOO-HIGH)
+        ;; Validate access level
+        (asserts! (and (>= access-level u1) (<= access-level u3)) ERR-INVALID-ACCESS-LEVEL)
+        ;; Validate description
+        (asserts! (> (len description) u0) ERR-INVALID-STRING-LENGTH)
+        (asserts! (>= (len description) u10) ERR-INVALID-STRING-LENGTH)
+        (asserts! (<= (len description) u200) ERR-INVALID-STRING-LENGTH)
+        (ok true)
+    )
+)
+
+;; @notice Helper: Check if listing price matches expected amount
+;; @param listing-id: Listing ID
+;; @param expected-price: Expected price in microSTX
+;; @return: ok true if prices match, error otherwise
+(define-read-only (validate-price-match (listing-id uint) (expected-price uint))
+    (match (map-get? listings { listing-id: listing-id })
+        listing (if (is-eq (get price listing) expected-price)
+            (ok true)
+            ERR-PRICE-MISMATCH
+        )
+        ERR-LISTING-NOT-FOUND
+    )
+)
+
+;; @notice Helper: Validate listing ID is strictly positive
+;; @param listing-id: ID to validate
+;; @return: ok(true) if valid, error otherwise
+(define-read-only (validate-listing-id (listing-id uint))
+    (if (> listing-id u0)
+        (ok true)
+        ERR-INVALID-INPUT
+    )
 )

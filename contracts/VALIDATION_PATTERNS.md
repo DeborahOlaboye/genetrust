@@ -200,3 +200,141 @@ When refactoring existing validation:
 4. Add missing validation where appropriate
 5. Update documentation
 6. Test thoroughly
+
+## Advanced Validation Patterns
+
+### Pattern 11: Composite Validation (Multiple Conditions)
+```clarity
+;; Validate all inputs at once
+(asserts! (and
+    (> amount u0)
+    (<= amount MAX-PRICE)
+    (> (len description) u0)
+    (is-eq (len hash) u32)
+) ERR-INVALID-INPUT)
+```
+
+### Pattern 12: Range Boundary Validation
+```clarity
+;; Validate value is within inclusive bounds
+(asserts! (and (>= value min-value) (<= value max-value)) ERR-INVALID-INPUT)
+```
+
+### Pattern 13: Ownership and State Combined
+```clarity
+;; Verify both ownership and active status
+(let ((resource (unwrap! (map-get? resources { id: id }) ERR-NOT-FOUND)))
+    (asserts! (is-eq tx-sender (get owner resource)) ERR-NOT-OWNER)
+    (asserts! (get is-active resource) ERR-INACTIVE-RESOURCE)
+    ;; Continue operations...
+)
+```
+
+### Pattern 14: Prevent Self-Operations
+```clarity
+;; Ensure user doesn't operate on themselves
+(asserts! (not (is-eq target-user tx-sender)) ERR-SELF-OPERATION-NOT-ALLOWED)
+```
+
+### Pattern 15: Expiry Validation
+```clarity
+;; Check if resource has not expired
+(asserts! (< block-height (get expires-at resource)) ERR-EXPIRED-RESOURCE)
+```
+
+### Pattern 16: Contract Principal Validation
+```clarity
+;; Ensure address is not the contract itself
+(asserts! (not (is-eq address (as-contract tx-sender))) ERR-INVALID-ADDRESS)
+```
+
+### Pattern 17: Buffer Content Validation
+```clarity
+;; Validate buffer is non-empty and not all zeros
+(asserts! (and
+    (> (len buffer) u0)
+    (not (is-eq buffer 0x0000...))
+) ERR-INVALID-BUFFER)
+```
+
+### Pattern 18: String Format Validation
+```clarity
+;; Validate string meets both length and content requirements
+(let ((len (len description)))
+    (asserts! (and
+        (>= len MIN-LENGTH)
+        (<= len MAX-LENGTH)
+        (> len u0)
+    ) ERR-INVALID-STRING)
+)
+```
+
+### Pattern 19: Access Level Hierarchy
+```clarity
+;; Ensure granted access doesn't exceed dataset's own level
+(asserts! (<= granted-level (get access-level dataset)) ERR-INSUFFICIENT-ACCESS-LEVEL)
+```
+
+### Pattern 20: Type-Specific Enum Validation
+```clarity
+;; Validate enum value is within allowed set
+(asserts! (or
+    (is-eq proof-type PROOF-GENE-PRESENCE)
+    (is-eq proof-type PROOF-GENE-VARIANT)
+    (is-eq proof-type PROOF-AGGREGATE)
+) ERR-INVALID-PROOF-TYPE)
+```
+
+## Validation Checklist
+
+For every public function, verify:
+
+- [ ] Input parameters validated
+- [ ] Resource existence checked (ERR-NOT-FOUND)
+- [ ] Resource state verified (ERR-INACTIVE)
+- [ ] Authorization checked (ERR-NOT-OWNER)
+- [ ] Business rules enforced
+- [ ] No self-operations possible
+- [ ] Appropriate error codes used
+- [ ] Documented with @requires
+- [ ] Tested with valid inputs
+- [ ] Tested with invalid inputs
+- [ ] Edge cases considered
+- [ ] Performance impacts minimal
+
+## Common Validation Mistakes to Avoid
+
+1. ❌ Validating after state change
+   - ✅ Validate BEFORE making changes
+
+2. ❌ Trusting user input without bounds check
+   - ✅ Always check length, range, and content
+
+3. ❌ Forgetting to check resource existence
+   - ✅ Always unwrap! with appropriate error
+
+4. ❌ Missing state validation
+   - ✅ Check is-active, is-verified, etc.
+
+5. ❌ Incomplete authorization checks
+   - ✅ Verify ownership, permissions, and roles
+
+## Error Aggregation Pattern
+
+For complex validation, combine checks:
+
+```clarity
+(define-read-only (validate-complete (id uint) (amount uint) (desc (string-utf8 200)))
+    (begin
+        (asserts! (> id u0) ERR-INVALID-INPUT)
+        (asserts! (> amount u0) ERR-INVALID-AMOUNT)
+        (asserts! (> (len desc) u0) ERR-INVALID-STRING)
+        (ok true)
+    )
+)
+```
+
+Callers use this with try!:
+```clarity
+(try! (validate-complete id amount description))
+```

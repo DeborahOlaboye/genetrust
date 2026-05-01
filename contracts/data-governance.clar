@@ -441,3 +441,95 @@
 (define-read-only (get-version)
     CONTRACT-VERSION
 )
+
+;; @notice Helper: Validate data-id is strictly positive
+;; @param data-id: ID to validate
+;; @return: ok(true) if valid, error otherwise
+(define-read-only (validate-data-id (data-id uint))
+    (if (> data-id u0)
+        (ok true)
+        ERR-INVALID-INPUT
+    )
+)
+
+;; @notice Helper: Validate jurisdiction code is within valid range
+;; @param jurisdiction: Code to validate (0-4)
+;; @return: ok(true) if valid, error otherwise
+(define-read-only (validate-jurisdiction (jurisdiction uint))
+    (if (and (>= jurisdiction u0) (<= jurisdiction u4))
+        (ok true)
+        ERR-INVALID-INPUT
+    )
+)
+
+;; @notice Helper: Validate consent exists for dataset
+;; @param data-id: Dataset ID
+;; @return: ok with consent record if exists, error otherwise
+(define-read-only (validate-consent-exists (data-id uint))
+    (let ((consent (map-get? consent-records { data-id: data-id })))
+        (match consent
+            consent-rec (ok consent-rec)
+            ERR-CONSENT-NOT-FOUND
+        )
+    )
+)
+
+;; @notice Helper: Validate consent exists and is valid (not expired)
+;; @param data-id: Dataset ID
+;; @return: ok with consent if valid, error otherwise
+(define-read-only (validate-valid-consent (data-id uint))
+    (let ((consent (map-get? consent-records { data-id: data-id })))
+        (match consent
+            consent-rec (if (< stacks-block-height (get expires-at consent-rec))
+                (ok consent-rec)
+                ERR-CONSENT-EXPIRED
+            )
+            ERR-CONSENT-NOT-FOUND
+        )
+    )
+)
+
+;; @notice Helper: Check if consent has been erased
+;; @param data-id: Dataset ID to check
+;; @return: ok true if erased, ok false otherwise
+(define-read-only (is-consent-erased (data-id uint))
+    (match (map-get? gdpr-records { data-id: data-id })
+        gdpr (ok (get right-to-be-forgotten gdpr))
+        (ok false)
+    )
+)
+
+;; @notice Helper: Validate all inputs for consent setting
+;; @dev Performs comprehensive input validation before consent creation
+;; @return: ok(true) if all inputs are valid
+(define-read-only (validate-consent-setting-complete
+    (data-id uint)
+    (jurisdiction uint))
+    (begin
+        ;; Validate data-id is positive
+        (asserts! (> data-id u0) ERR-INVALID-INPUT)
+        ;; Validate jurisdiction is within valid range (0-4)
+        (asserts! (and (>= jurisdiction u0) (<= jurisdiction u4)) ERR-INVALID-INPUT)
+        (ok true)
+    )
+)
+
+;; @notice Helper: Check if GDPR record exists for dataset
+;; @param data-id: Dataset ID to check
+;; @return: ok true if record exists, ok false otherwise
+(define-read-only (has-gdpr-record (data-id uint))
+    (is-some (map-get? gdpr-records { data-id: data-id }))
+)
+
+;; @notice Helper: Validate consent is not expired before operation
+;; @param data-id: Dataset ID to check
+;; @return: ok(true) if not expired, error otherwise
+(define-read-only (validate-consent-not-expired (data-id uint))
+    (match (map-get? consent-records { data-id: data-id })
+        consent (if (< stacks-block-height (get expires-at consent))
+            (ok true)
+            ERR-CONSENT-EXPIRED
+        )
+        ERR-CONSENT-NOT-FOUND
+    )
+)

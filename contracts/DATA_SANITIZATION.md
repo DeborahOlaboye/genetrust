@@ -310,3 +310,83 @@ Storage URLs must be at least `MIN-URL-LENGTH` (5) characters. This eliminates s
 
 ### Access Level Cap Sanitization
 When granting access, the requested level cannot exceed the dataset's own configured level. This prevents owners from accidentally granting more access than the dataset is classified for.
+
+## Advanced Sanitization Patterns
+
+### Principal/Address Sanitization
+
+#### Prevent Self-Operations
+```clarity
+;; Always validate that user ≠ caller
+(asserts! (not (is-eq user tx-sender)) ERR-SELF-GRANT-NOT-ALLOWED)
+```
+
+#### Prevent Contract Address Usage
+```clarity
+;; Ensure address is not the contract itself
+(asserts! (not (is-eq address (as-contract tx-sender))) ERR-INVALID-ADDRESS)
+```
+
+#### Validate Principal Distinctness
+```clarity
+;; Ensure two principals are different
+(asserts! (not (is-eq principal1 principal2)) ERR-DIFFERENT-PRINCIPALS-REQUIRED)
+```
+
+### Numeric Sanitization Patterns
+
+#### Price Range Validation
+```clarity
+;; Ensure price is positive and within cap
+(asserts! (> price u0) ERR-INVALID-AMOUNT)
+(asserts! (<= price MAX-PRICE) ERR-PRICE-TOO-HIGH)
+```
+
+#### Access Level Enumeration Validation
+```clarity
+;; Ensure level is in valid enum range (1-3)
+(asserts! (and (>= level ACCESS-BASIC) (<= level ACCESS-FULL)) ERR-INVALID-ACCESS-LEVEL)
+```
+
+#### Block Height Validation
+```clarity
+;; Ensure expiry is in the future
+(asserts! (< stacks-block-height (get expires-at resource)) ERR-EXPIRED-RESOURCE)
+```
+
+## Sanitization Testing
+
+### String Input Tests
+- Test minimum boundary (exactly MIN length)
+- Test maximum boundary (exactly MAX length)
+- Test below minimum (MIN - 1)
+- Test above maximum (MAX + 1)
+- Test empty string
+- Test valid UTF-8 content
+
+### Numeric Input Tests
+- Test smallest positive amount
+- Test amount at MAX constant
+- Test zero amount
+- Test amount exceeding MAX
+- Test all enum boundary values
+
+### Principal Tests
+- Test self-grant prevention
+- Test contract address rejection
+- Test valid principal acceptance
+- Test principal distinctness
+
+### Hash/Buffer Tests
+- Test exact length (32 bytes)
+- Test wrong length
+- Test all-zero hash (sentinel)
+- Test non-zero content
+
+## Sanitization Best Practices
+
+1. **Validate Early**: Check inputs at function entry
+2. **Fail Fast**: Stop on first validation failure
+3. **Be Specific**: Use precise error codes
+4. **Document Constants**: Clearly document all bounds
+5. **Test Boundaries**: Test min, max, and beyond edge cases
