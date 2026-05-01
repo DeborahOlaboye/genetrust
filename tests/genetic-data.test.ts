@@ -1224,3 +1224,47 @@ describe('genetic-data - set-contract-owner (simnet)', () => {
     expect(result).toBeTruthy();
   });
 });
+
+describe('genetic-data - extend-access and update-access-level (simnet)', () => {
+  it('extend-access returns ERR-DATASET-NOT-FOUND for non-existent dataset', () => {
+    const { result } = simnet.callPublicFn(
+      'genetic-data',
+      'extend-access',
+      [Cl.uint(99999), Cl.principal(wallet1)],
+      deployer,
+    );
+    expect(result).toBeErr(Cl.uint(431));
+  });
+
+  it('update-access-level returns ERR-DATASET-NOT-FOUND for non-existent dataset', () => {
+    const { result } = simnet.callPublicFn(
+      'genetic-data',
+      'update-access-level',
+      [Cl.uint(99999), Cl.principal(wallet1), Cl.uint(1)],
+      deployer,
+    );
+    expect(result).toBeErr(Cl.uint(431));
+  });
+
+  it('update-access-level rejects level 0 (ERR-INVALID-ACCESS-LEVEL u406)', () => {
+    simnet.callPublicFn(
+      'genetic-data',
+      'register-dataset',
+      [
+        Cl.buffer(Buffer.from('e'.repeat(32))),
+        Cl.stringUtf8('https://ipfs.io/level-test'),
+        Cl.stringUtf8('Update access level test dataset'),
+        Cl.uint(3),
+        Cl.uint(100000),
+      ],
+      deployer,
+    );
+    const { result } = simnet.callPublicFn(
+      'genetic-data',
+      'update-access-level',
+      [Cl.uint(1), Cl.principal(wallet1), Cl.uint(0)],
+      deployer,
+    );
+    expect(result).toBeErr(Cl.uint(406));
+  });
+});
