@@ -525,6 +525,25 @@
     )
 )
 
+;; Transfer contract ownership to a new principal (current contract-owner only)
+;; @param new-owner: The principal to transfer contract ownership to
+;; @returns: ok true on success, error otherwise
+(define-public (set-contract-owner (new-owner principal))
+    (begin
+        (asserts! (is-eq tx-sender (var-get contract-owner)) ERR-NOT-CONTRACT-OWNER)
+        (asserts! (not (is-eq new-owner (as-contract tx-sender))) ERR-INVALID-INPUT)
+        (print { event: "contract-owner-transferred", from: tx-sender, to: new-owner,
+                 block: stacks-block-height })
+        (ok (var-set contract-owner new-owner))
+    )
+)
+
+;; @notice Returns the current contract owner principal.
+;; @return The principal that currently owns the contract.
+(define-read-only (get-contract-owner)
+    (var-get contract-owner)
+)
+
 ;; @notice Returns a summary snapshot of key dataset fields.
 ;; @param data-id The dataset ID to summarise.
 ;; @return Some(tuple) with owner, price, access-level, and is-active flag.
