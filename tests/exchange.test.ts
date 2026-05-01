@@ -334,3 +334,36 @@ describe('exchange - snapshot helpers (simnet)', () => {
     expect(result).toBeOk(Cl.uint(0));
   });
 });
+
+describe('exchange - update-listing-data-id (simnet)', () => {
+  it('update-listing-data-id rejects zero new-data-id (ERR-INVALID-INPUT u400)', () => {
+    simnet.callPublicFn(
+      'exchange',
+      'create-listing',
+      [
+        Cl.uint(1),
+        Cl.uint(500000),
+        Cl.uint(1),
+        Cl.stringUtf8('Test listing for data-id update'),
+      ],
+      deployer,
+    );
+    const { result } = simnet.callPublicFn(
+      'exchange',
+      'update-listing-data-id',
+      [Cl.uint(1), Cl.uint(0)], // zero data-id — should fail
+      deployer,
+    );
+    expect(result).toBeErr(Cl.uint(400));
+  });
+
+  it('update-listing-data-id rejects non-owner caller (ERR-NOT-OWNER u411)', () => {
+    const { result } = simnet.callPublicFn(
+      'exchange',
+      'update-listing-data-id',
+      [Cl.uint(1), Cl.uint(2)],
+      wallet1, // not the owner
+    );
+    expect(result).toBeErr(Cl.uint(411));
+  });
+});
