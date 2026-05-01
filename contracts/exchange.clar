@@ -428,6 +428,32 @@
     )
 )
 
+;; @notice Returns true if the listing exists and is currently active. Alias for is-listing-active.
+;; @param listing-id The listing ID to check.
+;; @return ok(bool) - true if active, false if not found or cancelled.
+(define-read-only (get-listing-is-active (listing-id uint))
+    (match (map-get? listings { listing-id: listing-id })
+        listing (ok (get active listing))
+        (ok false)
+    )
+)
+
+;; @notice Returns a summary snapshot of key listing fields.
+;; @param listing-id The listing ID to summarise.
+;; @return Some(tuple) with owner, price, access-level, and active flag.
+(define-read-only (get-listing-summary (listing-id uint))
+    (match (map-get? listings { listing-id: listing-id })
+        listing (some {
+            owner: (get owner listing),
+            price: (get price listing),
+            access-level: (get access-level listing),
+            active: (get active listing),
+            data-id: (get data-id listing)
+        })
+        none
+    )
+)
+
 ;; @notice Returns the deployed contract version string.
 (define-read-only (get-version)
     CONTRACT-VERSION
