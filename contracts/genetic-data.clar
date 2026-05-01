@@ -100,12 +100,17 @@
 )
 
 ;; Register a new dataset
-;; @param metadata-hash: 32-byte hash of dataset metadata
-;; @param storage-url: URL where dataset is stored (5-200 chars)
-;; @param description: Dataset description (10-200 chars)
+;; @param metadata-hash: 32-byte hash of dataset metadata (must not be all zeros)
+;; @param storage-url: URL where dataset is stored (5-200 chars, non-empty)
+;; @param description: Dataset description (10-200 chars, non-empty)
 ;; @param access-level: Access level (1=basic, 2=detailed, 3=full)
-;; @param price: Price in microSTX (must be > 0)
+;; @param price: Price in microSTX (must be > 0 and <= MAX-PRICE)
 ;; @returns: ok with data-id on success, error otherwise
+;; @requires: metadata-hash must be exactly 32 bytes and not zero-filled
+;; @requires: storage-url must be between 5 and 200 characters
+;; @requires: description must be between 10 and 200 characters
+;; @requires: access-level must be 1, 2, or 3
+;; @requires: price must be positive and not exceed MAX-PRICE constant
 (define-public (register-dataset
     (metadata-hash (buff 32))
     (storage-url (string-utf8 200))
@@ -113,21 +118,39 @@
     (access-level uint)
     (price uint))
     (let ((data-id (var-get next-data-id)))
-        ;; Validate metadata hash is exactly 32 bytes
+        ;; VALIDATION PHASE 1: Metadata hash validation
+        ;; Check hash is exactly 32 bytes
         (asserts! (is-eq (len metadata-hash) u32) ERR-INVALID-HASH)
-        ;; Validate metadata hash is not all-zero (meaningless sentinel)
+        ;; Check hash is not all-zero (meaningless sentinel value)
         (asserts! (not (is-eq metadata-hash 0x0000000000000000000000000000000000000000000000000000000000000000)) ERR-ZERO-HASH)
-        ;; Validate storage URL meets minimum length and does not exceed maximum
-        (asserts! (and (>= (len storage-url) MIN-URL-LENGTH) (<= (len storage-url) u200)) ERR-INVALID-STRING-LENGTH)
-        ;; Validate description is not empty and reasonable length
-        (asserts! (and (>= (len description) u10) (<= (len description) u200)) ERR-INVALID-STRING-LENGTH)
-        ;; Validate price is positive
-        (asserts! (> price u0) ERR-INVALID-AMOUNT)
-        ;; Validate price does not exceed the maximum cap
-        (asserts! (<= price MAX-PRICE) ERR-PRICE-TOO-HIGH)
-        ;; Validate access-level is in valid range (1-3)
+        
+        ;; VALIDATION PHASE 2: Storage URL validation
+        ;; Check URL is not empty
+        (asserts! (> (len storage-url) u0) ERR-INVALID-STRING-LENGTH)
+        ;; Check URL meets minimum length requirement
+        (asserts! (>= (len storage-url) MIN-URL-LENGTH) ERR-INVALID-STRING-LENGTH)
+        ;; Check URL does not exceed maximum length
+        (asserts! (<= (len storage-url) u200) ERR-INVALID-STRING-LENGTH)
+        
+        ;; VALIDATION PHASE 3: Description validation
+        ;; Check description is not empty
+        (asserts! (> (len description) u0) ERR-INVALID-STRING-LENGTH)
+        ;; Check description meets minimum length requirement
+        (asserts! (>= (len description) u10) ERR-INVALID-STRING-LENGTH)
+        ;; Check description does not exceed maximum length
+        (asserts! (<= (len description) u200) ERR-INVALID-STRING-LENGTH)
+        
+        ;; VALIDATION PHASE 4: Access level validation
+        ;; Check access level is >= 1 and <= 3
         (asserts! (and (>= access-level ACCESS-BASIC) (<= access-level ACCESS-FULL)) ERR-INVALID-ACCESS-LEVEL)
-        ;; Create the dataset
+        
+        ;; VALIDATION PHASE 5: Price validation
+        ;; Check price is positive (> 0)
+        (asserts! (> price u0) ERR-INVALID-AMOUNT)
+        ;; Check price does not exceed maximum cap
+        (asserts! (<= price MAX-PRICE) ERR-PRICE-TOO-HIGH)
+        
+        ;; All validations passed - proceed with dataset creation
         (map-set datasets { data-id: data-id }
             {
                 owner: tx-sender,
