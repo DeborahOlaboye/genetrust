@@ -20,6 +20,7 @@
 (define-constant ERR-NOT-AUTHORIZED (err u410))
 (define-constant ERR-NOT-OWNER (err u411))
 (define-constant ERR-INSUFFICIENT-PERMISSIONS (err u412))
+(define-constant ERR-NOT-CONTRACT-OWNER (err u413))
 
 ;; Errors - Not Found (430-439)
 (define-constant ERR-NOT-FOUND (err u430))
@@ -55,6 +56,9 @@
 
 ;; Minimum storage URL length (e.g. "ipfs://a" is 8 chars)
 (define-constant MIN-URL-LENGTH u5)
+
+;; Contract owner — the deployer; can be transferred via set-contract-owner
+(define-data-var contract-owner principal tx-sender)
 
 ;; Dataset counter
 (define-data-var next-data-id uint u1)
