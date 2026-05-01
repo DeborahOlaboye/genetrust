@@ -94,21 +94,29 @@
 )
 
 ;; Register a trusted verifier (contract owner only)
-;; @param name: Name of the verifier (1-64 chars)
-;; @param verifier-address: Principal address of the verifier
+;; @param name: Name of the verifier (1-64 chars, non-empty)
+;; @param verifier-address: Principal address of the verifier (must not be contract)
 ;; @returns: ok with verifier-id on success, error otherwise
 ;; @requires: Caller must be contract owner
-;; @requires: Name must not be empty
-;; @requires: Address must not be the contract itself
+;; @requires: Name must not be empty and not exceed 64 chars
+;; @requires: Address must not be the contract address
 (define-public (register-verifier (name (string-utf8 64)) (verifier-address principal))
     (let ((verifier-id (var-get next-verifier-id)))
+        ;; VALIDATION PHASE 1: Authorization validation
         ;; Verify caller is contract owner
         (asserts! (is-eq tx-sender (var-get contract-owner)) ERR-NOT-CONTRACT-OWNER)
-        ;; Validate name length (1-64 chars)
-        (asserts! (and (> (len name) u0) (<= (len name) u64)) ERR-INVALID-STRING-LENGTH)
+        
+        ;; VALIDATION PHASE 2: Name validation
+        ;; Check name is not empty
+        (asserts! (> (len name) u0) ERR-INVALID-STRING-LENGTH)
+        ;; Check name does not exceed maximum length (64 chars)
+        (asserts! (<= (len name) u64) ERR-INVALID-STRING-LENGTH)
+        
+        ;; VALIDATION PHASE 3: Address validation
         ;; Prevent contract address as verifier
         (asserts! (not (is-eq verifier-address (as-contract tx-sender))) ERR-INVALID-PARAMETERS)
-        ;; Register the verifier
+        
+        ;; All validations passed - register the verifier
         (map-set verifiers { verifier-id: verifier-id }
             {
                 address: verifier-address,
