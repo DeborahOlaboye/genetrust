@@ -253,6 +253,26 @@
     )
 )
 
+;; Update the access level of an active listing (owner only)
+;; @param listing-id: ID of the listing
+;; @param new-access-level: New access level (1-3)
+;; @returns: ok true on success, error otherwise
+(define-public (update-listing-access-level (listing-id uint) (new-access-level uint))
+    (let ((listing (unwrap! (map-get? listings { listing-id: listing-id }) ERR-LISTING-NOT-FOUND)))
+        (asserts! (> listing-id u0) ERR-INVALID-INPUT)
+        (asserts! (is-eq tx-sender (get owner listing)) ERR-NOT-OWNER)
+        (asserts! (get active listing) ERR-LISTING-INACTIVE)
+        (asserts! (and (>= new-access-level u1) (<= new-access-level u3)) ERR-INVALID-ACCESS-LEVEL)
+        (map-set listings { listing-id: listing-id }
+            (merge listing { access-level: new-access-level })
+        )
+        (print { event: "listing-access-level-updated", listing-id: listing-id, owner: tx-sender,
+                 old-level: (get access-level listing), new-level: new-access-level,
+                 block: stacks-block-height })
+        (ok true)
+    )
+)
+
 ;; @notice Returns all stored fields for a given listing.
 ;; @param listing-id The listing ID to look up.
 ;; @return Some(listing) if found, none otherwise. Check active field before use.
