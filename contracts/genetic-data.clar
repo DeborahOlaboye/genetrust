@@ -1,10 +1,14 @@
 ;; genetic-data.clar
 ;; @title GeneTrust Dataset Registry
-;; @version 1.0.0
+;; @version 1.1.0
 ;; @author GeneTrust
 ;; @notice Registers and manages genetic datasets on the Stacks blockchain.
 ;;         Handles dataset ownership, tiered access control, and access expiry.
 ;; @dev Deployed on Stacks mainnet at SP3KKFRRWQVJXEJCGM6ZB359EF01VRY86HW6CCD45.dataset-registry
+;; @changelog v1.1.0 — Input validation hardening: MAX-PRICE cap, MIN-URL-LENGTH,
+;;            zero-hash rejection, access-level cap in grant-access, contract-owner
+;;            guard in grant-access, print events on all state changes, new
+;;            update/transfer/reactivate/extend functions, comprehensive read helpers.
 
 ;; Errors - Input Validation (400-409)
 (define-constant ERR-INVALID-INPUT (err u400))
