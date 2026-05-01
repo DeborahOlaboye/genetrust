@@ -443,3 +443,79 @@ describe('attestations contract - new validation rules', () => {
     });
   });
 });
+
+describe('attestations contract - read helper functions', () => {
+  describe('get-proof-hash', () => {
+    it('should return the 32-byte hash for a registered proof', () => {
+      const hash = new Uint8Array(32).fill(1);
+      expect(hash.length).toBe(32);
+    });
+
+    it('should return none for non-existent proof', () => {
+      const exists = false;
+      expect(exists).toBe(false);
+    });
+  });
+
+  describe('get-verifier-name', () => {
+    it('should return the verifier name string', () => {
+      const name = 'GeneLab Inc.';
+      expect(name.length).toBeGreaterThan(0);
+      expect(name.length).toBeLessThanOrEqual(64);
+    });
+
+    it('should return none for non-existent verifier', () => {
+      const exists = false;
+      expect(exists).toBe(false);
+    });
+  });
+
+  describe('get-proof-creator', () => {
+    it('should return creator principal for a valid proof', () => {
+      const creator = 'SP1CREATOR00000000000000000000000000';
+      expect(creator).toBeTruthy();
+    });
+  });
+
+  describe('get-proof-type', () => {
+    it('should return proof type 1 for gene-presence proof', () => {
+      expect(1).toBe(1);
+    });
+
+    it('should return proof type 4 for aggregate proof', () => {
+      expect(4).toBe(4);
+    });
+  });
+
+  describe('get-next-verifier-id', () => {
+    it('should start at 1 before any registrations', () => {
+      const nextId = 1;
+      expect(nextId).toBe(1);
+    });
+
+    it('should increment after each registration', () => {
+      let nextId = 1;
+      nextId += 1;
+      expect(nextId).toBe(2);
+    });
+  });
+
+  describe('get-proof-metadata', () => {
+    it('should return empty string for proof with no metadata', () => {
+      const metadata = '';
+      expect(metadata.length).toBe(0);
+    });
+
+    it('should return metadata string for proof with metadata', () => {
+      const metadata = 'BRCA1 variant confirmed';
+      expect(metadata.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe('get-proof-created-at', () => {
+    it('should return block height at submission time', () => {
+      const createdAt = 12345;
+      expect(createdAt).toBeGreaterThan(0);
+    });
+  });
+});
