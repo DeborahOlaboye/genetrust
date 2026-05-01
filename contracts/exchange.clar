@@ -27,6 +27,7 @@
 ;; Errors - Authorization (410-414)
 (define-constant ERR-NOT-AUTHORIZED (err u410))
 (define-constant ERR-NOT-OWNER (err u411))
+(define-constant ERR-NOT-CONTRACT-OWNER (err u413))
 
 ;; Errors - Not Found (430-439)
 (define-constant ERR-NOT-FOUND (err u430))
@@ -54,6 +55,9 @@
 
 ;; Price cap: 1 billion STX in microSTX to prevent absurd listings
 (define-constant MAX-PRICE u1000000000000000)
+
+;; Contract owner — the deployer; can be transferred via set-contract-owner
+(define-data-var contract-owner principal tx-sender)
 
 ;; @notice Auto-incrementing counter for listing IDs. Starts at 1.
 (define-data-var next-listing-id uint u1)
@@ -472,6 +476,24 @@
         })
         none
     )
+)
+
+;; Transfer exchange contract ownership (current contract-owner only)
+;; @param new-owner: The principal to transfer ownership to
+;; @returns: ok true on success, error otherwise
+(define-public (set-contract-owner (new-owner principal))
+    (begin
+        (asserts! (is-eq tx-sender (var-get contract-owner)) ERR-NOT-CONTRACT-OWNER)
+        (asserts! (not (is-eq new-owner (as-contract tx-sender))) ERR-INVALID-INPUT)
+        (print { event: "contract-owner-transferred", from: tx-sender, to: new-owner,
+                 block: stacks-block-height })
+        (ok (var-set contract-owner new-owner))
+    )
+)
+
+;; @notice Returns the current exchange contract owner.
+(define-read-only (get-contract-owner)
+    (var-get contract-owner)
 )
 
 ;; @notice Returns the deployed contract version string.
