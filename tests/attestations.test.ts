@@ -81,3 +81,65 @@ describe('attestations - new validation rules (simnet)', () => {
     expect(result).toBeErr(Cl.uint(400));
   });
 });
+
+describe('attestations - snapshot and counter helpers (simnet)', () => {
+  it('get-total-proofs starts at zero', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'attestations',
+      'get-total-proofs',
+      [],
+      deployer,
+    );
+    expect(result).toBeOk(Cl.uint(0));
+  });
+
+  it('get-total-verifiers starts at zero', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'attestations',
+      'get-total-verifiers',
+      [],
+      deployer,
+    );
+    expect(result).toBeOk(Cl.uint(0));
+  });
+
+  it('get-total-verified-proofs starts at zero', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'attestations',
+      'get-total-verified-proofs',
+      [],
+      deployer,
+    );
+    expect(result).toBeOk(Cl.uint(0));
+  });
+
+  it('get-proof-summary returns none for non-existent proof', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'attestations',
+      'get-proof-summary',
+      [Cl.uint(99999)],
+      deployer,
+    );
+    expect(result).toBeNone();
+  });
+
+  it('is-active-verifier returns false for non-existent verifier', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'attestations',
+      'is-active-verifier',
+      [Cl.uint(99999)],
+      deployer,
+    );
+    expect(result).toBeOk(Cl.bool(false));
+  });
+
+  it('get-next-proof-id starts at 1', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'attestations',
+      'get-next-proof-id',
+      [],
+      deployer,
+    );
+    expect(result).toBeOk(Cl.uint(1));
+  });
+});
