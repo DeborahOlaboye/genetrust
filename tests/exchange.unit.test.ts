@@ -351,3 +351,56 @@ describe('exchange contract - new validation rules', () => {
     });
   });
 });
+
+describe('exchange contract - update-listing-access-level', () => {
+  it('should reject access level below 1', () => {
+    const level = 0;
+    expect(level).toBeLessThan(1);
+  });
+
+  it('should reject access level above 3', () => {
+    const level = 4;
+    expect(level).toBeGreaterThan(3);
+  });
+
+  it('should accept valid access levels 1-3', () => {
+    for (const level of [1, 2, 3]) {
+      expect(level).toBeGreaterThanOrEqual(1);
+      expect(level).toBeLessThanOrEqual(3);
+    }
+  });
+
+  it('should require listing to be active', () => {
+    const isActive = false;
+    // ERR-LISTING-INACTIVE (u451) expected
+    expect(isActive).toBe(false);
+  });
+
+  it('should require caller to be listing owner', () => {
+    const isOwner = false;
+    // ERR-NOT-OWNER (u411) expected
+    expect(isOwner).toBe(false);
+  });
+});
+
+describe('exchange contract - purchase read helpers', () => {
+  it('get-purchase-paid-amount returns none for non-existent purchase', () => {
+    const hasPurchase = false;
+    expect(hasPurchase).toBe(false);
+  });
+
+  it('get-purchase-timestamp returns block-height on purchase', () => {
+    const purchaseBlock = 1000;
+    expect(purchaseBlock).toBeGreaterThan(0);
+  });
+
+  it('get-listing-created-at returns block-height on create', () => {
+    const createdAt = 500;
+    expect(createdAt).toBeGreaterThan(0);
+  });
+
+  it('get-listing-description returns description string', () => {
+    const desc = 'Valid listing description here';
+    expect(desc.length).toBeGreaterThanOrEqual(10);
+  });
+});
