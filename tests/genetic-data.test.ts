@@ -1052,3 +1052,47 @@ describe('genetic-data - new validation behaviour (simnet)', () => {
     expect(result).toBeErr(Cl.uint(406));
   });
 });
+
+describe('genetic-data - grant-access new validations (simnet)', () => {
+  it('grant-access rejects level higher than dataset level (ERR-INSUFFICIENT-ACCESS-LEVEL u621)', () => {
+    // Register dataset with level 1 first
+    simnet.callPublicFn(
+      'genetic-data',
+      'register-dataset',
+      [
+        Cl.buffer(Buffer.from('b'.repeat(32))),
+        Cl.stringUtf8('https://ipfs.io/grant-test'),
+        Cl.stringUtf8('Grant access level test dataset'),
+        Cl.uint(1), // dataset level = 1 (BASIC)
+        Cl.uint(500000),
+      ],
+      deployer,
+    );
+    // Try to grant level 3 (FULL) on a level-1 dataset
+    const { result } = simnet.callPublicFn(
+      'genetic-data',
+      'grant-access',
+      [
+        Cl.uint(1),
+        Cl.principal(wallet1),
+        Cl.uint(3), // exceeds dataset level — should fail
+      ],
+      deployer,
+    );
+    expect(result).toBeErr(Cl.uint(621));
+  });
+
+  it('grant-access rejects self-grant (ERR-SELF-GRANT-NOT-ALLOWED u610)', () => {
+    const { result } = simnet.callPublicFn(
+      'genetic-data',
+      'grant-access',
+      [
+        Cl.uint(1),
+        Cl.principal(deployer), // self-grant
+        Cl.uint(1),
+      ],
+      deployer,
+    );
+    expect(result).toBeErr(Cl.uint(610));
+  });
+});
