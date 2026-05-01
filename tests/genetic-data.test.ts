@@ -1150,3 +1150,55 @@ describe('genetic-data - snapshot helpers (simnet)', () => {
     expect(result).toBeSome(expect.anything());
   });
 });
+
+describe('genetic-data - counter and total helpers (simnet)', () => {
+  it('get-total-datasets starts at 0 before any registration', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'genetic-data',
+      'get-total-datasets',
+      [],
+      deployer,
+    );
+    expect(result).toBeOk(Cl.uint(0));
+  });
+
+  it('get-next-data-id starts at 1', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'genetic-data',
+      'get-next-data-id',
+      [],
+      deployer,
+    );
+    expect(result).toBeOk(Cl.uint(1));
+  });
+
+  it('get-dataset-owner returns none for non-existent dataset', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'genetic-data',
+      'get-dataset-owner',
+      [Cl.uint(99999)],
+      deployer,
+    );
+    expect(result).toBeNone();
+  });
+
+  it('is-dataset-active returns false for non-existent dataset', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'genetic-data',
+      'is-dataset-active',
+      [Cl.uint(99999)],
+      deployer,
+    );
+    expect(result).toBeOk(Cl.bool(false));
+  });
+
+  it('has-valid-access returns false when no access granted', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'genetic-data',
+      'has-valid-access',
+      [Cl.uint(1), Cl.principal(wallet2)],
+      deployer,
+    );
+    expect(result).toBeOk(Cl.bool(false));
+  });
+});
