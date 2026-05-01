@@ -93,13 +93,14 @@
 )
 
 ;; Create a marketplace listing for a dataset
-;; @param data-id: ID of the dataset to list
-;; @param price: Price in microSTX (must be > 0).
-;; @param access-level: Access level offered (1-3).
-;; @param description: Listing description (10-200 chars).
+;; @param data-id: ID of dataset to list (must be > 0)
+;; @param price: Price in microSTX (must be > 0 and <= MAX-PRICE)
+;; @param access-level: Access level offered (1-3 inclusive)
+;; @param description: Listing description (10-200 chars)
 ;; @returns ok(listing-id) on success.
 ;;   ERR-INVALID-INPUT (u400) — data-id is zero.
 ;;   ERR-INVALID-AMOUNT (u401) — price is zero.
+;;   ERR-PRICE-TOO-HIGH (u402) — price exceeds MAX-PRICE.
 ;;   ERR-INVALID-ACCESS-LEVEL (u406) — access-level not in 1-3.
 ;;   ERR-INVALID-STRING-LENGTH (u407) — description outside 10-200 chars.
 (define-public (create-listing
@@ -108,17 +109,25 @@
     (access-level uint)
     (description (string-utf8 200)))
     (let ((listing-id (var-get next-listing-id)))
-        ;; Validate data-id is positive
+        ;; VALIDATION PHASE 1: Dataset ID validation
+        ;; Check data-id is positive (> 0)
         (asserts! (> data-id u0) ERR-INVALID-INPUT)
-        ;; Validate price is positive
+        
+        ;; VALIDATION PHASE 2: Price validation
+        ;; Check price is positive (> 0)
         (asserts! (> price u0) ERR-INVALID-AMOUNT)
-        ;; Validate price does not exceed maximum cap
+        ;; Check price does not exceed maximum cap
         (asserts! (<= price MAX-PRICE) ERR-PRICE-TOO-HIGH)
-        ;; Validate access-level is in valid range (1-3)
+        
+        ;; VALIDATION PHASE 3: Access level validation
+        ;; Check access level is within range (1-3)
         (asserts! (and (>= access-level u1) (<= access-level u3)) ERR-INVALID-ACCESS-LEVEL)
-        ;; Validate description length (10-200 chars)
+        
+        ;; VALIDATION PHASE 4: Description validation
+        ;; Check description meets length requirements (10-200 chars)
         (asserts! (and (>= (len description) u10) (<= (len description) u200)) ERR-INVALID-STRING-LENGTH)
-        ;; Create the listing
+        
+        ;; All validations passed - create the listing
         (map-set listings { listing-id: listing-id }
             {
                 owner: tx-sender,
