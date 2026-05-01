@@ -737,3 +737,73 @@ describe('data-governance - new helpers and fixes', () => {
     });
   });
 });
+
+describe('data-governance - is-consent-expired and timestamp helpers', () => {
+  it('is-consent-expired returns false for fresh consent record', () => {
+    simnet.callPublicFn(
+      'data-governance',
+      'set-consent',
+      [Cl.uint(3001), Cl.bool(true), Cl.bool(false), Cl.bool(false), Cl.uint(1)],
+      deployer,
+    );
+    const { result } = simnet.callReadOnlyFn(
+      'data-governance',
+      'is-consent-expired',
+      [Cl.uint(3001)],
+      deployer,
+    );
+    expect(result).toBeOk(Cl.bool(false));
+  });
+
+  it('is-consent-expired returns false for non-existent record', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'data-governance',
+      'is-consent-expired',
+      [Cl.uint(99999)],
+      deployer,
+    );
+    expect(result).toBeOk(Cl.bool(false));
+  });
+
+  it('get-consent-updated-at returns some after set-consent', () => {
+    simnet.callPublicFn(
+      'data-governance',
+      'set-consent',
+      [Cl.uint(4001), Cl.bool(false), Cl.bool(true), Cl.bool(false), Cl.uint(0)],
+      deployer,
+    );
+    const { result } = simnet.callReadOnlyFn(
+      'data-governance',
+      'get-consent-updated-at',
+      [Cl.uint(4001)],
+      deployer,
+    );
+    expect(result).toBeSome(expect.anything());
+  });
+
+  it('get-consent-updated-at returns none when no record exists', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'data-governance',
+      'get-consent-updated-at',
+      [Cl.uint(88888)],
+      deployer,
+    );
+    expect(result).toBeNone();
+  });
+
+  it('get-consent-jurisdiction returns jurisdiction code after set-consent', () => {
+    simnet.callPublicFn(
+      'data-governance',
+      'set-consent',
+      [Cl.uint(5001), Cl.bool(true), Cl.bool(true), Cl.bool(true), Cl.uint(2)],
+      deployer,
+    );
+    const { result } = simnet.callReadOnlyFn(
+      'data-governance',
+      'get-consent-jurisdiction',
+      [Cl.uint(5001)],
+      deployer,
+    );
+    expect(result).toBeSome(Cl.uint(2));
+  });
+});
