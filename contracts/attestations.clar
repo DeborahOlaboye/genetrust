@@ -309,3 +309,29 @@
         none
     )
 )
+
+;; @notice Returns the proof-type of a submitted proof.
+;; @param proof-id The proof ID to look up.
+;; @return Some(uint) if proof exists, none otherwise.
+(define-read-only (get-proof-type (proof-id uint))
+    (match (map-get? proofs { proof-id: proof-id })
+        proof (some (get proof-type proof))
+        none
+    )
+)
+
+;; @notice Returns the creator principal of a proof.
+;; @param proof-id The proof ID to look up.
+;; @return Some(principal) if proof exists, none otherwise.
+(define-read-only (get-proof-creator (proof-id uint))
+    (match (map-get? proofs { proof-id: proof-id })
+        proof (some (get creator proof))
+        none
+    )
+)
+
+;; @notice Returns the next verifier-id that will be assigned on the next register-verifier call.
+;; @return ok(uint) - the next available verifier-id.
+(define-read-only (get-next-verifier-id)
+    (ok (var-get next-verifier-id))
+)
