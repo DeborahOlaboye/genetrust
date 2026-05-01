@@ -403,3 +403,88 @@
         none
     )
 )
+
+;; @notice Helper: Validate proof exists and matches expected criteria
+;; @param proof-id: ID to validate
+;; @return: ok with proof if exists, error otherwise
+;; @dev Prevents invalid proof IDs from causing operations
+(define-read-only (validate-proof-exists (proof-id uint))
+    (let ((proof (map-get? proofs { proof-id: proof-id })))
+        (match proof
+            proof-rec (ok proof-rec)
+            ERR-PROOF-NOT-FOUND
+        )
+    )
+)
+
+;; @notice Helper: Validate verifier exists and is active
+;; @param verifier-id: ID to validate
+;; @return: ok with verifier if valid, error otherwise
+;; @dev Ensures only active verifiers can verify proofs
+(define-read-only (validate-active-verifier (verifier-id uint))
+    (let ((verifier (map-get? verifiers { verifier-id: verifier-id })))
+        (match verifier
+            verifier-rec (if (get active verifier-rec)
+                (ok verifier-rec)
+                ERR-VERIFIER-INACTIVE
+            )
+            ERR-VERIFIER-NOT-FOUND
+        )
+    )
+)
+
+;; @notice Helper: Validate all inputs for proof registration
+;; @dev Performs comprehensive input validation before proof submission
+;; @return: ok(true) if all inputs are valid
+(define-read-only (validate-proof-registration-complete
+    (data-id uint)
+    (proof-type uint)
+    (proof-hash (buff 32))
+    (parameters (buff 256))
+    (metadata (string-utf8 200)))
+    (begin
+        ;; Validate data-id is positive
+        (asserts! (> data-id u0) ERR-INVALID-INPUT)
+        ;; Validate proof type  (1-4)
+        (asserts! (and (>= proof-type PROOF-GENE-PRESENCE) (<= proof-type PROOF-AGGREGATE)) ERR-INVALID-PROOF-TYPE)
+        ;; Validate proof hash
+        (asserts! (is-eq (len proof-hash) u32) ERR-INVALID-HASH)
+        (asserts! (not (is-eq proof-hash 0x0000000000000000000000000000000000000000000000000000000000000000)) ERR-INVALID-HASH)
+        ;; Validate parameters buffer
+        (asserts! (> (len parameters) u0) ERR-INVALID-BUFFER-SIZE)
+        (asserts! (<= (len parameters) u256) ERR-INVALID-BUFFER-SIZE)
+        ;; Validate metadata string
+        (asserts! (<= (len metadata) u200) ERR-INVALID-STRING-LENGTH)
+        (ok true)
+    )
+)
+
+;; @notice Helper: Check if proof has been previously verified
+;; @param proof-id: ID to check
+;; @return: ok true if verified, ok false otherwise
+(define-read-only (is-proof-verified (proof-id uint))
+    (match (map-get? proofs { proof-id: proof-id })
+        proof (ok (get verified proof))
+        ERR-PROOF-NOT-FOUND
+    )
+)
+
+;; @notice Helper: Validate verifier ID is strictly positive
+;; @param verifier-id: ID to validate
+;; @return: ok(true) if valid, error otherwise
+(define-read-only (validate-verifier-id (verifier-id uint))
+    (if (> verifier-id u0)
+        (ok true)
+        ERR-INVALID-INPUT
+    )
+)
+
+;; @notice Helper: Validate proof ID is strictly positive
+;; @param proof-id: ID to validate
+;; @return: ok(true) if valid, error otherwise
+(define-read-only (validate-proof-id (proof-id uint))
+    (if (> proof-id u0)
+        (ok true)
+        ERR-INVALID-INPUT
+    )
+)
