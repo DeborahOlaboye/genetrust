@@ -1096,3 +1096,57 @@ describe('genetic-data - grant-access new validations (simnet)', () => {
     expect(result).toBeErr(Cl.uint(610));
   });
 });
+
+describe('genetic-data - snapshot helpers (simnet)', () => {
+  it('get-dataset-summary returns structured tuple for existing dataset', () => {
+    simnet.callPublicFn(
+      'genetic-data',
+      'register-dataset',
+      [
+        Cl.buffer(Buffer.from('d'.repeat(32))),
+        Cl.stringUtf8('https://ipfs.io/summary-test'),
+        Cl.stringUtf8('Summary test dataset description'),
+        Cl.uint(2),
+        Cl.uint(750000),
+      ],
+      deployer,
+    );
+    const { result } = simnet.callReadOnlyFn(
+      'genetic-data',
+      'get-dataset-summary',
+      [Cl.uint(1)],
+      deployer,
+    );
+    expect(result).toBeSome(expect.anything());
+  });
+
+  it('get-dataset-summary returns none for non-existent dataset', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'genetic-data',
+      'get-dataset-summary',
+      [Cl.uint(99999)],
+      deployer,
+    );
+    expect(result).toBeNone();
+  });
+
+  it('has-any-access returns false when no access has been granted', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'genetic-data',
+      'has-any-access',
+      [Cl.uint(1), Cl.principal(wallet1)],
+      deployer,
+    );
+    expect(result).toBeOk(Cl.bool(false));
+  });
+
+  it('get-dataset-access-level returns the configured access level', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'genetic-data',
+      'get-dataset-access-level',
+      [Cl.uint(1)],
+      deployer,
+    );
+    expect(result).toBeSome(expect.anything());
+  });
+});
