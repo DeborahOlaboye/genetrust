@@ -428,3 +428,25 @@
         none
     )
 )
+
+;; @notice Returns the block height at which a user's access expires.
+;; @param data-id The dataset ID.
+;; @param user The principal whose access to check.
+;; @return Some(uint) if access exists, none if user has no access record.
+(define-read-only (get-access-expiry (data-id uint) (user principal))
+    (match (map-get? access-rights { data-id: data-id, user: user })
+        rights (some (get expires-at rights))
+        none
+    )
+)
+
+;; @notice Returns the access level granted to a specific user on a dataset.
+;; @param data-id The dataset ID.
+;; @param user The principal to check.
+;; @return Some(uint) if access exists, none otherwise.
+(define-read-only (get-user-access-level (data-id uint) (user principal))
+    (match (map-get? access-rights { data-id: data-id, user: user })
+        rights (some (get access-level rights))
+        none
+    )
+)
