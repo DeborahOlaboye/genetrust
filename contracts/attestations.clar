@@ -335,3 +335,33 @@
 (define-read-only (get-next-verifier-id)
     (ok (var-get next-verifier-id))
 )
+
+;; @notice Returns the proof-hash of a submitted proof.
+;; @param proof-id The proof ID to look up.
+;; @return Some(buff 32) if proof exists, none otherwise.
+(define-read-only (get-proof-hash (proof-id uint))
+    (match (map-get? proofs { proof-id: proof-id })
+        proof (some (get proof-hash proof))
+        none
+    )
+)
+
+;; @notice Returns the name of a registered verifier.
+;; @param verifier-id The verifier ID to look up.
+;; @return Some(string-utf8) if verifier exists, none otherwise.
+(define-read-only (get-verifier-name (verifier-id uint))
+    (match (map-get? verifiers { verifier-id: verifier-id })
+        v (some (get name v))
+        none
+    )
+)
+
+;; @notice Returns the block height at which a verifier was registered.
+;; @param verifier-id The verifier ID to look up.
+;; @return Some(uint) if verifier exists, none otherwise.
+(define-read-only (get-verifier-added-at (verifier-id uint))
+    (match (map-get? verifiers { verifier-id: verifier-id })
+        v (some (get added-at v))
+        none
+    )
+)
