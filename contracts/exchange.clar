@@ -500,3 +500,96 @@
 (define-read-only (get-version)
     CONTRACT-VERSION
 )
+
+;; @notice Helper: Validate listing exists and is active
+;; @param listing-id: ID to validate
+;; @return: ok with listing if valid, error otherwise
+;; @dev Prevents operations on inactive or non-existent listings
+(define-read-only (validate-active-listing (listing-id uint))
+    (let ((listing (map-get? listings { listing-id: listing-id })))
+        (match listing
+            listing-rec (if (get active listing-rec)
+                (ok listing-rec)
+                ERR-LISTING-INACTIVE
+            )
+            ERR-LISTING-NOT-FOUND
+        )
+    )
+)
+
+;; @notice Helper: Validate listing exists and caller is owner
+;; @param listing-id: ID to validate
+;; @param caller: Principal to check ownership
+;; @return: ok with listing if valid, error otherwise
+(define-read-only (validate-listing-ownership (listing-id uint) (caller principal))
+    (let ((listing (map-get? listings { listing-id: listing-id })))
+        (match listing
+            listing-rec (if (is-eq (get owner listing-rec) caller)
+                (ok listing-rec)
+                ERR-NOT-OWNER
+            )
+            ERR-LISTING-NOT-FOUND
+        )
+    )
+)
+
+;; @notice Helper: Validate purchase exists for listing and buyer
+;; @param listing-id: Listing ID
+;; @param buyer: Buyer principal
+;; @return: ok with purchase if exists, error otherwise
+(define-read-only (validate-purchase-exists (listing-id uint) (buyer principal))
+    (let ((purchase (map-get? purchases { listing-id: listing-id, buyer: buyer })))
+        (match purchase
+            purchase-rec (ok purchase-rec)
+            ERR-PURCHASE-NOT-FOUND
+        )
+    )
+)
+
+;; @notice Helper: Validate all inputs for listing creation
+;; @dev Performs comprehensive input validation before listing creation
+;; @return: ok(true) if all inputs are valid
+(define-read-only (validate-listing-creation-complete
+    (data-id uint)
+    (price uint)
+    (access-level uint)
+    (description (string-utf8 200)))
+    (begin
+        ;; Validate data-id is positive
+        (asserts! (> data-id u0) ERR-INVALID-INPUT)
+        ;; Validate price
+        (asserts! (> price u0) ERR-INVALID-AMOUNT)
+        (asserts! (<= price MAX-PRICE) ERR-PRICE-TOO-HIGH)
+        ;; Validate access level
+        (asserts! (and (>= access-level u1) (<= access-level u3)) ERR-INVALID-ACCESS-LEVEL)
+        ;; Validate description
+        (asserts! (> (len description) u0) ERR-INVALID-STRING-LENGTH)
+        (asserts! (>= (len description) u10) ERR-INVALID-STRING-LENGTH)
+        (asserts! (<= (len description) u200) ERR-INVALID-STRING-LENGTH)
+        (ok true)
+    )
+)
+
+;; @notice Helper: Check if listing price matches expected amount
+;; @param listing-id: Listing ID
+;; @param expected-price: Expected price in microSTX
+;; @return: ok true if prices match, error otherwise
+(define-read-only (validate-price-match (listing-id uint) (expected-price uint))
+    (match (map-get? listings { listing-id: listing-id })
+        listing (if (is-eq (get price listing) expected-price)
+            (ok true)
+            ERR-PRICE-MISMATCH
+        )
+        ERR-LISTING-NOT-FOUND
+    )
+)
+
+;; @notice Helper: Validate listing ID is strictly positive
+;; @param listing-id: ID to validate
+;; @return: ok(true) if valid, error otherwise
+(define-read-only (validate-listing-id (listing-id uint))
+    (if (> listing-id u0)
+        (ok true)
+        ERR-INVALID-INPUT
+    )
+)
