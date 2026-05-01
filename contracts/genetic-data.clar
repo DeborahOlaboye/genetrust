@@ -481,3 +481,23 @@
         none
     )
 )
+
+;; @notice Returns the description of a dataset.
+;; @param data-id The dataset ID to look up.
+;; @return Some(string-utf8) if dataset exists, none otherwise.
+(define-read-only (get-dataset-description (data-id uint))
+    (match (map-get? datasets { data-id: data-id })
+        dataset (some (get description dataset))
+        none
+    )
+)
+
+;; @notice Returns the metadata hash of a dataset.
+;; @param data-id The dataset ID to look up.
+;; @return Some(buff 32) if dataset exists, none otherwise.
+(define-read-only (get-dataset-metadata-hash (data-id uint))
+    (match (map-get? datasets { data-id: data-id })
+        dataset (some (get metadata-hash dataset))
+        none
+    )
+)
