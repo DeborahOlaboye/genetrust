@@ -986,3 +986,69 @@ describe('dataset-registry - get-data-details and verify-access-rights', () => {
     expect(result).toBeSome(expect.anything());
   });
 });
+
+describe('genetic-data - new validation behaviour (simnet)', () => {
+  it('register-dataset rejects zero price (ERR-INVALID-AMOUNT u401)', () => {
+    const { result } = simnet.callPublicFn(
+      'genetic-data',
+      'register-dataset',
+      [
+        Cl.buffer(Buffer.from('a'.repeat(32))),
+        Cl.stringUtf8('https://ipfs.io/test'),
+        Cl.stringUtf8('Valid description here for test'),
+        Cl.uint(1),
+        Cl.uint(0), // zero price — should fail
+      ],
+      deployer,
+    );
+    expect(result).toBeErr(Cl.uint(401));
+  });
+
+  it('register-dataset rejects URL shorter than 5 chars (ERR-INVALID-STRING-LENGTH u407)', () => {
+    const { result } = simnet.callPublicFn(
+      'genetic-data',
+      'register-dataset',
+      [
+        Cl.buffer(Buffer.from('a'.repeat(32))),
+        Cl.stringUtf8('ab'), // too short
+        Cl.stringUtf8('Valid description here for test'),
+        Cl.uint(1),
+        Cl.uint(1000),
+      ],
+      deployer,
+    );
+    expect(result).toBeErr(Cl.uint(407));
+  });
+
+  it('register-dataset rejects access level 0 (ERR-INVALID-ACCESS-LEVEL u406)', () => {
+    const { result } = simnet.callPublicFn(
+      'genetic-data',
+      'register-dataset',
+      [
+        Cl.buffer(Buffer.from('a'.repeat(32))),
+        Cl.stringUtf8('https://valid.url'),
+        Cl.stringUtf8('Valid description here for test'),
+        Cl.uint(0), // invalid level
+        Cl.uint(1000),
+      ],
+      deployer,
+    );
+    expect(result).toBeErr(Cl.uint(406));
+  });
+
+  it('register-dataset rejects access level 4 (ERR-INVALID-ACCESS-LEVEL u406)', () => {
+    const { result } = simnet.callPublicFn(
+      'genetic-data',
+      'register-dataset',
+      [
+        Cl.buffer(Buffer.from('a'.repeat(32))),
+        Cl.stringUtf8('https://valid.url'),
+        Cl.stringUtf8('Valid description here for test'),
+        Cl.uint(4), // out of range
+        Cl.uint(1000),
+      ],
+      deployer,
+    );
+    expect(result).toBeErr(Cl.uint(406));
+  });
+});
