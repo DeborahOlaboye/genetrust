@@ -563,3 +563,75 @@
         none
     )
 )
+
+;; @notice Helper: Validate dataset exists, is active, and caller is owner
+;; @param data-id: ID to validate  
+;; @param caller: Principal to check ownership
+;; @return: ok with dataset if all checks pass, error otherwise
+;; @dev Combines multiple validation checks for DRY principle
+(define-read-only (validate-ownable-active-dataset (data-id uint) (caller principal))
+    (let ((dataset (map-get? datasets { data-id: data-id })))
+        (match dataset
+            dataset-rec (begin
+                (asserts! (get is-active dataset-rec) ERR-INACTIVE-DATASET)
+                (asserts! (is-eq (get owner dataset-rec) caller) ERR-NOT-OWNER)
+                (ok dataset-rec)
+            )
+            ERR-DATASET-NOT-FOUND
+        )
+    )
+)
+
+;; @notice Helper: Verify data ID is strictly positive and valid
+;; @param data-id: ID to validate
+;; @return: ok(true) if valid, error otherwise
+;; @dev Guards against zero and negative values in arithmetic operations
+(define-read-only (validate-data-id (data-id uint))
+    (if (> data-id u0)
+        (ok true)
+        ERR-INVALID-INPUT
+    )
+)
+
+;; @notice Helper: Validate all inputs for dataset registration
+;; @dev Performs comprehensive input validation before dataset creation
+;; @return: ok(true) if all inputs are valid
+(define-read-only (validate-dataset-registration-complete
+    (metadata-hash (buff 32))
+    (storage-url (string-utf8 200))
+    (description (string-utf8 200))
+    (access-level uint)
+    (price uint))
+    (begin
+        ;; Validate metadata hash
+        (asserts! (is-eq (len metadata-hash) u32) ERR-INVALID-HASH)
+        (asserts! (not (is-eq metadata-hash 0x0000000000000000000000000000000000000000000000000000000000000000)) ERR-ZERO-HASH)
+        ;; Validate storage URL
+        (asserts! (> (len storage-url) u0) ERR-INVALID-STRING-LENGTH)
+        (asserts! (>= (len storage-url) MIN-URL-LENGTH) ERR-INVALID-STRING-LENGTH)
+        (asserts! (<= (len storage-url) u200) ERR-INVALID-STRING-LENGTH)
+        ;; Validate description
+        (asserts! (> (len description) u0) ERR-INVALID-STRING-LENGTH)
+        (asserts! (>= (len description) u10) ERR-INVALID-STRING-LENGTH)
+        (asserts! (<= (len description) u200) ERR-INVALID-STRING-LENGTH)
+        ;; Validate access level
+        (asserts! (and (>= access-level ACCESS-BASIC) (<= access-level ACCESS-FULL)) ERR-INVALID-ACCESS-LEVEL)
+        ;; Validate price
+        (asserts! (> price u0) ERR-INVALID-AMOUNT)
+        (asserts! (<= price MAX-PRICE) ERR-PRICE-TOO-HIGH)
+        (ok true)
+    )
+)
+
+;; @notice Helper: Check if any access record exists for user on dataset
+;; @param data-id: Dataset ID
+;; @param user: User principal
+;; @return: ok true if any access exists (expired or not), ok false otherwise
+(define-read-only (has-any-access (data-id uint) (user principal))
+    (let ((access (map-get? access-rights { data-id: data-id, user: user })))
+        (match access
+            _ (ok true)
+            (ok false)
+        )
+    )
+)
