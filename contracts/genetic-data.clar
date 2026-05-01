@@ -501,3 +501,12 @@
         none
     )
 )
+
+;; @notice Checks whether a user has any access record for a dataset (expired or not).
+;; @dev Use has-valid-access to check non-expired access. This checks bare existence.
+;; @param data-id The dataset ID.
+;; @param user The principal to check.
+;; @return ok(true) if any access record exists, ok(false) otherwise.
+(define-read-only (has-any-access (data-id uint) (user principal))
+    (ok (is-some (map-get? access-rights { data-id: data-id, user: user })))
+)
