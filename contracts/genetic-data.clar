@@ -450,3 +450,14 @@
         none
     )
 )
+
+;; @notice Returns the principal that granted access to a specific user on a dataset.
+;; @param data-id The dataset ID.
+;; @param user The principal whose grant to look up.
+;; @return Some(principal) if access record exists, none otherwise.
+(define-read-only (get-access-granted-by (data-id uint) (user principal))
+    (match (map-get? access-rights { data-id: data-id, user: user })
+        rights (some (get granted-by rights))
+        none
+    )
+)
