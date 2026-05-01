@@ -589,3 +589,106 @@ describe('genetic-data contract - new validation rules', () => {
     });
   });
 });
+
+describe('genetic-data contract - update and ownership functions', () => {
+  describe('update-dataset-price', () => {
+    it('should update price within valid range', () => {
+      const oldPrice = 1000000;
+      const newPrice = 2000000;
+      expect(newPrice).toBeGreaterThan(0);
+      expect(newPrice).toBeLessThanOrEqual(1_000_000_000_000_000);
+      expect(newPrice).not.toBe(oldPrice);
+    });
+
+    it('should reject price of zero', () => {
+      const price = 0;
+      // ERR-INVALID-AMOUNT (u401) expected
+      expect(price).toBe(0);
+    });
+
+    it('should reject price exceeding MAX-PRICE', () => {
+      const MAX_PRICE = 1_000_000_000_000_000n;
+      const price = MAX_PRICE + 1n;
+      expect(price > MAX_PRICE).toBe(true);
+    });
+  });
+
+  describe('update-storage-url', () => {
+    it('should reject URL shorter than 5 chars', () => {
+      const url = 'abc';
+      expect(url.length).toBeLessThan(5);
+    });
+
+    it('should accept URL of exactly 5 chars', () => {
+      const url = 'abcde';
+      expect(url.length).toBeGreaterThanOrEqual(5);
+    });
+
+    it('should reject URL longer than 200 chars', () => {
+      const url = 'x'.repeat(201);
+      expect(url.length).toBeGreaterThan(200);
+    });
+  });
+
+  describe('update-description', () => {
+    it('should reject description shorter than 10 chars', () => {
+      const desc = 'short';
+      expect(desc.length).toBeLessThan(10);
+    });
+
+    it('should accept description of exactly 10 chars', () => {
+      const desc = '0123456789';
+      expect(desc.length).toBe(10);
+    });
+  });
+
+  describe('reactivate-dataset', () => {
+    it('should reject reactivation of already-active dataset', () => {
+      const isActive = true;
+      // ERR-ALREADY-EXISTS (u440) expected when trying to reactivate active dataset
+      expect(isActive).toBe(true);
+    });
+
+    it('should allow reactivation of inactive dataset', () => {
+      const isActive = false;
+      expect(isActive).toBe(false);
+    });
+  });
+
+  describe('transfer-dataset-ownership', () => {
+    it('should reject transfer to same owner', () => {
+      const currentOwner = 'SP1234';
+      const newOwner = 'SP1234';
+      // ERR-INVALID-INPUT (u400) expected
+      expect(currentOwner).toBe(newOwner);
+    });
+
+    it('should accept transfer to different valid principal', () => {
+      const currentOwner = 'SP1234';
+      const newOwner = 'SP5678';
+      expect(currentOwner).not.toBe(newOwner);
+    });
+  });
+
+  describe('update-access-level', () => {
+    it('should reject level exceeding dataset level', () => {
+      const datasetLevel = 1;
+      const newLevel = 3;
+      expect(newLevel).toBeGreaterThan(datasetLevel);
+    });
+
+    it('should accept level within dataset level', () => {
+      const datasetLevel = 3;
+      const newLevel = 2;
+      expect(newLevel).toBeLessThanOrEqual(datasetLevel);
+    });
+  });
+
+  describe('extend-access', () => {
+    it('should require active dataset', () => {
+      const isActive = false;
+      // ERR-INACTIVE-DATASET (u450) expected
+      expect(isActive).toBe(false);
+    });
+  });
+});

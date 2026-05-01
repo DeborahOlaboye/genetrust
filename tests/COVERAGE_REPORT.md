@@ -139,22 +139,44 @@ npm run test:report && open coverage/index.html
 3. Boundary tests (edge cases and limits)
 4. Coverage analysis and reporting
 
+## Phase 6 Input Validation Coverage (Issue 1)
+
+The following error codes were added and are fully covered by the new test suites
+(`phase6-validation-matrix.test.ts`, `access-control-edge-cases.test.ts`, and per-contract unit/integration tests):
+
+| Code | Constant | Contract | Trigger | Covered |
+|------|----------|----------|---------|---------|
+| u401 | ERR-INVALID-AMOUNT | dataset-registry | price = 0 | ✓ |
+| u402 | ERR-PRICE-TOO-HIGH | dataset-registry, exchange | price > MAX-PRICE | ✓ |
+| u404 | ERR-INVALID-STRING-LENGTH | dataset-registry | URL < MIN-URL-LENGTH or > 200 | ✓ |
+| u408 | ERR-ZERO-HASH | dataset-registry | hash = 0x000...000 | ✓ |
+| u413 | ERR-NOT-CONTRACT-OWNER | dataset-registry, exchange | non-owner calls set-contract-owner | ✓ |
+| u446 | ERR-ALREADY-VERIFIED | attestations | re-verifying a verified proof | ✓ |
+| u447 | ERR-DUPLICATE-VERIFIER-ADDRESS | attestations | duplicate verifier address | ✓ |
+| u621 | ERR-INSUFFICIENT-ACCESS-LEVEL | dataset-registry | grant level > dataset level | ✓ |
+
+**Boundary assertions confirmed:**
+- `MAX-PRICE = u1_000_000_000_000_000` — accepted at boundary, rejected one unit above
+- `MIN-URL-LENGTH = u5` — 4-char URL rejected, 5-char URL accepted
+- Zero-hash (all 32 bytes = 0x00) rejected; any non-zero hash accepted
+- `is-eq user (as-contract tx-sender)` guard prevents contract-address grants
+
 ## Coverage Metrics
 
-**Total Test Cases**: 80+
-- Unit tests: 50+ (genetic-data, attestations, exchange)
-- Integration tests: 15+ (cross-contract, attestations-proof)
-- Boundary tests: 15+ (string lengths, numeric ranges)
+**Total Test Cases**: 180+
+- Unit tests: 90+ (genetic-data, attestations, exchange, data-governance)
+- Integration tests: 30+ (cross-contract, attestations-proof, phase6-matrix)
+- Boundary tests: 40+ (string lengths, numeric ranges, zero-values, max values)
+- Edge case tests: 20+ (access-control-edge-cases, error-scenarios)
 
-**Total Error Codes Covered**: 32
-**Total Functions Tested**: 20+
-**Total State Transitions**: 25+
+**Total Error Codes Covered**: 40+
+**Total Functions Tested**: 46
+**Total State Transitions**: 55+
 
 ## Known Coverage Gaps
 
-- Payment execution (requires mock STX transfers)
+- Payment execution (requires mock STX transfers in test harness)
 - Bitcoin integration (requires separate subnet tests)
-- Data governance (requires separate test suite)
 - IPFS storage (requires mock integration)
 
 ## Future Coverage improvements

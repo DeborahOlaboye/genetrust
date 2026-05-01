@@ -1,13 +1,13 @@
 ;; data-governance.clar
 ;; @title GeneTrust Data Governance
-;; @version 1.1.0
+;; @version 1.2.0
 ;; @author GeneTrust
 ;; @notice Manages consent settings and GDPR rights for genetic datasets.
 ;;         Each dataset owner can set research, commercial, and clinical consent flags
 ;;         and invoke data subject rights: erasure, portability, and processing restriction.
 ;; @dev Deployed on Stacks mainnet at SP3KKFRRWQVJXEJCGM6ZB359EF01VRY86HW6CCD45.data-governance
 
-(define-constant CONTRACT-VERSION "1.1.0")
+(define-constant CONTRACT-VERSION "1.2.0")
 
 ;; Error code ranges mirror the rest of the contract suite:
 ;;   400-409  Input validation
@@ -364,6 +364,75 @@
             clinical: (get clinical-consent consent)
         })
         none
+    )
+)
+
+;; @notice Returns true if a consent record exists but has already expired.
+;; @param data-id The dataset ID to check.
+;; @return ok(true) if expired, ok(false) if valid or no record exists.
+(define-read-only (is-consent-expired (data-id uint))
+    (match (map-get? consent-records { data-id: data-id })
+        consent (ok (>= stacks-block-height (get expires-at consent)))
+        (ok false)
+    )
+)
+
+;; @notice Returns the block height at which the consent record was last updated.
+;; @param data-id The dataset ID to look up.
+;; @return Some(uint) if consent record exists, none otherwise.
+(define-read-only (get-consent-updated-at (data-id uint))
+    (match (map-get? consent-records { data-id: data-id })
+        consent (some (get updated-at consent))
+        none
+    )
+)
+
+;; @notice Returns the jurisdiction code for a dataset's consent record.
+;; @param data-id The dataset ID to look up.
+;; @return Some(uint) if consent record exists, none otherwise.
+(define-read-only (get-consent-jurisdiction (data-id uint))
+    (match (map-get? consent-records { data-id: data-id })
+        consent (some (get jurisdiction consent))
+        none
+    )
+)
+
+;; @notice Returns the block height at which any GDPR record was last updated.
+;; @param data-id The dataset ID to look up.
+;; @return Some(uint) if a GDPR record exists, none otherwise.
+(define-read-only (get-gdpr-updated-at (data-id uint))
+    (match (map-get? gdpr-records { data-id: data-id })
+        gdpr (some (get updated-at gdpr))
+        none
+    )
+)
+
+;; @notice Returns a complete summary of consent and GDPR state for a dataset.
+;; @param data-id The dataset ID to summarise.
+;; @return Some(tuple) with all consent flags, jurisdiction, validity, and GDPR flags.
+(define-read-only (get-consent-summary (data-id uint))
+    (match (map-get? consent-records { data-id: data-id })
+        consent (some {
+            owner: (get owner consent),
+            research: (get research-consent consent),
+            commercial: (get commercial-consent consent),
+            clinical: (get clinical-consent consent),
+            jurisdiction: (get jurisdiction consent),
+            expires-at: (get expires-at consent),
+            is-valid: (< stacks-block-height (get expires-at consent))
+        })
+        none
+    )
+)
+
+;; @notice Returns true if right-to-be-forgotten has been invoked for a dataset.
+;; @dev Alias for is-erasure-requested with a more explicit name for contract consumers.
+;; @param data-id The dataset ID to check.
+;; @return ok(true) if erasure was requested, ok(false) otherwise.
+(define-read-only (has-erasure-been-requested (data-id uint))
+    (match (map-get? gdpr-records { data-id: data-id })
+        gdpr (ok (get right-to-be-forgotten gdpr))
+        (ok false)
     )
 )
 

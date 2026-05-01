@@ -301,3 +301,21 @@ Create tests for each error scenario:
 5. **Validate consistency**: Ensure related data remains consistent
 6. **Document errors**: Use specific, descriptive error codes
 7. **Test edges**: Test all error paths thoroughly
+
+## Phase 6 Recovery Patterns
+
+### ERR-PRICE-TOO-HIGH (u402) Recovery
+- **Cause**: `price > MAX-PRICE (u1000000000000000)`
+- **Recovery**: Reduce price to be within `[1, MAX-PRICE]` and retry
+
+### ERR-ZERO-HASH (u408) Recovery
+- **Cause**: `metadata-hash` is all zero bytes
+- **Recovery**: Provide the actual SHA-256 hash of the dataset metadata
+
+### ERR-ALREADY-VERIFIED (u446) Recovery
+- **Cause**: Calling `verify-proof` on an already-verified proof
+- **Recovery**: No action needed — proof is already verified. Check `is-verified` before calling `verify-proof`
+
+### ERR-INSUFFICIENT-ACCESS-LEVEL (u621) in grant-access
+- **Cause**: Requested grant level exceeds the dataset's configured access level
+- **Recovery**: Either grant a lower level, or first use `update-dataset-price` to upgrade the dataset's own access level

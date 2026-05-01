@@ -1,8 +1,10 @@
 ;; attestations.clar
 ;; @title GeneTrust Attestations
-;; @version 1.0.0
+;; @version 1.1.0
 ;; @author GeneTrust
 ;; @notice Registry for zero-knowledge attestation proofs on genetic datasets.
+;; @changelog v1.1.0 — ERR-ALREADY-VERIFIED guard, total counters, print events on all
+;;            state changes, comprehensive read helpers including summary, proof, and verifier helpers.
 ;;         Trusted verifiers (e.g. medical labs) can register proofs and mark them as verified
 ;;         without exposing the underlying raw genetic data.
 ;; @dev Deployed on Stacks mainnet at SP3KKFRRWQVJXEJCGM6ZB359EF01VRY86HW6CCD45.attestations
@@ -139,6 +141,8 @@
         (asserts! (get active v) ERR-VERIFIER-INACTIVE)
         ;; Deactivate the verifier
         (map-set verifiers { verifier-id: verifier-id } (merge v { active: false }))
+        (print { event: "verifier-deactivated", verifier-id: verifier-id,
+                 deactivated-by: tx-sender, block: stacks-block-height })
         (ok true)
     )
 )
@@ -304,6 +308,98 @@
 (define-read-only (get-verifier-address (verifier-id uint))
     (match (map-get? verifiers { verifier-id: verifier-id })
         v (some (get address v))
+        none
+    )
+)
+
+;; @notice Returns the proof-type of a submitted proof.
+;; @param proof-id The proof ID to look up.
+;; @return Some(uint) if proof exists, none otherwise.
+(define-read-only (get-proof-type (proof-id uint))
+    (match (map-get? proofs { proof-id: proof-id })
+        proof (some (get proof-type proof))
+        none
+    )
+)
+
+;; @notice Returns the creator principal of a proof.
+;; @param proof-id The proof ID to look up.
+;; @return Some(principal) if proof exists, none otherwise.
+(define-read-only (get-proof-creator (proof-id uint))
+    (match (map-get? proofs { proof-id: proof-id })
+        proof (some (get creator proof))
+        none
+    )
+)
+
+;; @notice Returns the next verifier-id that will be assigned on the next register-verifier call.
+;; @return ok(uint) - the next available verifier-id.
+(define-read-only (get-next-verifier-id)
+    (ok (var-get next-verifier-id))
+)
+
+;; @notice Returns the proof-hash of a submitted proof.
+;; @param proof-id The proof ID to look up.
+;; @return Some(buff 32) if proof exists, none otherwise.
+(define-read-only (get-proof-hash (proof-id uint))
+    (match (map-get? proofs { proof-id: proof-id })
+        proof (some (get proof-hash proof))
+        none
+    )
+)
+
+;; @notice Returns the name of a registered verifier.
+;; @param verifier-id The verifier ID to look up.
+;; @return Some(string-utf8) if verifier exists, none otherwise.
+(define-read-only (get-verifier-name (verifier-id uint))
+    (match (map-get? verifiers { verifier-id: verifier-id })
+        v (some (get name v))
+        none
+    )
+)
+
+;; @notice Returns the block height at which a verifier was registered.
+;; @param verifier-id The verifier ID to look up.
+;; @return Some(uint) if verifier exists, none otherwise.
+(define-read-only (get-verifier-added-at (verifier-id uint))
+    (match (map-get? verifiers { verifier-id: verifier-id })
+        v (some (get added-at v))
+        none
+    )
+)
+
+;; @notice Returns the block height at which a proof was submitted.
+;; @param proof-id The proof ID to look up.
+;; @return Some(uint) if proof exists, none otherwise.
+(define-read-only (get-proof-created-at (proof-id uint))
+    (match (map-get? proofs { proof-id: proof-id })
+        proof (some (get created-at proof))
+        none
+    )
+)
+
+;; @notice Returns the metadata string attached to a proof.
+;; @param proof-id The proof ID to look up.
+;; @return Some(string-utf8) if proof exists, none otherwise.
+(define-read-only (get-proof-metadata (proof-id uint))
+    (match (map-get? proofs { proof-id: proof-id })
+        proof (some (get metadata proof))
+        none
+    )
+)
+
+;; @notice Returns a summary snapshot of key proof fields.
+;; @param proof-id The proof ID to summarise.
+;; @return Some(tuple) with data-id, proof-type, verified flag, creator, and created-at.
+(define-read-only (get-proof-summary (proof-id uint))
+    (match (map-get? proofs { proof-id: proof-id })
+        proof (some {
+            data-id: (get data-id proof),
+            proof-type: (get proof-type proof),
+            verified: (get verified proof),
+            creator: (get creator proof),
+            created-at: (get created-at proof)
+        })
         none
     )
 )

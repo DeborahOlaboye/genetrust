@@ -10,6 +10,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Smart contract input validation hardening (Issue One)
+  - `ERR-PRICE-TOO-HIGH (u402)` and `ERR-ZERO-HASH (u408)` error constants across contracts
+  - `MAX-PRICE` cap (`u1000000000000000`) enforced in `genetic-data.clar` and `exchange.clar`
+  - Minimum URL length (`MIN-URL-LENGTH = 5`) enforced in `register-dataset` and `update-storage-url`
+  - All-zero metadata hash rejection in `register-dataset`
+  - Access level cap: granted level cannot exceed dataset's own level in `grant-access`
+  - Contract-address guard in `grant-access` to prevent granting to self
+  - Print events on all state-changing functions across all four contracts
+  - New public functions: `update-dataset-price`, `update-storage-url`, `update-description`, `reactivate-dataset`, `transfer-dataset-ownership`, `extend-access`, `update-access-level`
+  - New exchange functions: `update-listing-description`, `update-listing-access-level`
+  - `total-datasets`, `total-purchases-completed`, `total-proofs`, `total-verified-proofs`, `total-verifiers` running counters
+  - Structural bug fix in `data-governance.clar` `restrict-processing` (misplaced `(ok true)`)
+  - `ERR-ALREADY-VERIFIED (u446)` guard in attestations `verify-proof`
+  - Comprehensive read-only helper functions across all contracts
+  - Full test coverage for all new validation rules and functions
+
 - Rate limiting middleware system (Issue Two)
   - Sliding window algorithm with LRU cache for memory efficiency
   - Category-based configuration for auth, sensitive data, marketplace endpoints

@@ -986,3 +986,285 @@ describe('dataset-registry - get-data-details and verify-access-rights', () => {
     expect(result).toBeSome(expect.anything());
   });
 });
+
+describe('genetic-data - new validation behaviour (simnet)', () => {
+  it('register-dataset rejects zero price (ERR-INVALID-AMOUNT u401)', () => {
+    const { result } = simnet.callPublicFn(
+      'genetic-data',
+      'register-dataset',
+      [
+        Cl.buffer(Buffer.from('a'.repeat(32))),
+        Cl.stringUtf8('https://ipfs.io/test'),
+        Cl.stringUtf8('Valid description here for test'),
+        Cl.uint(1),
+        Cl.uint(0), // zero price — should fail
+      ],
+      deployer,
+    );
+    expect(result).toBeErr(Cl.uint(401));
+  });
+
+  it('register-dataset rejects URL shorter than 5 chars (ERR-INVALID-STRING-LENGTH u407)', () => {
+    const { result } = simnet.callPublicFn(
+      'genetic-data',
+      'register-dataset',
+      [
+        Cl.buffer(Buffer.from('a'.repeat(32))),
+        Cl.stringUtf8('ab'), // too short
+        Cl.stringUtf8('Valid description here for test'),
+        Cl.uint(1),
+        Cl.uint(1000),
+      ],
+      deployer,
+    );
+    expect(result).toBeErr(Cl.uint(407));
+  });
+
+  it('register-dataset rejects access level 0 (ERR-INVALID-ACCESS-LEVEL u406)', () => {
+    const { result } = simnet.callPublicFn(
+      'genetic-data',
+      'register-dataset',
+      [
+        Cl.buffer(Buffer.from('a'.repeat(32))),
+        Cl.stringUtf8('https://valid.url'),
+        Cl.stringUtf8('Valid description here for test'),
+        Cl.uint(0), // invalid level
+        Cl.uint(1000),
+      ],
+      deployer,
+    );
+    expect(result).toBeErr(Cl.uint(406));
+  });
+
+  it('register-dataset rejects access level 4 (ERR-INVALID-ACCESS-LEVEL u406)', () => {
+    const { result } = simnet.callPublicFn(
+      'genetic-data',
+      'register-dataset',
+      [
+        Cl.buffer(Buffer.from('a'.repeat(32))),
+        Cl.stringUtf8('https://valid.url'),
+        Cl.stringUtf8('Valid description here for test'),
+        Cl.uint(4), // out of range
+        Cl.uint(1000),
+      ],
+      deployer,
+    );
+    expect(result).toBeErr(Cl.uint(406));
+  });
+});
+
+describe('genetic-data - grant-access new validations (simnet)', () => {
+  it('grant-access rejects level higher than dataset level (ERR-INSUFFICIENT-ACCESS-LEVEL u621)', () => {
+    // Register dataset with level 1 first
+    simnet.callPublicFn(
+      'genetic-data',
+      'register-dataset',
+      [
+        Cl.buffer(Buffer.from('b'.repeat(32))),
+        Cl.stringUtf8('https://ipfs.io/grant-test'),
+        Cl.stringUtf8('Grant access level test dataset'),
+        Cl.uint(1), // dataset level = 1 (BASIC)
+        Cl.uint(500000),
+      ],
+      deployer,
+    );
+    // Try to grant level 3 (FULL) on a level-1 dataset
+    const { result } = simnet.callPublicFn(
+      'genetic-data',
+      'grant-access',
+      [
+        Cl.uint(1),
+        Cl.principal(wallet1),
+        Cl.uint(3), // exceeds dataset level — should fail
+      ],
+      deployer,
+    );
+    expect(result).toBeErr(Cl.uint(621));
+  });
+
+  it('grant-access rejects self-grant (ERR-SELF-GRANT-NOT-ALLOWED u610)', () => {
+    const { result } = simnet.callPublicFn(
+      'genetic-data',
+      'grant-access',
+      [
+        Cl.uint(1),
+        Cl.principal(deployer), // self-grant
+        Cl.uint(1),
+      ],
+      deployer,
+    );
+    expect(result).toBeErr(Cl.uint(610));
+  });
+});
+
+describe('genetic-data - snapshot helpers (simnet)', () => {
+  it('get-dataset-summary returns structured tuple for existing dataset', () => {
+    simnet.callPublicFn(
+      'genetic-data',
+      'register-dataset',
+      [
+        Cl.buffer(Buffer.from('d'.repeat(32))),
+        Cl.stringUtf8('https://ipfs.io/summary-test'),
+        Cl.stringUtf8('Summary test dataset description'),
+        Cl.uint(2),
+        Cl.uint(750000),
+      ],
+      deployer,
+    );
+    const { result } = simnet.callReadOnlyFn(
+      'genetic-data',
+      'get-dataset-summary',
+      [Cl.uint(1)],
+      deployer,
+    );
+    expect(result).toBeSome(expect.anything());
+  });
+
+  it('get-dataset-summary returns none for non-existent dataset', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'genetic-data',
+      'get-dataset-summary',
+      [Cl.uint(99999)],
+      deployer,
+    );
+    expect(result).toBeNone();
+  });
+
+  it('has-any-access returns false when no access has been granted', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'genetic-data',
+      'has-any-access',
+      [Cl.uint(1), Cl.principal(wallet1)],
+      deployer,
+    );
+    expect(result).toBeOk(Cl.bool(false));
+  });
+
+  it('get-dataset-access-level returns the configured access level', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'genetic-data',
+      'get-dataset-access-level',
+      [Cl.uint(1)],
+      deployer,
+    );
+    expect(result).toBeSome(expect.anything());
+  });
+});
+
+describe('genetic-data - counter and total helpers (simnet)', () => {
+  it('get-total-datasets starts at 0 before any registration', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'genetic-data',
+      'get-total-datasets',
+      [],
+      deployer,
+    );
+    expect(result).toBeOk(Cl.uint(0));
+  });
+
+  it('get-next-data-id starts at 1', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'genetic-data',
+      'get-next-data-id',
+      [],
+      deployer,
+    );
+    expect(result).toBeOk(Cl.uint(1));
+  });
+
+  it('get-dataset-owner returns none for non-existent dataset', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'genetic-data',
+      'get-dataset-owner',
+      [Cl.uint(99999)],
+      deployer,
+    );
+    expect(result).toBeNone();
+  });
+
+  it('is-dataset-active returns false for non-existent dataset', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'genetic-data',
+      'is-dataset-active',
+      [Cl.uint(99999)],
+      deployer,
+    );
+    expect(result).toBeOk(Cl.bool(false));
+  });
+
+  it('has-valid-access returns false when no access granted', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'genetic-data',
+      'has-valid-access',
+      [Cl.uint(1), Cl.principal(wallet2)],
+      deployer,
+    );
+    expect(result).toBeOk(Cl.bool(false));
+  });
+});
+
+describe('genetic-data - set-contract-owner (simnet)', () => {
+  it('set-contract-owner rejects call from non-owner (ERR-NOT-CONTRACT-OWNER u413)', () => {
+    const { result } = simnet.callPublicFn(
+      'genetic-data',
+      'set-contract-owner',
+      [Cl.principal(wallet2)],
+      wallet1, // not the contract owner
+    );
+    expect(result).toBeErr(Cl.uint(413));
+  });
+
+  it('get-contract-owner returns deployer initially', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'genetic-data',
+      'get-contract-owner',
+      [],
+      deployer,
+    );
+    expect(result).toBeTruthy();
+  });
+});
+
+describe('genetic-data - extend-access and update-access-level (simnet)', () => {
+  it('extend-access returns ERR-DATASET-NOT-FOUND for non-existent dataset', () => {
+    const { result } = simnet.callPublicFn(
+      'genetic-data',
+      'extend-access',
+      [Cl.uint(99999), Cl.principal(wallet1)],
+      deployer,
+    );
+    expect(result).toBeErr(Cl.uint(431));
+  });
+
+  it('update-access-level returns ERR-DATASET-NOT-FOUND for non-existent dataset', () => {
+    const { result } = simnet.callPublicFn(
+      'genetic-data',
+      'update-access-level',
+      [Cl.uint(99999), Cl.principal(wallet1), Cl.uint(1)],
+      deployer,
+    );
+    expect(result).toBeErr(Cl.uint(431));
+  });
+
+  it('update-access-level rejects level 0 (ERR-INVALID-ACCESS-LEVEL u406)', () => {
+    simnet.callPublicFn(
+      'genetic-data',
+      'register-dataset',
+      [
+        Cl.buffer(Buffer.from('e'.repeat(32))),
+        Cl.stringUtf8('https://ipfs.io/level-test'),
+        Cl.stringUtf8('Update access level test dataset'),
+        Cl.uint(3),
+        Cl.uint(100000),
+      ],
+      deployer,
+    );
+    const { result } = simnet.callPublicFn(
+      'genetic-data',
+      'update-access-level',
+      [Cl.uint(1), Cl.principal(wallet1), Cl.uint(0)],
+      deployer,
+    );
+    expect(result).toBeErr(Cl.uint(406));
+  });
+});

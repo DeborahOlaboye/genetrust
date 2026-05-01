@@ -1,6 +1,6 @@
 ;; exchange.clar
 ;; @title GeneTrust Exchange
-;; @version 1.1.0
+;; @version 1.2.0
 ;; @author GeneTrust
 ;; @notice Marketplace for listing and purchasing access to genetic datasets.
 ;;         STX payments transfer directly from buyer to dataset owner with no intermediary.
@@ -27,6 +27,7 @@
 ;; Errors - Authorization (410-414)
 (define-constant ERR-NOT-AUTHORIZED (err u410))
 (define-constant ERR-NOT-OWNER (err u411))
+(define-constant ERR-NOT-CONTRACT-OWNER (err u413))
 
 ;; Errors - Not Found (430-439)
 (define-constant ERR-NOT-FOUND (err u430))
@@ -50,10 +51,13 @@
 (define-constant ERR-PAYMENT-FAILED (err u500))
 (define-constant ERR-TRANSACTION-FAILED (err u501))
 
-(define-constant CONTRACT-VERSION "1.1.0")
+(define-constant CONTRACT-VERSION "1.2.0")
 
 ;; Price cap: 1 billion STX in microSTX to prevent absurd listings
 (define-constant MAX-PRICE u1000000000000000)
+
+;; Contract owner — the deployer; can be transferred via set-contract-owner
+(define-data-var contract-owner principal tx-sender)
 
 ;; @notice Auto-incrementing counter for listing IDs. Starts at 1.
 (define-data-var next-listing-id uint u1)
@@ -253,6 +257,26 @@
     )
 )
 
+;; Update the access level of an active listing (owner only)
+;; @param listing-id: ID of the listing
+;; @param new-access-level: New access level (1-3)
+;; @returns: ok true on success, error otherwise
+(define-public (update-listing-access-level (listing-id uint) (new-access-level uint))
+    (let ((listing (unwrap! (map-get? listings { listing-id: listing-id }) ERR-LISTING-NOT-FOUND)))
+        (asserts! (> listing-id u0) ERR-INVALID-INPUT)
+        (asserts! (is-eq tx-sender (get owner listing)) ERR-NOT-OWNER)
+        (asserts! (get active listing) ERR-LISTING-INACTIVE)
+        (asserts! (and (>= new-access-level u1) (<= new-access-level u3)) ERR-INVALID-ACCESS-LEVEL)
+        (map-set listings { listing-id: listing-id }
+            (merge listing { access-level: new-access-level })
+        )
+        (print { event: "listing-access-level-updated", listing-id: listing-id, owner: tx-sender,
+                 old-level: (get access-level listing), new-level: new-access-level,
+                 block: stacks-block-height })
+        (ok true)
+    )
+)
+
 ;; @notice Returns all stored fields for a given listing.
 ;; @param listing-id The listing ID to look up.
 ;; @return Some(listing) if found, none otherwise. Check active field before use.
@@ -346,6 +370,26 @@
     (ok (var-get total-purchases-completed))
 )
 
+;; @notice Returns the block height at which a listing was created.
+;; @param listing-id The listing ID to look up.
+;; @return Some(uint) if listing exists, none otherwise.
+(define-read-only (get-listing-created-at (listing-id uint))
+    (match (map-get? listings { listing-id: listing-id })
+        listing (some (get created-at listing))
+        none
+    )
+)
+
+;; @notice Returns the description of a listing.
+;; @param listing-id The listing ID to look up.
+;; @return Some(string-utf8) if listing exists, none otherwise.
+(define-read-only (get-listing-description (listing-id uint))
+    (match (map-get? listings { listing-id: listing-id })
+        listing (some (get description listing))
+        none
+    )
+)
+
 ;; @notice Returns the access level offered by a listing.
 ;; @param listing-id The listing to check.
 ;; @return Some(uint) if listing exists, none otherwise.
@@ -364,6 +408,92 @@
         listing (some (get data-id listing))
         none
     )
+)
+
+;; @notice Returns the amount paid by a buyer for a specific listing purchase.
+;; @param listing-id The purchased listing ID.
+;; @param buyer The principal who made the purchase.
+;; @return Some(uint) if purchase record exists, none otherwise.
+(define-read-only (get-purchase-paid-amount (listing-id uint) (buyer principal))
+    (match (map-get? purchases { listing-id: listing-id, buyer: buyer })
+        purchase (some (get paid purchase))
+        none
+    )
+)
+
+;; @notice Returns the block height at which a purchase was completed.
+;; @param listing-id The purchased listing ID.
+;; @param buyer The principal who made the purchase.
+;; @return Some(uint) if purchase record exists, none otherwise.
+(define-read-only (get-purchase-timestamp (listing-id uint) (buyer principal))
+    (match (map-get? purchases { listing-id: listing-id, buyer: buyer })
+        purchase (some (get purchased-at purchase))
+        none
+    )
+)
+
+;; Update the data-id referenced by a listing (owner only, active listings only)
+;; @param listing-id: ID of the listing
+;; @param new-data-id: New dataset ID to reference (must be > 0)
+;; @returns: ok true on success, error otherwise
+(define-public (update-listing-data-id (listing-id uint) (new-data-id uint))
+    (let ((listing (unwrap! (map-get? listings { listing-id: listing-id }) ERR-LISTING-NOT-FOUND)))
+        (asserts! (> listing-id u0) ERR-INVALID-INPUT)
+        (asserts! (> new-data-id u0) ERR-INVALID-INPUT)
+        (asserts! (is-eq tx-sender (get owner listing)) ERR-NOT-OWNER)
+        (asserts! (get active listing) ERR-LISTING-INACTIVE)
+        (map-set listings { listing-id: listing-id }
+            (merge listing { data-id: new-data-id })
+        )
+        (print { event: "listing-data-id-updated", listing-id: listing-id, owner: tx-sender,
+                 old-data-id: (get data-id listing), new-data-id: new-data-id,
+                 block: stacks-block-height })
+        (ok true)
+    )
+)
+
+;; @notice Returns true if the listing exists and is currently active. Alias for is-listing-active.
+;; @param listing-id The listing ID to check.
+;; @return ok(bool) - true if active, false if not found or cancelled.
+(define-read-only (get-listing-is-active (listing-id uint))
+    (match (map-get? listings { listing-id: listing-id })
+        listing (ok (get active listing))
+        (ok false)
+    )
+)
+
+;; @notice Returns a summary snapshot of key listing fields.
+;; @param listing-id The listing ID to summarise.
+;; @return Some(tuple) with owner, price, access-level, and active flag.
+(define-read-only (get-listing-summary (listing-id uint))
+    (match (map-get? listings { listing-id: listing-id })
+        listing (some {
+            owner: (get owner listing),
+            price: (get price listing),
+            access-level: (get access-level listing),
+            active: (get active listing),
+            data-id: (get data-id listing)
+        })
+        none
+    )
+)
+
+;; Transfer exchange contract ownership (current contract-owner only)
+;; @param new-owner: The principal to transfer ownership to
+;; @returns: ok true on success, error otherwise
+(define-public (set-contract-owner (new-owner principal))
+    (begin
+        (asserts! (is-eq tx-sender (var-get contract-owner)) ERR-NOT-CONTRACT-OWNER)
+        (asserts! (not (is-eq new-owner (as-contract tx-sender))) ERR-INVALID-INPUT)
+        (print { event: "contract-owner-transferred", from: tx-sender, to: new-owner,
+                 block: stacks-block-height })
+        (ok (var-set contract-owner new-owner))
+    )
+)
+
+;; @notice Returns the current exchange contract owner.
+(define-read-only (get-contract-owner)
+    (var-get contract-owner)
 )
 
 ;; @notice Returns the deployed contract version string.

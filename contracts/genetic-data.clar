@@ -1,10 +1,14 @@
 ;; genetic-data.clar
 ;; @title GeneTrust Dataset Registry
-;; @version 1.0.0
+;; @version 1.1.0
 ;; @author GeneTrust
 ;; @notice Registers and manages genetic datasets on the Stacks blockchain.
 ;;         Handles dataset ownership, tiered access control, and access expiry.
 ;; @dev Deployed on Stacks mainnet at SP3KKFRRWQVJXEJCGM6ZB359EF01VRY86HW6CCD45.dataset-registry
+;; @changelog v1.1.0 — Input validation hardening: MAX-PRICE cap, MIN-URL-LENGTH,
+;;            zero-hash rejection, access-level cap in grant-access, contract-owner
+;;            guard in grant-access, print events on all state changes, new
+;;            update/transfer/reactivate/extend functions, comprehensive read helpers.
 
 ;; Errors - Input Validation (400-409)
 (define-constant ERR-INVALID-INPUT (err u400))
@@ -20,6 +24,7 @@
 (define-constant ERR-NOT-AUTHORIZED (err u410))
 (define-constant ERR-NOT-OWNER (err u411))
 (define-constant ERR-INSUFFICIENT-PERMISSIONS (err u412))
+(define-constant ERR-NOT-CONTRACT-OWNER (err u413))
 
 ;; Errors - Not Found (430-439)
 (define-constant ERR-NOT-FOUND (err u430))
@@ -55,6 +60,9 @@
 
 ;; Minimum storage URL length (e.g. "ipfs://a" is 8 chars)
 (define-constant MIN-URL-LENGTH u5)
+
+;; Contract owner — the deployer; can be transferred via set-contract-owner
+(define-data-var contract-owner principal tx-sender)
 
 ;; Dataset counter
 (define-data-var next-data-id uint u1)
@@ -425,6 +433,133 @@
 (define-read-only (get-dataset-price (data-id uint))
     (match (map-get? datasets { data-id: data-id })
         dataset (some (get price dataset))
+        none
+    )
+)
+
+;; @notice Returns the block height at which a user's access expires.
+;; @param data-id The dataset ID.
+;; @param user The principal whose access to check.
+;; @return Some(uint) if access exists, none if user has no access record.
+(define-read-only (get-access-expiry (data-id uint) (user principal))
+    (match (map-get? access-rights { data-id: data-id, user: user })
+        rights (some (get expires-at rights))
+        none
+    )
+)
+
+;; @notice Returns the access level granted to a specific user on a dataset.
+;; @param data-id The dataset ID.
+;; @param user The principal to check.
+;; @return Some(uint) if access exists, none otherwise.
+(define-read-only (get-user-access-level (data-id uint) (user principal))
+    (match (map-get? access-rights { data-id: data-id, user: user })
+        rights (some (get access-level rights))
+        none
+    )
+)
+
+;; @notice Returns the principal that granted access to a specific user on a dataset.
+;; @param data-id The dataset ID.
+;; @param user The principal whose grant to look up.
+;; @return Some(principal) if access record exists, none otherwise.
+(define-read-only (get-access-granted-by (data-id uint) (user principal))
+    (match (map-get? access-rights { data-id: data-id, user: user })
+        rights (some (get granted-by rights))
+        none
+    )
+)
+
+;; @notice Returns the block height at which a dataset was registered.
+;; @param data-id The dataset ID to look up.
+;; @return Some(uint) if dataset exists, none otherwise.
+(define-read-only (get-dataset-created-at (data-id uint))
+    (match (map-get? datasets { data-id: data-id })
+        dataset (some (get created-at dataset))
+        none
+    )
+)
+
+;; @notice Returns the storage URL of a dataset.
+;; @param data-id The dataset ID to look up.
+;; @return Some(string-utf8) if dataset exists, none otherwise.
+(define-read-only (get-dataset-storage-url (data-id uint))
+    (match (map-get? datasets { data-id: data-id })
+        dataset (some (get storage-url dataset))
+        none
+    )
+)
+
+;; @notice Returns the description of a dataset.
+;; @param data-id The dataset ID to look up.
+;; @return Some(string-utf8) if dataset exists, none otherwise.
+(define-read-only (get-dataset-description (data-id uint))
+    (match (map-get? datasets { data-id: data-id })
+        dataset (some (get description dataset))
+        none
+    )
+)
+
+;; @notice Returns the metadata hash of a dataset.
+;; @param data-id The dataset ID to look up.
+;; @return Some(buff 32) if dataset exists, none otherwise.
+(define-read-only (get-dataset-metadata-hash (data-id uint))
+    (match (map-get? datasets { data-id: data-id })
+        dataset (some (get metadata-hash dataset))
+        none
+    )
+)
+
+;; @notice Checks whether a user has any access record for a dataset (expired or not).
+;; @dev Use has-valid-access to check non-expired access. This checks bare existence.
+;; @param data-id The dataset ID.
+;; @param user The principal to check.
+;; @return ok(true) if any access record exists, ok(false) otherwise.
+(define-read-only (has-any-access (data-id uint) (user principal))
+    (ok (is-some (map-get? access-rights { data-id: data-id, user: user })))
+)
+
+;; @notice Returns the access level configured for a dataset (not a user's grant — the dataset's own level).
+;; @param data-id The dataset ID to look up.
+;; @return Some(uint) if dataset exists, none otherwise.
+(define-read-only (get-dataset-access-level (data-id uint))
+    (match (map-get? datasets { data-id: data-id })
+        dataset (some (get access-level dataset))
+        none
+    )
+)
+
+;; Transfer contract ownership to a new principal (current contract-owner only)
+;; @param new-owner: The principal to transfer contract ownership to
+;; @returns: ok true on success, error otherwise
+(define-public (set-contract-owner (new-owner principal))
+    (begin
+        (asserts! (is-eq tx-sender (var-get contract-owner)) ERR-NOT-CONTRACT-OWNER)
+        (asserts! (not (is-eq new-owner (as-contract tx-sender))) ERR-INVALID-INPUT)
+        (print { event: "contract-owner-transferred", from: tx-sender, to: new-owner,
+                 block: stacks-block-height })
+        (ok (var-set contract-owner new-owner))
+    )
+)
+
+;; @notice Returns the current contract owner principal.
+;; @return The principal that currently owns the contract.
+(define-read-only (get-contract-owner)
+    (var-get contract-owner)
+)
+
+;; @notice Returns a summary snapshot of key dataset fields.
+;; @param data-id The dataset ID to summarise.
+;; @return Some(tuple) with owner, price, access-level, and is-active flag.
+(define-read-only (get-dataset-summary (data-id uint))
+    (match (map-get? datasets { data-id: data-id })
+        dataset (some {
+            owner: (get owner dataset),
+            price: (get price dataset),
+            access-level: (get access-level dataset),
+            is-active: (get is-active dataset),
+            created-at: (get created-at dataset)
+        })
         none
     )
 )
