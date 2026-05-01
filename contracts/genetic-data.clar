@@ -461,3 +461,23 @@
         none
     )
 )
+
+;; @notice Returns the block height at which a dataset was registered.
+;; @param data-id The dataset ID to look up.
+;; @return Some(uint) if dataset exists, none otherwise.
+(define-read-only (get-dataset-created-at (data-id uint))
+    (match (map-get? datasets { data-id: data-id })
+        dataset (some (get created-at dataset))
+        none
+    )
+)
+
+;; @notice Returns the storage URL of a dataset.
+;; @param data-id The dataset ID to look up.
+;; @return Some(string-utf8) if dataset exists, none otherwise.
+(define-read-only (get-dataset-storage-url (data-id uint))
+    (match (map-get? datasets { data-id: data-id })
+        dataset (some (get storage-url dataset))
+        none
+    )
+)
