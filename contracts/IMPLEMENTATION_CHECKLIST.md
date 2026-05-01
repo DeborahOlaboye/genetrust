@@ -274,3 +274,57 @@ Use this for every function that was modified:
 | TBD | 8 | Pending | Deployment & rollout |
 | TBD | 9 | Pending | Documentation finalization |
 | TBD | 10 | Pending | Team training |
+
+## Phase 6: Input Validation Hardening (fix/smart-contract-input-validation)
+
+### genetic-data.clar
+- [x] Add ERR-PRICE-TOO-HIGH (u402) and ERR-ZERO-HASH (u408) error constants
+- [x] Add MAX-PRICE and MIN-URL-LENGTH bounds constants
+- [x] Add total-datasets counter var
+- [x] Enforce max price cap in register-dataset
+- [x] Enforce minimum URL length (5 chars) in register-dataset
+- [x] Reject all-zero metadata hash in register-dataset
+- [x] Cap grant-access level at dataset's own access level
+- [x] Block granting access to contract address itself
+- [x] Add print events to register-dataset, grant-access, revoke-access, deactivate-dataset
+- [x] Add update-dataset-price function
+- [x] Add update-storage-url function
+- [x] Add update-description function
+- [x] Add reactivate-dataset function
+- [x] Add transfer-dataset-ownership function
+- [x] Add extend-access function
+- [x] Add update-access-level function
+- [x] Add get-dataset-owner, get-total-datasets, is-dataset-active, get-dataset-price read helpers
+- [x] Add get-access-expiry, get-user-access-level, get-access-granted-by read helpers
+- [x] Add get-dataset-created-at, get-dataset-storage-url, get-dataset-description, get-dataset-metadata-hash
+
+### exchange.clar
+- [x] Add ERR-PRICE-TOO-HIGH (u402) error constant
+- [x] Add MAX-PRICE constant and total-purchases-completed counter
+- [x] Enforce MAX-PRICE cap in create-listing and update-listing-price
+- [x] Increment total-purchases-completed on purchase
+- [x] Add update-listing-description function
+- [x] Add update-listing-access-level function
+- [x] Add get-total-purchases-completed read helper
+- [x] Add get-listing-access-level, get-listing-dataset-id read helpers
+- [x] Add get-listing-created-at, get-listing-description read helpers
+- [x] Add get-purchase-paid-amount, get-purchase-timestamp read helpers
+
+### attestations.clar
+- [x] Add ERR-ALREADY-VERIFIED (u446) and ERR-DUPLICATE-VERIFIER-ADDRESS (u447)
+- [x] Add total-verifiers, total-proofs, total-verified-proofs counters
+- [x] Add print events to register-verifier, deactivate-verifier, register-proof, verify-proof
+- [x] Guard against re-verifying an already-verified proof
+- [x] Add get-total-proofs, get-total-verified-proofs, get-total-verifiers read helpers
+- [x] Add is-active-verifier, get-verifier-address read helpers
+- [x] Add get-proof-type, get-proof-creator, get-next-verifier-id read helpers
+- [x] Add get-proof-hash, get-verifier-name, get-verifier-added-at read helpers
+- [x] Add get-proof-created-at, get-proof-metadata read helpers
+
+### data-governance.clar
+- [x] Fix structural inconsistency in restrict-processing (ok true inside let)
+- [x] Add print events to set-consent, renew-consent, update-jurisdiction
+- [x] Add print events to request-erasure, request-portability, restrict-processing
+- [x] Add get-jurisdiction-name read helper
+- [x] Add get-consent-flags read helper
+- [x] Add is-consent-expired, get-consent-updated-at, get-consent-jurisdiction read helpers
