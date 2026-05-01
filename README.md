@@ -56,8 +56,15 @@ Marketplace for listing and purchasing access to genetic datasets with direct ST
 | `create-listing` | public | List a dataset for sale |
 | `cancel-listing` | public | Cancel an active listing |
 | `purchase-listing` | public | Purchase access — transfers STX to owner |
-| `get-listing` | read-only | Fetch listing details |
+| `update-listing-price` | public | Update price of an active listing |
+| `update-listing-description` | public | Update description of an active listing |
+| `update-listing-access-level` | public | Update access level of an active listing |
+| `update-listing-data-id` | public | Re-point a listing to a different dataset |
+| `set-contract-owner` | public | Transfer exchange contract ownership |
+| `get-listing` | read-only | Fetch full listing details |
+| `get-listing-summary` | read-only | Fetch key listing fields as a tuple |
 | `get-purchase` | read-only | Fetch a purchase record |
+| `get-total-purchases-completed` | read-only | Total all-time purchases |
 | `get-next-listing-id` | read-only | Get the next available listing ID |
 
 ### `data-governance` — data-governance.clar
