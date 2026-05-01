@@ -407,6 +407,24 @@
     )
 )
 
+;; @notice Returns a complete summary of consent and GDPR state for a dataset.
+;; @param data-id The dataset ID to summarise.
+;; @return Some(tuple) with all consent flags, jurisdiction, validity, and GDPR flags.
+(define-read-only (get-consent-summary (data-id uint))
+    (match (map-get? consent-records { data-id: data-id })
+        consent (some {
+            owner: (get owner consent),
+            research: (get research-consent consent),
+            commercial: (get commercial-consent consent),
+            clinical: (get clinical-consent consent),
+            jurisdiction: (get jurisdiction consent),
+            expires-at: (get expires-at consent),
+            is-valid: (< stacks-block-height (get expires-at consent))
+        })
+        none
+    )
+)
+
 ;; @notice Returns true if right-to-be-forgotten has been invoked for a dataset.
 ;; @dev Alias for is-erasure-requested with a more explicit name for contract consumers.
 ;; @param data-id The dataset ID to check.
