@@ -510,3 +510,13 @@
 (define-read-only (has-any-access (data-id uint) (user principal))
     (ok (is-some (map-get? access-rights { data-id: data-id, user: user })))
 )
+
+;; @notice Returns the access level configured for a dataset (not a user's grant — the dataset's own level).
+;; @param data-id The dataset ID to look up.
+;; @return Some(uint) if dataset exists, none otherwise.
+(define-read-only (get-dataset-access-level (data-id uint))
+    (match (map-get? datasets { data-id: data-id })
+        dataset (some (get access-level dataset))
+        none
+    )
+)
