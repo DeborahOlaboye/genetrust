@@ -428,6 +428,26 @@
     )
 )
 
+;; Update the data-id referenced by a listing (owner only, active listings only)
+;; @param listing-id: ID of the listing
+;; @param new-data-id: New dataset ID to reference (must be > 0)
+;; @returns: ok true on success, error otherwise
+(define-public (update-listing-data-id (listing-id uint) (new-data-id uint))
+    (let ((listing (unwrap! (map-get? listings { listing-id: listing-id }) ERR-LISTING-NOT-FOUND)))
+        (asserts! (> listing-id u0) ERR-INVALID-INPUT)
+        (asserts! (> new-data-id u0) ERR-INVALID-INPUT)
+        (asserts! (is-eq tx-sender (get owner listing)) ERR-NOT-OWNER)
+        (asserts! (get active listing) ERR-LISTING-INACTIVE)
+        (map-set listings { listing-id: listing-id }
+            (merge listing { data-id: new-data-id })
+        )
+        (print { event: "listing-data-id-updated", listing-id: listing-id, owner: tx-sender,
+                 old-data-id: (get data-id listing), new-data-id: new-data-id,
+                 block: stacks-block-height })
+        (ok true)
+    )
+)
+
 ;; @notice Returns true if the listing exists and is currently active. Alias for is-listing-active.
 ;; @param listing-id The listing ID to check.
 ;; @return ok(bool) - true if active, false if not found or cancelled.
