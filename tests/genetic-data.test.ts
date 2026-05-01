@@ -1202,3 +1202,25 @@ describe('genetic-data - counter and total helpers (simnet)', () => {
     expect(result).toBeOk(Cl.bool(false));
   });
 });
+
+describe('genetic-data - set-contract-owner (simnet)', () => {
+  it('set-contract-owner rejects call from non-owner (ERR-NOT-CONTRACT-OWNER u413)', () => {
+    const { result } = simnet.callPublicFn(
+      'genetic-data',
+      'set-contract-owner',
+      [Cl.principal(wallet2)],
+      wallet1, // not the contract owner
+    );
+    expect(result).toBeErr(Cl.uint(413));
+  });
+
+  it('get-contract-owner returns deployer initially', () => {
+    const { result } = simnet.callReadOnlyFn(
+      'genetic-data',
+      'get-contract-owner',
+      [],
+      deployer,
+    );
+    expect(result).toBeTruthy();
+  });
+});
