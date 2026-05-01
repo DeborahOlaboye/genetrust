@@ -366,6 +366,26 @@
     (ok (var-get total-purchases-completed))
 )
 
+;; @notice Returns the block height at which a listing was created.
+;; @param listing-id The listing ID to look up.
+;; @return Some(uint) if listing exists, none otherwise.
+(define-read-only (get-listing-created-at (listing-id uint))
+    (match (map-get? listings { listing-id: listing-id })
+        listing (some (get created-at listing))
+        none
+    )
+)
+
+;; @notice Returns the description of a listing.
+;; @param listing-id The listing ID to look up.
+;; @return Some(string-utf8) if listing exists, none otherwise.
+(define-read-only (get-listing-description (listing-id uint))
+    (match (map-get? listings { listing-id: listing-id })
+        listing (some (get description listing))
+        none
+    )
+)
+
 ;; @notice Returns the access level offered by a listing.
 ;; @param listing-id The listing to check.
 ;; @return Some(uint) if listing exists, none otherwise.
