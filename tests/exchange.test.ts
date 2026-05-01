@@ -212,3 +212,72 @@ describe('exchange contract - access level pricing', () => {
     expect(result).toBeErr(Cl.uint(401));
   });
 });
+
+describe('exchange - price cap and new functions (simnet)', () => {
+  it('create-listing rejects price of zero (ERR-INVALID-AMOUNT u401)', () => {
+    const { result } = simnet.callPublicFn(
+      'exchange',
+      'create-listing',
+      [
+        Cl.uint(1),    // data-id
+        Cl.uint(0),    // price = 0 — should fail
+        Cl.uint(1),    // access-level
+        Cl.stringUtf8('Valid listing description here'),
+      ],
+      deployer,
+    );
+    expect(result).toBeErr(Cl.uint(401));
+  });
+
+  it('create-listing rejects description shorter than 10 chars (ERR-INVALID-STRING-LENGTH u407)', () => {
+    const { result } = simnet.callPublicFn(
+      'exchange',
+      'create-listing',
+      [
+        Cl.uint(1),
+        Cl.uint(1000000),
+        Cl.uint(1),
+        Cl.stringUtf8('short'),  // too short
+      ],
+      deployer,
+    );
+    expect(result).toBeErr(Cl.uint(407));
+  });
+
+  it('create-listing rejects access level 0 (ERR-INVALID-ACCESS-LEVEL u406)', () => {
+    const { result } = simnet.callPublicFn(
+      'exchange',
+      'create-listing',
+      [
+        Cl.uint(1),
+        Cl.uint(1000000),
+        Cl.uint(0),   // invalid level
+        Cl.stringUtf8('Valid listing description here'),
+      ],
+      deployer,
+    );
+    expect(result).toBeErr(Cl.uint(406));
+  });
+
+  it('update-listing-price rejects zero price (ERR-INVALID-AMOUNT u401)', () => {
+    // First create a listing
+    simnet.callPublicFn(
+      'exchange',
+      'create-listing',
+      [
+        Cl.uint(1),
+        Cl.uint(1000000),
+        Cl.uint(1),
+        Cl.stringUtf8('Valid listing description here'),
+      ],
+      deployer,
+    );
+    const { result } = simnet.callPublicFn(
+      'exchange',
+      'update-listing-price',
+      [Cl.uint(1), Cl.uint(0)], // zero price
+      deployer,
+    );
+    expect(result).toBeErr(Cl.uint(401));
+  });
+});
