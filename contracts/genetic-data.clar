@@ -520,3 +520,19 @@
         none
     )
 )
+
+;; @notice Returns a summary snapshot of key dataset fields.
+;; @param data-id The dataset ID to summarise.
+;; @return Some(tuple) with owner, price, access-level, and is-active flag.
+(define-read-only (get-dataset-summary (data-id uint))
+    (match (map-get? datasets { data-id: data-id })
+        dataset (some {
+            owner: (get owner dataset),
+            price: (get price dataset),
+            access-level: (get access-level dataset),
+            is-active: (get is-active dataset),
+            created-at: (get created-at dataset)
+        })
+        none
+    )
+)
