@@ -428,3 +428,27 @@ npm test error-410
 - Maintain coverage above 95%
 - Review coverage reports weekly
 - Add tests for any new error codes
+
+## Phase 6 Test Cases (Input Validation Hardening)
+
+Run phase 6 specific tests with:
+```bash
+npm test -- --reporter=verbose genetic-data.unit
+npm test -- --reporter=verbose exchange.unit
+npm test -- --reporter=verbose attestations.unit
+npm test -- --reporter=verbose data-governance
+npm test -- --reporter=verbose access-control-edge-cases
+```
+
+### Critical Test Scenarios to Verify
+
+| Scenario | Expected Error | Contract |
+|---|---|---|
+| `price > MAX-PRICE` | `u402 ERR-PRICE-TOO-HIGH` | genetic-data, exchange |
+| `metadata-hash == 0x00...00` | `u408 ERR-ZERO-HASH` | genetic-data |
+| `storage-url.length < 5` | `u407 ERR-INVALID-STRING-LENGTH` | genetic-data |
+| `grant-access level > dataset level` | `u621 ERR-INSUFFICIENT-ACCESS-LEVEL` | genetic-data |
+| `grant-access to contract address` | `u400 ERR-INVALID-INPUT` | genetic-data |
+| `verify-proof on already-verified` | `u446 ERR-ALREADY-VERIFIED` | attestations |
+| `transfer-dataset-ownership to self` | `u400 ERR-INVALID-INPUT` | genetic-data |
+| `reactivate an active dataset` | `u440 ERR-ALREADY-EXISTS` | genetic-data |
