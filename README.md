@@ -28,12 +28,24 @@ Registers and manages genetic datasets on-chain with tiered access control.
 | `register-dataset` | public | Register a new genetic dataset |
 | `grant-access` | public | Grant a user access to a dataset |
 | `revoke-access` | public | Revoke a user's access |
-| `deactivate-dataset` | public | Deactivate a dataset |
-| `get-dataset` | read-only | Fetch dataset details |
+| `deactivate-dataset` | public | Deactivate a dataset (soft delete) |
+| `reactivate-dataset` | public | Re-activate a previously deactivated dataset |
+| `update-dataset-price` | public | Update price of an active dataset |
+| `update-storage-url` | public | Update the storage URL of a dataset |
+| `update-description` | public | Update the description of a dataset |
+| `update-access-level` | public | Change an existing access grant's level |
+| `extend-access` | public | Extend expiry of an existing access grant |
+| `transfer-dataset-ownership` | public | Transfer dataset to a new owner |
+| `set-contract-owner` | public | Transfer contract ownership |
+| `get-dataset` | read-only | Fetch full dataset details |
+| `get-dataset-summary` | read-only | Fetch key dataset fields as a tuple |
 | `has-valid-access` | read-only | Check if a user's access is still valid |
+| `has-any-access` | read-only | Check if any access record exists (expired or not) |
+| `get-total-datasets` | read-only | Get total datasets ever registered |
 | `get-next-data-id` | read-only | Get the next available dataset ID |
 
-**Access Levels:** `1` = Basic · `2` = Detailed · `3` = Full
+**Access Levels:** `1` = Basic · `2` = Detailed · `3` = Full  
+**Validation:** MAX-PRICE = 1,000,000,000,000,000 µSTX · MIN-URL-LENGTH = 5 chars · Zero-hash rejected
 
 ### `exchange` — exchange.clar
 
