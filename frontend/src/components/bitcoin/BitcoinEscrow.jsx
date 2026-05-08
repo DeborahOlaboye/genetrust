@@ -8,6 +8,7 @@ import {
   isBtcTxSpendable,
   fetchCurrentBurnHeight,
 } from '../../services/bitcoinService';
+import { SectionErrorBoundary } from '../common';
 
 const STEPS = ['Create Escrow', 'Send Bitcoin', 'Confirm Payment', 'Done'];
 
@@ -107,6 +108,7 @@ export default function BitcoinEscrow({ listingId, accessLevel, userAddress, onC
   }
 
   return (
+    <SectionErrorBoundary sectionName="Bitcoin Escrow">
     <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
       {/* Step indicator */}
       <div className="flex border-b border-gray-100" role="list" aria-label="Progress steps">
@@ -260,5 +262,6 @@ export default function BitcoinEscrow({ listingId, accessLevel, userAddress, onC
         )}
       </div>
     </div>
+    </SectionErrorBoundary>
   );
 }
