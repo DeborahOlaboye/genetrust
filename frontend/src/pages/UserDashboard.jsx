@@ -7,6 +7,12 @@ import Navigation from '../components/landing/Navigation.jsx';
 import { ConsentManagementPanel } from '../components/consent/ConsentManagementPanel.jsx';
 import { DatasetUploadWizard } from '../components/upload/DatasetUploadWizard.jsx';
 import { WalletGate } from '../components/upload/WalletGate.jsx';
+import {
+  DashboardStatsSkeleton,
+  DatasetTableSkeleton,
+  ListingsTableSkeleton,
+  SectionErrorBoundary,
+} from '../components/common';
 
 const DESC_MIN = 10;
 const DESC_MAX = 200;
@@ -302,12 +308,18 @@ export default function UserDashboard() {
         )}
 
         {/* Stats */}
-        <section aria-labelledby="dashboard-stats" className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <section aria-labelledby="dashboard-stats">
           <h2 id="dashboard-stats" className="sr-only">Dashboard Statistics</h2>
-          <StatCard title="Datasets" value={isFetching ? '—' : datasets.length} />
-          <StatCard title="Listings" value={isFetching ? '—' : myListings.length} />
-          <StatCard title="Mode" value={status?.mode || (APP_CONFIG.USE_REAL_SDK ? 'Real' : 'Mock')} accent="amber" />
-          <StatCard title="Network" value={APP_CONFIG.NETWORK} />
+          {isFetching ? (
+            <DashboardStatsSkeleton count={4} />
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <StatCard title="Datasets" value={datasets.length} />
+              <StatCard title="Listings" value={myListings.length} />
+              <StatCard title="Mode" value={status?.mode || (APP_CONFIG.USE_REAL_SDK ? 'Real' : 'Mock')} accent="amber" />
+              <StatCard title="Network" value={APP_CONFIG.NETWORK} />
+            </div>
+          )}
         </section>
 
         {/* Dataset Upload Wizard */}
