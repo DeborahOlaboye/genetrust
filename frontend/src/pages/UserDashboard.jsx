@@ -408,6 +408,7 @@ export default function UserDashboard() {
           </SectionCard>
 
           <SectionCard title="Create Listing">
+            <FormSubmitOverlay isLoading={loading} message="Creating listing…">
             <div className="space-y-4">
               {datasets.length === 0 ? (
                 <div className="text-center py-4 text-[#9AA0B2]">
@@ -474,6 +475,7 @@ export default function UserDashboard() {
                 </>
               )}
             </div>
+            </FormSubmitOverlay>
           </SectionCard>
         </div>
 
