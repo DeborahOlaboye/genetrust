@@ -15,3 +15,4 @@ export { default as ListingsTableSkeleton } from './ListingsTableSkeleton';
 export { default as MarketplaceListingSkeleton } from './MarketplaceListingSkeleton';
 export { default as FormSubmitOverlay } from './FormSubmitOverlay';
 export { default as ErrorRetryButton } from './ErrorRetryButton';
+export { default as WalletErrorBoundary } from './WalletErrorBoundary';

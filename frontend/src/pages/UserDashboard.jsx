@@ -13,6 +13,7 @@ import {
   ListingsTableSkeleton,
   SectionErrorBoundary,
   FormSubmitOverlay,
+  WalletErrorBoundary,
 } from '../components/common';
 
 const DESC_MIN = 10;
@@ -287,6 +288,7 @@ export default function UserDashboard() {
 
         {/* Wallet Connection Status */}
         {APP_CONFIG.USE_REAL_SDK && !walletConnected && (
+          <WalletErrorBoundary>
           <div className="p-6 rounded-xl bg-[#8B5CF6]/10 border border-[#8B5CF6]/20">
             <h3 className="text-lg font-semibold mb-2">Connect Your Wallet</h3>
             <p className="text-[#9AA0B2] mb-4">To interact with the blockchain, please connect your Stacks wallet.</p>
@@ -299,6 +301,7 @@ export default function UserDashboard() {
               {loading ? 'Connecting...' : 'Connect Wallet'}
             </button>
           </div>
+          </WalletErrorBoundary>
         )}
 
         {/* Connection Info */}
