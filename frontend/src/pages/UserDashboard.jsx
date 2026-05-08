@@ -12,6 +12,7 @@ import {
   DatasetTableSkeleton,
   ListingsTableSkeleton,
   SectionErrorBoundary,
+  FormSubmitOverlay,
 } from '../components/common';
 
 const DESC_MIN = 10;
@@ -366,6 +367,7 @@ export default function UserDashboard() {
         {/* Create / Manage */}
         <div className="grid md:grid-cols-2 gap-6">
           <SectionCard title="Quick Create Dataset">
+            <FormSubmitOverlay isLoading={loading} message="Creating dataset…">
             <div className="space-y-4">
               <div className="grid md:grid-cols-3 gap-3">
                 <div className="md:col-span-3">
@@ -402,6 +404,7 @@ export default function UserDashboard() {
                 {loading ? 'Processing...' : 'Create Dataset'}
               </button>
             </div>
+            </FormSubmitOverlay>
           </SectionCard>
 
           <SectionCard title="Create Listing">
