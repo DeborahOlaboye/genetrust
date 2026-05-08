@@ -16,3 +16,4 @@ export { default as MarketplaceListingSkeleton } from './MarketplaceListingSkele
 export { default as FormSubmitOverlay } from './FormSubmitOverlay';
 export { default as ErrorRetryButton } from './ErrorRetryButton';
 export { default as WalletErrorBoundary } from './WalletErrorBoundary';
+export { default as PageLoadingGate } from './PageLoadingGate';
