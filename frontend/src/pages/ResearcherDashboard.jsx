@@ -92,6 +92,7 @@ export default function ResearcherDashboard() {
         )}
 
         {/* Controls */}
+        <SectionErrorBoundary sectionName="Marketplace Filters">
         <SectionCard title="Filters" border="#8B5CF6" aria-label="Marketplace filters">
           <div className="grid md:grid-cols-3 gap-4">
             <div>
@@ -105,6 +106,7 @@ export default function ResearcherDashboard() {
             </div>
           </div>
         </SectionCard>
+        </SectionErrorBoundary>
 
         {/* Listings */}
         <SectionErrorBoundary sectionName="Marketplace Listings">
