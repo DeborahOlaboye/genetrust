@@ -323,6 +323,7 @@ export default function UserDashboard() {
         </section>
 
         {/* Dataset Upload Wizard */}
+        <SectionErrorBoundary sectionName="Dataset Upload Wizard">
         <section aria-labelledby="upload-wizard-heading">
           <div className="flex items-center justify-between mb-3">
             <h2 id="upload-wizard-heading" className="text-white font-semibold text-base">
@@ -360,6 +361,7 @@ export default function UserDashboard() {
             </WalletGate>
           )}
         </section>
+        </SectionErrorBoundary>
 
         {/* Create / Manage */}
         <div className="grid md:grid-cols-2 gap-6">
