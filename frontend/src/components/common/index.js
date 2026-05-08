@@ -2,6 +2,9 @@
 // Usage:  import { Button, LoadingSpinner } from '../components/common';
 export { default as Button } from './Button';
 export { default as ErrorBoundary } from './ErrorBoundary';
+export { default as PageErrorBoundary } from './PageErrorBoundary';
+export { default as SectionErrorBoundary } from './SectionErrorBoundary';
+export { default as InlineErrorBoundary } from './InlineErrorBoundary';
 export { default as ErrorDisplay } from './ErrorDisplay';
 export { LazyImage } from './LazyImage';
 export { default as LoadingSpinner } from './LoadingSpinner';
