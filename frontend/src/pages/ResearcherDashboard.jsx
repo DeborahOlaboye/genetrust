@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import toast, { Toaster } from 'react-hot-toast';
 import { contractService } from '../services/contractService.js';
 import Navigation from '../components/landing/Navigation.jsx';
+import { MarketplaceListingSkeleton, SectionErrorBoundary } from '../components/common';
 
 const SectionCard = ({ title, children, border = '#34D399' }) => (
   <div className="rounded-2xl p-6 bg-[#0B0B1D]/80 backdrop-blur-xl shadow-2xl" style={{ border: `1px solid ${border}33` }}>
@@ -106,17 +107,10 @@ export default function ResearcherDashboard() {
         </SectionCard>
 
         {/* Listings */}
+        <SectionErrorBoundary sectionName="Marketplace Listings">
         <SectionCard title={`Available Listings${!isFetching ? ` (${listings.length})` : ''}`} border="#34D399">
           <div className="divide-y divide-[#34D399]/10" role="list">
-            {isFetching && Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="py-4 flex items-center justify-between animate-pulse">
-                <div className="space-y-2">
-                  <div className="h-4 w-40 bg-[#8B5CF6]/20 rounded" />
-                  <div className="h-3 w-28 bg-[#8B5CF6]/10 rounded" />
-                </div>
-                <div className="h-9 w-24 bg-[#8B5CF6]/20 rounded-lg" />
-              </div>
-            ))}
+            {isFetching && <MarketplaceListingSkeleton count={3} />}
             {!isFetching && listings.length === 0 && !initError && (
               <div className="py-10 text-center space-y-2">
                 <svg className="mx-auto h-10 w-10 text-[#8B5CF6]/40" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
@@ -160,6 +154,7 @@ export default function ResearcherDashboard() {
             ))}
           </div>
         </SectionCard>
+        </SectionErrorBoundary>
       </main>
 
       {/* Screen reader live region for purchase status */}
