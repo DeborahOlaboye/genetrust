@@ -5,6 +5,7 @@ import { WagmiProvider } from 'wagmi';
 import { config } from '../config/walletConfig';
 import { createReownClient } from '../utils/reownClientStub';
 import { useEffect, useState } from 'react';
+import { SectionErrorBoundary } from '../components/common';
 
 // Create a client for React Query
 const queryClient = new QueryClient();
@@ -34,11 +35,13 @@ export function WalletProvider({ children }) {
   }
 
   return (
-    <WagmiProvider config={config}>
-      <QueryClientProvider client={queryClient}>
-        {children}
-      </QueryClientProvider>
-    </WagmiProvider>
+    <SectionErrorBoundary sectionName="Wallet Provider">
+      <WagmiProvider config={config}>
+        <QueryClientProvider client={queryClient}>
+          {children}
+        </QueryClientProvider>
+      </WagmiProvider>
+    </SectionErrorBoundary>
   );
 }
 

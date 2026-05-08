@@ -7,6 +7,14 @@ import Navigation from '../components/landing/Navigation.jsx';
 import { ConsentManagementPanel } from '../components/consent/ConsentManagementPanel.jsx';
 import { DatasetUploadWizard } from '../components/upload/DatasetUploadWizard.jsx';
 import { WalletGate } from '../components/upload/WalletGate.jsx';
+import {
+  DashboardStatsSkeleton,
+  DatasetTableSkeleton,
+  ListingsTableSkeleton,
+  SectionErrorBoundary,
+  FormSubmitOverlay,
+  WalletErrorBoundary,
+} from '../components/common';
 
 const DESC_MIN = 10;
 const DESC_MAX = 200;
@@ -280,6 +288,7 @@ export default function UserDashboard() {
 
         {/* Wallet Connection Status */}
         {APP_CONFIG.USE_REAL_SDK && !walletConnected && (
+          <WalletErrorBoundary>
           <div className="p-6 rounded-xl bg-[#8B5CF6]/10 border border-[#8B5CF6]/20">
             <h3 className="text-lg font-semibold mb-2">Connect Your Wallet</h3>
             <p className="text-[#9AA0B2] mb-4">To interact with the blockchain, please connect your Stacks wallet.</p>
@@ -292,6 +301,7 @@ export default function UserDashboard() {
               {loading ? 'Connecting...' : 'Connect Wallet'}
             </button>
           </div>
+          </WalletErrorBoundary>
         )}
 
         {/* Connection Info */}
@@ -302,15 +312,22 @@ export default function UserDashboard() {
         )}
 
         {/* Stats */}
-        <section aria-labelledby="dashboard-stats" className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <section aria-labelledby="dashboard-stats">
           <h2 id="dashboard-stats" className="sr-only">Dashboard Statistics</h2>
-          <StatCard title="Datasets" value={isFetching ? '—' : datasets.length} />
-          <StatCard title="Listings" value={isFetching ? '—' : myListings.length} />
-          <StatCard title="Mode" value={status?.mode || (APP_CONFIG.USE_REAL_SDK ? 'Real' : 'Mock')} accent="amber" />
-          <StatCard title="Network" value={APP_CONFIG.NETWORK} />
+          {isFetching ? (
+            <DashboardStatsSkeleton count={4} />
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <StatCard title="Datasets" value={datasets.length} />
+              <StatCard title="Listings" value={myListings.length} />
+              <StatCard title="Mode" value={status?.mode || (APP_CONFIG.USE_REAL_SDK ? 'Real' : 'Mock')} accent="amber" />
+              <StatCard title="Network" value={APP_CONFIG.NETWORK} />
+            </div>
+          )}
         </section>
 
         {/* Dataset Upload Wizard */}
+        <SectionErrorBoundary sectionName="Dataset Upload Wizard">
         <section aria-labelledby="upload-wizard-heading">
           <div className="flex items-center justify-between mb-3">
             <h2 id="upload-wizard-heading" className="text-white font-semibold text-base">
@@ -348,10 +365,12 @@ export default function UserDashboard() {
             </WalletGate>
           )}
         </section>
+        </SectionErrorBoundary>
 
         {/* Create / Manage */}
         <div className="grid md:grid-cols-2 gap-6">
           <SectionCard title="Quick Create Dataset">
+            <FormSubmitOverlay isLoading={loading} message="Creating dataset…">
             <div className="space-y-4">
               <div className="grid md:grid-cols-3 gap-3">
                 <div className="md:col-span-3">
@@ -388,9 +407,11 @@ export default function UserDashboard() {
                 {loading ? 'Processing...' : 'Create Dataset'}
               </button>
             </div>
+            </FormSubmitOverlay>
           </SectionCard>
 
           <SectionCard title="Create Listing">
+            <FormSubmitOverlay isLoading={loading} message="Creating listing…">
             <div className="space-y-4">
               {datasets.length === 0 ? (
                 <div className="text-center py-4 text-[#9AA0B2]">
@@ -457,12 +478,17 @@ export default function UserDashboard() {
                 </>
               )}
             </div>
+            </FormSubmitOverlay>
           </SectionCard>
         </div>
 
         {/* Tables */}
         <div className="grid md:grid-cols-2 gap-6">
+          <SectionErrorBoundary sectionName="Your Datasets">
           <SectionCard title="Your Datasets">
+            {isFetching ? (
+              <DatasetTableSkeleton rows={3} />
+            ) : (
             <div className="divide-y divide-[#8B5CF6]/10" role="list">
               {datasets.length === 0 && <div className="text-[#9AA0B2]">No datasets yet.</div>}
               {datasets.map(ds => (
@@ -507,9 +533,15 @@ export default function UserDashboard() {
                 </div>
               ))}
             </div>
+            )}
           </SectionCard>
+          </SectionErrorBoundary>
 
+          <SectionErrorBoundary sectionName="Your Listings">
           <SectionCard title="Your Listings" border="#F59E0B">
+            {isFetching ? (
+              <ListingsTableSkeleton rows={3} />
+            ) : (
             <div className="divide-y divide-[#F59E0B]/10" role="list">
               {myListings.length === 0 && <div className="text-[#9AA0B2]">No listings yet.</div>}
               {myListings.map(l => (
@@ -524,7 +556,9 @@ export default function UserDashboard() {
                 </div>
               ))}
             </div>
+            )}
           </SectionCard>
+          </SectionErrorBoundary>
         </div>
       </main>
 

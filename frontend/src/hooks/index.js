@@ -4,6 +4,8 @@
 // --- Error & Loading ---
 export { default as useErrorHandler } from './useErrorHandler';
 export { default as useLoadingState } from './useLoadingState';
+export { default as useAsyncError } from './useAsyncError';
+export { default as useErrorBoundaryReset } from './useErrorBoundaryReset';
 
 // --- Data & Caching ---
 export { useOptimisticUpdate } from './useOptimisticUpdate';

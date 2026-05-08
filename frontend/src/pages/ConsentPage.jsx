@@ -10,6 +10,7 @@ import { contractService } from '../services/contractService.js';
 import { walletService } from '../services/walletService.js';
 import { APP_CONFIG } from '../config/app.js';
 import toast, { Toaster } from 'react-hot-toast';
+import { SectionErrorBoundary, SkeletonLoader } from '../components/common';
 
 export default function ConsentPage() {
   const [datasets, setDatasets] = useState([]);
@@ -81,7 +82,9 @@ export default function ConsentPage() {
         )}
 
         {loading && (
-          <p style={{ color: '#6B7280', textAlign: 'center' }}>Loading datasets…</p>
+          <div style={{ marginBottom: '1.25rem' }}>
+            <SkeletonLoader height="2.5rem" rounded="md" label="Loading datasets…" className="bg-white/5" />
+          </div>
         )}
 
         {!loading && datasets.length === 0 && (
@@ -103,12 +106,14 @@ export default function ConsentPage() {
         )}
 
         {selectedId !== null && (
-          <ConsentManagementPanel
-            key={selectedId}
-            dataId={selectedId}
-            contractService={contractService}
-            onSaved={() => toast.success('Consent policy saved!')}
-          />
+          <SectionErrorBoundary sectionName="Consent Management Panel">
+            <ConsentManagementPanel
+              key={selectedId}
+              dataId={selectedId}
+              contractService={contractService}
+              onSaved={() => toast.success('Consent policy saved!')}
+            />
+          </SectionErrorBoundary>
         )}
       </main>
     </div>

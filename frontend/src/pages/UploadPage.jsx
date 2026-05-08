@@ -12,6 +12,7 @@ import { walletService } from '../services/walletService.js';
 import { APP_CONFIG } from '../config/app.js';
 import toast, { Toaster } from 'react-hot-toast';
 import { useDatasetList } from '../hooks/useDatasetList.js';
+import { SectionErrorBoundary } from '../components/common';
 
 export default function UploadPage() {
   const [walletConnected, setWalletConnected] = useState(false);
@@ -64,21 +65,23 @@ export default function UploadPage() {
         </div>
 
         {/* Wizard or wallet gate */}
-        <WalletGate
-          isConnected={walletConnected || !APP_CONFIG.USE_REAL_SDK}
-          onConnect={handleConnect}
-          connecting={connecting}
-        >
-          <DatasetUploadWizard
-            contractService={contractService}
-            walletService={walletService}
-            onComplete={(txId) => {
-              setLastTxId(txId);
-              toast.success(`Dataset registered! TX: ${String(txId).slice(0, 12)}…`);
-              refreshDatasets();
-            }}
-          />
-        </WalletGate>
+        <SectionErrorBoundary sectionName="Dataset Upload Wizard">
+          <WalletGate
+            isConnected={walletConnected || !APP_CONFIG.USE_REAL_SDK}
+            onConnect={handleConnect}
+            connecting={connecting}
+          >
+            <DatasetUploadWizard
+              contractService={contractService}
+              walletService={walletService}
+              onComplete={(txId) => {
+                setLastTxId(txId);
+                toast.success(`Dataset registered! TX: ${String(txId).slice(0, 12)}…`);
+                refreshDatasets();
+              }}
+            />
+          </WalletGate>
+        </SectionErrorBoundary>
 
         {/* Summary strip */}
         {(lastTxId || datasets.length > 0) && (

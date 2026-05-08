@@ -67,6 +67,14 @@ const ResearcherDashboard = lazyWithRetry(() =>
 // Initialize mobile optimizations
 disableHoverOnTouch();
 
+// Surface unhandled promise rejections to the console; in production these
+// are also captured by the analytics service if one is wired up.
+window.addEventListener('unhandledrejection', (event) => {
+  console.error('[GeneTrust] Unhandled promise rejection:', event.reason);
+  // Prevent the browser default "Uncaught (in promise)" noise in DevTools
+  event.preventDefault();
+});
+
 // Optimized loading component with better performance
 const PageLoader = React.memo(() => (
   <div 
