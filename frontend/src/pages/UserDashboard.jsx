@@ -474,6 +474,7 @@ export default function UserDashboard() {
 
         {/* Tables */}
         <div className="grid md:grid-cols-2 gap-6">
+          <SectionErrorBoundary sectionName="Your Datasets">
           <SectionCard title="Your Datasets">
             {isFetching ? (
               <DatasetTableSkeleton rows={3} />
@@ -524,7 +525,9 @@ export default function UserDashboard() {
             </div>
             )}
           </SectionCard>
+          </SectionErrorBoundary>
 
+          <SectionErrorBoundary sectionName="Your Listings">
           <SectionCard title="Your Listings" border="#F59E0B">
             {isFetching ? (
               <ListingsTableSkeleton rows={3} />
@@ -545,6 +548,7 @@ export default function UserDashboard() {
             </div>
             )}
           </SectionCard>
+          </SectionErrorBoundary>
         </div>
       </main>
 
