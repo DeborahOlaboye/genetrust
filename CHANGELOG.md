@@ -26,7 +26,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Comprehensive read-only helper functions across all contracts
   - Full test coverage for all new validation rules and functions
 
-- Rate limiting middleware system (Issue Two)
+- Rate limiter hardening and burst control (Issue Three)
+  - `BurstLimiter` class: enforces short-window burst cap (e.g., 10 req/5s) on top of per-minute sliding window
+  - `TokenBucketLimiter` class: smooth continuous rate limiting with configurable refill rate
+  - `RateLimitError` with `retryAfterMs` field for caller-aware retry decisions
+  - `getResetTime(key)` — ms until oldest window entry expires
+  - `getRateLimitHeaders(key)` — `X-RateLimit-*` compatible header object
+  - `peek(key)` — token check without consuming
+  - `isNearLimit(key, threshold)` — warn when quota is nearly exhausted
+  - `withRateLimit(key, fn)` / `waitForSlot(key, ms)` — async wrappers with queue support
+  - Deterministic cleanup every N calls (replaces stochastic `Math.random() < 0.01`)
+  - New pre-configured instances: `contractBurstLimiter`, `walletSignLimiter`
+  - `CircuitBreaker` class with CLOSED/OPEN/HALF_OPEN state machine, `onStateChange` callback
+  - Pre-configured circuit breakers: `contractCircuit`, `ipfsCircuit`, `apiCircuit`
+  - Full-jitter backoff in `apiService.fetchWithRetry`, `useTransactionRetry`, `useOptimizedQuery`
+  - `maxDelay` cap in `useTransactionRetry` (no unbounded backoff)
+  - `shouldRetry` predicate in `useTransactionRetry` (skip retry on user-rejected errors)
+  - `Retry-After` header parsing (delta-seconds and HTTP-date) in `fetchWithRetry`
+  - `X-RateLimit-*` header parsing and `getRateLimitStatus()` export in `apiService`
+  - `contractApiLimiter` check gating query execution in `useOptimizedQuery`
+  - React hooks: `useRateLimiter`, `useRequestThrottle`, `useBurstGuard`
+  - `RATE_LIMITING.md` — full documentation of all strategies and hook APIs
+
+- Rate limiting middleware system (legacy entry)
   - Sliding window algorithm with LRU cache for memory efficiency
   - Category-based configuration for auth, sensitive data, marketplace endpoints
   - Express.js integration with automatic route detection

@@ -9,6 +9,7 @@
  * - Request deduplication
  * - Memory optimization
  */
+import { contractApiLimiter } from './rateLimiter';
 
 /**
  * Performance metrics tracker
@@ -86,6 +87,12 @@ class RequestDeduplicator {
     // Check if request is already pending
     if (this.pendingRequests.has(key)) {
       return this.pendingRequests.get(key);
+    }
+
+    // Check per-minute contract API rate limit before executing
+    if (!contractApiLimiter.isAllowed(key)) {
+      const { RateLimitError } = await import('./rateLimiter');
+      throw new RateLimitError(key, contractApiLimiter.getResetTime(key));
     }
 
     // Execute request

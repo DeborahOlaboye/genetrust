@@ -4,6 +4,8 @@
  * @description Provides a wrapper around fetch with standardized error handling,
  * retry logic, and request/response interception.
  */
+import { apiCircuit } from '../utils/circuitBreaker';
+import { fullJitter } from '../utils/backoffUtils';
 
 /**
  * Standardized error format for API responses
@@ -53,12 +55,23 @@ function createError(message, { status, code, details } = {}) {
   };
 }
 
-/**
- * Delays execution for the specified duration
- * @param {number} ms - Delay duration in milliseconds
- * @returns {Promise<void>}
- */
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+// Re-use shared fullJitter from backoffUtils for consistency
+const jitteredDelay = fullJitter;
+
+/**
+ * Parse a Retry-After header value into milliseconds.
+ * Accepts both delta-seconds ("30") and HTTP-date formats.
+ */
+function parseRetryAfter(headerValue) {
+  if (!headerValue) return null;
+  const seconds = Number(headerValue);
+  if (!Number.isNaN(seconds)) return seconds * 1000;
+  const date = new Date(headerValue);
+  if (!Number.isNaN(date.getTime())) return Math.max(0, date.getTime() - Date.now());
+  return null;
+}
 
 /**
  * Determines if a request should be retried based on the response or error
@@ -140,13 +153,15 @@ export async function fetchWithRetry(
   const requestPromise = (async () => {
     while (retryCount <= retryConfig.maxRetries) {
       try {
-        const response = await fetch(url, {
-          ...options,
-          headers: {
-            'Content-Type': 'application/json',
-            ...options.headers,
-          },
-        });
+        const response = await apiCircuit.execute(() =>
+          fetch(url, {
+            ...options,
+            headers: {
+              'Content-Type': 'application/json',
+              ...options.headers,
+            },
+          })
+        );
 
         const responseData = await parseResponseBody(response);
 
@@ -166,7 +181,9 @@ export async function fetchWithRetry(
           // Check if we should retry
           if (shouldRetry(response, null, retryCount, retryConfig)) {
             retryCount++;
-            await delay(retryConfig.retryDelay * Math.pow(2, retryCount - 1));
+            const retryAfter = parseRetryAfter(response.headers.get('Retry-After'));
+            const wait = retryAfter ?? jitteredDelay(retryConfig.retryDelay, retryCount - 1);
+            await delay(wait);
             continue;
           }
 
@@ -190,7 +207,7 @@ export async function fetchWithRetry(
         // Check if we should retry
         if (shouldRetry(null, error, retryCount, retryConfig)) {
           retryCount++;
-          await delay(retryConfig.retryDelay * Math.pow(2, retryCount - 1));
+          await delay(jitteredDelay(retryConfig.retryDelay, retryCount - 1));
           continue;
         }
 
@@ -356,6 +373,34 @@ export function ApiErrorBoundary({ children, fallback = null, onError }) {
   }
 
   return children;
+}
+
+/**
+ * Extracts standardised rate limit info from response headers.
+ * Reads X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset, and Retry-After.
+ */
+export function parseRateLimitHeaders(headers) {
+  const limit = headers.get('X-RateLimit-Limit');
+  const remaining = headers.get('X-RateLimit-Remaining');
+  const reset = headers.get('X-RateLimit-Reset');
+  const retryAfter = headers.get('Retry-After');
+  return {
+    limit: limit !== null ? Number(limit) : null,
+    remaining: remaining !== null ? Number(remaining) : null,
+    resetAt: reset !== null ? new Date(Number(reset) * 1000) : null,
+    retryAfterMs: parseRetryAfter(retryAfter),
+  };
+}
+
+// In-memory cache of the last known rate-limit state per URL prefix
+const _rateLimitState = new Map();
+
+export function updateRateLimitState(urlPrefix, headers) {
+  _rateLimitState.set(urlPrefix, { ...parseRateLimitHeaders(headers), updatedAt: Date.now() });
+}
+
+export function getRateLimitStatus(urlPrefix) {
+  return _rateLimitState.get(urlPrefix) || null;
 }
 
 // Export error utilities

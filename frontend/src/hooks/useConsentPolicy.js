@@ -10,6 +10,7 @@
  */
 
 import { useCallback, useReducer } from 'react';
+import { contractBurstLimiter, RateLimitError } from '../utils/rateLimiter';
 
 // ── constants ─────────────────────────────────────────────────────────────────
 
@@ -103,8 +104,13 @@ export function useConsentPolicy(contractService) {
     }
   }, [contractService]);
 
-  /** Amend an existing consent policy */
+  /** Amend an existing consent policy — burst-guarded (max 10 writes per 5s) */
   const amendPolicy = useCallback(async (dataId, { research, commercial, clinical, jurisdiction, durationBlocks }) => {
+    if (!contractBurstLimiter.isAllowed('consent-write')) {
+      const err = new RateLimitError('consent-write', contractBurstLimiter.getResetTime('consent-write'));
+      dispatch({ type: 'ERROR', message: err.message });
+      return;
+    }
     dispatch({ type: 'SAVING' });
     try {
       const updated = await contractService.amendConsentPolicy(dataId, { research, commercial, clinical, jurisdiction, durationBlocks });
