@@ -53,12 +53,29 @@ function createError(message, { status, code, details } = {}) {
   };
 }
 
-/**
- * Delays execution for the specified duration
- * @param {number} ms - Delay duration in milliseconds
- * @returns {Promise<void>}
- */
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/**
+ * Full-jitter exponential backoff: random value in [0, base * 2^attempt].
+ * Prevents thundering-herd when many clients retry at the same time.
+ */
+function jitteredDelay(base, attempt, maxMs = 30000) {
+  const cap = Math.min(maxMs, base * Math.pow(2, attempt));
+  return Math.random() * cap;
+}
+
+/**
+ * Parse a Retry-After header value into milliseconds.
+ * Accepts both delta-seconds ("30") and HTTP-date formats.
+ */
+function parseRetryAfter(headerValue) {
+  if (!headerValue) return null;
+  const seconds = Number(headerValue);
+  if (!Number.isNaN(seconds)) return seconds * 1000;
+  const date = new Date(headerValue);
+  if (!Number.isNaN(date.getTime())) return Math.max(0, date.getTime() - Date.now());
+  return null;
+}
 
 /**
  * Determines if a request should be retried based on the response or error
