@@ -4,6 +4,7 @@
  * @description Provides a wrapper around fetch with standardized error handling,
  * retry logic, and request/response interception.
  */
+import { apiCircuit } from '../utils/circuitBreaker';
 
 /**
  * Standardized error format for API responses
@@ -157,13 +158,15 @@ export async function fetchWithRetry(
   const requestPromise = (async () => {
     while (retryCount <= retryConfig.maxRetries) {
       try {
-        const response = await fetch(url, {
-          ...options,
-          headers: {
-            'Content-Type': 'application/json',
-            ...options.headers,
-          },
-        });
+        const response = await apiCircuit.execute(() =>
+          fetch(url, {
+            ...options,
+            headers: {
+              'Content-Type': 'application/json',
+              ...options.headers,
+            },
+          })
+        );
 
         const responseData = await parseResponseBody(response);
 
