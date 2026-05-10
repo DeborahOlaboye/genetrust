@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useBlockchainCache } from './useBlockchainCache';
 import { requestDeduplicator, queryBatcher } from '../utils/performanceOptimization';
+import { contractApiLimiter, RateLimitError } from '../utils/rateLimiter';
 
 /**
  * useOptimizedQuery Hook
@@ -58,6 +59,16 @@ export const useOptimizedQuery = (options = {}) => {
 
     setLoading(true);
     setError(null);
+
+    // Enforce per-minute contract API rate limit
+    if (!contractApiLimiter.isAllowed(queryKey)) {
+      const resetMs = contractApiLimiter.getResetTime(queryKey);
+      const rateLimitErr = new RateLimitError(queryKey, resetMs);
+      setError(rateLimitErr);
+      setLoading(false);
+      if (onRateLimit) onRateLimit(rateLimitErr);
+      throw rateLimitErr;
+    }
 
     try {
       let result;
