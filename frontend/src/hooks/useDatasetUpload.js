@@ -9,6 +9,7 @@
  */
 
 import { useCallback, useReducer } from 'react';
+import { contractBurstLimiter, RateLimitError } from '../utils/rateLimiter';
 
 // ── constants ─────────────────────────────────────────────────────────────────
 
@@ -138,6 +139,13 @@ export function useDatasetUpload({ contractService, walletService, onComplete } 
 
   // Step 3 → 4: hash then submit
   const submitRegistration = useCallback(async () => {
+    // Guard against rapid re-submissions (burst: 10 per 5s)
+    if (!contractBurstLimiter.isAllowed('dataset-register')) {
+      const err = new RateLimitError('dataset-register', contractBurstLimiter.getResetTime('dataset-register'));
+      dispatch({ type: 'SET_ERROR', message: err.message });
+      return;
+    }
+
     const { file, price, accessLevel, storageUrl, description } = state;
 
     // Basic validation
