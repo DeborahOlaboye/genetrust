@@ -12,6 +12,11 @@ export { useOptimisticUpdate } from './useOptimisticUpdate';
 export { useOptimizedQuery, QUERY_DEFAULTS } from './useOptimizedQuery';
 export { useBlockchainCache, CACHE_TTL } from './useBlockchainCache';
 
+// --- Rate Limiting ---
+export { useRateLimiter } from './useRateLimiter';
+export { useRequestThrottle } from './useRequestThrottle';
+export { useBurstGuard } from './useBurstGuard';
+
 // --- Performance & Analytics ---
 export { usePerformance } from './usePerformance';
 export { default as useAnalytics, ANALYTICS_EVENTS } from './useAnalytics';
