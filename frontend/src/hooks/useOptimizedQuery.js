@@ -19,6 +19,7 @@ export const QUERY_DEFAULTS = {
   cacheTTL: 60000,
   retryAttempts: 2,
   retryDelay: 1000,
+  maxRetryDelay: 20000,
 };
 
 export const useOptimizedQuery = (options = {}) => {
@@ -29,6 +30,8 @@ export const useOptimizedQuery = (options = {}) => {
     enableDeduplication = true,
     retryAttempts = 2,
     retryDelay = 1000,
+    maxRetryDelay = QUERY_DEFAULTS.maxRetryDelay,
+    onRateLimit = null,
   } = options;
 
   const [data, setData] = useState(null);
@@ -59,13 +62,15 @@ export const useOptimizedQuery = (options = {}) => {
     try {
       let result;
 
-      // Wrap query function with retry logic
+      // Wrap query function with retry logic (full-jitter backoff)
       const queryWithRetry = async (attempt = 0) => {
         try {
           return await queryFn(abortControllerRef.current.signal);
         } catch (err) {
           if (attempt < retryAttempts && !abortControllerRef.current.signal.aborted) {
-            await new Promise((resolve) => setTimeout(resolve, retryDelay * (attempt + 1)));
+            const cap = Math.min(maxRetryDelay, retryDelay * Math.pow(2, attempt));
+            const jittered = Math.random() * cap;
+            await new Promise((resolve) => setTimeout(resolve, jittered));
             return queryWithRetry(attempt + 1);
           }
           throw err;
@@ -106,7 +111,7 @@ export const useOptimizedQuery = (options = {}) => {
       }
       throw err;
     }
-  }, [enableCache, cacheTTL, enableDeduplication, enableBatching, retryAttempts, retryDelay, cachedQuery]);
+  }, [enableCache, cacheTTL, enableDeduplication, enableBatching, retryAttempts, retryDelay, maxRetryDelay, onRateLimit, cachedQuery]);
 
   /**
    * Refetch query
