@@ -177,6 +177,63 @@ export class BurstLimiter {
   }
 }
 
+/**
+ * TokenBucketLimiter — classic token bucket for smooth, continuous rate limiting.
+ * Tokens refill at a steady rate (refillRate tokens per refillIntervalMs).
+ * Unlike the sliding window, this allows short controlled bursts up to `capacity`.
+ */
+export class TokenBucketLimiter {
+  constructor(options = {}) {
+    this.capacity = options.capacity || 10;
+    this.refillRate = options.refillRate || 1; // tokens added per interval
+    this.refillIntervalMs = options.refillIntervalMs || 1000;
+    this._buckets = new Map(); // key → { tokens, lastRefill }
+  }
+
+  _getBucket(key) {
+    if (!this._buckets.has(key)) {
+      this._buckets.set(key, { tokens: this.capacity, lastRefill: Date.now() });
+    }
+    return this._buckets.get(key);
+  }
+
+  _refill(bucket) {
+    const now = Date.now();
+    const intervals = Math.floor((now - bucket.lastRefill) / this.refillIntervalMs);
+    if (intervals > 0) {
+      bucket.tokens = Math.min(this.capacity, bucket.tokens + intervals * this.refillRate);
+      bucket.lastRefill += intervals * this.refillIntervalMs;
+    }
+  }
+
+  isAllowed(key) {
+    const bucket = this._getBucket(key);
+    this._refill(bucket);
+    if (bucket.tokens < 1) return false;
+    bucket.tokens -= 1;
+    return true;
+  }
+
+  getRemaining(key) {
+    const bucket = this._getBucket(key);
+    this._refill(bucket);
+    return Math.floor(bucket.tokens);
+  }
+
+  /** Ms until the next token is available. */
+  getResetTime(key) {
+    const bucket = this._getBucket(key);
+    this._refill(bucket);
+    if (bucket.tokens >= 1) return 0;
+    const tokensNeeded = 1 - bucket.tokens;
+    return Math.ceil((tokensNeeded / this.refillRate) * this.refillIntervalMs);
+  }
+
+  reset(key) {
+    this._buckets.delete(key);
+  }
+}
+
 // Create instances for different API types
 export const contractApiLimiter = new RateLimiter({
   maxRequests: 50,
