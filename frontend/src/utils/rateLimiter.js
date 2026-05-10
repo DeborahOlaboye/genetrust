@@ -234,20 +234,39 @@ export class TokenBucketLimiter {
   }
 }
 
-// Create instances for different API types
+// ── Pre-configured instances ────────────────────────────────────────────────
+
+/** Sliding-window limiter for Stacks contract reads/writes (50 req/min). */
 export const contractApiLimiter = new RateLimiter({
   maxRequests: 50,
-  windowMs: 60000, // 50 requests per minute
+  windowMs: 60000,
 });
 
+/** Burst-aware limiter for contract calls: 10 req/5s AND 50 req/min. */
+export const contractBurstLimiter = new BurstLimiter({
+  maxRequests: 50,
+  windowMs: 60000,
+  burstMax: 10,
+  burstWindowMs: 5000,
+});
+
+/** Sliding-window limiter for IPFS gateway requests (30 req/min). */
 export const ipfsLimiter = new RateLimiter({
   maxRequests: 30,
-  windowMs: 60000, // 30 requests per minute
+  windowMs: 60000,
 });
 
+/** Sliding-window limiter for general API calls (100 req/min). */
 export const generalApiLimiter = new RateLimiter({
   maxRequests: 100,
-  windowMs: 60000, // 100 requests per minute
+  windowMs: 60000,
+});
+
+/** Token-bucket limiter for wallet signing operations (5 tokens, 1 refill/2s). */
+export const walletSignLimiter = new TokenBucketLimiter({
+  capacity: 5,
+  refillRate: 1,
+  refillIntervalMs: 2000,
 });
 
 export default RateLimiter;
