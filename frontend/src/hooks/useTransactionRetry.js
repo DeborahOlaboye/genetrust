@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
 import toast from 'react-hot-toast';
+import { fullJitter } from '../utils/backoffUtils';
 
 /**
  * useTransactionRetry Hook
@@ -33,10 +34,9 @@ export const useTransactionRetry = (options = {}) => {
     }
   }, []);
 
-  // Full-jitter backoff: random in [0, min(maxDelay, initialDelay * 2^attempt)]
+  // Full-jitter backoff via backoffUtils.fullJitter
   const getRetryDelay = useCallback((attempt) => {
-    const cap = Math.min(maxDelay, initialDelay * Math.pow(2, attempt));
-    return Math.random() * cap;
+    return fullJitter(initialDelay, attempt, maxDelay);
   }, [initialDelay, maxDelay]);
 
   // Execute transaction with retry logic
