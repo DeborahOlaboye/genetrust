@@ -16,6 +16,8 @@ export const useTransactionRetry = (options = {}) => {
   const {
     maxRetries = 3,
     initialDelay = 2000,
+    maxDelay = 30000,
+    shouldRetry = null, // (error) => boolean — skip retry for certain errors
     onRetry,
     onMaxRetriesReached,
   } = options;
@@ -24,7 +26,6 @@ export const useTransactionRetry = (options = {}) => {
   const [retryCount, setRetryCount] = useState(0);
   const retryTimeoutRef = useRef(null);
 
-  // Clear pending retry timeout
   const clearRetry = useCallback(() => {
     if (retryTimeoutRef.current) {
       clearTimeout(retryTimeoutRef.current);
@@ -32,10 +33,11 @@ export const useTransactionRetry = (options = {}) => {
     }
   }, []);
 
-  // Calculate delay with exponential backoff
+  // Full-jitter backoff: random in [0, min(maxDelay, initialDelay * 2^attempt)]
   const getRetryDelay = useCallback((attempt) => {
-    return initialDelay * Math.pow(2, attempt);
-  }, [initialDelay]);
+    const cap = Math.min(maxDelay, initialDelay * Math.pow(2, attempt));
+    return Math.random() * cap;
+  }, [initialDelay, maxDelay]);
 
   // Execute transaction with retry logic
   const executeWithRetry = useCallback(async (transactionFn, attemptNumber = 0) => {
@@ -50,7 +52,8 @@ export const useTransactionRetry = (options = {}) => {
     } catch (error) {
       console.error(`Transaction attempt ${attemptNumber + 1} failed:`, error);
 
-      if (attemptNumber < maxRetries) {
+      const retryAllowed = shouldRetry ? shouldRetry(error) : true;
+      if (attemptNumber < maxRetries && retryAllowed) {
         setIsRetrying(true);
         setRetryCount(attemptNumber + 1);
 
