@@ -5,6 +5,7 @@
  * retry logic, and request/response interception.
  */
 import { apiCircuit } from '../utils/circuitBreaker';
+import { fullJitter } from '../utils/backoffUtils';
 
 /**
  * Standardized error format for API responses
@@ -56,14 +57,8 @@ function createError(message, { status, code, details } = {}) {
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-/**
- * Full-jitter exponential backoff: random value in [0, base * 2^attempt].
- * Prevents thundering-herd when many clients retry at the same time.
- */
-function jitteredDelay(base, attempt, maxMs = 30000) {
-  const cap = Math.min(maxMs, base * Math.pow(2, attempt));
-  return Math.random() * cap;
-}
+// Re-use shared fullJitter from backoffUtils for consistency
+const jitteredDelay = fullJitter;
 
 /**
  * Parse a Retry-After header value into milliseconds.
