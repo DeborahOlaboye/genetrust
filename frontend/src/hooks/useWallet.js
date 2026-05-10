@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { createLogger } from '../utils/logger';
 import WalletManager, { PROVIDERS } from '../services/wallet/WalletManager';
+import { walletSignLimiter, RateLimitError } from '../utils/rateLimiter';
 
 const logger = createLogger({ module: 'useWallet' });
 
@@ -144,8 +145,13 @@ const useWallet = (config = {}) => {
     }
   }, [walletManager]);
 
-  // Sign a message
+  // Sign a message — guarded by walletSignLimiter (token bucket: 5 tokens, 1/2s refill)
   const signMessage = useCallback(async (message) => {
+    if (!walletSignLimiter.isAllowed('sign')) {
+      const err = new RateLimitError('sign', walletSignLimiter.getResetTime('sign'));
+      setState(prev => ({ ...prev, error: err.message }));
+      throw err;
+    }
     try {
       setState(prevState => ({ ...prevState, isLoading: true, error: null }));
       const signature = await walletManager.signMessage(message);
@@ -162,8 +168,13 @@ const useWallet = (config = {}) => {
     }
   }, [walletManager]);
 
-  // Send a transaction
+  // Send a transaction — guarded by walletSignLimiter
   const sendTransaction = useCallback(async (transaction) => {
+    if (!walletSignLimiter.isAllowed('send')) {
+      const err = new RateLimitError('send', walletSignLimiter.getResetTime('send'));
+      setState(prev => ({ ...prev, error: err.message }));
+      throw err;
+    }
     try {
       setState(prevState => ({ ...prevState, isLoading: true, error: null }));
       const result = await walletManager.sendTransaction(transaction);
