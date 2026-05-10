@@ -183,7 +183,9 @@ export async function fetchWithRetry(
           // Check if we should retry
           if (shouldRetry(response, null, retryCount, retryConfig)) {
             retryCount++;
-            await delay(retryConfig.retryDelay * Math.pow(2, retryCount - 1));
+            const retryAfter = parseRetryAfter(response.headers.get('Retry-After'));
+            const wait = retryAfter ?? jitteredDelay(retryConfig.retryDelay, retryCount - 1);
+            await delay(wait);
             continue;
           }
 
@@ -207,7 +209,7 @@ export async function fetchWithRetry(
         // Check if we should retry
         if (shouldRetry(null, error, retryCount, retryConfig)) {
           retryCount++;
-          await delay(retryConfig.retryDelay * Math.pow(2, retryCount - 1));
+          await delay(jitteredDelay(retryConfig.retryDelay, retryCount - 1));
           continue;
         }
 
