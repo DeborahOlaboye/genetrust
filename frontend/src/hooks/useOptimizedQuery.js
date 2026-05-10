@@ -2,6 +2,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { useBlockchainCache } from './useBlockchainCache';
 import { requestDeduplicator, queryBatcher } from '../utils/performanceOptimization';
 import { contractApiLimiter, RateLimitError } from '../utils/rateLimiter';
+import { fullJitter } from '../utils/backoffUtils';
 
 /**
  * useOptimizedQuery Hook
@@ -79,9 +80,7 @@ export const useOptimizedQuery = (options = {}) => {
           return await queryFn(abortControllerRef.current.signal);
         } catch (err) {
           if (attempt < retryAttempts && !abortControllerRef.current.signal.aborted) {
-            const cap = Math.min(maxRetryDelay, retryDelay * Math.pow(2, attempt));
-            const jittered = Math.random() * cap;
-            await new Promise((resolve) => setTimeout(resolve, jittered));
+            await new Promise((resolve) => setTimeout(resolve, fullJitter(retryDelay, attempt, maxRetryDelay)));
             return queryWithRetry(attempt + 1);
           }
           throw err;
