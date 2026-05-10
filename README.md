@@ -166,6 +166,27 @@ cp frontend/.env.example frontend/.env.local
 
 `settings/Mainnet.toml` holds your wallet mnemonic for Clarinet deployments and is covered by `.gitignore` — never commit it.
 
+## Rate Limiting & Resilience
+
+The frontend enforces request quotas and protects against cascading failures:
+
+| Mechanism | Location | Scope |
+|---|---|---|
+| `RateLimiter` (sliding window) | `utils/rateLimiter.js` | Per-minute quota per key |
+| `BurstLimiter` | `utils/rateLimiter.js` | Short-window spike cap + per-minute |
+| `TokenBucketLimiter` | `utils/rateLimiter.js` | Smooth continuous limiting |
+| `CircuitBreaker` | `utils/circuitBreaker.js` | CLOSED/OPEN/HALF_OPEN per service |
+| Full-jitter backoff | `apiService`, `useTransactionRetry`, `useOptimizedQuery` | Prevents thundering herd on retry |
+
+Pre-configured instances:
+- `contractBurstLimiter` — 10 req/5s AND 50 req/min (contract writes)
+- `walletSignLimiter` — 5 tokens, 1 refill/2s (wallet signing)
+- `contractCircuit` — opens after 5 failures, resets after 30s
+
+React hooks: `useRateLimiter`, `useRequestThrottle`, `useBurstGuard`, `useCircuitBreaker`
+
+See `frontend/src/utils/RATE_LIMITING.md` for full documentation.
+
 ## Running Tests
 
 ```bash
