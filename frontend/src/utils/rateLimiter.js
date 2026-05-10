@@ -128,6 +128,55 @@ class RateLimiter {
   }
 }
 
+/**
+ * BurstLimiter — enforces a tight short-window cap on top of a per-minute limit.
+ * Wraps a primary RateLimiter and adds a secondary burst window.
+ *
+ * Example: 10 requests per 5 seconds AND 50 per minute.
+ */
+export class BurstLimiter {
+  constructor(options = {}) {
+    this.primary = new RateLimiter({
+      maxRequests: options.maxRequests || 50,
+      windowMs: options.windowMs || 60000,
+    });
+    this.burst = new RateLimiter({
+      maxRequests: options.burstMax || 10,
+      windowMs: options.burstWindowMs || 5000,
+    });
+  }
+
+  isAllowed(key) {
+    if (!this.burst.peek(key)) return false;
+    if (!this.primary.peek(key)) return false;
+    // Consume from both
+    this.burst.isAllowed(key);
+    this.primary.isAllowed(key);
+    return true;
+  }
+
+  getRemaining(key) {
+    return Math.min(this.burst.getRemaining(key), this.primary.getRemaining(key));
+  }
+
+  getResetTime(key) {
+    return Math.min(this.burst.getResetTime(key), this.primary.getResetTime(key));
+  }
+
+  isNearLimit(key, threshold = 0.2) {
+    return this.burst.isNearLimit(key, threshold) || this.primary.isNearLimit(key, threshold);
+  }
+
+  reset(key) {
+    this.burst.reset(key);
+    this.primary.reset(key);
+  }
+
+  async withRateLimit(key, fn, opts) {
+    return this.primary.withRateLimit(key, fn, opts);
+  }
+}
+
 // Create instances for different API types
 export const contractApiLimiter = new RateLimiter({
   maxRequests: 50,
