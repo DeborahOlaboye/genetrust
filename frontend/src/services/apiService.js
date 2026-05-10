@@ -377,6 +377,34 @@ export function ApiErrorBoundary({ children, fallback = null, onError }) {
   return children;
 }
 
+/**
+ * Extracts standardised rate limit info from response headers.
+ * Reads X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset, and Retry-After.
+ */
+export function parseRateLimitHeaders(headers) {
+  const limit = headers.get('X-RateLimit-Limit');
+  const remaining = headers.get('X-RateLimit-Remaining');
+  const reset = headers.get('X-RateLimit-Reset');
+  const retryAfter = headers.get('Retry-After');
+  return {
+    limit: limit !== null ? Number(limit) : null,
+    remaining: remaining !== null ? Number(remaining) : null,
+    resetAt: reset !== null ? new Date(Number(reset) * 1000) : null,
+    retryAfterMs: parseRetryAfter(retryAfter),
+  };
+}
+
+// In-memory cache of the last known rate-limit state per URL prefix
+const _rateLimitState = new Map();
+
+export function updateRateLimitState(urlPrefix, headers) {
+  _rateLimitState.set(urlPrefix, { ...parseRateLimitHeaders(headers), updatedAt: Date.now() });
+}
+
+export function getRateLimitStatus(urlPrefix) {
+  return _rateLimitState.get(urlPrefix) || null;
+}
+
 // Export error utilities
 export const ApiError = {
   /**
