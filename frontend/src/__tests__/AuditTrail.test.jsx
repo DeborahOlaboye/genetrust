@@ -70,5 +70,10 @@ it('returns just now for 30 seconds ago', () => {
   expect(formatAuditTimestamp(Date.now() - 30 * 1000)).toBe('just now');
 });
 
+
+it('returns 1m ago for 61 seconds ago', () => {
+  expect(formatAuditTimestamp(Date.now() - 61 * 1000)).toBe('1m ago');
+});
+
   });
 });
