@@ -155,5 +155,10 @@ it('returns just now for Date object input now', () => {
   expect(formatAuditTimestamp(new Date(Date.now()))).toBe('just now');
 });
 
+
+it('returns 1m ago for Date object one minute ago', () => {
+  expect(formatAuditTimestamp(new Date(Date.now() - 60 * 1000))).toBe('1m ago');
+});
+
   });
 });
