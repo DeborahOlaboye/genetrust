@@ -290,5 +290,10 @@ it('returns 5d 12h ago for 132 hours ago', () => {
   expect(formatAuditTimestamp(Date.now() - 132 * 60 * 60 * 1000)).toBe('5d 12h ago');
 });
 
+
+it('returns 60d 0h ago for 1440 hours ago', () => {
+  expect(formatAuditTimestamp(Date.now() - 1440 * 60 * 60 * 1000)).toBe('60d 0h ago');
+});
+
   });
 });
