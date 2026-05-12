@@ -115,5 +115,10 @@ it('returns 2d 5h ago for 53 hours ago', () => {
   expect(formatAuditTimestamp(Date.now() - ((2 * 24) + 5) * 60 * 60 * 1000)).toBe('2d 5h ago');
 });
 
+
+it('parses numeric timestamp strings', () => {
+  expect(formatAuditTimestamp(String(Date.now() - 10 * 60 * 1000))).toBe('10m ago');
+});
+
   });
 });
