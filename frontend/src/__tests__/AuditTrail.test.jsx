@@ -140,5 +140,10 @@ it('returns unknown time for zero timestamp', () => {
   expect(formatAuditTimestamp(0)).toBe('Unknown time');
 });
 
+
+it('returns unknown time for negative timestamp', () => {
+  expect(formatAuditTimestamp(-100000)).toBe('Unknown time');
+});
+
   });
 });
