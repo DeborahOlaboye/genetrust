@@ -350,5 +350,10 @@ it('returns 21d 0h ago for 504 hours ago', () => {
   expect(formatAuditTimestamp(Date.now() - 504 * 60 * 60 * 1000)).toBe('21d 0h ago');
 });
 
+
+it('returns unknown time for Date object with invalid timestamp string', () => {
+  expect(formatAuditTimestamp(new Date('invalid'))).toBe('Unknown time');
+});
+
   });
 });
