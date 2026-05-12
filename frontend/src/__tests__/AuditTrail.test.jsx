@@ -170,5 +170,10 @@ it('returns 3d 4h ago for 76 hours ago', () => {
   expect(formatAuditTimestamp(new Date(Date.now() - 76 * 60 * 60 * 1000))).toBe('3d 4h ago');
 });
 
+
+it('returns unknown time for invalid Date object', () => {
+  expect(formatAuditTimestamp(new Date("invalid"))).toBe('Unknown time');
+});
+
   });
 });
