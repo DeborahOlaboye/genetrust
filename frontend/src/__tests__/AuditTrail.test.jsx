@@ -65,5 +65,10 @@ describe('AuditTrail component', () => {
     it('returns just now for current timestamp', () => {
       expect(formatAuditTimestamp(Date.now())).toBe('just now');
     });
+
+it('returns just now for 30 seconds ago', () => {
+  expect(formatAuditTimestamp(Date.now() - 30 * 1000)).toBe('just now');
+});
+
   });
 });
