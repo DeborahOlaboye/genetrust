@@ -235,5 +235,10 @@ it('returns 10m ago for 10 minutes ago', () => {
   expect(formatAuditTimestamp(Date.now() - 10 * 60 * 1000)).toBe('10m ago');
 });
 
+
+it('returns 47h 0m ago for 47 hours ago', () => {
+  expect(formatAuditTimestamp(Date.now() - 47 * 60 * 60 * 1000)).toBe('1d 23h ago');
+});
+
   });
 });
