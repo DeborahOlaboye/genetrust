@@ -120,5 +120,10 @@ it('parses numeric timestamp strings', () => {
   expect(formatAuditTimestamp(String(Date.now() - 10 * 60 * 1000))).toBe('10m ago');
 });
 
+
+it('returns unknown time for invalid numeric string', () => {
+  expect(formatAuditTimestamp('not-a-timestamp')).toBe('Unknown time');
+});
+
   });
 });
