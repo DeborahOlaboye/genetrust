@@ -225,5 +225,10 @@ it('returns unknown time for string 0 timestamp', () => {
   expect(formatAuditTimestamp('0')).toBe('Unknown time');
 });
 
+
+it('returns unknown time for negative timestamp string', () => {
+  expect(formatAuditTimestamp('-10000')).toBe('Unknown time');
+});
+
   });
 });
