@@ -150,5 +150,10 @@ it('returns just now for future timestamp', () => {
   expect(formatAuditTimestamp(Date.now() + 60 * 1000)).toBe('just now');
 });
 
+
+it('returns just now for Date object input now', () => {
+  expect(formatAuditTimestamp(new Date(Date.now()))).toBe('just now');
+});
+
   });
 });
