@@ -220,5 +220,10 @@ it('returns unknown time for NaN timestamp', () => {
   expect(formatAuditTimestamp(NaN)).toBe('Unknown time');
 });
 
+
+it('returns unknown time for string 0 timestamp', () => {
+  expect(formatAuditTimestamp('0')).toBe('Unknown time');
+});
+
   });
 });
