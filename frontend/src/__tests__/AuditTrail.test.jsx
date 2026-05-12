@@ -145,5 +145,10 @@ it('returns unknown time for negative timestamp', () => {
   expect(formatAuditTimestamp(-100000)).toBe('Unknown time');
 });
 
+
+it('returns just now for future timestamp', () => {
+  expect(formatAuditTimestamp(Date.now() + 60 * 1000)).toBe('just now');
+});
+
   });
 });
