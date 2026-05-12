@@ -280,5 +280,10 @@ it('returns 20h 0m ago for 20 hours ago', () => {
   expect(formatAuditTimestamp(Date.now() - 20 * 60 * 60 * 1000)).toBe('20h 0m ago');
 });
 
+
+it('returns 3d 23h ago for 95 hours ago', () => {
+  expect(formatAuditTimestamp(Date.now() - 95 * 60 * 60 * 1000)).toBe('3d 23h ago');
+});
+
   });
 });
