@@ -4,7 +4,12 @@ export function formatAuditTimestamp(timestamp) {
   }
 
   const now = Date.now();
-  const eventTime = typeof timestamp === 'string' ? Number(timestamp) : timestamp;
+  const eventTime =
+    timestamp instanceof Date
+      ? timestamp.valueOf()
+      : typeof timestamp === 'string'
+      ? Number(timestamp)
+      : timestamp;
 
   if (Number.isNaN(eventTime) || eventTime <= 0) {
     return 'Unknown time';
