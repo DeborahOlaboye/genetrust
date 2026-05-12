@@ -35,6 +35,7 @@ import {
   History as HistoryIcon,
   Visibility as ViewIcon,
 } from '@mui/icons-material';
+import { formatAuditTimestamp } from '../utils/auditTrailTimestampFormatter';
 
 const AuditTrail = ({
   dataId,
@@ -115,16 +116,7 @@ const AuditTrail = ({
     return colors[action] || 'default';
   };
 
-  const formatTimestamp = (blockHeight) => {
-    const blocksPerMinute = 0.16;
-    const minutes = Math.floor(blockHeight / blocksPerMinute);
-    const days = Math.floor(minutes / 1440);
-    
-    if (days > 0) {
-      return `${days}d ${minutes % 1440}m ago`;
-    }
-    return `${minutes}m ago`;
-  };
+  const formatTimestamp = (timestamp) => formatAuditTimestamp(timestamp);
 
   if (error) {
     return (
@@ -249,7 +241,7 @@ const AuditTrail = ({
                           />
                         </TableCell>
                         <TableCell>
-                          {formatTimestamp(entry.blockHeight)}
+                          {formatTimestamp(entry.timestamp)}
                         </TableCell>
                         <TableCell>
                           <Chip
@@ -405,7 +397,7 @@ const AuditTrail = ({
 };
 
 AuditTrail.propTypes = {
-  dataId: PropTypes.number.isRequired,
+  dataId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
   auditEntries: PropTypes.arrayOf(
     PropTypes.shape({
       blockHeight: PropTypes.number,
@@ -415,7 +407,7 @@ AuditTrail.propTypes = {
       accessLevel: PropTypes.number,
       txId: PropTypes.string,
       approvedBy: PropTypes.string,
-      timestamp: PropTypes.number,
+      timestamp: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
     })
   ),
   loading: PropTypes.bool,
