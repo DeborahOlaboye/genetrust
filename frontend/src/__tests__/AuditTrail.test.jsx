@@ -180,5 +180,10 @@ it('handles string timestamp with milliseconds precision', () => {
   expect(formatAuditTimestamp(String(Date.now() - 5 * 60 * 1000 - 123))).toBe('5m ago');
 });
 
+
+it('returns just now for 59 seconds ago', () => {
+  expect(formatAuditTimestamp(Date.now() - 59 * 1000)).toBe('just now');
+});
+
   });
 });
