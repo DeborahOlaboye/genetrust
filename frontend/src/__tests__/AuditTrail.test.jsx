@@ -160,5 +160,10 @@ it('returns 1m ago for Date object one minute ago', () => {
   expect(formatAuditTimestamp(new Date(Date.now() - 60 * 1000))).toBe('1m ago');
 });
 
+
+it('returns 2h 30m ago for Date object 2.5 hours ago', () => {
+  expect(formatAuditTimestamp(new Date(Date.now() - 2.5 * 60 * 60 * 1000))).toBe('2h 30m ago');
+});
+
   });
 });
