@@ -345,5 +345,10 @@ it('returns 14d 0h ago for 336 hours ago', () => {
   expect(formatAuditTimestamp(Date.now() - 336 * 60 * 60 * 1000)).toBe('14d 0h ago');
 });
 
+
+it('returns 21d 0h ago for 504 hours ago', () => {
+  expect(formatAuditTimestamp(Date.now() - 504 * 60 * 60 * 1000)).toBe('21d 0h ago');
+});
+
   });
 });
