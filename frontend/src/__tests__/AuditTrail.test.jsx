@@ -175,5 +175,10 @@ it('returns unknown time for invalid Date object', () => {
   expect(formatAuditTimestamp(new Date("invalid"))).toBe('Unknown time');
 });
 
+
+it('handles string timestamp with milliseconds precision', () => {
+  expect(formatAuditTimestamp(String(Date.now() - 5 * 60 * 1000 - 123))).toBe('5m ago');
+});
+
   });
 });
