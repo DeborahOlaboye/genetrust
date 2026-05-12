@@ -125,5 +125,10 @@ it('returns unknown time for invalid numeric string', () => {
   expect(formatAuditTimestamp('not-a-timestamp')).toBe('Unknown time');
 });
 
+
+it('returns unknown time for null timestamp', () => {
+  expect(formatAuditTimestamp(null)).toBe('Unknown time');
+});
+
   });
 });
