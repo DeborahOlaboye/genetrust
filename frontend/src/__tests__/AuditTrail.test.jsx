@@ -105,5 +105,10 @@ it('returns 23h 59m ago for 23 hours 59 minutes ago', () => {
   expect(formatAuditTimestamp(Date.now() - ((23 * 60) + 59) * 60 * 1000)).toBe('23h 59m ago');
 });
 
+
+it('returns 1d 0h ago for 24 hours ago', () => {
+  expect(formatAuditTimestamp(Date.now() - 24 * 60 * 60 * 1000)).toBe('1d 0h ago');
+});
+
   });
 });
