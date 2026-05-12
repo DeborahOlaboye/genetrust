@@ -1,6 +1,7 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import AuditTrail from '../components/AuditTrail';
+import { formatAuditTimestamp } from '../utils/auditTrailTimestampFormatter';
 
 describe('AuditTrail component', () => {
   beforeAll(() => {
@@ -58,5 +59,11 @@ describe('AuditTrail component', () => {
     );
 
     expect(screen.getByText(/Unknown time/i)).toBeInTheDocument();
+  });
+
+  describe('formatAuditTimestamp helper', () => {
+    it('returns just now for current timestamp', () => {
+      expect(formatAuditTimestamp(Date.now())).toBe('just now');
+    });
   });
 });
