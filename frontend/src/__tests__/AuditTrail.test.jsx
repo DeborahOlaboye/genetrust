@@ -135,5 +135,10 @@ it('returns unknown time for undefined timestamp', () => {
   expect(formatAuditTimestamp(undefined)).toBe('Unknown time');
 });
 
+
+it('returns unknown time for zero timestamp', () => {
+  expect(formatAuditTimestamp(0)).toBe('Unknown time');
+});
+
   });
 });
