@@ -230,5 +230,10 @@ it('returns unknown time for negative timestamp string', () => {
   expect(formatAuditTimestamp('-10000')).toBe('Unknown time');
 });
 
+
+it('returns 10m ago for 10 minutes ago', () => {
+  expect(formatAuditTimestamp(Date.now() - 10 * 60 * 1000)).toBe('10m ago');
+});
+
   });
 });
