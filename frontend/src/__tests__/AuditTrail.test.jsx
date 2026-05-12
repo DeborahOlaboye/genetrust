@@ -215,5 +215,10 @@ it('returns 10d 3h ago for 243 hours ago', () => {
   expect(formatAuditTimestamp(Date.now() - 243 * 60 * 60 * 1000)).toBe('10d 3h ago');
 });
 
+
+it('returns unknown time for NaN timestamp', () => {
+  expect(formatAuditTimestamp(NaN)).toBe('Unknown time');
+});
+
   });
 });
