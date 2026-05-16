@@ -439,6 +439,20 @@
     )
 )
 
+;; @notice Returns the access level for a user if their access exists and is not expired.
+;; @dev Single-call alternative to calling has-valid-access then get-user-access-level.
+;; @param data-id The dataset ID.
+;; @param user The principal to check.
+;; @return Some(access-level) if access is valid and unexpired, none if expired or absent.
+(define-read-only (get-valid-access-level (data-id uint) (user principal))
+    (match (map-get? access-rights { data-id: data-id, user: user })
+        rights (if (< stacks-block-height (get expires-at rights))
+                    (some (get access-level rights))
+                    none)
+        none
+    )
+)
+
 ;; @notice Returns the next auto-increment ID that will be assigned to the next registered dataset.
 ;; @dev Useful for frontends to predict the data-id before submitting a transaction.
 ;; @return ok(uint) - the next available data-id.
