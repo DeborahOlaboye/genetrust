@@ -145,9 +145,9 @@
         ;; Check description is not empty
         (asserts! (> (len description) u0) ERR-INVALID-STRING-LENGTH)
         ;; Check description meets minimum length requirement
-        (asserts! (>= (len description) u10) ERR-INVALID-STRING-LENGTH)
+        (asserts! (>= (len description) MIN-DESCRIPTION-LENGTH) ERR-INVALID-STRING-LENGTH)
         ;; Check description does not exceed maximum length
-        (asserts! (<= (len description) u200) ERR-INVALID-STRING-LENGTH)
+        (asserts! (<= (len description) MAX-DESCRIPTION-LENGTH) ERR-INVALID-STRING-LENGTH)
         
         ;; VALIDATION PHASE 4: Access level validation
         ;; Check access level is >= 1 and <= 3
