@@ -439,6 +439,20 @@
     )
 )
 
+;; @notice Returns the number of blocks remaining before a user's access expires.
+;; @param data-id The dataset ID.
+;; @param user The principal to check.
+;; @return Some(uint) blocks remaining if access is valid, Some(0) if already expired,
+;;         none if no access record exists.
+(define-read-only (get-access-remaining-blocks (data-id uint) (user principal))
+    (match (map-get? access-rights { data-id: data-id, user: user })
+        rights (some (if (> (get expires-at rights) stacks-block-height)
+                         (- (get expires-at rights) stacks-block-height)
+                         u0))
+        none
+    )
+)
+
 ;; @notice Checks whether a user's access has explicitly expired (record exists but is stale).
 ;; @dev Distinct from has-any-access — this returns true only when the record exists AND is expired.
 ;; @param data-id The dataset ID.
