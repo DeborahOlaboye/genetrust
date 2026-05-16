@@ -472,10 +472,15 @@
     )
 )
 
-;; Extend an existing access grant by another ACCESS-EXPIRY-BLOCKS period (owner only)
-;; @param data-id: ID of the dataset
-;; @param user: Principal whose access to extend
-;; @returns: ok true on success, error otherwise
+;; Extend an existing access grant by another ACCESS-EXPIRY-BLOCKS period (owner only).
+;; The new expiry is always stacks-block-height + ACCESS-EXPIRY-BLOCKS, not additive.
+;; @param data-id: ID of the dataset.
+;; @param user: Principal whose access to extend (must have an existing grant).
+;; @returns ok(true) on success.
+;;   ERR-DATASET-NOT-FOUND (u431) — dataset does not exist.
+;;   ERR-ACCESS-RIGHT-NOT-FOUND (u436) — user has no grant to extend.
+;;   ERR-NOT-OWNER (u411) — caller is not the dataset owner.
+;;   ERR-INACTIVE-DATASET (u450) — dataset is deactivated.
 (define-public (extend-access (data-id uint) (user principal))
     (let (
         (dataset (unwrap! (map-get? datasets { data-id: data-id }) ERR-DATASET-NOT-FOUND))
