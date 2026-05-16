@@ -544,6 +544,17 @@
     (ok (var-get total-datasets))
 )
 
+;; @notice Returns true if the given principal is the owner of a dataset.
+;; @param data-id The dataset ID.
+;; @param principal The principal to check.
+;; @return ok(true) if the dataset exists and the principal is owner, ok(false) otherwise.
+(define-read-only (is-dataset-owner (data-id uint) (who principal))
+    (match (map-get? datasets { data-id: data-id })
+        dataset (ok (is-eq who (get owner dataset)))
+        (ok false)
+    )
+)
+
 ;; @notice Returns true if the given dataset exists and is active.
 ;; @param data-id The dataset ID to check.
 ;; @return ok(true) if active, ok(false) if inactive or not found.
