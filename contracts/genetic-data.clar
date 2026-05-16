@@ -10,6 +10,16 @@
 ;;            guard in grant-access, print events on all state changes, new
 ;;            update/transfer/reactivate/extend functions, comprehensive read helpers.
 
+;; Error code ranges (shared convention across the GeneTrust contract suite):
+;;   400-409  Input validation
+;;   410-414  Authorization / ownership
+;;   420-429  Gone / expired
+;;   430-439  Not found
+;;   440-449  Conflict / already exists
+;;   450-459  Gone / inactive
+;;   500-519  Server / payment errors
+;;   610-699  Business logic
+
 ;; Errors - Input Validation (400-409)
 (define-constant ERR-INVALID-INPUT (err u400))
 (define-constant ERR-INVALID-AMOUNT (err u401))
