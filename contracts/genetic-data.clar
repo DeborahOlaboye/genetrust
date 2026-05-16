@@ -556,6 +556,12 @@
     (ok (var-get total-datasets))
 )
 
+;; @notice Returns the count of currently active (non-deactivated) datasets.
+;; @return ok(uint) - the current active dataset count.
+(define-read-only (get-total-active-datasets)
+    (ok (var-get total-active-datasets))
+)
+
 ;; @notice Returns true if the user has valid full-access (level 3) to a dataset.
 ;; @param data-id The dataset ID.
 ;; @param user The principal to check.
