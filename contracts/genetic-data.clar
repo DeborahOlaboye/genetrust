@@ -439,6 +439,18 @@
     )
 )
 
+;; @notice Checks whether a user's access has explicitly expired (record exists but is stale).
+;; @dev Distinct from has-any-access — this returns true only when the record exists AND is expired.
+;; @param data-id The dataset ID.
+;; @param user The principal to check.
+;; @return ok(true) if a record exists and is expired, ok(false) if no record or still valid.
+(define-read-only (is-access-expired (data-id uint) (user principal))
+    (match (map-get? access-rights { data-id: data-id, user: user })
+        rights (ok (>= stacks-block-height (get expires-at rights)))
+        (ok false)
+    )
+)
+
 ;; @notice Returns the full access-rights record for a user if their access is not expired.
 ;; @param data-id The dataset ID.
 ;; @param user The principal to check.
