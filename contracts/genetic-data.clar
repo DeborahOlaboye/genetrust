@@ -682,15 +682,3 @@
     )
 )
 
-;; @notice Helper: Check if any access record exists for user on dataset
-;; @param data-id: Dataset ID
-;; @param user: User principal
-;; @return: ok true if any access exists (expired or not), ok false otherwise
-(define-read-only (has-any-access (data-id uint) (user principal))
-    (let ((access (map-get? access-rights { data-id: data-id, user: user })))
-        (match access
-            _ (ok true)
-            (ok false)
-        )
-    )
-)
