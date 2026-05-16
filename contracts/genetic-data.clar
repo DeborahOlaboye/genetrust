@@ -856,6 +856,17 @@
     )
 )
 
+;; @notice Helper: Validate a description string (MIN-DESCRIPTION-LENGTH–MAX-DESCRIPTION-LENGTH chars).
+;; @param description The description to validate.
+;; @return ok(true) if valid, ERR-INVALID-STRING-LENGTH otherwise.
+(define-read-only (validate-description (description (string-utf8 200)))
+    (begin
+        (asserts! (>= (len description) MIN-DESCRIPTION-LENGTH) ERR-INVALID-STRING-LENGTH)
+        (asserts! (<= (len description) MAX-DESCRIPTION-LENGTH) ERR-INVALID-STRING-LENGTH)
+        (ok true)
+    )
+)
+
 ;; @notice Helper: Validate a storage URL (must be MIN-URL-LENGTH–MAX-URL-LENGTH chars).
 ;; @param url The storage URL to validate.
 ;; @return ok(true) if valid, ERR-INVALID-STRING-LENGTH otherwise.
