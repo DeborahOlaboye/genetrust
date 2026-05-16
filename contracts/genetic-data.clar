@@ -760,16 +760,16 @@
     (price uint))
     (begin
         ;; Validate metadata hash
-        (asserts! (is-eq (len metadata-hash) u32) ERR-INVALID-HASH)
+        (asserts! (is-eq (len metadata-hash) HASH-LENGTH) ERR-INVALID-HASH)
         (asserts! (not (is-eq metadata-hash 0x0000000000000000000000000000000000000000000000000000000000000000)) ERR-ZERO-HASH)
         ;; Validate storage URL
         (asserts! (> (len storage-url) u0) ERR-INVALID-STRING-LENGTH)
         (asserts! (>= (len storage-url) MIN-URL-LENGTH) ERR-INVALID-STRING-LENGTH)
-        (asserts! (<= (len storage-url) u200) ERR-INVALID-STRING-LENGTH)
+        (asserts! (<= (len storage-url) MAX-URL-LENGTH) ERR-INVALID-STRING-LENGTH)
         ;; Validate description
         (asserts! (> (len description) u0) ERR-INVALID-STRING-LENGTH)
-        (asserts! (>= (len description) u10) ERR-INVALID-STRING-LENGTH)
-        (asserts! (<= (len description) u200) ERR-INVALID-STRING-LENGTH)
+        (asserts! (>= (len description) MIN-DESCRIPTION-LENGTH) ERR-INVALID-STRING-LENGTH)
+        (asserts! (<= (len description) MAX-DESCRIPTION-LENGTH) ERR-INVALID-STRING-LENGTH)
         ;; Validate access level
         (asserts! (and (>= access-level ACCESS-BASIC) (<= access-level ACCESS-FULL)) ERR-INVALID-ACCESS-LEVEL)
         ;; Validate price
