@@ -55,6 +55,9 @@
 ;; Access expires after ~30 days of blocks
 (define-constant ACCESS-EXPIRY-BLOCKS u8640)
 
+;; Warning threshold: ~4 days before expiry (6 blocks/hr × 24 hr × 4 days = 576)
+(define-constant ACCESS-EXPIRY-WARNING-BLOCKS u576)
+
 ;; Price cap: 1 billion STX in microSTX to prevent absurd listings
 (define-constant MAX-PRICE u1000000000000000)
 
