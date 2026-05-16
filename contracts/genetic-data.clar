@@ -262,14 +262,15 @@
     )
 )
 
-;; Revoke access from a user (owner only)
-;; @param data-id: ID of the dataset
-;; @param user: Principal whose access to revoke
-;; @returns: ok true on success, error otherwise
-;; @requires: Caller must be dataset owner
-;; @requires: User cannot be the caller (no self-revoke)
-;; @requires: Dataset must exist
-;; @requires: Access grant must exist for this user
+;; Revoke access from a user (owner only).
+;; @param data-id: ID of the dataset.
+;; @param user: Principal whose access to revoke (must not be the caller).
+;; @returns ok(true) on success.
+;;   ERR-DATASET-NOT-FOUND (u431) — dataset does not exist.
+;;   ERR-ACCESS-RIGHT-NOT-FOUND (u436) — user has no grant to revoke.
+;;   ERR-INVALID-INPUT (u400) — data-id is zero.
+;;   ERR-CANNOT-REVOKE-OWN-ACCESS (u611) — caller cannot revoke their own access.
+;;   ERR-NOT-OWNER (u411) — caller is not the dataset owner.
 (define-public (revoke-access (data-id uint) (user principal))
     (let ((dataset (unwrap! (map-get? datasets { data-id: data-id }) ERR-DATASET-NOT-FOUND))
           (access (unwrap! (map-get? access-rights { data-id: data-id, user: user }) ERR-ACCESS-RIGHT-NOT-FOUND)))
