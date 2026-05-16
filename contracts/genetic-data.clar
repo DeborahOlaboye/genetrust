@@ -61,6 +61,12 @@
 ;; Price cap: 1 billion STX in microSTX to prevent absurd listings
 (define-constant MAX-PRICE u1000000000000000)
 
+;; String length constraints for dataset fields
+(define-constant MIN-DESCRIPTION-LENGTH u10)
+(define-constant MAX-DESCRIPTION-LENGTH u200)
+(define-constant MAX-URL-LENGTH u200)
+(define-constant HASH-LENGTH u32)
+
 ;; Minimum storage URL length (e.g. "ipfs://a" is 8 chars)
 (define-constant MIN-URL-LENGTH u5)
 
