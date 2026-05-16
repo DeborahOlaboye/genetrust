@@ -822,6 +822,24 @@
     (var-get contract-owner)
 )
 
+;; @notice Returns a combined snapshot of dataset info and a specific user's access.
+;; @param data-id The dataset ID.
+;; @param user The principal whose access to include.
+;; @return Some(tuple) with dataset summary fields plus the user's valid access-level
+;;         (none if user has no valid access), none if dataset does not exist.
+(define-read-only (get-dataset-access-summary (data-id uint) (user principal))
+    (match (map-get? datasets { data-id: data-id })
+        dataset (some {
+            owner: (get owner dataset),
+            price: (get price dataset),
+            dataset-access-level: (get access-level dataset),
+            is-active: (get is-active dataset),
+            user-valid-access-level: (get-valid-access-level data-id user)
+        })
+        none
+    )
+)
+
 ;; @notice Returns a summary snapshot of key dataset fields.
 ;; @param data-id The dataset ID to summarise.
 ;; @return Some(tuple) with owner, price, access-level, and is-active flag.
