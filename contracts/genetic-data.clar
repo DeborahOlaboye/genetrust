@@ -984,6 +984,13 @@
     )
 )
 
+;; @notice Checks whether a data-id refers to a registered dataset (active or not).
+;; @param data-id The dataset ID to check.
+;; @return ok(true) if a dataset record exists, ok(false) otherwise.
+(define-read-only (is-registered-dataset (data-id uint))
+    (ok (is-some (map-get? datasets { data-id: data-id })))
+)
+
 ;; @notice Helper: Validate dataset exists, is active, and caller is owner
 ;; @param data-id: ID to validate  
 ;; @param caller: Principal to check ownership
