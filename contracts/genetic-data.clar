@@ -5,10 +5,11 @@
 ;; @notice Registers and manages genetic datasets on the Stacks blockchain.
 ;;         Handles dataset ownership, tiered access control, and access expiry.
 ;; @dev Deployed on Stacks mainnet at SP3KKFRRWQVJXEJCGM6ZB359EF01VRY86HW6CCD45.dataset-registry
-;; @changelog v1.1.0 — Input validation hardening: MAX-PRICE cap, MIN-URL-LENGTH,
-;;            zero-hash rejection, access-level cap in grant-access, contract-owner
-;;            guard in grant-access, print events on all state changes, new
-;;            update/transfer/reactivate/extend functions, comprehensive read helpers.
+;; @changelog v1.1.0 — Input validation hardening, print events, update/transfer/extend functions.
+;;            v1.2.0 — get-valid-access-level (core fix), remove duplicate has-any-access,
+;;            fix error section comments (u621, u423), add regrant-access, update-metadata-hash,
+;;            ERR-DATASET-ALREADY-ACTIVE, total-active-datasets tracking, 12 new read helpers,
+;;            access level label constants, named length constants (HASH-LENGTH etc.).
 
 ;; Error code ranges (shared convention across the GeneTrust contract suite):
 ;;   400-409  Input validation
