@@ -856,6 +856,17 @@
     )
 )
 
+;; @notice Helper: Validate that a price is within the accepted range.
+;; @param price The price in microSTX to validate.
+;; @return ok(true) if 0 < price <= MAX-PRICE, error otherwise.
+(define-read-only (validate-price (price uint))
+    (begin
+        (asserts! (> price u0) ERR-INVALID-AMOUNT)
+        (asserts! (<= price MAX-PRICE) ERR-PRICE-TOO-HIGH)
+        (ok true)
+    )
+)
+
 ;; @notice Helper: Validate that an access level is in the 1-3 range.
 ;; @param level The access level to validate.
 ;; @return ok(true) if valid, ERR-INVALID-ACCESS-LEVEL otherwise.
