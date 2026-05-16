@@ -35,6 +35,7 @@
 (define-constant ERR-ALREADY-EXISTS (err u440))
 (define-constant ERR-DATASET-ALREADY-EXISTS (err u441))
 (define-constant ERR-DUPLICATE-ACCESS-GRANT (err u444))
+(define-constant ERR-DATASET-ALREADY-ACTIVE (err u446))
 
 ;; Errors - Gone/Inactive (450-459)
 (define-constant ERR-INACTIVE-DATASET (err u450))
