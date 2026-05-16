@@ -39,12 +39,12 @@
 ;; Errors - Gone/Inactive (450-459)
 (define-constant ERR-INACTIVE-DATASET (err u450))
 
-;; Errors - Precondition Failed (460-469)
-(define-constant ERR-INSUFFICIENT-ACCESS-LEVEL (err u621))
-
 ;; Errors - Custom Business Logic (600-699)
 (define-constant ERR-SELF-GRANT-NOT-ALLOWED (err u610))
 (define-constant ERR-CANNOT-REVOKE-OWN-ACCESS (err u611))
+(define-constant ERR-INSUFFICIENT-ACCESS-LEVEL (err u621))
+
+;; Errors - Gone / Expired (420-429)
 (define-constant ERR-EXPIRED-ACCESS (err u423))
 
 ;; Access levels
