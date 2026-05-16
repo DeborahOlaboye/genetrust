@@ -583,6 +583,16 @@
     )
 )
 
+;; @notice Returns the age of a dataset in blocks (current block minus created-at).
+;; @param data-id The dataset ID to look up.
+;; @return Some(uint) blocks since creation if dataset exists, none otherwise.
+(define-read-only (get-dataset-age-blocks (data-id uint))
+    (match (map-get? datasets { data-id: data-id })
+        dataset (some (- stacks-block-height (get created-at dataset)))
+        none
+    )
+)
+
 ;; @notice Returns the total number of datasets ever registered (including deactivated).
 ;; @return ok(uint) - the all-time dataset registration count.
 (define-read-only (get-total-datasets)
