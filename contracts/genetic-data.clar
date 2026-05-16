@@ -360,7 +360,7 @@
         (asserts! (> data-id u0) ERR-INVALID-INPUT)
         (asserts! (is-eq tx-sender (get owner dataset)) ERR-NOT-OWNER)
         (asserts! (get is-active dataset) ERR-INACTIVE-DATASET)
-        (asserts! (and (>= (len new-description) u10) (<= (len new-description) u200)) ERR-INVALID-STRING-LENGTH)
+        (asserts! (and (>= (len new-description) MIN-DESCRIPTION-LENGTH) (<= (len new-description) MAX-DESCRIPTION-LENGTH)) ERR-INVALID-STRING-LENGTH)
         (map-set datasets { data-id: data-id } (merge dataset { description: new-description }))
         (print { event: "dataset-description-updated", data-id: data-id, owner: tx-sender,
                  block: stacks-block-height })
