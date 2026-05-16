@@ -439,6 +439,19 @@
     )
 )
 
+;; @notice Returns the full access-rights record for a user if their access is not expired.
+;; @param data-id The dataset ID.
+;; @param user The principal to check.
+;; @return Some(access-right) if the record exists and is unexpired, none otherwise.
+(define-read-only (get-valid-access (data-id uint) (user principal))
+    (match (map-get? access-rights { data-id: data-id, user: user })
+        rights (if (< stacks-block-height (get expires-at rights))
+                    (some rights)
+                    none)
+        none
+    )
+)
+
 ;; @notice Returns the access level for a user if their access exists and is not expired.
 ;; @dev Single-call alternative to calling has-valid-access then get-user-access-level.
 ;; @param data-id The dataset ID.
