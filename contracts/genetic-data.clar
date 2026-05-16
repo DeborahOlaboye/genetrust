@@ -762,6 +762,16 @@
     )
 )
 
+;; @notice Returns both price and access-level of a dataset in one call.
+;; @param data-id The dataset ID to look up.
+;; @return Some(tuple { price, access-level }) if dataset exists, none otherwise.
+(define-read-only (get-dataset-price-and-level (data-id uint))
+    (match (map-get? datasets { data-id: data-id })
+        dataset (some { price: (get price dataset), access-level: (get access-level dataset) })
+        none
+    )
+)
+
 ;; @notice Returns the current price of a dataset in microSTX.
 ;; @param data-id The dataset ID to look up.
 ;; @return Some(uint) if dataset exists, none otherwise.
