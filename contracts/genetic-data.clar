@@ -291,11 +291,17 @@
     )
 )
 
-;; Update the access level of an existing grant (owner only)
-;; @param data-id: ID of the dataset
-;; @param user: Principal whose access level to update
-;; @param new-access-level: New access level (1-3, cannot exceed dataset level)
-;; @returns: ok true on success, error otherwise
+;; Update the access level of an existing grant (owner only).
+;; @param data-id: ID of the dataset.
+;; @param user: Principal whose access level to update (must have an existing grant).
+;; @param new-access-level: New access level (1-3, cannot exceed dataset level).
+;; @returns ok(true) on success.
+;;   ERR-DATASET-NOT-FOUND (u431) — dataset does not exist.
+;;   ERR-ACCESS-RIGHT-NOT-FOUND (u436) — user has no existing grant.
+;;   ERR-NOT-OWNER (u411) — caller is not the dataset owner.
+;;   ERR-INACTIVE-DATASET (u450) — dataset is deactivated.
+;;   ERR-INVALID-ACCESS-LEVEL (u406) — new-access-level out of 1-3 range.
+;;   ERR-INSUFFICIENT-ACCESS-LEVEL (u621) — new level exceeds dataset level.
 (define-public (update-access-level (data-id uint) (user principal) (new-access-level uint))
     (let (
         (dataset (unwrap! (map-get? datasets { data-id: data-id }) ERR-DATASET-NOT-FOUND))
