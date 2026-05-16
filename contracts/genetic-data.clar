@@ -71,6 +71,8 @@
 ;; Minimum storage URL length (e.g. "ipfs://a" is 8 chars)
 (define-constant MIN-URL-LENGTH u5)
 
+(define-constant CONTRACT-VERSION "1.2.0")
+
 ;; Contract owner — the deployer; can be transferred via set-contract-owner
 (define-data-var contract-owner principal tx-sender)
 
