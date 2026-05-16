@@ -1,14 +1,25 @@
 ;; genetic-data.clar
 ;; @title GeneTrust Dataset Registry
-;; @version 1.1.0
+;; @version 1.2.0
 ;; @author GeneTrust
 ;; @notice Registers and manages genetic datasets on the Stacks blockchain.
 ;;         Handles dataset ownership, tiered access control, and access expiry.
 ;; @dev Deployed on Stacks mainnet at SP3KKFRRWQVJXEJCGM6ZB359EF01VRY86HW6CCD45.dataset-registry
-;; @changelog v1.1.0 — Input validation hardening: MAX-PRICE cap, MIN-URL-LENGTH,
-;;            zero-hash rejection, access-level cap in grant-access, contract-owner
-;;            guard in grant-access, print events on all state changes, new
-;;            update/transfer/reactivate/extend functions, comprehensive read helpers.
+;; @changelog v1.1.0 — Input validation hardening, print events, update/transfer/extend functions.
+;;            v1.2.0 — get-valid-access-level (core fix), remove duplicate has-any-access,
+;;            fix error section comments (u621, u423), add regrant-access, update-metadata-hash,
+;;            ERR-DATASET-ALREADY-ACTIVE, total-active-datasets tracking, 12 new read helpers,
+;;            access level label constants, named length constants (HASH-LENGTH etc.).
+
+;; Error code ranges (shared convention across the GeneTrust contract suite):
+;;   400-409  Input validation
+;;   410-414  Authorization / ownership
+;;   420-429  Gone / expired
+;;   430-439  Not found
+;;   440-449  Conflict / already exists
+;;   450-459  Gone / inactive
+;;   500-519  Server / payment errors
+;;   610-699  Business logic
 
 ;; Errors - Input Validation (400-409)
 (define-constant ERR-INVALID-INPUT (err u400))
@@ -35,16 +46,17 @@
 (define-constant ERR-ALREADY-EXISTS (err u440))
 (define-constant ERR-DATASET-ALREADY-EXISTS (err u441))
 (define-constant ERR-DUPLICATE-ACCESS-GRANT (err u444))
+(define-constant ERR-DATASET-ALREADY-ACTIVE (err u446))
 
 ;; Errors - Gone/Inactive (450-459)
 (define-constant ERR-INACTIVE-DATASET (err u450))
 
-;; Errors - Precondition Failed (460-469)
-(define-constant ERR-INSUFFICIENT-ACCESS-LEVEL (err u621))
-
 ;; Errors - Custom Business Logic (600-699)
 (define-constant ERR-SELF-GRANT-NOT-ALLOWED (err u610))
 (define-constant ERR-CANNOT-REVOKE-OWN-ACCESS (err u611))
+(define-constant ERR-INSUFFICIENT-ACCESS-LEVEL (err u621))
+
+;; Errors - Gone / Expired (420-429)
 (define-constant ERR-EXPIRED-ACCESS (err u423))
 
 ;; Access levels
@@ -52,14 +64,30 @@
 (define-constant ACCESS-DETAILED u2)
 (define-constant ACCESS-FULL u3)
 
+;; Human-readable access level labels (returned by get-access-level-label)
+(define-constant ACCESS-BASIC-LABEL "basic")
+(define-constant ACCESS-DETAILED-LABEL "detailed")
+(define-constant ACCESS-FULL-LABEL "full")
+
 ;; Access expires after ~30 days of blocks
 (define-constant ACCESS-EXPIRY-BLOCKS u8640)
+
+;; Warning threshold: ~4 days before expiry (6 blocks/hr × 24 hr × 4 days = 576)
+(define-constant ACCESS-EXPIRY-WARNING-BLOCKS u576)
 
 ;; Price cap: 1 billion STX in microSTX to prevent absurd listings
 (define-constant MAX-PRICE u1000000000000000)
 
+;; String length constraints for dataset fields
+(define-constant MIN-DESCRIPTION-LENGTH u10)
+(define-constant MAX-DESCRIPTION-LENGTH u200)
+(define-constant MAX-URL-LENGTH u200)
+(define-constant HASH-LENGTH u32)
+
 ;; Minimum storage URL length (e.g. "ipfs://a" is 8 chars)
 (define-constant MIN-URL-LENGTH u5)
+
+(define-constant CONTRACT-VERSION "1.2.0")
 
 ;; Contract owner — the deployer; can be transferred via set-contract-owner
 (define-data-var contract-owner principal tx-sender)
@@ -69,6 +97,8 @@
 
 ;; Running total of all datasets ever registered (including deactivated ones)
 (define-data-var total-datasets uint u0)
+;; Count of currently active (non-deactivated) datasets
+(define-data-var total-active-datasets uint u0)
 
 ;; @notice Primary storage map for all registered genetic datasets.
 ;;         Keyed by auto-incremented data-id. Owner is always tx-sender at registration time.
@@ -99,18 +129,19 @@
     }
 )
 
-;; Register a new dataset
-;; @param metadata-hash: 32-byte hash of dataset metadata (must not be all zeros)
-;; @param storage-url: URL where dataset is stored (5-200 chars, non-empty)
-;; @param description: Dataset description (10-200 chars, non-empty)
-;; @param access-level: Access level (1=basic, 2=detailed, 3=full)
-;; @param price: Price in microSTX (must be > 0 and <= MAX-PRICE)
-;; @returns: ok with data-id on success, error otherwise
-;; @requires: metadata-hash must be exactly 32 bytes and not zero-filled
-;; @requires: storage-url must be between 5 and 200 characters
-;; @requires: description must be between 10 and 200 characters
-;; @requires: access-level must be 1, 2, or 3
-;; @requires: price must be positive and not exceed MAX-PRICE constant
+;; Register a new genetic dataset on-chain. The caller becomes the dataset owner.
+;; @param metadata-hash: 32-byte HASH-LENGTH hash of dataset metadata (must not be all zeros).
+;; @param storage-url: URL where dataset is stored (MIN-URL-LENGTH–MAX-URL-LENGTH chars).
+;; @param description: Dataset description (MIN-DESCRIPTION-LENGTH–MAX-DESCRIPTION-LENGTH chars).
+;; @param access-level: Access level (1=basic, 2=detailed, 3=full).
+;; @param price: Price in microSTX (must be > 0 and <= MAX-PRICE).
+;; @returns ok(data-id) on success.
+;;   ERR-INVALID-HASH (u403) — hash is not HASH-LENGTH bytes.
+;;   ERR-ZERO-HASH (u408) — hash is all zeros.
+;;   ERR-INVALID-STRING-LENGTH (u407) — URL or description out of range.
+;;   ERR-INVALID-ACCESS-LEVEL (u406) — access-level not in 1-3.
+;;   ERR-INVALID-AMOUNT (u401) — price is zero.
+;;   ERR-PRICE-TOO-HIGH (u402) — price exceeds MAX-PRICE.
 (define-public (register-dataset
     (metadata-hash (buff 32))
     (storage-url (string-utf8 200))
@@ -119,8 +150,8 @@
     (price uint))
     (let ((data-id (var-get next-data-id)))
         ;; VALIDATION PHASE 1: Metadata hash validation
-        ;; Check hash is exactly 32 bytes
-        (asserts! (is-eq (len metadata-hash) u32) ERR-INVALID-HASH)
+        ;; Check hash is exactly HASH-LENGTH bytes
+        (asserts! (is-eq (len metadata-hash) HASH-LENGTH) ERR-INVALID-HASH)
         ;; Check hash is not all-zero (meaningless sentinel value)
         (asserts! (not (is-eq metadata-hash 0x0000000000000000000000000000000000000000000000000000000000000000)) ERR-ZERO-HASH)
         
@@ -130,15 +161,15 @@
         ;; Check URL meets minimum length requirement
         (asserts! (>= (len storage-url) MIN-URL-LENGTH) ERR-INVALID-STRING-LENGTH)
         ;; Check URL does not exceed maximum length
-        (asserts! (<= (len storage-url) u200) ERR-INVALID-STRING-LENGTH)
+        (asserts! (<= (len storage-url) MAX-URL-LENGTH) ERR-INVALID-STRING-LENGTH)
         
         ;; VALIDATION PHASE 3: Description validation
         ;; Check description is not empty
         (asserts! (> (len description) u0) ERR-INVALID-STRING-LENGTH)
         ;; Check description meets minimum length requirement
-        (asserts! (>= (len description) u10) ERR-INVALID-STRING-LENGTH)
+        (asserts! (>= (len description) MIN-DESCRIPTION-LENGTH) ERR-INVALID-STRING-LENGTH)
         ;; Check description does not exceed maximum length
-        (asserts! (<= (len description) u200) ERR-INVALID-STRING-LENGTH)
+        (asserts! (<= (len description) MAX-DESCRIPTION-LENGTH) ERR-INVALID-STRING-LENGTH)
         
         ;; VALIDATION PHASE 4: Access level validation
         ;; Check access level is >= 1 and <= 3
@@ -169,21 +200,24 @@
         ;; Increment counters
         (var-set next-data-id (+ data-id u1))
         (var-set total-datasets (+ (var-get total-datasets) u1))
+        (var-set total-active-datasets (+ (var-get total-active-datasets) u1))
         (ok data-id)
     )
 )
 
-;; Grant access to a user (owner only)
-;; @param data-id: ID of the dataset to grant access to
-;; @param user: Principal to grant access to (must not be caller)
-;; @param access-level: Access level to grant (1=basic, 2=detailed, 3=full)
-;; @returns: ok true on success, error otherwise
-;; @requires: Caller must be dataset owner
-;; @requires: User cannot be the caller (no self-grant)
-;; @requires: User cannot be the contract itself
-;; @requires: Dataset must exist and be active
-;; @requires: Access-level must be 1-3 and <= dataset's own access level
-;; @requires: Access must not already exist for this user on this dataset
+;; Grant access to a user (owner only). Fails if the user already has any grant — use regrant-access to overwrite.
+;; @param data-id: ID of the dataset to grant access to.
+;; @param user: Principal to grant access to (must not be caller or contract).
+;; @param access-level: Access level to grant (1-3, cannot exceed dataset level).
+;; @returns ok(true) on success.
+;;   ERR-DATASET-NOT-FOUND (u431) — dataset does not exist.
+;;   ERR-INVALID-INPUT (u400) — data-id is zero or user is the contract.
+;;   ERR-SELF-GRANT-NOT-ALLOWED (u610) — user equals tx-sender.
+;;   ERR-NOT-OWNER (u411) — caller is not the dataset owner.
+;;   ERR-INACTIVE-DATASET (u450) — dataset is deactivated.
+;;   ERR-INVALID-ACCESS-LEVEL (u406) — access-level out of 1-3 range.
+;;   ERR-INSUFFICIENT-ACCESS-LEVEL (u621) — access-level exceeds dataset level.
+;;   ERR-DUPLICATE-ACCESS-GRANT (u444) — user already has an access grant.
 (define-public (grant-access (data-id uint) (user principal) (access-level uint))
     (let ((dataset (unwrap! (map-get? datasets { data-id: data-id }) ERR-DATASET-NOT-FOUND)))
         ;; VALIDATION PHASE 1: Input validation
@@ -230,14 +264,15 @@
     )
 )
 
-;; Revoke access from a user (owner only)
-;; @param data-id: ID of the dataset
-;; @param user: Principal whose access to revoke
-;; @returns: ok true on success, error otherwise
-;; @requires: Caller must be dataset owner
-;; @requires: User cannot be the caller (no self-revoke)
-;; @requires: Dataset must exist
-;; @requires: Access grant must exist for this user
+;; Revoke access from a user (owner only).
+;; @param data-id: ID of the dataset.
+;; @param user: Principal whose access to revoke (must not be the caller).
+;; @returns ok(true) on success.
+;;   ERR-DATASET-NOT-FOUND (u431) — dataset does not exist.
+;;   ERR-ACCESS-RIGHT-NOT-FOUND (u436) — user has no grant to revoke.
+;;   ERR-INVALID-INPUT (u400) — data-id is zero.
+;;   ERR-CANNOT-REVOKE-OWN-ACCESS (u611) — caller cannot revoke their own access.
+;;   ERR-NOT-OWNER (u411) — caller is not the dataset owner.
 (define-public (revoke-access (data-id uint) (user principal))
     (let ((dataset (unwrap! (map-get? datasets { data-id: data-id }) ERR-DATASET-NOT-FOUND))
           (access (unwrap! (map-get? access-rights { data-id: data-id, user: user }) ERR-ACCESS-RIGHT-NOT-FOUND)))
@@ -261,11 +296,17 @@
     )
 )
 
-;; Update the access level of an existing grant (owner only)
-;; @param data-id: ID of the dataset
-;; @param user: Principal whose access level to update
-;; @param new-access-level: New access level (1-3, cannot exceed dataset level)
-;; @returns: ok true on success, error otherwise
+;; Update the access level of an existing grant (owner only).
+;; @param data-id: ID of the dataset.
+;; @param user: Principal whose access level to update (must have an existing grant).
+;; @param new-access-level: New access level (1-3, cannot exceed dataset level).
+;; @returns ok(true) on success.
+;;   ERR-DATASET-NOT-FOUND (u431) — dataset does not exist.
+;;   ERR-ACCESS-RIGHT-NOT-FOUND (u436) — user has no existing grant.
+;;   ERR-NOT-OWNER (u411) — caller is not the dataset owner.
+;;   ERR-INACTIVE-DATASET (u450) — dataset is deactivated.
+;;   ERR-INVALID-ACCESS-LEVEL (u406) — new-access-level out of 1-3 range.
+;;   ERR-INSUFFICIENT-ACCESS-LEVEL (u621) — new level exceeds dataset level.
 (define-public (update-access-level (data-id uint) (user principal) (new-access-level uint))
     (let (
         (dataset (unwrap! (map-get? datasets { data-id: data-id }) ERR-DATASET-NOT-FOUND))
@@ -286,11 +327,13 @@
     )
 )
 
-;; Deactivate a dataset (owner only)
-;; @param data-id: ID of the dataset to deactivate
-;; @returns: ok true on success, error otherwise
-;; @requires: Caller must be dataset owner
-;; @requires: Dataset must exist and be active
+;; Deactivate a dataset (owner only). Soft-deletes by setting is-active=false.
+;; @param data-id: ID of the dataset to deactivate (must be > 0).
+;; @returns ok(true) on success.
+;;   ERR-DATASET-NOT-FOUND (u431) — dataset does not exist.
+;;   ERR-INVALID-INPUT (u400) — data-id is zero.
+;;   ERR-NOT-OWNER (u411) — caller is not the dataset owner.
+;;   ERR-INACTIVE-DATASET (u450) — dataset is already deactivated.
 (define-public (deactivate-dataset (data-id uint))
     (let ((dataset (unwrap! (map-get? datasets { data-id: data-id }) ERR-DATASET-NOT-FOUND)))
         ;; Validate data-id is positive
@@ -301,6 +344,7 @@
         (asserts! (get is-active dataset) ERR-INACTIVE-DATASET)
         ;; Deactivate the dataset
         (map-set datasets { data-id: data-id } (merge dataset { is-active: false }))
+        (var-set total-active-datasets (- (var-get total-active-datasets) u1))
         (print { event: "dataset-deactivated", data-id: data-id, owner: tx-sender,
                  block: stacks-block-height })
         (ok true)
@@ -334,7 +378,7 @@
         (asserts! (> data-id u0) ERR-INVALID-INPUT)
         (asserts! (is-eq tx-sender (get owner dataset)) ERR-NOT-OWNER)
         (asserts! (get is-active dataset) ERR-INACTIVE-DATASET)
-        (asserts! (and (>= (len new-url) MIN-URL-LENGTH) (<= (len new-url) u200)) ERR-INVALID-STRING-LENGTH)
+        (asserts! (and (>= (len new-url) MIN-URL-LENGTH) (<= (len new-url) MAX-URL-LENGTH)) ERR-INVALID-STRING-LENGTH)
         (map-set datasets { data-id: data-id } (merge dataset { storage-url: new-url }))
         (print { event: "dataset-url-updated", data-id: data-id, owner: tx-sender,
                  block: stacks-block-height })
@@ -351,9 +395,45 @@
         (asserts! (> data-id u0) ERR-INVALID-INPUT)
         (asserts! (is-eq tx-sender (get owner dataset)) ERR-NOT-OWNER)
         (asserts! (get is-active dataset) ERR-INACTIVE-DATASET)
-        (asserts! (and (>= (len new-description) u10) (<= (len new-description) u200)) ERR-INVALID-STRING-LENGTH)
+        (asserts! (and (>= (len new-description) MIN-DESCRIPTION-LENGTH) (<= (len new-description) MAX-DESCRIPTION-LENGTH)) ERR-INVALID-STRING-LENGTH)
         (map-set datasets { data-id: data-id } (merge dataset { description: new-description }))
         (print { event: "dataset-description-updated", data-id: data-id, owner: tx-sender,
+                 block: stacks-block-height })
+        (ok true)
+    )
+)
+
+;; Update the metadata hash of an active dataset (owner only).
+;; @param data-id: ID of the dataset
+;; @param new-hash: New 32-byte metadata hash (must not be zero-filled)
+;; @returns: ok true on success, error otherwise
+(define-public (update-metadata-hash (data-id uint) (new-hash (buff 32)))
+    (let ((dataset (unwrap! (map-get? datasets { data-id: data-id }) ERR-DATASET-NOT-FOUND)))
+        (asserts! (> data-id u0) ERR-INVALID-INPUT)
+        (asserts! (is-eq tx-sender (get owner dataset)) ERR-NOT-OWNER)
+        (asserts! (get is-active dataset) ERR-INACTIVE-DATASET)
+        (asserts! (is-eq (len new-hash) HASH-LENGTH) ERR-INVALID-HASH)
+        (asserts! (not (is-eq new-hash 0x0000000000000000000000000000000000000000000000000000000000000000)) ERR-ZERO-HASH)
+        (map-set datasets { data-id: data-id } (merge dataset { metadata-hash: new-hash }))
+        (print { event: "dataset-hash-updated", data-id: data-id, owner: tx-sender,
+                 block: stacks-block-height })
+        (ok true)
+    )
+)
+
+;; Update the maximum access level of a dataset (owner only).
+;; @param data-id: ID of the dataset.
+;; @param new-level: New maximum access level (1-3).
+;; @returns ok(true) on success.
+(define-public (update-dataset-access-level (data-id uint) (new-level uint))
+    (let ((dataset (unwrap! (map-get? datasets { data-id: data-id }) ERR-DATASET-NOT-FOUND)))
+        (asserts! (> data-id u0) ERR-INVALID-INPUT)
+        (asserts! (is-eq tx-sender (get owner dataset)) ERR-NOT-OWNER)
+        (asserts! (get is-active dataset) ERR-INACTIVE-DATASET)
+        (asserts! (and (>= new-level ACCESS-BASIC) (<= new-level ACCESS-FULL)) ERR-INVALID-ACCESS-LEVEL)
+        (map-set datasets { data-id: data-id } (merge dataset { access-level: new-level }))
+        (print { event: "dataset-access-level-updated", data-id: data-id, owner: tx-sender,
+                 old-level: (get access-level dataset), new-level: new-level,
                  block: stacks-block-height })
         (ok true)
     )
@@ -366,8 +446,9 @@
     (let ((dataset (unwrap! (map-get? datasets { data-id: data-id }) ERR-DATASET-NOT-FOUND)))
         (asserts! (> data-id u0) ERR-INVALID-INPUT)
         (asserts! (is-eq tx-sender (get owner dataset)) ERR-NOT-OWNER)
-        (asserts! (not (get is-active dataset)) ERR-ALREADY-EXISTS)
+        (asserts! (not (get is-active dataset)) ERR-DATASET-ALREADY-ACTIVE)
         (map-set datasets { data-id: data-id } (merge dataset { is-active: true }))
+        (var-set total-active-datasets (+ (var-get total-active-datasets) u1))
         (print { event: "dataset-reactivated", data-id: data-id, owner: tx-sender,
                  block: stacks-block-height })
         (ok true)
@@ -391,10 +472,15 @@
     )
 )
 
-;; Extend an existing access grant by another ACCESS-EXPIRY-BLOCKS period (owner only)
-;; @param data-id: ID of the dataset
-;; @param user: Principal whose access to extend
-;; @returns: ok true on success, error otherwise
+;; Extend an existing access grant by another ACCESS-EXPIRY-BLOCKS period (owner only).
+;; The new expiry is always stacks-block-height + ACCESS-EXPIRY-BLOCKS, not additive.
+;; @param data-id: ID of the dataset.
+;; @param user: Principal whose access to extend (must have an existing grant).
+;; @returns ok(true) on success.
+;;   ERR-DATASET-NOT-FOUND (u431) — dataset does not exist.
+;;   ERR-ACCESS-RIGHT-NOT-FOUND (u436) — user has no grant to extend.
+;;   ERR-NOT-OWNER (u411) — caller is not the dataset owner.
+;;   ERR-INACTIVE-DATASET (u450) — dataset is deactivated.
 (define-public (extend-access (data-id uint) (user principal))
     (let (
         (dataset (unwrap! (map-get? datasets { data-id: data-id }) ERR-DATASET-NOT-FOUND))
@@ -409,6 +495,37 @@
         (print { event: "access-extended", data-id: data-id, user: user,
                  new-expires-at: (+ stacks-block-height ACCESS-EXPIRY-BLOCKS),
                  extended-by: tx-sender, block: stacks-block-height })
+        (ok true)
+    )
+)
+
+;; Re-grant or replace access for a user (owner only). Unlike grant-access this
+;; overwrites an existing grant rather than returning ERR-DUPLICATE-ACCESS-GRANT.
+;; Useful when re-granting with a different level or after expiry.
+;; @param data-id: ID of the dataset
+;; @param user: Principal to grant access to
+;; @param access-level: Access level (1-3, cannot exceed dataset level)
+;; @returns: ok true on success, error otherwise
+(define-public (regrant-access (data-id uint) (user principal) (access-level uint))
+    (let ((dataset (unwrap! (map-get? datasets { data-id: data-id }) ERR-DATASET-NOT-FOUND)))
+        (asserts! (> data-id u0) ERR-INVALID-INPUT)
+        (asserts! (not (is-eq user tx-sender)) ERR-SELF-GRANT-NOT-ALLOWED)
+        (asserts! (not (is-eq user (as-contract tx-sender))) ERR-INVALID-INPUT)
+        (asserts! (is-eq tx-sender (get owner dataset)) ERR-NOT-OWNER)
+        (asserts! (get is-active dataset) ERR-INACTIVE-DATASET)
+        (asserts! (and (>= access-level ACCESS-BASIC) (<= access-level ACCESS-FULL)) ERR-INVALID-ACCESS-LEVEL)
+        (asserts! (<= access-level (get access-level dataset)) ERR-INSUFFICIENT-ACCESS-LEVEL)
+        (map-set access-rights { data-id: data-id, user: user }
+            {
+                access-level: access-level,
+                expires-at: (+ stacks-block-height ACCESS-EXPIRY-BLOCKS),
+                granted-by: tx-sender
+            }
+        )
+        (print { event: "access-regranted", data-id: data-id, user: user,
+                 access-level: access-level, granted-by: tx-sender,
+                 expires-at: (+ stacks-block-height ACCESS-EXPIRY-BLOCKS),
+                 block: stacks-block-height })
         (ok true)
     )
 )
@@ -432,10 +549,120 @@
 ;; @param data-id The dataset ID.
 ;; @param user The principal to check.
 ;; @return ok(true) if access exists and has not expired, ok(false) otherwise.
+;; @dev Use get-valid-access-level to also retrieve the level in one call.
+;;      Use has-sufficient-access to check expiry + minimum level together.
+;;      Use get-access-info for a full snapshot (level, expiry, granted-by, remaining).
 (define-read-only (has-valid-access (data-id uint) (user principal))
     (match (map-get? access-rights { data-id: data-id, user: user })
         rights (ok (< stacks-block-height (get expires-at rights)))
         (ok false)
+    )
+)
+
+;; @notice Returns true when valid access exists and is within ACCESS-EXPIRY-WARNING-BLOCKS of expiring.
+;; @param data-id The dataset ID.
+;; @param user The principal to check.
+;; @return ok(true) if access is valid but expires within the warning window, ok(false) otherwise.
+(define-read-only (is-access-near-expiry (data-id uint) (user principal))
+    (match (map-get? access-rights { data-id: data-id, user: user })
+        rights (ok (and (< stacks-block-height (get expires-at rights))
+                        (<= (- (get expires-at rights) stacks-block-height)
+                            ACCESS-EXPIRY-WARNING-BLOCKS)))
+        (ok false)
+    )
+)
+
+;; @notice Checks whether a user has valid (unexpired) access at or above a minimum level.
+;; @param data-id The dataset ID.
+;; @param user The principal to check.
+;; @param min-level The minimum required access level (1-3).
+;; @return ok(true) if access is valid, unexpired, and >= min-level; ok(false) otherwise.
+(define-read-only (has-sufficient-access (data-id uint) (user principal) (min-level uint))
+    (match (map-get? access-rights { data-id: data-id, user: user })
+        rights (ok (and (< stacks-block-height (get expires-at rights))
+                        (>= (get access-level rights) min-level)))
+        (ok false)
+    )
+)
+
+;; @notice Returns the number of blocks remaining before a user's access expires.
+;; @param data-id The dataset ID.
+;; @param user The principal to check.
+;; @return Some(uint) blocks remaining if access is valid, Some(0) if already expired,
+;;         none if no access record exists.
+(define-read-only (get-access-remaining-blocks (data-id uint) (user principal))
+    (match (map-get? access-rights { data-id: data-id, user: user })
+        rights (some (if (> (get expires-at rights) stacks-block-height)
+                         (- (get expires-at rights) stacks-block-height)
+                         u0))
+        none
+    )
+)
+
+;; @notice Checks whether a user's access has explicitly expired (record exists but is stale).
+;; @dev Distinct from has-any-access — this returns true only when the record exists AND is expired.
+;; @param data-id The dataset ID.
+;; @param user The principal to check.
+;; @return ok(true) if a record exists and is expired, ok(false) if no record or still valid.
+(define-read-only (is-access-expired (data-id uint) (user principal))
+    (match (map-get? access-rights { data-id: data-id, user: user })
+        rights (ok (>= stacks-block-height (get expires-at rights)))
+        (ok false)
+    )
+)
+
+;; @notice Returns the full access-rights record for a user if their access is not expired.
+;; @param data-id The dataset ID.
+;; @param user The principal to check.
+;; @return Some(access-right) if the record exists and is unexpired, none otherwise.
+(define-read-only (get-valid-access (data-id uint) (user principal))
+    (match (map-get? access-rights { data-id: data-id, user: user })
+        rights (if (< stacks-block-height (get expires-at rights))
+                    (some rights)
+                    none)
+        none
+    )
+)
+
+;; @notice Alias of get-access-remaining-blocks with a more descriptive name.
+;; @param data-id The dataset ID.
+;; @param user The principal to check.
+;; @return Some(uint) blocks remaining (0 if expired), none if no record.
+(define-read-only (get-blocks-until-expiry (data-id uint) (user principal))
+    (get-access-remaining-blocks data-id user)
+)
+
+;; @notice Returns a comprehensive access snapshot for a user on a dataset.
+;; @param data-id The dataset ID.
+;; @param user The principal to check.
+;; @return Some(tuple) with level, expires-at, granted-by, is-valid, remaining-blocks
+;;         if an access record exists, none otherwise.
+(define-read-only (get-access-info (data-id uint) (user principal))
+    (match (map-get? access-rights { data-id: data-id, user: user })
+        rights (some {
+            access-level: (get access-level rights),
+            expires-at: (get expires-at rights),
+            granted-by: (get granted-by rights),
+            is-valid: (< stacks-block-height (get expires-at rights)),
+            remaining-blocks: (if (> (get expires-at rights) stacks-block-height)
+                                  (- (get expires-at rights) stacks-block-height)
+                                  u0)
+        })
+        none
+    )
+)
+
+;; @notice Returns the access level for a user if their access exists and is not expired.
+;; @dev Single-call alternative to calling has-valid-access then get-user-access-level.
+;; @param data-id The dataset ID.
+;; @param user The principal to check.
+;; @return Some(access-level) if access is valid and unexpired, none if expired or absent.
+(define-read-only (get-valid-access-level (data-id uint) (user principal))
+    (match (map-get? access-rights { data-id: data-id, user: user })
+        rights (if (< stacks-block-height (get expires-at rights))
+                    (some (get access-level rights))
+                    none)
+        none
     )
 )
 
@@ -456,10 +683,73 @@
     )
 )
 
+;; @notice Returns the age of a dataset in blocks (current block minus created-at).
+;; @param data-id The dataset ID to look up.
+;; @return Some(uint) blocks since creation if dataset exists, none otherwise.
+(define-read-only (get-dataset-age-blocks (data-id uint))
+    (match (map-get? datasets { data-id: data-id })
+        dataset (some (- stacks-block-height (get created-at dataset)))
+        none
+    )
+)
+
 ;; @notice Returns the total number of datasets ever registered (including deactivated).
 ;; @return ok(uint) - the all-time dataset registration count.
 (define-read-only (get-total-datasets)
     (ok (var-get total-datasets))
+)
+
+;; @notice Returns the count of currently active (non-deactivated) datasets.
+;; @return ok(uint) - the current active dataset count.
+(define-read-only (get-total-active-datasets)
+    (ok (var-get total-active-datasets))
+)
+
+;; @notice Returns true if the user has valid basic-access (level 1+) to a dataset.
+;; @param data-id The dataset ID.
+;; @param user The principal to check.
+;; @return ok(true) if access is valid and level >= 1; ok(false) otherwise.
+(define-read-only (has-basic-access (data-id uint) (user principal))
+    (match (map-get? access-rights { data-id: data-id, user: user })
+        rights (ok (and (< stacks-block-height (get expires-at rights))
+                        (>= (get access-level rights) ACCESS-BASIC)))
+        (ok false)
+    )
+)
+
+;; @notice Returns true if the user has valid detailed-access (level 2+) to a dataset.
+;; @param data-id The dataset ID.
+;; @param user The principal to check.
+;; @return ok(true) if access is valid and level >= 2; ok(false) otherwise.
+(define-read-only (has-detailed-access (data-id uint) (user principal))
+    (match (map-get? access-rights { data-id: data-id, user: user })
+        rights (ok (and (< stacks-block-height (get expires-at rights))
+                        (>= (get access-level rights) ACCESS-DETAILED)))
+        (ok false)
+    )
+)
+
+;; @notice Returns true if the user has valid full-access (level 3) to a dataset.
+;; @param data-id The dataset ID.
+;; @param user The principal to check.
+;; @return ok(true) if access is valid, unexpired, and level 3; ok(false) otherwise.
+(define-read-only (has-full-access (data-id uint) (user principal))
+    (match (map-get? access-rights { data-id: data-id, user: user })
+        rights (ok (and (< stacks-block-height (get expires-at rights))
+                        (is-eq (get access-level rights) ACCESS-FULL)))
+        (ok false)
+    )
+)
+
+;; @notice Returns true if the given principal is the owner of a dataset.
+;; @param data-id The dataset ID.
+;; @param principal The principal to check.
+;; @return ok(true) if the dataset exists and the principal is owner, ok(false) otherwise.
+(define-read-only (is-dataset-owner (data-id uint) (who principal))
+    (match (map-get? datasets { data-id: data-id })
+        dataset (ok (is-eq who (get owner dataset)))
+        (ok false)
+    )
 )
 
 ;; @notice Returns true if the given dataset exists and is active.
@@ -587,10 +877,46 @@
     )
 )
 
+;; @notice Returns the human-readable label for an access level uint.
+;; @param level The access level (1-3).
+;; @return Some(string-ascii) label if level is valid, none if out of range.
+(define-read-only (get-access-level-label (level uint))
+    (if (is-eq level ACCESS-BASIC)
+        (some ACCESS-BASIC-LABEL)
+        (if (is-eq level ACCESS-DETAILED)
+            (some ACCESS-DETAILED-LABEL)
+            (if (is-eq level ACCESS-FULL)
+                (some ACCESS-FULL-LABEL)
+                none)))
+)
+
+;; @notice Returns the deployed contract version string.
+(define-read-only (get-version)
+    CONTRACT-VERSION
+)
+
 ;; @notice Returns the current contract owner principal.
 ;; @return The principal that currently owns the contract.
 (define-read-only (get-contract-owner)
     (var-get contract-owner)
+)
+
+;; @notice Returns a combined snapshot of dataset info and a specific user's access.
+;; @param data-id The dataset ID.
+;; @param user The principal whose access to include.
+;; @return Some(tuple) with dataset summary fields plus the user's valid access-level
+;;         (none if user has no valid access), none if dataset does not exist.
+(define-read-only (get-dataset-access-summary (data-id uint) (user principal))
+    (match (map-get? datasets { data-id: data-id })
+        dataset (some {
+            owner: (get owner dataset),
+            price: (get price dataset),
+            dataset-access-level: (get access-level dataset),
+            is-active: (get is-active dataset),
+            user-valid-access-level: (get-valid-access-level data-id user)
+        })
+        none
+    )
 )
 
 ;; @notice Returns a summary snapshot of key dataset fields.
@@ -607,6 +933,67 @@
         })
         none
     )
+)
+
+;; @notice Helper: Validate a description string (MIN-DESCRIPTION-LENGTH–MAX-DESCRIPTION-LENGTH chars).
+;; @param description The description to validate.
+;; @return ok(true) if valid, ERR-INVALID-STRING-LENGTH otherwise.
+(define-read-only (validate-description (description (string-utf8 200)))
+    (begin
+        (asserts! (>= (len description) MIN-DESCRIPTION-LENGTH) ERR-INVALID-STRING-LENGTH)
+        (asserts! (<= (len description) MAX-DESCRIPTION-LENGTH) ERR-INVALID-STRING-LENGTH)
+        (ok true)
+    )
+)
+
+;; @notice Helper: Validate a storage URL (must be MIN-URL-LENGTH–MAX-URL-LENGTH chars).
+;; @param url The storage URL to validate.
+;; @return ok(true) if valid, ERR-INVALID-STRING-LENGTH otherwise.
+(define-read-only (validate-storage-url (url (string-utf8 200)))
+    (begin
+        (asserts! (>= (len url) MIN-URL-LENGTH) ERR-INVALID-STRING-LENGTH)
+        (asserts! (<= (len url) MAX-URL-LENGTH) ERR-INVALID-STRING-LENGTH)
+        (ok true)
+    )
+)
+
+;; @notice Helper: Validate a metadata hash (must be HASH-LENGTH bytes and non-zero).
+;; @param hash The buff(32) to validate.
+;; @return ok(true) if valid, ERR-INVALID-HASH or ERR-ZERO-HASH otherwise.
+(define-read-only (validate-metadata-hash (hash (buff 32)))
+    (begin
+        (asserts! (is-eq (len hash) HASH-LENGTH) ERR-INVALID-HASH)
+        (asserts! (not (is-eq hash 0x0000000000000000000000000000000000000000000000000000000000000000)) ERR-ZERO-HASH)
+        (ok true)
+    )
+)
+
+;; @notice Helper: Validate that a price is within the accepted range.
+;; @param price The price in microSTX to validate.
+;; @return ok(true) if 0 < price <= MAX-PRICE, error otherwise.
+(define-read-only (validate-price (price uint))
+    (begin
+        (asserts! (> price u0) ERR-INVALID-AMOUNT)
+        (asserts! (<= price MAX-PRICE) ERR-PRICE-TOO-HIGH)
+        (ok true)
+    )
+)
+
+;; @notice Helper: Validate that an access level is in the 1-3 range.
+;; @param level The access level to validate.
+;; @return ok(true) if valid, ERR-INVALID-ACCESS-LEVEL otherwise.
+(define-read-only (validate-access-level-range (level uint))
+    (if (and (>= level ACCESS-BASIC) (<= level ACCESS-FULL))
+        (ok true)
+        ERR-INVALID-ACCESS-LEVEL
+    )
+)
+
+;; @notice Checks whether a data-id refers to a registered dataset (active or not).
+;; @param data-id The dataset ID to check.
+;; @return ok(true) if a dataset record exists, ok(false) otherwise.
+(define-read-only (is-registered-dataset (data-id uint))
+    (ok (is-some (map-get? datasets { data-id: data-id })))
 )
 
 ;; @notice Helper: Validate dataset exists, is active, and caller is owner
@@ -649,16 +1036,16 @@
     (price uint))
     (begin
         ;; Validate metadata hash
-        (asserts! (is-eq (len metadata-hash) u32) ERR-INVALID-HASH)
+        (asserts! (is-eq (len metadata-hash) HASH-LENGTH) ERR-INVALID-HASH)
         (asserts! (not (is-eq metadata-hash 0x0000000000000000000000000000000000000000000000000000000000000000)) ERR-ZERO-HASH)
         ;; Validate storage URL
         (asserts! (> (len storage-url) u0) ERR-INVALID-STRING-LENGTH)
         (asserts! (>= (len storage-url) MIN-URL-LENGTH) ERR-INVALID-STRING-LENGTH)
-        (asserts! (<= (len storage-url) u200) ERR-INVALID-STRING-LENGTH)
+        (asserts! (<= (len storage-url) MAX-URL-LENGTH) ERR-INVALID-STRING-LENGTH)
         ;; Validate description
         (asserts! (> (len description) u0) ERR-INVALID-STRING-LENGTH)
-        (asserts! (>= (len description) u10) ERR-INVALID-STRING-LENGTH)
-        (asserts! (<= (len description) u200) ERR-INVALID-STRING-LENGTH)
+        (asserts! (>= (len description) MIN-DESCRIPTION-LENGTH) ERR-INVALID-STRING-LENGTH)
+        (asserts! (<= (len description) MAX-DESCRIPTION-LENGTH) ERR-INVALID-STRING-LENGTH)
         ;; Validate access level
         (asserts! (and (>= access-level ACCESS-BASIC) (<= access-level ACCESS-FULL)) ERR-INVALID-ACCESS-LEVEL)
         ;; Validate price
@@ -668,15 +1055,3 @@
     )
 )
 
-;; @notice Helper: Check if any access record exists for user on dataset
-;; @param data-id: Dataset ID
-;; @param user: User principal
-;; @return: ok true if any access exists (expired or not), ok false otherwise
-(define-read-only (has-any-access (data-id uint) (user principal))
-    (let ((access (map-get? access-rights { data-id: data-id, user: user })))
-        (match access
-            _ (ok true)
-            (ok false)
-        )
-    )
-)
