@@ -597,6 +597,26 @@
     )
 )
 
+;; @notice Returns a comprehensive access snapshot for a user on a dataset.
+;; @param data-id The dataset ID.
+;; @param user The principal to check.
+;; @return Some(tuple) with level, expires-at, granted-by, is-valid, remaining-blocks
+;;         if an access record exists, none otherwise.
+(define-read-only (get-access-info (data-id uint) (user principal))
+    (match (map-get? access-rights { data-id: data-id, user: user })
+        rights (some {
+            access-level: (get access-level rights),
+            expires-at: (get expires-at rights),
+            granted-by: (get granted-by rights),
+            is-valid: (< stacks-block-height (get expires-at rights)),
+            remaining-blocks: (if (> (get expires-at rights) stacks-block-height)
+                                  (- (get expires-at rights) stacks-block-height)
+                                  u0)
+        })
+        none
+    )
+)
+
 ;; @notice Returns the access level for a user if their access exists and is not expired.
 ;; @dev Single-call alternative to calling has-valid-access then get-user-access-level.
 ;; @param data-id The dataset ID.
