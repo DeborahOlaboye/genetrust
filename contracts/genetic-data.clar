@@ -856,6 +856,17 @@
     )
 )
 
+;; @notice Helper: Validate a metadata hash (must be HASH-LENGTH bytes and non-zero).
+;; @param hash The buff(32) to validate.
+;; @return ok(true) if valid, ERR-INVALID-HASH or ERR-ZERO-HASH otherwise.
+(define-read-only (validate-metadata-hash (hash (buff 32)))
+    (begin
+        (asserts! (is-eq (len hash) HASH-LENGTH) ERR-INVALID-HASH)
+        (asserts! (not (is-eq hash 0x0000000000000000000000000000000000000000000000000000000000000000)) ERR-ZERO-HASH)
+        (ok true)
+    )
+)
+
 ;; @notice Helper: Validate that a price is within the accepted range.
 ;; @param price The price in microSTX to validate.
 ;; @return ok(true) if 0 < price <= MAX-PRICE, error otherwise.
