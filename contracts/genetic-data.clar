@@ -390,6 +390,24 @@
     )
 )
 
+;; Update the metadata hash of an active dataset (owner only).
+;; @param data-id: ID of the dataset
+;; @param new-hash: New 32-byte metadata hash (must not be zero-filled)
+;; @returns: ok true on success, error otherwise
+(define-public (update-metadata-hash (data-id uint) (new-hash (buff 32)))
+    (let ((dataset (unwrap! (map-get? datasets { data-id: data-id }) ERR-DATASET-NOT-FOUND)))
+        (asserts! (> data-id u0) ERR-INVALID-INPUT)
+        (asserts! (is-eq tx-sender (get owner dataset)) ERR-NOT-OWNER)
+        (asserts! (get is-active dataset) ERR-INACTIVE-DATASET)
+        (asserts! (is-eq (len new-hash) HASH-LENGTH) ERR-INVALID-HASH)
+        (asserts! (not (is-eq new-hash 0x0000000000000000000000000000000000000000000000000000000000000000)) ERR-ZERO-HASH)
+        (map-set datasets { data-id: data-id } (merge dataset { metadata-hash: new-hash }))
+        (print { event: "dataset-hash-updated", data-id: data-id, owner: tx-sender,
+                 block: stacks-block-height })
+        (ok true)
+    )
+)
+
 ;; Reactivate a previously deactivated dataset (owner only)
 ;; @param data-id: ID of the dataset to reactivate
 ;; @returns: ok true on success, error otherwise
