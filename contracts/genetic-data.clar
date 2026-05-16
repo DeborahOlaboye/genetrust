@@ -181,6 +181,7 @@
         ;; Increment counters
         (var-set next-data-id (+ data-id u1))
         (var-set total-datasets (+ (var-get total-datasets) u1))
+        (var-set total-active-datasets (+ (var-get total-active-datasets) u1))
         (ok data-id)
     )
 )
