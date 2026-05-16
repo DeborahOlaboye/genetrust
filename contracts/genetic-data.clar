@@ -856,6 +856,16 @@
     )
 )
 
+;; @notice Helper: Validate that an access level is in the 1-3 range.
+;; @param level The access level to validate.
+;; @return ok(true) if valid, ERR-INVALID-ACCESS-LEVEL otherwise.
+(define-read-only (validate-access-level-range (level uint))
+    (if (and (>= level ACCESS-BASIC) (<= level ACCESS-FULL))
+        (ok true)
+        ERR-INVALID-ACCESS-LEVEL
+    )
+)
+
 ;; @notice Helper: Validate dataset exists, is active, and caller is owner
 ;; @param data-id: ID to validate  
 ;; @param caller: Principal to check ownership
