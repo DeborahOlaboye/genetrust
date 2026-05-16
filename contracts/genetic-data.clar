@@ -1,6 +1,6 @@
 ;; genetic-data.clar
 ;; @title GeneTrust Dataset Registry
-;; @version 1.1.0
+;; @version 1.2.0
 ;; @author GeneTrust
 ;; @notice Registers and manages genetic datasets on the Stacks blockchain.
 ;;         Handles dataset ownership, tiered access control, and access expiry.
