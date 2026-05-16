@@ -430,6 +430,37 @@
     )
 )
 
+;; Re-grant or replace access for a user (owner only). Unlike grant-access this
+;; overwrites an existing grant rather than returning ERR-DUPLICATE-ACCESS-GRANT.
+;; Useful when re-granting with a different level or after expiry.
+;; @param data-id: ID of the dataset
+;; @param user: Principal to grant access to
+;; @param access-level: Access level (1-3, cannot exceed dataset level)
+;; @returns: ok true on success, error otherwise
+(define-public (regrant-access (data-id uint) (user principal) (access-level uint))
+    (let ((dataset (unwrap! (map-get? datasets { data-id: data-id }) ERR-DATASET-NOT-FOUND)))
+        (asserts! (> data-id u0) ERR-INVALID-INPUT)
+        (asserts! (not (is-eq user tx-sender)) ERR-SELF-GRANT-NOT-ALLOWED)
+        (asserts! (not (is-eq user (as-contract tx-sender))) ERR-INVALID-INPUT)
+        (asserts! (is-eq tx-sender (get owner dataset)) ERR-NOT-OWNER)
+        (asserts! (get is-active dataset) ERR-INACTIVE-DATASET)
+        (asserts! (and (>= access-level ACCESS-BASIC) (<= access-level ACCESS-FULL)) ERR-INVALID-ACCESS-LEVEL)
+        (asserts! (<= access-level (get access-level dataset)) ERR-INSUFFICIENT-ACCESS-LEVEL)
+        (map-set access-rights { data-id: data-id, user: user }
+            {
+                access-level: access-level,
+                expires-at: (+ stacks-block-height ACCESS-EXPIRY-BLOCKS),
+                granted-by: tx-sender
+            }
+        )
+        (print { event: "access-regranted", data-id: data-id, user: user,
+                 access-level: access-level, granted-by: tx-sender,
+                 expires-at: (+ stacks-block-height ACCESS-EXPIRY-BLOCKS),
+                 block: stacks-block-height })
+        (ok true)
+    )
+)
+
 ;; @notice Returns all stored fields for a given dataset.
 ;; @param data-id The dataset ID to look up.
 ;; @return Some(dataset) if found, none otherwise.
