@@ -343,7 +343,7 @@
         (asserts! (> data-id u0) ERR-INVALID-INPUT)
         (asserts! (is-eq tx-sender (get owner dataset)) ERR-NOT-OWNER)
         (asserts! (get is-active dataset) ERR-INACTIVE-DATASET)
-        (asserts! (and (>= (len new-url) MIN-URL-LENGTH) (<= (len new-url) u200)) ERR-INVALID-STRING-LENGTH)
+        (asserts! (and (>= (len new-url) MIN-URL-LENGTH) (<= (len new-url) MAX-URL-LENGTH)) ERR-INVALID-STRING-LENGTH)
         (map-set datasets { data-id: data-id } (merge dataset { storage-url: new-url }))
         (print { event: "dataset-url-updated", data-id: data-id, owner: tx-sender,
                  block: stacks-block-height })
