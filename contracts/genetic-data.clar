@@ -203,17 +203,19 @@
     )
 )
 
-;; Grant access to a user (owner only)
-;; @param data-id: ID of the dataset to grant access to
-;; @param user: Principal to grant access to (must not be caller)
-;; @param access-level: Access level to grant (1=basic, 2=detailed, 3=full)
-;; @returns: ok true on success, error otherwise
-;; @requires: Caller must be dataset owner
-;; @requires: User cannot be the caller (no self-grant)
-;; @requires: User cannot be the contract itself
-;; @requires: Dataset must exist and be active
-;; @requires: Access-level must be 1-3 and <= dataset's own access level
-;; @requires: Access must not already exist for this user on this dataset
+;; Grant access to a user (owner only). Fails if the user already has any grant — use regrant-access to overwrite.
+;; @param data-id: ID of the dataset to grant access to.
+;; @param user: Principal to grant access to (must not be caller or contract).
+;; @param access-level: Access level to grant (1-3, cannot exceed dataset level).
+;; @returns ok(true) on success.
+;;   ERR-DATASET-NOT-FOUND (u431) — dataset does not exist.
+;;   ERR-INVALID-INPUT (u400) — data-id is zero or user is the contract.
+;;   ERR-SELF-GRANT-NOT-ALLOWED (u610) — user equals tx-sender.
+;;   ERR-NOT-OWNER (u411) — caller is not the dataset owner.
+;;   ERR-INACTIVE-DATASET (u450) — dataset is deactivated.
+;;   ERR-INVALID-ACCESS-LEVEL (u406) — access-level out of 1-3 range.
+;;   ERR-INSUFFICIENT-ACCESS-LEVEL (u621) — access-level exceeds dataset level.
+;;   ERR-DUPLICATE-ACCESS-GRANT (u444) — user already has an access grant.
 (define-public (grant-access (data-id uint) (user principal) (access-level uint))
     (let ((dataset (unwrap! (map-get? datasets { data-id: data-id }) ERR-DATASET-NOT-FOUND)))
         ;; VALIDATION PHASE 1: Input validation
