@@ -442,6 +442,19 @@
     )
 )
 
+;; @notice Returns true when valid access exists and is within ACCESS-EXPIRY-WARNING-BLOCKS of expiring.
+;; @param data-id The dataset ID.
+;; @param user The principal to check.
+;; @return ok(true) if access is valid but expires within the warning window, ok(false) otherwise.
+(define-read-only (is-access-near-expiry (data-id uint) (user principal))
+    (match (map-get? access-rights { data-id: data-id, user: user })
+        rights (ok (and (< stacks-block-height (get expires-at rights))
+                        (<= (- (get expires-at rights) stacks-block-height)
+                            ACCESS-EXPIRY-WARNING-BLOCKS)))
+        (ok false)
+    )
+)
+
 ;; @notice Checks whether a user has valid (unexpired) access at or above a minimum level.
 ;; @param data-id The dataset ID.
 ;; @param user The principal to check.
