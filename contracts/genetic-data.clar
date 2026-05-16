@@ -712,6 +712,11 @@
     )
 )
 
+;; @notice Returns the deployed contract version string.
+(define-read-only (get-version)
+    CONTRACT-VERSION
+)
+
 ;; @notice Returns the current contract owner principal.
 ;; @return The principal that currently owns the contract.
 (define-read-only (get-contract-owner)
