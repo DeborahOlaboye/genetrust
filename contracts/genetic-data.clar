@@ -53,6 +53,11 @@
 (define-constant ACCESS-DETAILED u2)
 (define-constant ACCESS-FULL u3)
 
+;; Human-readable access level labels (returned by get-access-level-label)
+(define-constant ACCESS-BASIC-LABEL "basic")
+(define-constant ACCESS-DETAILED-LABEL "detailed")
+(define-constant ACCESS-FULL-LABEL "full")
+
 ;; Access expires after ~30 days of blocks
 (define-constant ACCESS-EXPIRY-BLOCKS u8640)
 
