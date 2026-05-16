@@ -139,7 +139,7 @@
         ;; Check URL meets minimum length requirement
         (asserts! (>= (len storage-url) MIN-URL-LENGTH) ERR-INVALID-STRING-LENGTH)
         ;; Check URL does not exceed maximum length
-        (asserts! (<= (len storage-url) u200) ERR-INVALID-STRING-LENGTH)
+        (asserts! (<= (len storage-url) MAX-URL-LENGTH) ERR-INVALID-STRING-LENGTH)
         
         ;; VALIDATION PHASE 3: Description validation
         ;; Check description is not empty
