@@ -856,6 +856,17 @@
     )
 )
 
+;; @notice Helper: Validate a storage URL (must be MIN-URL-LENGTH–MAX-URL-LENGTH chars).
+;; @param url The storage URL to validate.
+;; @return ok(true) if valid, ERR-INVALID-STRING-LENGTH otherwise.
+(define-read-only (validate-storage-url (url (string-utf8 200)))
+    (begin
+        (asserts! (>= (len url) MIN-URL-LENGTH) ERR-INVALID-STRING-LENGTH)
+        (asserts! (<= (len url) MAX-URL-LENGTH) ERR-INVALID-STRING-LENGTH)
+        (ok true)
+    )
+)
+
 ;; @notice Helper: Validate a metadata hash (must be HASH-LENGTH bytes and non-zero).
 ;; @param hash The buff(32) to validate.
 ;; @return ok(true) if valid, ERR-INVALID-HASH or ERR-ZERO-HASH otherwise.
