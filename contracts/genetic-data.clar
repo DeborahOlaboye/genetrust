@@ -758,6 +758,19 @@
     )
 )
 
+;; @notice Returns the human-readable label for an access level uint.
+;; @param level The access level (1-3).
+;; @return Some(string-ascii) label if level is valid, none if out of range.
+(define-read-only (get-access-level-label (level uint))
+    (if (is-eq level ACCESS-BASIC)
+        (some ACCESS-BASIC-LABEL)
+        (if (is-eq level ACCESS-DETAILED)
+            (some ACCESS-DETAILED-LABEL)
+            (if (is-eq level ACCESS-FULL)
+                (some ACCESS-FULL-LABEL)
+                none)))
+)
+
 ;; @notice Returns the deployed contract version string.
 (define-read-only (get-version)
     CONTRACT-VERSION
