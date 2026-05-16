@@ -421,6 +421,24 @@
     )
 )
 
+;; Update the maximum access level of a dataset (owner only).
+;; @param data-id: ID of the dataset.
+;; @param new-level: New maximum access level (1-3).
+;; @returns ok(true) on success.
+(define-public (update-dataset-access-level (data-id uint) (new-level uint))
+    (let ((dataset (unwrap! (map-get? datasets { data-id: data-id }) ERR-DATASET-NOT-FOUND)))
+        (asserts! (> data-id u0) ERR-INVALID-INPUT)
+        (asserts! (is-eq tx-sender (get owner dataset)) ERR-NOT-OWNER)
+        (asserts! (get is-active dataset) ERR-INACTIVE-DATASET)
+        (asserts! (and (>= new-level ACCESS-BASIC) (<= new-level ACCESS-FULL)) ERR-INVALID-ACCESS-LEVEL)
+        (map-set datasets { data-id: data-id } (merge dataset { access-level: new-level }))
+        (print { event: "dataset-access-level-updated", data-id: data-id, owner: tx-sender,
+                 old-level: (get access-level dataset), new-level: new-level,
+                 block: stacks-block-height })
+        (ok true)
+    )
+)
+
 ;; Reactivate a previously deactivated dataset (owner only)
 ;; @param data-id: ID of the dataset to reactivate
 ;; @returns: ok true on success, error otherwise
