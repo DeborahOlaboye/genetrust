@@ -439,6 +439,19 @@
     )
 )
 
+;; @notice Checks whether a user has valid (unexpired) access at or above a minimum level.
+;; @param data-id The dataset ID.
+;; @param user The principal to check.
+;; @param min-level The minimum required access level (1-3).
+;; @return ok(true) if access is valid, unexpired, and >= min-level; ok(false) otherwise.
+(define-read-only (has-sufficient-access (data-id uint) (user principal) (min-level uint))
+    (match (map-get? access-rights { data-id: data-id, user: user })
+        rights (ok (and (< stacks-block-height (get expires-at rights))
+                        (>= (get access-level rights) min-level)))
+        (ok false)
+    )
+)
+
 ;; @notice Returns the number of blocks remaining before a user's access expires.
 ;; @param data-id The dataset ID.
 ;; @param user The principal to check.
