@@ -128,18 +128,19 @@
     }
 )
 
-;; Register a new dataset
-;; @param metadata-hash: 32-byte hash of dataset metadata (must not be all zeros)
-;; @param storage-url: URL where dataset is stored (5-200 chars, non-empty)
-;; @param description: Dataset description (10-200 chars, non-empty)
-;; @param access-level: Access level (1=basic, 2=detailed, 3=full)
-;; @param price: Price in microSTX (must be > 0 and <= MAX-PRICE)
-;; @returns: ok with data-id on success, error otherwise
-;; @requires: metadata-hash must be exactly 32 bytes and not zero-filled
-;; @requires: storage-url must be between 5 and 200 characters
-;; @requires: description must be between 10 and 200 characters
-;; @requires: access-level must be 1, 2, or 3
-;; @requires: price must be positive and not exceed MAX-PRICE constant
+;; Register a new genetic dataset on-chain. The caller becomes the dataset owner.
+;; @param metadata-hash: 32-byte HASH-LENGTH hash of dataset metadata (must not be all zeros).
+;; @param storage-url: URL where dataset is stored (MIN-URL-LENGTH–MAX-URL-LENGTH chars).
+;; @param description: Dataset description (MIN-DESCRIPTION-LENGTH–MAX-DESCRIPTION-LENGTH chars).
+;; @param access-level: Access level (1=basic, 2=detailed, 3=full).
+;; @param price: Price in microSTX (must be > 0 and <= MAX-PRICE).
+;; @returns ok(data-id) on success.
+;;   ERR-INVALID-HASH (u403) — hash is not HASH-LENGTH bytes.
+;;   ERR-ZERO-HASH (u408) — hash is all zeros.
+;;   ERR-INVALID-STRING-LENGTH (u407) — URL or description out of range.
+;;   ERR-INVALID-ACCESS-LEVEL (u406) — access-level not in 1-3.
+;;   ERR-INVALID-AMOUNT (u401) — price is zero.
+;;   ERR-PRICE-TOO-HIGH (u402) — price exceeds MAX-PRICE.
 (define-public (register-dataset
     (metadata-hash (buff 32))
     (storage-url (string-utf8 200))
