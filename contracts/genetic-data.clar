@@ -79,6 +79,8 @@
 
 ;; Running total of all datasets ever registered (including deactivated ones)
 (define-data-var total-datasets uint u0)
+;; Count of currently active (non-deactivated) datasets
+(define-data-var total-active-datasets uint u0)
 
 ;; @notice Primary storage map for all registered genetic datasets.
 ;;         Keyed by auto-incremented data-id. Owner is always tx-sender at registration time.
