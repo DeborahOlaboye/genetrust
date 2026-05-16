@@ -376,7 +376,7 @@
     (let ((dataset (unwrap! (map-get? datasets { data-id: data-id }) ERR-DATASET-NOT-FOUND)))
         (asserts! (> data-id u0) ERR-INVALID-INPUT)
         (asserts! (is-eq tx-sender (get owner dataset)) ERR-NOT-OWNER)
-        (asserts! (not (get is-active dataset)) ERR-ALREADY-EXISTS)
+        (asserts! (not (get is-active dataset)) ERR-DATASET-ALREADY-ACTIVE)
         (map-set datasets { data-id: data-id } (merge dataset { is-active: true }))
         (print { event: "dataset-reactivated", data-id: data-id, owner: tx-sender,
                  block: stacks-block-height })
