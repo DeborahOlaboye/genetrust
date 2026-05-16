@@ -382,6 +382,7 @@
         (asserts! (is-eq tx-sender (get owner dataset)) ERR-NOT-OWNER)
         (asserts! (not (get is-active dataset)) ERR-DATASET-ALREADY-ACTIVE)
         (map-set datasets { data-id: data-id } (merge dataset { is-active: true }))
+        (var-set total-active-datasets (+ (var-get total-active-datasets) u1))
         (print { event: "dataset-reactivated", data-id: data-id, owner: tx-sender,
                  block: stacks-block-height })
         (ok true)
