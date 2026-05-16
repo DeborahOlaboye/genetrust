@@ -525,6 +525,9 @@
 ;; @param data-id The dataset ID.
 ;; @param user The principal to check.
 ;; @return ok(true) if access exists and has not expired, ok(false) otherwise.
+;; @dev Use get-valid-access-level to also retrieve the level in one call.
+;;      Use has-sufficient-access to check expiry + minimum level together.
+;;      Use get-access-info for a full snapshot (level, expiry, granted-by, remaining).
 (define-read-only (has-valid-access (data-id uint) (user principal))
     (match (map-get? access-rights { data-id: data-id, user: user })
         rights (ok (< stacks-block-height (get expires-at rights)))
