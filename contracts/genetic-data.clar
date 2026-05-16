@@ -128,8 +128,8 @@
     (price uint))
     (let ((data-id (var-get next-data-id)))
         ;; VALIDATION PHASE 1: Metadata hash validation
-        ;; Check hash is exactly 32 bytes
-        (asserts! (is-eq (len metadata-hash) u32) ERR-INVALID-HASH)
+        ;; Check hash is exactly HASH-LENGTH bytes
+        (asserts! (is-eq (len metadata-hash) HASH-LENGTH) ERR-INVALID-HASH)
         ;; Check hash is not all-zero (meaningless sentinel value)
         (asserts! (not (is-eq metadata-hash 0x0000000000000000000000000000000000000000000000000000000000000000)) ERR-ZERO-HASH)
         
