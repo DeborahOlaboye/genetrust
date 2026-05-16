@@ -544,6 +544,18 @@
     (ok (var-get total-datasets))
 )
 
+;; @notice Returns true if the user has valid full-access (level 3) to a dataset.
+;; @param data-id The dataset ID.
+;; @param user The principal to check.
+;; @return ok(true) if access is valid, unexpired, and level 3; ok(false) otherwise.
+(define-read-only (has-full-access (data-id uint) (user principal))
+    (match (map-get? access-rights { data-id: data-id, user: user })
+        rights (ok (and (< stacks-block-height (get expires-at rights))
+                        (is-eq (get access-level rights) ACCESS-FULL)))
+        (ok false)
+    )
+)
+
 ;; @notice Returns true if the given principal is the owner of a dataset.
 ;; @param data-id The dataset ID.
 ;; @param principal The principal to check.
