@@ -619,6 +619,14 @@
     )
 )
 
+;; @notice Alias of get-access-remaining-blocks with a more descriptive name.
+;; @param data-id The dataset ID.
+;; @param user The principal to check.
+;; @return Some(uint) blocks remaining (0 if expired), none if no record.
+(define-read-only (get-blocks-until-expiry (data-id uint) (user principal))
+    (get-access-remaining-blocks data-id user)
+)
+
 ;; @notice Returns a comprehensive access snapshot for a user on a dataset.
 ;; @param data-id The dataset ID.
 ;; @param user The principal to check.
