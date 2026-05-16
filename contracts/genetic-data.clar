@@ -692,6 +692,30 @@
     (ok (var-get total-active-datasets))
 )
 
+;; @notice Returns true if the user has valid basic-access (level 1+) to a dataset.
+;; @param data-id The dataset ID.
+;; @param user The principal to check.
+;; @return ok(true) if access is valid and level >= 1; ok(false) otherwise.
+(define-read-only (has-basic-access (data-id uint) (user principal))
+    (match (map-get? access-rights { data-id: data-id, user: user })
+        rights (ok (and (< stacks-block-height (get expires-at rights))
+                        (>= (get access-level rights) ACCESS-BASIC)))
+        (ok false)
+    )
+)
+
+;; @notice Returns true if the user has valid detailed-access (level 2+) to a dataset.
+;; @param data-id The dataset ID.
+;; @param user The principal to check.
+;; @return ok(true) if access is valid and level >= 2; ok(false) otherwise.
+(define-read-only (has-detailed-access (data-id uint) (user principal))
+    (match (map-get? access-rights { data-id: data-id, user: user })
+        rights (ok (and (< stacks-block-height (get expires-at rights))
+                        (>= (get access-level rights) ACCESS-DETAILED)))
+        (ok false)
+    )
+)
+
 ;; @notice Returns true if the user has valid full-access (level 3) to a dataset.
 ;; @param data-id The dataset ID.
 ;; @param user The principal to check.
