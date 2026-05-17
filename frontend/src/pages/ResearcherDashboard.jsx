@@ -119,14 +119,13 @@ export default function ResearcherDashboard() {
           </button>
         </div>
 
-        {/* Screen reader live region for loading state */}
-        <div role="status" className="sr-only">
-          {isFetching ? 'Loading marketplace listings…' : initError ? `Error: ${initError}` : `${listings.length} listing${listings.length !== 1 ? 's' : ''} loaded.`}
-        </div>
-
-        {/* Screen reader live region for status announcements */}
-        <div aria-live="polite" aria-atomic="true" className="sr-only">
-          {isFetching ? 'Loading marketplace listings…' : `${listings.length} listing${listings.length !== 1 ? 's' : ''} available`}
+        {/* Screen reader live region — single source of truth for loading/error/loaded state */}
+        <div role="status" aria-live="polite" aria-atomic="true" className="sr-only">
+          {isFetching || isRefreshing
+            ? 'Loading marketplace listings…'
+            : initError
+              ? `Error: ${initError}`
+              : `${listings.length} listing${listings.length !== 1 ? 's' : ''} loaded.`}
         </div>
 
         {/* Initialization error banner with retry */}
