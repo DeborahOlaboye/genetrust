@@ -44,6 +44,7 @@ export default function ResearcherDashboard() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [initError, setInitError] = useState(null);
   const [statusAnnouncement, setStatusAnnouncement] = useState('');
+  const [purchasedListings, setPurchasedListings] = useState(() => new Set());
 
   const loadListings = useCallback(async (opts = {}) => {
     const { signal } = opts;
