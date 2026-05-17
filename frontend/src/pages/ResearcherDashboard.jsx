@@ -28,6 +28,10 @@ const Pill = ({ children, color = '#34D399' }) => (
     {children}
   </span>
 );
+Pill.propTypes = {
+  children: PropTypes.node.isRequired,
+  color: PropTypes.string,
+};
 
 export default function ResearcherDashboard() {
   const [status, setStatus] = useState(null);
