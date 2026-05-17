@@ -70,6 +70,12 @@ export default function ResearcherDashboard() {
     return () => controller.abort();
   }, [loadListings]);
 
+  const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    await loadListings();
+    setIsRefreshing(false);
+  }, [loadListings]);
+
   const handleRetry = useCallback(async () => {
     setInitError(null);
     setIsFetching(true);
