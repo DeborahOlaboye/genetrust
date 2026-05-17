@@ -113,10 +113,17 @@ export default function ResearcherDashboard() {
           {isFetching ? 'Loading marketplace listings…' : `${listings.length} listing${listings.length !== 1 ? 's' : ''} available`}
         </div>
 
-        {/* Initialization error banner */}
+        {/* Initialization error banner with retry */}
         {initError && (
-          <div role="alert" className="rounded-xl px-5 py-4 bg-red-900/30 border border-red-500/40 text-red-300 text-sm">
-            {initError}
+          <div role="alert" className="rounded-xl px-5 py-4 bg-red-900/30 border border-red-500/40 text-red-300 text-sm flex items-center justify-between gap-4">
+            <span>{initError}</span>
+            <button
+              onClick={handleRetry}
+              disabled={isFetching}
+              className="shrink-0 px-4 py-1.5 rounded-lg bg-red-500/20 border border-red-500/40 text-red-200 text-xs font-medium hover:bg-red-500/30 disabled:opacity-50"
+            >
+              {isFetching ? 'Retrying…' : 'Retry'}
+            </button>
           </div>
         )}
 
