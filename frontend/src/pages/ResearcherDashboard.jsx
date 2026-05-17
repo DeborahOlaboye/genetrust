@@ -83,7 +83,7 @@ export default function ResearcherDashboard() {
     setIsFetching(false);
   }, [loadListings]);
 
-  const purchase = async (listingId) => {
+  const purchase = useCallback(async (listingId) => {
     setLoadingId(listingId);
     try {
       const res = await contractService.purchaseListing({ listingId, desiredAccessLevel: accessLevel });
@@ -97,7 +97,7 @@ export default function ResearcherDashboard() {
     } finally {
       setLoadingId(null);
     }
-  };
+  }, [accessLevel]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0B0B1D] via-[#14102E] to-[#0B0B1D] text-white">
