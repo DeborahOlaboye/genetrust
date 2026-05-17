@@ -41,6 +41,7 @@ export default function ResearcherDashboard() {
   const [loadingId, setLoadingId] = useState(null);
   const [accessLevel, setAccessLevel] = useState(1);
   const [isFetching, setIsFetching] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [initError, setInitError] = useState(null);
   const [statusAnnouncement, setStatusAnnouncement] = useState('');
 
