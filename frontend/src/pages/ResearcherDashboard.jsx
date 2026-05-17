@@ -33,6 +33,7 @@ Pill.propTypes = {
   children: PropTypes.node.isRequired,
   color: PropTypes.string,
 };
+Pill.displayName = 'Pill';
 
 export default function ResearcherDashboard() {
   const [status, setStatus] = useState(null);
