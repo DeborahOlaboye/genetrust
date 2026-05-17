@@ -70,6 +70,13 @@ export default function ResearcherDashboard() {
     return () => controller.abort();
   }, [loadListings]);
 
+  const handleRetry = useCallback(async () => {
+    setInitError(null);
+    setIsFetching(true);
+    await loadListings();
+    setIsFetching(false);
+  }, [loadListings]);
+
   const purchase = async (listingId) => {
     setLoadingId(listingId);
     try {
