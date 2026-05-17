@@ -187,23 +187,29 @@ export default function ResearcherDashboard() {
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <button
-                    onClick={() => purchase(l.listingId)}
-                    disabled={loadingId === l.listingId}
-                    aria-busy={loadingId === l.listingId}
-                    aria-label={`Purchase listing ${l.listingId}`}
-                    className="px-5 py-2 bg-gradient-to-r from-[#34D399] to-[#8B5CF6] rounded-lg font-semibold disabled:opacity-60"
-                  >
-                    {loadingId === l.listingId ? (
-                      <span role="status" className="flex items-center gap-2">
-                        <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-                        </svg>
-                        Purchasing…
-                      </span>
-                    ) : 'Purchase'}
-                  </button>
+                  {purchasedListings.has(l.listingId) ? (
+                    <span className="px-5 py-2 rounded-lg text-sm font-semibold text-[#34D399] border border-[#34D399]/30 bg-[#34D399]/10">
+                      ✓ Purchased
+                    </span>
+                  ) : (
+                    <button
+                      onClick={() => purchase(l.listingId)}
+                      disabled={loadingId === l.listingId}
+                      aria-busy={loadingId === l.listingId}
+                      aria-label={`Purchase listing ${l.listingId}`}
+                      className="px-5 py-2 bg-gradient-to-r from-[#34D399] to-[#8B5CF6] rounded-lg font-semibold disabled:opacity-60"
+                    >
+                      {loadingId === l.listingId ? (
+                        <span role="status" className="flex items-center gap-2">
+                          <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                          </svg>
+                          Purchasing…
+                        </span>
+                      ) : 'Purchase'}
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
