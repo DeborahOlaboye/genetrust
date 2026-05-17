@@ -72,6 +72,12 @@ export default function ResearcherDashboard() {
     return () => controller.abort();
   }, [loadListings]);
 
+  const sortedListings = useMemo(() => {
+    const copy = [...listings];
+    copy.sort((a, b) => sortOrder === 'asc' ? a.price - b.price : b.price - a.price);
+    return copy;
+  }, [listings, sortOrder]);
+
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
     await loadListings();
