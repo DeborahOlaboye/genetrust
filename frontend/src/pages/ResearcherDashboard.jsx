@@ -9,14 +9,14 @@ const TOAST_OPTIONS = {
   style: { background: '#14102E', color: '#fff', border: '1px solid #8B5CF633' },
 };
 
-const SectionCard = ({ title, children, border = '#34D399' }) => (
+const SectionCard = React.memo(({ title, children, border = '#34D399' }) => (
   <div className="rounded-2xl p-6 bg-[#0B0B1D]/80 backdrop-blur-xl shadow-2xl" style={{ border: `1px solid ${border}33` }}>
     <div className="flex items-center justify-between mb-4">
       <h3 className="text-white font-semibold">{title}</h3>
     </div>
     {children}
   </div>
-);
+));
 SectionCard.propTypes = {
   title: PropTypes.string.isRequired,
   children: PropTypes.node.isRequired,
