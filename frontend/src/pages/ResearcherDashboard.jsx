@@ -91,6 +91,7 @@ export default function ResearcherDashboard() {
       const msg = `Access Level ${res.accessLevel} granted. TX: ${res.txId.slice(0, 10)}…`;
       toast.success(msg, { duration: 6000 });
       setStatusAnnouncement(msg);
+      setPurchasedListings(prev => new Set([...prev, listingId]));
     } catch (e) {
       const msg = `Purchase failed: ${e?.message || 'Unknown error'}`;
       toast.error(msg);
