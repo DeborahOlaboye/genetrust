@@ -104,9 +104,19 @@ export default function ResearcherDashboard() {
       <Toaster position="top-right" toastOptions={TOAST_OPTIONS} />
       <Navigation />
       <main role="main" aria-label="Researcher marketplace" className="max-w-7xl mx-auto px-6 lg:px-8 py-10 space-y-8">
-        <div>
-          <h2 className="text-2xl font-bold text-white">Researcher Marketplace</h2>
-          <p className="text-sm text-[#9AA0B2] mt-1">Browse and purchase access to genomic datasets listed on-chain.</p>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 className="text-2xl font-bold text-white">Researcher Marketplace</h2>
+            <p className="text-sm text-[#9AA0B2] mt-1">Browse and purchase access to genomic datasets listed on-chain.</p>
+          </div>
+          <button
+            onClick={handleRefresh}
+            disabled={isFetching || isRefreshing}
+            aria-label="Refresh listings"
+            className="mt-1 shrink-0 px-4 py-2 rounded-lg border border-[#34D399]/30 text-[#34D399] text-sm font-medium hover:bg-[#34D399]/10 disabled:opacity-40"
+          >
+            {isRefreshing ? 'Refreshing…' : 'Refresh'}
+          </button>
         </div>
 
         {/* Screen reader live region for loading state */}
