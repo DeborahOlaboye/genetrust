@@ -45,25 +45,30 @@ export default function ResearcherDashboard() {
   const [initError, setInitError] = useState(null);
   const [statusAnnouncement, setStatusAnnouncement] = useState('');
 
-  useEffect(() => {
-    let mounted = true;
-    (async () => {
-      try {
-        await contractService.initialize({});
-        const s = await contractService.getStatus();
-        const ls = await contractService.listMarketplace();
-        if (!mounted) return;
-        setStatus(s);
-        setListings(ls);
-      } catch (err) {
-        if (!mounted) return;
-        setInitError(err?.message || 'Failed to load marketplace data');
-      } finally {
-        if (mounted) setIsFetching(false);
-      }
-    })();
-    return () => { mounted = false; };
+  const loadListings = useCallback(async (opts = {}) => {
+    const { signal } = opts;
+    try {
+      await contractService.initialize({});
+      const s = await contractService.getStatus();
+      const ls = await contractService.listMarketplace();
+      if (signal?.aborted) return;
+      setStatus(s);
+      setListings(ls);
+      setInitError(null);
+    } catch (err) {
+      if (signal?.aborted) return;
+      setInitError(err?.message || 'Failed to load marketplace data');
+    }
   }, []);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    setIsFetching(true);
+    loadListings({ signal: controller.signal }).finally(() => {
+      if (!controller.signal.aborted) setIsFetching(false);
+    });
+    return () => controller.abort();
+  }, [loadListings]);
 
   const purchase = async (listingId) => {
     setLoadingId(listingId);
