@@ -22,6 +22,7 @@ SectionCard.propTypes = {
   children: PropTypes.node.isRequired,
   border: PropTypes.string,
 };
+SectionCard.displayName = 'SectionCard';
 
 const Pill = ({ children, color = '#34D399' }) => (
   <span className="text-xs px-2 py-1 rounded-full" style={{ backgroundColor: `${color}1A`, color }}>
