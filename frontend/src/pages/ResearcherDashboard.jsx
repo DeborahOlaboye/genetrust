@@ -164,6 +164,16 @@ export default function ResearcherDashboard() {
               </select>
               <p id="access-level-hint" className="mt-1 text-xs text-[#9AA0B2]">Only listings at or above this level will grant the selected access.</p>
             </div>
+            <div>
+              <label className="text-sm text-[#9AA0B2]">Sort by Price</label>
+              <button
+                onClick={() => setSortOrder(o => o === 'asc' ? 'desc' : 'asc')}
+                className="mt-1 w-full bg-[#14102E] border border-[#8B5CF6]/20 rounded-lg px-3 py-2 text-white text-left text-sm"
+                aria-label={`Sort price ${sortOrder === 'asc' ? 'descending' : 'ascending'}`}
+              >
+                Price: {sortOrder === 'asc' ? '↑ Low to High' : '↓ High to Low'}
+              </button>
+            </div>
           </div>
         </SectionCard>
         </SectionErrorBoundary>
