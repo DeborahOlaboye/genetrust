@@ -181,7 +181,7 @@ export default function ResearcherDashboard() {
                 <p className="text-[#9AA0B2] text-sm">No listings available yet. Check back later.</p>
               </div>
             )}
-            {!isFetching && listings.map(l => (
+            {!isFetching && sortedListings.map(l => (
               <div key={l.listingId} className="py-4 flex items-center justify-between" role="listitem">
                 <div className="space-y-1">
                   <div className="font-medium">Listing #{l.listingId} • Dataset #{l.dataId}</div>
