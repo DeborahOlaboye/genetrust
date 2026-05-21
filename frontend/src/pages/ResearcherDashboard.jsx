@@ -203,7 +203,7 @@ export default function ResearcherDashboard() {
           <div className="grid md:grid-cols-3 gap-4">
             <div>
               <label htmlFor="access-level-select" className="text-sm text-[#9AA0B2]">Desired Access Level</label>
-              <select id="access-level-select" value={accessLevel} onChange={e => setAccessLevel(parseInt(e.target.value, 10))} aria-label="Desired access level" className="mt-1 w-full bg-[#14102E] border border-[#8B5CF6]/20 rounded-lg px-3 py-2">
+              <select id="access-level-select" value={accessLevel} onChange={handleAccessLevelChange} aria-label="Desired access level" className="mt-1 w-full bg-[#14102E] border border-[#8B5CF6]/20 rounded-lg px-3 py-2">
                 <option value={1}>1 - Basic</option>
                 <option value={2}>2 - Detailed</option>
                 <option value={3}>3 - Full</option>
@@ -215,7 +215,7 @@ export default function ResearcherDashboard() {
               <select
                 id="min-access-filter"
                 value={minAccessFilter}
-                onChange={e => setMinAccessFilter(parseInt(e.target.value, 10))}
+                onChange={handleMinAccessFilterChange}
                 className="mt-1 w-full bg-[#14102E] border border-[#8B5CF6]/20 rounded-lg px-3 py-2 text-white"
               >
                 <option value={0}>All levels</option>
@@ -227,7 +227,7 @@ export default function ResearcherDashboard() {
             <div>
               <label className="text-sm text-[#9AA0B2]">Sort by Price</label>
               <button
-                onClick={() => setSortOrder(o => o === 'asc' ? 'desc' : 'asc')}
+                onClick={handleSortToggle}
                 className="mt-1 w-full bg-[#14102E] border border-[#8B5CF6]/20 rounded-lg px-3 py-2 text-white text-left text-sm"
                 aria-label={`Sort price ${sortOrder === 'asc' ? 'descending' : 'ascending'}`}
               >
@@ -259,7 +259,7 @@ export default function ResearcherDashboard() {
             {!isFetching && listings.length > 0 && sortedListings.length === 0 && (
               <div className="py-8 text-center">
                 <p className="text-[#9AA0B2] text-sm">No listings match your current filters.</p>
-                <button onClick={() => setMinAccessFilter(0)} className="mt-2 text-xs text-[#8B5CF6] underline">
+                <button onClick={handleClearFilters} className="mt-2 text-xs text-[#8B5CF6] underline">
                   Clear filters
                 </button>
               </div>
