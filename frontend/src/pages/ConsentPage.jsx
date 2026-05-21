@@ -47,7 +47,7 @@ export default function ConsentPage() {
   }, [loadDatasets]);
 
   return (
-    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg,#0B0B1D,#14102E,#0B0B1D)', color: '#fff' }}>
+    <div className="min-h-screen bg-gradient-to-br from-[#0B0B1D] via-[#14102E] to-[#0B0B1D] text-white">
       <Toaster position="top-right" toastOptions={TOAST_OPTIONS} />
       <Navigation />
 
