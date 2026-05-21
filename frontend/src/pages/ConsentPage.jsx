@@ -98,9 +98,7 @@ export default function ConsentPage() {
         )}
 
         {loading && (
-          <div style={{ marginBottom: '1.25rem' }}>
-            <SkeletonLoader height="2.5rem" rounded="md" label="Loading datasets…" className="bg-white/5" />
-          </div>
+          <SkeletonLoader height="2.5rem" rounded="md" label="Loading datasets…" className="bg-white/5" />
         )}
 
         {!loading && datasets.length === 0 && !loadError && (
