@@ -139,6 +139,19 @@ export default function ResearcherDashboard() {
           </button>
         </div>
 
+        {/* Stats bar */}
+        {!isFetching && (
+          <div className="flex flex-wrap gap-3">
+            <Pill color="#34D399">{listings.length} total listing{listings.length !== 1 ? 's' : ''}</Pill>
+            {sortedListings.length !== listings.length && (
+              <Pill color="#8B5CF6">{sortedListings.length} shown</Pill>
+            )}
+            {purchaseCount > 0 && (
+              <Pill color="#F59E0B">{purchaseCount} purchased this session</Pill>
+            )}
+          </div>
+        )}
+
         {/* Screen reader live region — single source of truth for loading/error/loaded state */}
         <div role="status" aria-live="polite" aria-atomic="true" className="sr-only">
           {isFetching || isRefreshing
