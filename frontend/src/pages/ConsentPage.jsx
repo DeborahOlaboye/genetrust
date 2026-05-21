@@ -146,7 +146,10 @@ export default function ConsentPage() {
               key={selectedId}
               dataId={selectedId}
               contractService={contractService}
-              onSaved={() => toast.success('Consent policy saved!')}
+              onSaved={() => {
+                toast.success('Consent policy saved!');
+                setSaveAnnouncement('Consent policy saved successfully.');
+              }}
             />
           </SectionErrorBoundary>
         )}
