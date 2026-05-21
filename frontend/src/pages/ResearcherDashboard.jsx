@@ -268,6 +268,9 @@ export default function ResearcherDashboard() {
         >
           <div className="divide-y divide-[#34D399]/10" role="list" aria-busy={isBusy}>
             {isFetching && <MarketplaceListingSkeleton count={3} />}
+            {isRefreshing && !isFetching && (
+              <div className="py-2 text-center text-xs text-[#9AA0B2] animate-pulse">Refreshing listings…</div>
+            )}
             {!isFetching && listings.length === 0 && !initError && (
               <div className="py-10 text-center space-y-2">
                 <svg className="mx-auto h-10 w-10 text-[#8B5CF6]/40" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
