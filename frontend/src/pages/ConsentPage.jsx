@@ -68,6 +68,15 @@ export default function ConsentPage() {
           </p>
         </div>
 
+        {/* Screen reader live region */}
+        <div role="status" aria-live="polite" aria-atomic="true" className="sr-only">
+          {loading
+            ? 'Loading your datasets…'
+            : loadError
+              ? `Error: ${loadError}`
+              : `${datasets.length} dataset${datasets.length !== 1 ? 's' : ''} loaded.`}
+        </div>
+
         {/* Load error banner */}
         {loadError && (
           <div role="alert" className="mb-5 rounded-xl px-5 py-4 bg-red-900/30 border border-red-500/40 text-red-300 text-sm flex items-center justify-between gap-4">
