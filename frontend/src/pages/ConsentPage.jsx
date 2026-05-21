@@ -51,7 +51,7 @@ export default function ConsentPage() {
       <Toaster position="top-right" toastOptions={TOAST_OPTIONS} />
       <Navigation />
 
-      <main style={{ maxWidth: '700px', margin: '0 auto', padding: '2.5rem 1rem 4rem' }}>
+      <main id="consent-main" role="main" aria-label="Consent management" className="max-w-2xl mx-auto px-4 py-10 pb-16 space-y-6">
         {/* Page header */}
         <div style={{ marginBottom: '2rem' }}>
           <h1 style={{
