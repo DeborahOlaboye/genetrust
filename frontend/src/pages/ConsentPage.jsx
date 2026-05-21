@@ -54,7 +54,7 @@ export default function ConsentPage() {
     return () => clearTimeout(t);
   }, [saveAnnouncement]);
 
-  const isBusy = loading;
+  const isBusy = loading || isRefreshing;
   const selectedDataset = useMemo(
     () => datasets.find(d => d.id === selectedId) ?? null,
     [datasets, selectedId]
