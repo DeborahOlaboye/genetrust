@@ -53,6 +53,8 @@ export default function ConsentPage() {
     return () => clearTimeout(t);
   }, [saveAnnouncement]);
 
+  const isBusy = loading;
+
   const handleDatasetChange = useCallback((e) => {
     setSelectedId(Number(e.target.value));
   }, []);
