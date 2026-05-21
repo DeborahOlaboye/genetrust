@@ -322,7 +322,7 @@ export default function ResearcherDashboard() {
       </main>
 
       {/* Screen reader live region for purchase status */}
-      <div aria-live="polite" aria-atomic="true" className="sr-only">
+      <div aria-live="assertive" aria-atomic="true" aria-label="Purchase status" className="sr-only">
         {statusAnnouncement}
       </div>
 
