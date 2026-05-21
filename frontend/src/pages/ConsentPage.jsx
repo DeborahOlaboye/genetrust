@@ -64,6 +64,20 @@ export default function ConsentPage() {
           </p>
         </div>
 
+        {/* Load error banner */}
+        {loadError && (
+          <div role="alert" className="mb-5 rounded-xl px-5 py-4 bg-red-900/30 border border-red-500/40 text-red-300 text-sm flex items-center justify-between gap-4">
+            <span>{loadError}</span>
+            <button
+              onClick={handleRetry}
+              disabled={loading}
+              className="shrink-0 px-4 py-1.5 rounded-lg bg-red-500/20 border border-red-500/40 text-red-200 text-xs font-medium hover:bg-red-500/30 disabled:opacity-50"
+            >
+              {loading ? 'Retrying…' : 'Retry'}
+            </button>
+          </div>
+        )}
+
         {/* Dataset selector */}
         {!loading && datasets.length > 0 && (
           <div style={{ marginBottom: '1.25rem' }}>
