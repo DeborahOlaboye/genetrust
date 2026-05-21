@@ -54,6 +54,10 @@ export default function ConsentPage() {
   }, [saveAnnouncement]);
 
   const isBusy = loading;
+  const selectedDataset = useMemo(
+    () => datasets.find(d => d.id === selectedId) ?? null,
+    [datasets, selectedId]
+  );
 
   const handleDatasetChange = useCallback((e) => {
     setSelectedId(Number(e.target.value));
