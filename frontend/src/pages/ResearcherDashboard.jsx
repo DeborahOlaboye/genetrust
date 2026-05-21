@@ -75,11 +75,16 @@ export default function ResearcherDashboard() {
     return () => controller.abort();
   }, [loadListings]);
 
+  const filteredListings = useMemo(() => {
+    if (minAccessFilter === 0) return listings;
+    return listings.filter(l => l.accessLevel >= minAccessFilter);
+  }, [listings, minAccessFilter]);
+
   const sortedListings = useMemo(() => {
-    const copy = [...listings];
+    const copy = [...filteredListings];
     copy.sort((a, b) => sortOrder === 'asc' ? a.price - b.price : b.price - a.price);
     return copy;
-  }, [listings, sortOrder]);
+  }, [filteredListings, sortOrder]);
 
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
