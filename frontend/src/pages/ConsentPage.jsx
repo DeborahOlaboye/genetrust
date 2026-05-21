@@ -181,6 +181,17 @@ export default function ConsentPage() {
           {saveAnnouncement}
         </div>
 
+        {/* Selected dataset breadcrumb */}
+        {selectedDataset && (
+          <p className="text-xs text-[#9AA0B2]">
+            Managing consent for{' '}
+            <span className="text-[#8B5CF6] font-medium">
+              Dataset #{selectedDataset.id}
+            </span>
+            {selectedDataset.description ? ` — ${selectedDataset.description}` : ''}
+          </p>
+        )}
+
         {selectedId !== null && (
           <SectionErrorBoundary sectionName="Consent Management Panel">
             <ConsentManagementPanel
