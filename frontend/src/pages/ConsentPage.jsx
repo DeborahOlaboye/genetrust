@@ -23,12 +23,15 @@ export default function ConsentPage() {
   const [loadError, setLoadError] = useState(null);
   const [saveAnnouncement, setSaveAnnouncement] = useState('');
   const [walletConnected, setWalletConnected] = useState(false);
+  const [status, setStatus] = useState(null);
 
   const loadDatasets = useCallback(async () => {
     try {
       const isConnected = APP_CONFIG.USE_REAL_SDK ? await walletService.isConnected() : true;
       setWalletConnected(isConnected);
       await contractService.initialize({ walletAddress: walletService.getAddress() });
+      const s = await contractService.getStatus();
+      setStatus(s);
       const ds = await contractService.listMyDatasets();
       setDatasets(ds ?? []);
       if (ds?.length && selectedId === null) setSelectedId(ds[0].id);
