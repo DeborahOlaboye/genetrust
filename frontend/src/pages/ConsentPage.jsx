@@ -64,6 +64,12 @@ export default function ConsentPage() {
     setSelectedId(Number(e.target.value));
   }, []);
 
+  const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    await loadDatasets();
+    setIsRefreshing(false);
+  }, [loadDatasets]);
+
   const handleConnectWallet = useCallback(async () => {
     await walletService.connect();
     setWalletConnected(true);
