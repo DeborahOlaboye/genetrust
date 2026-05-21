@@ -18,18 +18,23 @@ export default function ConsentPage() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
 
+  const loadDatasets = useCallback(async () => {
+    try {
+      await contractService.initialize({ walletAddress: walletService.getAddress() });
+      const ds = await contractService.listMyDatasets();
+      setDatasets(ds ?? []);
+      if (ds?.length && selectedId === null) setSelectedId(ds[0].id);
+      setLoadError(null);
+    } catch (err) {
+      setLoadError(err?.message || 'Failed to load datasets');
+    } finally {
+      setLoading(false);
+    }
+  }, [selectedId]);
+
   useEffect(() => {
-    contractService
-      .initialize({ walletAddress: walletService.getAddress() })
-      .then(() => contractService.listMyDatasets())
-      .then(ds => {
-        setDatasets(ds ?? []);
-        if (ds?.length) setSelectedId(ds[0].id);
-        setLoadError(null);
-      })
-      .catch(err => setLoadError(err?.message || 'Failed to load datasets'))
-      .finally(() => setLoading(false));
-  }, []);
+    loadDatasets();
+  }, [loadDatasets]);
 
   return (
     <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg,#0B0B1D,#14102E,#0B0B1D)', color: '#fff' }}>
