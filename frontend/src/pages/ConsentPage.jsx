@@ -16,6 +16,7 @@ export default function ConsentPage() {
   const [datasets, setDatasets] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(null);
 
   useEffect(() => {
     contractService
@@ -24,8 +25,9 @@ export default function ConsentPage() {
       .then(ds => {
         setDatasets(ds ?? []);
         if (ds?.length) setSelectedId(ds[0].id);
+        setLoadError(null);
       })
-      .catch(() => {})
+      .catch(err => setLoadError(err?.message || 'Failed to load datasets'))
       .finally(() => setLoading(false));
   }, []);
 
