@@ -159,7 +159,14 @@ export default function ResearcherDashboard() {
         <div className="flex items-start justify-between gap-4">
           <div>
             <h2 className="text-2xl font-bold text-white">Researcher Marketplace</h2>
-            <p className="text-sm text-[#9AA0B2] mt-1">Browse and purchase access to genomic datasets listed on-chain.</p>
+            <p className="text-sm text-[#9AA0B2] mt-1">
+              Browse and purchase access to genomic datasets listed on-chain.
+              {status?.mode && (
+                <span className="ml-2 text-xs px-2 py-0.5 rounded-full bg-[#8B5CF6]/10 text-[#8B5CF6] border border-[#8B5CF6]/20">
+                  {status.mode === 'mock' ? 'Demo mode' : 'Live'}
+                </span>
+              )}
+            </p>
           </div>
           <button
             onClick={handleRefresh}
