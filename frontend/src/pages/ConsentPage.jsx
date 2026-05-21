@@ -95,7 +95,7 @@ export default function ConsentPage() {
 
       <main id="consent-main" role="main" aria-label="Consent management" className="max-w-2xl mx-auto px-4 py-10 pb-16 space-y-6">
         {/* Page header */}
-        <div>
+        <div className="flex items-start justify-between gap-4">
           <h1 className="text-2xl font-extrabold mb-1 bg-gradient-to-r from-[#8B5CF6] to-[#06B6D4] bg-clip-text text-transparent">
             Consent Management
           </h1>
@@ -107,6 +107,14 @@ export default function ConsentPage() {
               </span>
             )}
           </p>
+          <button
+            onClick={handleRefresh}
+            disabled={isBusy || isRefreshing}
+            aria-label="Refresh datasets"
+            className="mt-1 shrink-0 px-4 py-2 rounded-lg border border-[#8B5CF6]/30 text-[#8B5CF6] text-sm font-medium hover:bg-[#8B5CF6]/10 disabled:opacity-40"
+          >
+            {isRefreshing ? 'Refreshing…' : 'Refresh'}
+          </button>
         </div>
 
         {/* Wallet connection prompt */}
