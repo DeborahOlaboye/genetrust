@@ -48,9 +48,7 @@ export default function ConsentPage() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg,#0B0B1D,#14102E,#0B0B1D)', color: '#fff' }}>
-      <Toaster position="top-right" toastOptions={{
-        style: { background: '#1a1a2e', color: '#fff', border: '1px solid rgba(139,92,246,0.3)' },
-      }} />
+      <Toaster position="top-right" toastOptions={TOAST_OPTIONS} />
       <Navigation />
 
       <main style={{ maxWidth: '700px', margin: '0 auto', padding: '2.5rem 1rem 4rem' }}>
