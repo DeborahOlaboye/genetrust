@@ -93,7 +93,7 @@ export default function ConsentPage() {
       <Toaster position="top-right" toastOptions={TOAST_OPTIONS} />
       <Navigation />
 
-      <main id="consent-main" role="main" aria-label="Consent management" className="max-w-2xl mx-auto px-4 py-10 pb-16 space-y-6">
+      <main id="consent-main" role="main" aria-label="Consent management" aria-busy={isBusy} className="max-w-2xl mx-auto px-4 py-10 pb-16 space-y-6">
         {/* Page header */}
         <div className="flex items-start justify-between gap-4">
           <h1 className="text-2xl font-extrabold mb-1 bg-gradient-to-r from-[#8B5CF6] to-[#06B6D4] bg-clip-text text-transparent">
