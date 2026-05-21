@@ -50,6 +50,10 @@ export default function ConsentPage() {
     return () => clearTimeout(t);
   }, [saveAnnouncement]);
 
+  const handleDatasetChange = useCallback((e) => {
+    setSelectedId(Number(e.target.value));
+  }, []);
+
   const handleConnectWallet = useCallback(async () => {
     await walletService.connect();
     setWalletConnected(true);
@@ -129,7 +133,7 @@ export default function ConsentPage() {
             <select
               id="consent-dataset-select"
               value={selectedId ?? ''}
-              onChange={e => setSelectedId(Number(e.target.value))}
+              onChange={handleDatasetChange}
               className="w-full bg-[#0B0B1D]/80 border border-[#8B5CF6]/30 rounded-lg px-3 py-2.5 text-[#E5E7EB] text-sm focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]/40"
             >
               {datasets.map(ds => (
