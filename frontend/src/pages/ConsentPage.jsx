@@ -3,7 +3,7 @@
  * Lets users select a dataset and manage its consent policy.
  */
 
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import Navigation from '../components/landing/Navigation.jsx';
 import { ConsentManagementPanel } from '../components/consent/ConsentManagementPanel.jsx';
 import { contractService } from '../services/contractService.js';
@@ -12,65 +12,159 @@ import { APP_CONFIG } from '../config/app.js';
 import toast, { Toaster } from 'react-hot-toast';
 import { SectionErrorBoundary, SkeletonLoader } from '../components/common';
 
+const TOAST_OPTIONS = {
+  style: { background: '#1a1a2e', color: '#fff', border: '1px solid rgba(139,92,246,0.3)' },
+};
+
 export default function ConsentPage() {
   const [datasets, setDatasets] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(null);
+  const [saveAnnouncement, setSaveAnnouncement] = useState('');
+  const [walletConnected, setWalletConnected] = useState(false);
+  const [status, setStatus] = useState(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const loadDatasets = useCallback(async () => {
+    try {
+      const isConnected = APP_CONFIG.USE_REAL_SDK ? await walletService.isConnected() : true;
+      setWalletConnected(isConnected);
+      await contractService.initialize({ walletAddress: walletService.getAddress() });
+      const s = await contractService.getStatus();
+      setStatus(s);
+      const ds = await contractService.listMyDatasets();
+      setDatasets(ds ?? []);
+      if (ds?.length && selectedId === null) setSelectedId(ds[0].id);
+      setLoadError(null);
+    } catch (err) {
+      setLoadError(err?.message || 'Failed to load datasets');
+    } finally {
+      setLoading(false);
+    }
+  }, [selectedId]);
 
   useEffect(() => {
-    contractService
-      .initialize({ walletAddress: walletService.getAddress() })
-      .then(() => contractService.listMyDatasets())
-      .then(ds => {
-        setDatasets(ds ?? []);
-        if (ds?.length) setSelectedId(ds[0].id);
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    loadDatasets();
+  }, [loadDatasets]);
+
+  useEffect(() => {
+    if (!saveAnnouncement) return;
+    const t = setTimeout(() => setSaveAnnouncement(''), 5000);
+    return () => clearTimeout(t);
+  }, [saveAnnouncement]);
+
+  const isBusy = loading || isRefreshing;
+  const selectedDataset = useMemo(
+    () => datasets.find(d => d.id === selectedId) ?? null,
+    [datasets, selectedId]
+  );
+
+  const handleDatasetChange = useCallback((e) => {
+    setSelectedId(Number(e.target.value));
   }, []);
 
+  const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    await loadDatasets();
+    setIsRefreshing(false);
+  }, [loadDatasets]);
+
+  const handleConnectWallet = useCallback(async () => {
+    await walletService.connect();
+    setWalletConnected(true);
+    await loadDatasets();
+  }, [loadDatasets]);
+
+  const handleRetry = useCallback(async () => {
+    setLoading(true);
+    setLoadError(null);
+    await loadDatasets();
+  }, [loadDatasets]);
+
   return (
-    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg,#0B0B1D,#14102E,#0B0B1D)', color: '#fff' }}>
-      <Toaster position="top-right" toastOptions={{
-        style: { background: '#1a1a2e', color: '#fff', border: '1px solid rgba(139,92,246,0.3)' },
-      }} />
+    <div className="min-h-screen bg-gradient-to-br from-[#0B0B1D] via-[#14102E] to-[#0B0B1D] text-white">
+      <a
+        href="#consent-main"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-gray-900 focus:text-white focus:rounded"
+      >
+        Skip to main content
+      </a>
+      <Toaster position="top-right" toastOptions={TOAST_OPTIONS} />
       <Navigation />
 
-      <main style={{ maxWidth: '700px', margin: '0 auto', padding: '2.5rem 1rem 4rem' }}>
+      <main id="consent-main" role="main" aria-label="Consent management" aria-busy={isBusy} className="max-w-2xl mx-auto px-4 py-10 pb-16 space-y-6">
         {/* Page header */}
-        <div style={{ marginBottom: '2rem' }}>
-          <h1 style={{
-            fontSize: '1.6rem', fontWeight: 800, margin: '0 0 0.4rem',
-            background: 'linear-gradient(135deg,#8B5CF6,#06B6D4)',
-            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-          }}>
+        <div className="flex items-start justify-between gap-4">
+          <h1 className="text-2xl font-extrabold mb-1 bg-gradient-to-r from-[#8B5CF6] to-[#06B6D4] bg-clip-text text-transparent">
             Consent Management
           </h1>
-          <p style={{ color: '#6B7280', fontSize: '0.875rem', margin: 0 }}>
+          <p className="text-sm text-[#6B7280] flex items-center gap-2">
             Control how your genomic data may be used and exercise your GDPR rights.
+            {status?.mode && (
+              <span className="text-xs px-2 py-0.5 rounded-full bg-[#8B5CF6]/10 text-[#8B5CF6] border border-[#8B5CF6]/20">
+                {status.mode === 'mock' ? 'Demo' : 'Live'}
+              </span>
+            )}
           </p>
+          <button
+            onClick={handleRefresh}
+            disabled={isBusy || isRefreshing}
+            aria-label="Refresh datasets"
+            className="mt-1 shrink-0 px-4 py-2 rounded-lg border border-[#8B5CF6]/30 text-[#8B5CF6] text-sm font-medium hover:bg-[#8B5CF6]/10 disabled:opacity-40"
+          >
+            {isRefreshing ? 'Refreshing…' : 'Refresh'}
+          </button>
         </div>
+
+        {/* Wallet connection prompt */}
+        {APP_CONFIG.USE_REAL_SDK && !walletConnected && !loading && (
+          <div className="rounded-xl p-5 bg-[#8B5CF6]/10 border border-[#8B5CF6]/20">
+            <p className="text-sm text-[#9AA0B2] mb-3">Connect your Stacks wallet to manage consent settings.</p>
+            <button
+              onClick={handleConnectWallet}
+              className="px-5 py-2.5 rounded-lg bg-gradient-to-r from-[#8B5CF6] to-[#6D28D9] text-white font-semibold text-sm"
+            >
+              Connect Wallet
+            </button>
+          </div>
+        )}
+
+        {/* Screen reader live region */}
+        <div role="status" aria-live="polite" aria-atomic="true" className="sr-only">
+          {loading
+            ? 'Loading your datasets…'
+            : loadError
+              ? `Error: ${loadError}`
+              : `${datasets.length} dataset${datasets.length !== 1 ? 's' : ''} loaded.`}
+        </div>
+
+        {/* Load error banner */}
+        {loadError && (
+          <div role="alert" className="mb-5 rounded-xl px-5 py-4 bg-red-900/30 border border-red-500/40 text-red-300 text-sm flex items-center justify-between gap-4">
+            <span>{loadError}</span>
+            <button
+              onClick={handleRetry}
+              disabled={isBusy}
+              className="shrink-0 px-4 py-1.5 rounded-lg bg-red-500/20 border border-red-500/40 text-red-200 text-xs font-medium hover:bg-red-500/30 disabled:opacity-50"
+            >
+              {loading ? 'Retrying…' : 'Retry'}
+            </button>
+          </div>
+        )}
 
         {/* Dataset selector */}
         {!loading && datasets.length > 0 && (
-          <div style={{ marginBottom: '1.25rem' }}>
-            <label htmlFor="consent-dataset-select" style={{ color: '#9AA0B2', fontSize: '0.82rem', display: 'block', marginBottom: '0.35rem' }}>
-              Select Dataset
+          <div>
+            <label htmlFor="consent-dataset-select" className="block text-xs text-[#9AA0B2] mb-1.5">
+              Select Dataset ({datasets.length})
             </label>
             <select
               id="consent-dataset-select"
               value={selectedId ?? ''}
-              onChange={e => setSelectedId(Number(e.target.value))}
-              style={{
-                width: '100%',
-                background: 'rgba(11,11,29,0.8)',
-                border: '1px solid rgba(139,92,246,0.3)',
-                borderRadius: '0.5rem',
-                padding: '0.6rem 0.75rem',
-                color: '#E5E7EB',
-                fontSize: '0.875rem',
-                outline: 'none',
-              }}
+              onChange={handleDatasetChange}
+              disabled={isBusy}
+              className="w-full bg-[#0B0B1D]/80 border border-[#8B5CF6]/30 rounded-lg px-3 py-2.5 text-[#E5E7EB] text-sm focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]/40 disabled:opacity-50"
             >
               {datasets.map(ds => (
                 <option key={ds.id} value={ds.id}>
@@ -82,27 +176,35 @@ export default function ConsentPage() {
         )}
 
         {loading && (
-          <div style={{ marginBottom: '1.25rem' }}>
-            <SkeletonLoader height="2.5rem" rounded="md" label="Loading datasets…" className="bg-white/5" />
-          </div>
+          <SkeletonLoader height="2.5rem" rounded="md" label="Loading datasets…" className="bg-white/5" />
         )}
 
-        {!loading && datasets.length === 0 && (
-          <div style={{
-            padding: '2rem', borderRadius: '1rem', textAlign: 'center',
-            background: 'rgba(55,65,81,0.1)', border: '1px solid rgba(55,65,81,0.3)',
-          }}>
-            <p style={{ color: '#6B7280', margin: '0 0 1rem' }}>
-              No datasets found. Register one first.
-            </p>
-            <a href="/upload" style={{
-              padding: '0.6rem 1.25rem', borderRadius: '0.5rem',
-              background: 'linear-gradient(135deg,#8B5CF6,#6D28D9)',
-              color: '#fff', textDecoration: 'none', fontWeight: 600, fontSize: '0.875rem',
-            }}>
+        {!loading && datasets.length === 0 && !loadError && (
+          <div className="rounded-2xl p-8 text-center bg-gray-900/10 border border-gray-700/30">
+            <p className="text-[#6B7280] text-sm mb-4">No datasets found. Register one first.</p>
+            <a
+              href="/upload"
+              className="inline-block px-5 py-2.5 rounded-lg bg-gradient-to-r from-[#8B5CF6] to-[#6D28D9] text-white font-semibold text-sm no-underline"
+            >
               Register Dataset →
             </a>
           </div>
+        )}
+
+        {/* Assertive live region for save/error announcements */}
+        <div aria-live="assertive" aria-atomic="true" aria-label="Consent save status" className="sr-only">
+          {saveAnnouncement}
+        </div>
+
+        {/* Selected dataset breadcrumb */}
+        {selectedDataset && (
+          <p className="text-xs text-[#9AA0B2]">
+            Managing consent for{' '}
+            <span className="text-[#8B5CF6] font-medium">
+              Dataset #{selectedDataset.id}
+            </span>
+            {selectedDataset.description ? ` — ${selectedDataset.description}` : ''}
+          </p>
         )}
 
         {selectedId !== null && (
@@ -111,7 +213,15 @@ export default function ConsentPage() {
               key={selectedId}
               dataId={selectedId}
               contractService={contractService}
-              onSaved={() => toast.success('Consent policy saved!')}
+              onSaved={() => {
+                toast.success('Consent policy saved!');
+                setSaveAnnouncement('Consent policy saved successfully.');
+              }}
+              onError={(err) => {
+                const msg = err?.message || 'Failed to save consent policy';
+                toast.error(msg);
+                setSaveAnnouncement(`Error: ${msg}`);
+              }}
             />
           </SectionErrorBoundary>
         )}
