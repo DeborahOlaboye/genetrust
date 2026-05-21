@@ -129,6 +129,11 @@ export default function ConsentPage() {
           </div>
         )}
 
+        {/* Assertive live region for save/error announcements */}
+        <div aria-live="assertive" aria-atomic="true" aria-label="Consent save status" className="sr-only">
+          {saveAnnouncement}
+        </div>
+
         {selectedId !== null && (
           <SectionErrorBoundary sectionName="Consent Management Panel">
             <ConsentManagementPanel
