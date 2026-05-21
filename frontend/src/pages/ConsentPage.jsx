@@ -86,8 +86,13 @@ export default function ConsentPage() {
           <h1 className="text-2xl font-extrabold mb-1 bg-gradient-to-r from-[#8B5CF6] to-[#06B6D4] bg-clip-text text-transparent">
             Consent Management
           </h1>
-          <p className="text-sm text-[#6B7280]">
+          <p className="text-sm text-[#6B7280] flex items-center gap-2">
             Control how your genomic data may be used and exercise your GDPR rights.
+            {status?.mode && (
+              <span className="text-xs px-2 py-0.5 rounded-full bg-[#8B5CF6]/10 text-[#8B5CF6] border border-[#8B5CF6]/20">
+                {status.mode === 'mock' ? 'Demo' : 'Live'}
+              </span>
+            )}
           </p>
         </div>
 
