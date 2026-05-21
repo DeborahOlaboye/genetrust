@@ -126,7 +126,7 @@ export default function ConsentPage() {
             <span>{loadError}</span>
             <button
               onClick={handleRetry}
-              disabled={loading}
+              disabled={isBusy}
               className="shrink-0 px-4 py-1.5 rounded-lg bg-red-500/20 border border-red-500/40 text-red-200 text-xs font-medium hover:bg-red-500/30 disabled:opacity-50"
             >
               {loading ? 'Retrying…' : 'Retry'}
