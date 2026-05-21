@@ -22,6 +22,7 @@ export default function ConsentPage() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
   const [saveAnnouncement, setSaveAnnouncement] = useState('');
+  const [walletConnected, setWalletConnected] = useState(false);
 
   const loadDatasets = useCallback(async () => {
     try {
