@@ -218,6 +218,14 @@ export default function ResearcherDashboard() {
                 <p className="text-[#9AA0B2] text-sm">No listings available yet. Check back later.</p>
               </div>
             )}
+            {!isFetching && listings.length > 0 && sortedListings.length === 0 && (
+              <div className="py-8 text-center">
+                <p className="text-[#9AA0B2] text-sm">No listings match your current filters.</p>
+                <button onClick={() => setMinAccessFilter(0)} className="mt-2 text-xs text-[#8B5CF6] underline">
+                  Clear filters
+                </button>
+              </div>
+            )}
             {!isFetching && sortedListings.map(l => (
               <div key={l.listingId} className="py-4 flex items-center justify-between" role="listitem">
                 <div className="space-y-1">
