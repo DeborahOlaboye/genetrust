@@ -202,7 +202,12 @@ export default function ResearcherDashboard() {
 
         {/* Listings */}
         <SectionErrorBoundary sectionName="Marketplace Listings">
-        <SectionCard title={`Available Listings${!isFetching ? ` (${listings.length})` : ''}`} border="#34D399">
+        <SectionCard
+          title={!isFetching
+            ? `Available Listings (${sortedListings.length}${sortedListings.length !== listings.length ? ` of ${listings.length}` : ''})`
+            : 'Available Listings'}
+          border="#34D399"
+        >
           <div className="divide-y divide-[#34D399]/10" role="list">
             {isFetching && <MarketplaceListingSkeleton count={3} />}
             {!isFetching && listings.length === 0 && !initError && (
