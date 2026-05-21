@@ -50,6 +50,12 @@ export default function ResearcherDashboard() {
   const [sortOrder, setSortOrder] = useState('asc');
   const [minAccessFilter, setMinAccessFilter] = useState(0);
 
+  useEffect(() => {
+    if (!statusAnnouncement) return;
+    const t = setTimeout(() => setStatusAnnouncement(''), 5000);
+    return () => clearTimeout(t);
+  }, [statusAnnouncement]);
+
   const loadListings = useCallback(async (opts = {}) => {
     const { signal } = opts;
     try {
