@@ -301,7 +301,10 @@ export default function ResearcherDashboard() {
                 </div>
                 <div className="flex items-center gap-3">
                   {purchasedListings.has(l.listingId) ? (
-                    <span className="px-5 py-2 rounded-lg text-sm font-semibold text-[#34D399] border border-[#34D399]/30 bg-[#34D399]/10">
+                    <span
+                      className="px-5 py-2 rounded-lg text-sm font-semibold text-[#34D399] border border-[#34D399]/30 bg-[#34D399]/10"
+                      aria-label={`Listing ${l.listingId} already purchased this session`}
+                    >
                       ✓ Purchased
                     </span>
                   ) : (
