@@ -130,7 +130,7 @@ export default function ResearcherDashboard() {
           </div>
           <button
             onClick={handleRefresh}
-            disabled={isFetching || isRefreshing}
+            disabled={isBusy}
             aria-label="Refresh listings"
             className="mt-1 shrink-0 px-4 py-2 rounded-lg border border-[#34D399]/30 text-[#34D399] text-sm font-medium hover:bg-[#34D399]/10 disabled:opacity-40"
           >
