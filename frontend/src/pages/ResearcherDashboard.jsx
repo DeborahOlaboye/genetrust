@@ -83,6 +83,10 @@ export default function ResearcherDashboard() {
 
   const isBusy = isFetching || isRefreshing;
   const purchaseCount = purchasedListings.size;
+  const maxPriceInView = useMemo(
+    () => sortedListings.reduce((max, l) => Math.max(max, l.price), 0),
+    [sortedListings]
+  );
 
   const filteredListings = useMemo(() => {
     if (minAccessFilter === 0) return listings;
