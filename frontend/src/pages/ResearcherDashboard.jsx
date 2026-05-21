@@ -48,6 +48,13 @@ export default function ResearcherDashboard() {
   const [statusAnnouncement, setStatusAnnouncement] = useState('');
   const [purchasedListings, setPurchasedListings] = useState(() => new Set());
   const [sortOrder, setSortOrder] = useState('asc');
+  const [minAccessFilter, setMinAccessFilter] = useState(0);
+
+  useEffect(() => {
+    if (!statusAnnouncement) return;
+    const t = setTimeout(() => setStatusAnnouncement(''), 5000);
+    return () => clearTimeout(t);
+  }, [statusAnnouncement]);
 
   const loadListings = useCallback(async (opts = {}) => {
     const { signal } = opts;
@@ -74,11 +81,39 @@ export default function ResearcherDashboard() {
     return () => controller.abort();
   }, [loadListings]);
 
+  const isBusy = isFetching || isRefreshing;
+  const purchaseCount = purchasedListings.size;
+  const maxPriceInView = useMemo(
+    () => sortedListings.reduce((max, l) => Math.max(max, l.price), 0),
+    [sortedListings]
+  );
+
+  const filteredListings = useMemo(() => {
+    if (minAccessFilter === 0) return listings;
+    return listings.filter(l => l.accessLevel >= minAccessFilter);
+  }, [listings, minAccessFilter]);
+
   const sortedListings = useMemo(() => {
-    const copy = [...listings];
+    const copy = [...filteredListings];
     copy.sort((a, b) => sortOrder === 'asc' ? a.price - b.price : b.price - a.price);
     return copy;
-  }, [listings, sortOrder]);
+  }, [filteredListings, sortOrder]);
+
+  const handleAccessLevelChange = useCallback((e) => {
+    setAccessLevel(parseInt(e.target.value, 10));
+  }, []);
+
+  const handleMinAccessFilterChange = useCallback((e) => {
+    setMinAccessFilter(parseInt(e.target.value, 10));
+  }, []);
+
+  const handleSortToggle = useCallback(() => {
+    setSortOrder(o => o === 'asc' ? 'desc' : 'asc');
+  }, []);
+
+  const handleClearFilters = useCallback(() => {
+    setMinAccessFilter(0);
+  }, []);
 
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
@@ -112,23 +147,52 @@ export default function ResearcherDashboard() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0B0B1D] via-[#14102E] to-[#0B0B1D] text-white">
+      <a
+        href="#marketplace-main"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-gray-900 focus:text-white focus:rounded"
+      >
+        Skip to main content
+      </a>
       <Toaster position="top-right" toastOptions={TOAST_OPTIONS} />
       <Navigation />
-      <main role="main" aria-label="Researcher marketplace" className="max-w-7xl mx-auto px-6 lg:px-8 py-10 space-y-8">
+      <main id="marketplace-main" role="main" aria-label="Researcher marketplace" className="max-w-7xl mx-auto px-6 lg:px-8 py-10 space-y-8">
         <div className="flex items-start justify-between gap-4">
           <div>
             <h2 className="text-2xl font-bold text-white">Researcher Marketplace</h2>
-            <p className="text-sm text-[#9AA0B2] mt-1">Browse and purchase access to genomic datasets listed on-chain.</p>
+            <p className="text-sm text-[#9AA0B2] mt-1">
+              Browse and purchase access to genomic datasets listed on-chain.
+              {status?.mode && (
+                <span className="ml-2 text-xs px-2 py-0.5 rounded-full bg-[#8B5CF6]/10 text-[#8B5CF6] border border-[#8B5CF6]/20">
+                  {status.mode === 'mock' ? 'Demo mode' : 'Live'}
+                </span>
+              )}
+            </p>
           </div>
           <button
             onClick={handleRefresh}
-            disabled={isFetching || isRefreshing}
+            disabled={isBusy}
             aria-label="Refresh listings"
             className="mt-1 shrink-0 px-4 py-2 rounded-lg border border-[#34D399]/30 text-[#34D399] text-sm font-medium hover:bg-[#34D399]/10 disabled:opacity-40"
           >
             {isRefreshing ? 'Refreshing…' : 'Refresh'}
           </button>
         </div>
+
+        {/* Stats bar */}
+        {!isFetching && (
+          <div className="flex flex-wrap gap-3">
+            <Pill color="#34D399">{listings.length} total listing{listings.length !== 1 ? 's' : ''}</Pill>
+            {sortedListings.length !== listings.length && (
+              <Pill color="#8B5CF6">{sortedListings.length} shown</Pill>
+            )}
+            {maxPriceInView > 0 && (
+              <Pill color="#60A5FA">Max: {formatSTX(maxPriceInView)}</Pill>
+            )}
+            {purchaseCount > 0 && (
+              <Pill color="#F59E0B">{purchaseCount} purchased this session</Pill>
+            )}
+          </div>
+        )}
 
         {/* Screen reader live region — single source of truth for loading/error/loaded state */}
         <div role="status" aria-live="polite" aria-atomic="true" className="sr-only">
@@ -145,7 +209,7 @@ export default function ResearcherDashboard() {
             <span>{initError}</span>
             <button
               onClick={handleRetry}
-              disabled={isFetching}
+              disabled={isBusy}
               className="shrink-0 px-4 py-1.5 rounded-lg bg-red-500/20 border border-red-500/40 text-red-200 text-xs font-medium hover:bg-red-500/30 disabled:opacity-50"
             >
               {isFetching ? 'Retrying…' : 'Retry'}
@@ -159,17 +223,31 @@ export default function ResearcherDashboard() {
           <div className="grid md:grid-cols-3 gap-4">
             <div>
               <label htmlFor="access-level-select" className="text-sm text-[#9AA0B2]">Desired Access Level</label>
-              <select id="access-level-select" value={accessLevel} onChange={e => setAccessLevel(parseInt(e.target.value, 10))} aria-label="Desired access level" className="mt-1 w-full bg-[#14102E] border border-[#8B5CF6]/20 rounded-lg px-3 py-2">
+              <select id="access-level-select" value={accessLevel} onChange={handleAccessLevelChange} aria-label="Desired access level" aria-describedby="access-level-hint" className="mt-1 w-full bg-[#14102E] border border-[#8B5CF6]/20 rounded-lg px-3 py-2">
                 <option value={1}>1 - Basic</option>
                 <option value={2}>2 - Detailed</option>
                 <option value={3}>3 - Full</option>
               </select>
-              <p id="access-level-hint" className="mt-1 text-xs text-[#9AA0B2]">Only listings at or above this level will grant the selected access.</p>
+              <p id="access-level-hint" role="note" className="mt-1 text-xs text-[#9AA0B2]">Only listings at or above this level will grant the selected access.</p>
+            </div>
+            <div>
+              <label htmlFor="min-access-filter" className="text-sm text-[#9AA0B2]">Minimum Listing Level</label>
+              <select
+                id="min-access-filter"
+                value={minAccessFilter}
+                onChange={handleMinAccessFilterChange}
+                className="mt-1 w-full bg-[#14102E] border border-[#8B5CF6]/20 rounded-lg px-3 py-2 text-white"
+              >
+                <option value={0}>All levels</option>
+                <option value={1}>1 - Basic+</option>
+                <option value={2}>2 - Detailed+</option>
+                <option value={3}>3 - Full only</option>
+              </select>
             </div>
             <div>
               <label className="text-sm text-[#9AA0B2]">Sort by Price</label>
               <button
-                onClick={() => setSortOrder(o => o === 'asc' ? 'desc' : 'asc')}
+                onClick={handleSortToggle}
                 className="mt-1 w-full bg-[#14102E] border border-[#8B5CF6]/20 rounded-lg px-3 py-2 text-white text-left text-sm"
                 aria-label={`Sort price ${sortOrder === 'asc' ? 'descending' : 'ascending'}`}
               >
@@ -182,9 +260,17 @@ export default function ResearcherDashboard() {
 
         {/* Listings */}
         <SectionErrorBoundary sectionName="Marketplace Listings">
-        <SectionCard title={`Available Listings${!isFetching ? ` (${listings.length})` : ''}`} border="#34D399">
-          <div className="divide-y divide-[#34D399]/10" role="list">
+        <SectionCard
+          title={!isFetching
+            ? `Available Listings (${sortedListings.length}${sortedListings.length !== listings.length ? ` of ${listings.length}` : ''})`
+            : 'Available Listings'}
+          border="#34D399"
+        >
+          <div className="divide-y divide-[#34D399]/10" role="list" aria-busy={isBusy}>
             {isFetching && <MarketplaceListingSkeleton count={3} />}
+            {isRefreshing && !isFetching && (
+              <div className="py-2 text-center text-xs text-[#9AA0B2] animate-pulse">Refreshing listings…</div>
+            )}
             {!isFetching && listings.length === 0 && !initError && (
               <div className="py-10 text-center space-y-2">
                 <svg className="mx-auto h-10 w-10 text-[#8B5CF6]/40" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
@@ -193,13 +279,21 @@ export default function ResearcherDashboard() {
                 <p className="text-[#9AA0B2] text-sm">No listings available yet. Check back later.</p>
               </div>
             )}
+            {!isFetching && listings.length > 0 && sortedListings.length === 0 && (
+              <div className="py-8 text-center">
+                <p className="text-[#9AA0B2] text-sm">No listings match your current filters.</p>
+                <button onClick={handleClearFilters} className="mt-2 text-xs text-[#8B5CF6] underline">
+                  Clear filters
+                </button>
+              </div>
+            )}
             {!isFetching && sortedListings.map(l => (
               <div key={l.listingId} className="py-4 flex items-center justify-between" role="listitem">
                 <div className="space-y-1">
                   <div className="font-medium">Listing #{l.listingId} • Dataset #{l.dataId}</div>
                   <div className="text-sm text-[#9AA0B2] flex items-center gap-2 flex-wrap">
                     <Pill color="#8B5CF6">Access ≤ {l.accessLevel}</Pill>
-                    <Pill color="#F59E0B">{(l.price / 1_000_000).toFixed(6)} STX</Pill>
+                    <Pill color="#F59E0B">{formatSTX(l.price)}</Pill>
                     {l.owner && (
                       <Pill color="#9AA0B2">Owner: {l.owner.slice(0, 6)}…{l.owner.slice(-4)}</Pill>
                     )}
@@ -207,7 +301,10 @@ export default function ResearcherDashboard() {
                 </div>
                 <div className="flex items-center gap-3">
                   {purchasedListings.has(l.listingId) ? (
-                    <span className="px-5 py-2 rounded-lg text-sm font-semibold text-[#34D399] border border-[#34D399]/30 bg-[#34D399]/10">
+                    <span
+                      className="px-5 py-2 rounded-lg text-sm font-semibold text-[#34D399] border border-[#34D399]/30 bg-[#34D399]/10"
+                      aria-label={`Listing ${l.listingId} already purchased this session`}
+                    >
                       ✓ Purchased
                     </span>
                   ) : (
@@ -238,7 +335,7 @@ export default function ResearcherDashboard() {
       </main>
 
       {/* Screen reader live region for purchase status */}
-      <div aria-live="polite" aria-atomic="true" className="sr-only">
+      <div aria-live="assertive" aria-atomic="true" aria-label="Purchase status" className="sr-only">
         {statusAnnouncement}
       </div>
 
