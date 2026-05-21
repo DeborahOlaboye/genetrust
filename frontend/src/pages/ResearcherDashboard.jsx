@@ -221,7 +221,7 @@ export default function ResearcherDashboard() {
                 <option value={2}>2 - Detailed</option>
                 <option value={3}>3 - Full</option>
               </select>
-              <p id="access-level-hint" className="mt-1 text-xs text-[#9AA0B2]">Only listings at or above this level will grant the selected access.</p>
+              <p id="access-level-hint" role="note" className="mt-1 text-xs text-[#9AA0B2]">Only listings at or above this level will grant the selected access.</p>
             </div>
             <div>
               <label htmlFor="min-access-filter" className="text-sm text-[#9AA0B2]">Minimum Listing Level</label>
