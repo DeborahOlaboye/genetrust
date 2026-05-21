@@ -36,6 +36,12 @@ export default function ConsentPage() {
     loadDatasets();
   }, [loadDatasets]);
 
+  const handleRetry = useCallback(async () => {
+    setLoading(true);
+    setLoadError(null);
+    await loadDatasets();
+  }, [loadDatasets]);
+
   return (
     <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg,#0B0B1D,#14102E,#0B0B1D)', color: '#fff' }}>
       <Toaster position="top-right" toastOptions={{
