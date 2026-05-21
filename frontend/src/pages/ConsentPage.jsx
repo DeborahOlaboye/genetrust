@@ -144,7 +144,8 @@ export default function ConsentPage() {
               id="consent-dataset-select"
               value={selectedId ?? ''}
               onChange={handleDatasetChange}
-              className="w-full bg-[#0B0B1D]/80 border border-[#8B5CF6]/30 rounded-lg px-3 py-2.5 text-[#E5E7EB] text-sm focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]/40"
+              disabled={isBusy}
+              className="w-full bg-[#0B0B1D]/80 border border-[#8B5CF6]/30 rounded-lg px-3 py-2.5 text-[#E5E7EB] text-sm focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]/40 disabled:opacity-50"
             >
               {datasets.map(ds => (
                 <option key={ds.id} value={ds.id}>
