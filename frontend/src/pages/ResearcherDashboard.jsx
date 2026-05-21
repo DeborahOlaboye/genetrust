@@ -75,6 +75,8 @@ export default function ResearcherDashboard() {
     return () => controller.abort();
   }, [loadListings]);
 
+  const isBusy = isFetching || isRefreshing;
+
   const filteredListings = useMemo(() => {
     if (minAccessFilter === 0) return listings;
     return listings.filter(l => l.accessLevel >= minAccessFilter);
