@@ -78,6 +78,23 @@ export default function ConsentPage() {
           </p>
         </div>
 
+        {/* Wallet connection prompt */}
+        {APP_CONFIG.USE_REAL_SDK && !walletConnected && !loading && (
+          <div className="rounded-xl p-5 bg-[#8B5CF6]/10 border border-[#8B5CF6]/20">
+            <p className="text-sm text-[#9AA0B2] mb-3">Connect your Stacks wallet to manage consent settings.</p>
+            <button
+              onClick={async () => {
+                await walletService.connect();
+                setWalletConnected(true);
+                await loadDatasets();
+              }}
+              className="px-5 py-2.5 rounded-lg bg-gradient-to-r from-[#8B5CF6] to-[#6D28D9] text-white font-semibold text-sm"
+            >
+              Connect Wallet
+            </button>
+          </div>
+        )}
+
         {/* Screen reader live region */}
         <div role="status" aria-live="polite" aria-atomic="true" className="sr-only">
           {loading
