@@ -53,15 +53,11 @@ export default function ConsentPage() {
 
       <main id="consent-main" role="main" aria-label="Consent management" className="max-w-2xl mx-auto px-4 py-10 pb-16 space-y-6">
         {/* Page header */}
-        <div style={{ marginBottom: '2rem' }}>
-          <h1 style={{
-            fontSize: '1.6rem', fontWeight: 800, margin: '0 0 0.4rem',
-            background: 'linear-gradient(135deg,#8B5CF6,#06B6D4)',
-            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-          }}>
+        <div>
+          <h1 className="text-2xl font-extrabold mb-1 bg-gradient-to-r from-[#8B5CF6] to-[#06B6D4] bg-clip-text text-transparent">
             Consent Management
           </h1>
-          <p style={{ color: '#6B7280', fontSize: '0.875rem', margin: 0 }}>
+          <p className="text-sm text-[#6B7280]">
             Control how your genomic data may be used and exercise your GDPR rights.
           </p>
         </div>
