@@ -12,6 +12,10 @@ import { APP_CONFIG } from '../config/app.js';
 import toast, { Toaster } from 'react-hot-toast';
 import { SectionErrorBoundary, SkeletonLoader } from '../components/common';
 
+const TOAST_OPTIONS = {
+  style: { background: '#1a1a2e', color: '#fff', border: '1px solid rgba(139,92,246,0.3)' },
+};
+
 export default function ConsentPage() {
   const [datasets, setDatasets] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
