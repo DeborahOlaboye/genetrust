@@ -199,7 +199,7 @@ export default function ResearcherDashboard() {
                   <div className="font-medium">Listing #{l.listingId} • Dataset #{l.dataId}</div>
                   <div className="text-sm text-[#9AA0B2] flex items-center gap-2 flex-wrap">
                     <Pill color="#8B5CF6">Access ≤ {l.accessLevel}</Pill>
-                    <Pill color="#F59E0B">{(l.price / 1_000_000).toFixed(6)} STX</Pill>
+                    <Pill color="#F59E0B">{formatSTX(l.price)}</Pill>
                     {l.owner && (
                       <Pill color="#9AA0B2">Owner: {l.owner.slice(0, 6)}…{l.owner.slice(-4)}</Pill>
                     )}
