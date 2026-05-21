@@ -76,6 +76,7 @@ export default function ResearcherDashboard() {
   }, [loadListings]);
 
   const isBusy = isFetching || isRefreshing;
+  const purchaseCount = purchasedListings.size;
 
   const filteredListings = useMemo(() => {
     if (minAccessFilter === 0) return listings;
