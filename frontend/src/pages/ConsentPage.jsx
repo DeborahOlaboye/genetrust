@@ -103,19 +103,13 @@ export default function ConsentPage() {
           </div>
         )}
 
-        {!loading && datasets.length === 0 && (
-          <div style={{
-            padding: '2rem', borderRadius: '1rem', textAlign: 'center',
-            background: 'rgba(55,65,81,0.1)', border: '1px solid rgba(55,65,81,0.3)',
-          }}>
-            <p style={{ color: '#6B7280', margin: '0 0 1rem' }}>
-              No datasets found. Register one first.
-            </p>
-            <a href="/upload" style={{
-              padding: '0.6rem 1.25rem', borderRadius: '0.5rem',
-              background: 'linear-gradient(135deg,#8B5CF6,#6D28D9)',
-              color: '#fff', textDecoration: 'none', fontWeight: 600, fontSize: '0.875rem',
-            }}>
+        {!loading && datasets.length === 0 && !loadError && (
+          <div className="rounded-2xl p-8 text-center bg-gray-900/10 border border-gray-700/30">
+            <p className="text-[#6B7280] text-sm mb-4">No datasets found. Register one first.</p>
+            <a
+              href="/upload"
+              className="inline-block px-5 py-2.5 rounded-lg bg-gradient-to-r from-[#8B5CF6] to-[#6D28D9] text-white font-semibold text-sm no-underline"
+            >
               Register Dataset →
             </a>
           </div>
