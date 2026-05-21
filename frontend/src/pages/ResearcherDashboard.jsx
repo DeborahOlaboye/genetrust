@@ -173,6 +173,20 @@ export default function ResearcherDashboard() {
               <p id="access-level-hint" className="mt-1 text-xs text-[#9AA0B2]">Only listings at or above this level will grant the selected access.</p>
             </div>
             <div>
+              <label htmlFor="min-access-filter" className="text-sm text-[#9AA0B2]">Minimum Listing Level</label>
+              <select
+                id="min-access-filter"
+                value={minAccessFilter}
+                onChange={e => setMinAccessFilter(parseInt(e.target.value, 10))}
+                className="mt-1 w-full bg-[#14102E] border border-[#8B5CF6]/20 rounded-lg px-3 py-2 text-white"
+              >
+                <option value={0}>All levels</option>
+                <option value={1}>1 - Basic+</option>
+                <option value={2}>2 - Detailed+</option>
+                <option value={3}>3 - Full only</option>
+              </select>
+            </div>
+            <div>
               <label className="text-sm text-[#9AA0B2]">Sort by Price</label>
               <button
                 onClick={() => setSortOrder(o => o === 'asc' ? 'desc' : 'asc')}
