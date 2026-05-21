@@ -224,7 +224,7 @@ export default function ResearcherDashboard() {
             : 'Available Listings'}
           border="#34D399"
         >
-          <div className="divide-y divide-[#34D399]/10" role="list">
+          <div className="divide-y divide-[#34D399]/10" role="list" aria-busy={isBusy}>
             {isFetching && <MarketplaceListingSkeleton count={3} />}
             {!isFetching && listings.length === 0 && !initError && (
               <div className="py-10 text-center space-y-2">
