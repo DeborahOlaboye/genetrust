@@ -95,6 +95,22 @@ export default function ResearcherDashboard() {
     return copy;
   }, [filteredListings, sortOrder]);
 
+  const handleAccessLevelChange = useCallback((e) => {
+    setAccessLevel(parseInt(e.target.value, 10));
+  }, []);
+
+  const handleMinAccessFilterChange = useCallback((e) => {
+    setMinAccessFilter(parseInt(e.target.value, 10));
+  }, []);
+
+  const handleSortToggle = useCallback(() => {
+    setSortOrder(o => o === 'asc' ? 'desc' : 'asc');
+  }, []);
+
+  const handleClearFilters = useCallback(() => {
+    setMinAccessFilter(0);
+  }, []);
+
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
     await loadListings();
