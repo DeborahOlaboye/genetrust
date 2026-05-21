@@ -26,6 +26,8 @@ export default function ConsentPage() {
 
   const loadDatasets = useCallback(async () => {
     try {
+      const isConnected = APP_CONFIG.USE_REAL_SDK ? await walletService.isConnected() : true;
+      setWalletConnected(isConnected);
       await contractService.initialize({ walletAddress: walletService.getAddress() });
       const ds = await contractService.listMyDatasets();
       setDatasets(ds ?? []);
