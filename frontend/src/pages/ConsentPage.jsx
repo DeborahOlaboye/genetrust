@@ -21,6 +21,7 @@ export default function ConsentPage() {
   const [selectedId, setSelectedId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
+  const [saveAnnouncement, setSaveAnnouncement] = useState('');
 
   const loadDatasets = useCallback(async () => {
     try {
