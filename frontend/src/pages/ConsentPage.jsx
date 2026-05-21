@@ -150,6 +150,11 @@ export default function ConsentPage() {
                 toast.success('Consent policy saved!');
                 setSaveAnnouncement('Consent policy saved successfully.');
               }}
+              onError={(err) => {
+                const msg = err?.message || 'Failed to save consent policy';
+                toast.error(msg);
+                setSaveAnnouncement(`Error: ${msg}`);
+              }}
             />
           </SectionErrorBoundary>
         )}
