@@ -153,7 +153,7 @@ export default function ResearcherDashboard() {
             <span>{initError}</span>
             <button
               onClick={handleRetry}
-              disabled={isFetching}
+              disabled={isBusy}
               className="shrink-0 px-4 py-1.5 rounded-lg bg-red-500/20 border border-red-500/40 text-red-200 text-xs font-medium hover:bg-red-500/30 disabled:opacity-50"
             >
               {isFetching ? 'Retrying…' : 'Retry'}
