@@ -41,6 +41,12 @@ export default function ConsentPage() {
     loadDatasets();
   }, [loadDatasets]);
 
+  useEffect(() => {
+    if (!saveAnnouncement) return;
+    const t = setTimeout(() => setSaveAnnouncement(''), 5000);
+    return () => clearTimeout(t);
+  }, [saveAnnouncement]);
+
   const handleRetry = useCallback(async () => {
     setLoading(true);
     setLoadError(null);
