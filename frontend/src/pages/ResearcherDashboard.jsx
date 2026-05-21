@@ -172,6 +172,9 @@ export default function ResearcherDashboard() {
             {sortedListings.length !== listings.length && (
               <Pill color="#8B5CF6">{sortedListings.length} shown</Pill>
             )}
+            {maxPriceInView > 0 && (
+              <Pill color="#60A5FA">Max: {formatSTX(maxPriceInView)}</Pill>
+            )}
             {purchaseCount > 0 && (
               <Pill color="#F59E0B">{purchaseCount} purchased this session</Pill>
             )}
