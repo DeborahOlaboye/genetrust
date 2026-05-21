@@ -78,24 +78,15 @@ export default function ConsentPage() {
 
         {/* Dataset selector */}
         {!loading && datasets.length > 0 && (
-          <div style={{ marginBottom: '1.25rem' }}>
-            <label htmlFor="consent-dataset-select" style={{ color: '#9AA0B2', fontSize: '0.82rem', display: 'block', marginBottom: '0.35rem' }}>
-              Select Dataset
+          <div>
+            <label htmlFor="consent-dataset-select" className="block text-xs text-[#9AA0B2] mb-1.5">
+              Select Dataset ({datasets.length})
             </label>
             <select
               id="consent-dataset-select"
               value={selectedId ?? ''}
               onChange={e => setSelectedId(Number(e.target.value))}
-              style={{
-                width: '100%',
-                background: 'rgba(11,11,29,0.8)',
-                border: '1px solid rgba(139,92,246,0.3)',
-                borderRadius: '0.5rem',
-                padding: '0.6rem 0.75rem',
-                color: '#E5E7EB',
-                fontSize: '0.875rem',
-                outline: 'none',
-              }}
+              className="w-full bg-[#0B0B1D]/80 border border-[#8B5CF6]/30 rounded-lg px-3 py-2.5 text-[#E5E7EB] text-sm focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]/40"
             >
               {datasets.map(ds => (
                 <option key={ds.id} value={ds.id}>
