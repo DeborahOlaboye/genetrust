@@ -50,6 +50,12 @@ export default function ConsentPage() {
     return () => clearTimeout(t);
   }, [saveAnnouncement]);
 
+  const handleConnectWallet = useCallback(async () => {
+    await walletService.connect();
+    setWalletConnected(true);
+    await loadDatasets();
+  }, [loadDatasets]);
+
   const handleRetry = useCallback(async () => {
     setLoading(true);
     setLoadError(null);
@@ -83,11 +89,7 @@ export default function ConsentPage() {
           <div className="rounded-xl p-5 bg-[#8B5CF6]/10 border border-[#8B5CF6]/20">
             <p className="text-sm text-[#9AA0B2] mb-3">Connect your Stacks wallet to manage consent settings.</p>
             <button
-              onClick={async () => {
-                await walletService.connect();
-                setWalletConnected(true);
-                await loadDatasets();
-              }}
+              onClick={handleConnectWallet}
               className="px-5 py-2.5 rounded-lg bg-gradient-to-r from-[#8B5CF6] to-[#6D28D9] text-white font-semibold text-sm"
             >
               Connect Wallet
