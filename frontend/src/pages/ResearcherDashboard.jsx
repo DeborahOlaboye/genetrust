@@ -1,10 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import PropTypes from 'prop-types';
 import toast, { Toaster } from 'react-hot-toast';
-import { contractService } from '../services/contractService.js';
 import Navigation from '../components/landing/Navigation.jsx';
 import { MarketplaceListingSkeleton, SectionErrorBoundary } from '../components/common';
 import { formatSTX } from '../lib/stxUtils.js';
+import { useMarketplaceListings } from '../hooks/useMarketplaceListings.js';
 
 const TOAST_OPTIONS = {
   style: { background: '#14102E', color: '#fff', border: '1px solid #8B5CF633' },
@@ -37,125 +37,50 @@ Pill.propTypes = {
 Pill.displayName = 'Pill';
 
 export default function ResearcherDashboard() {
-  const [status, setStatus] = useState(null);
-  const [listings, setListings] = useState([]);
-  const [loadingId, setLoadingId] = useState(null);
   const [accessLevel, setAccessLevel] = useState(1);
-  const [isFetching, setIsFetching] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [initError, setInitError] = useState(null);
   const [statusAnnouncement, setStatusAnnouncement] = useState('');
-  const [purchasedListings, setPurchasedListings] = useState(() => new Set());
-  const [sortOrder, setSortOrder] = useState('asc');
-  const [minAccessFilter, setMinAccessFilter] = useState(0);
 
-  useEffect(() => {
-    if (!statusAnnouncement) return;
-    const t = setTimeout(() => setStatusAnnouncement(''), 5000);
-    return () => clearTimeout(t);
-  }, [statusAnnouncement]);
-
-  const loadListings = useCallback(async (opts = {}) => {
-    const { signal } = opts;
-    try {
-      await contractService.initialize({});
-      const s = await contractService.getStatus();
-      const ls = await contractService.listMarketplace();
-      if (signal?.aborted) return;
-      setStatus(s);
-      setListings(ls);
-      setInitError(null);
-    } catch (err) {
-      if (signal?.aborted) return;
-      setInitError(err?.message || 'Failed to load marketplace data');
-    }
-  }, []);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    setIsFetching(true);
-    loadListings({ signal: controller.signal }).finally(() => {
-      if (!controller.signal.aborted) setIsFetching(false);
-    });
-    return () => controller.abort();
-  }, [loadListings]);
-
-  const isBusy = isFetching || isRefreshing;
-  const purchaseCount = purchasedListings.size;
-
-  const filteredListings = useMemo(() => {
-    if (minAccessFilter === 0) return listings;
-    return listings.filter(l => l.accessLevel >= minAccessFilter);
-  }, [listings, minAccessFilter]);
-
-  const sortedListings = useMemo(() => {
-    const copy = [...filteredListings];
-    copy.sort((a, b) => sortOrder === 'asc' ? a.price - b.price : b.price - a.price);
-    return copy;
-  }, [filteredListings, sortOrder]);
-
-  const maxPriceInView = useMemo(
-    () => sortedListings.reduce((max, l) => Math.max(max, l.price), 0),
-    [sortedListings]
-  );
+  const {
+    status,
+    listings,
+    isFetching,
+    isRefreshing,
+    isBusy,
+    initError,
+    loadingId,
+    purchasedListings,
+    purchaseCount,
+    sortOrder,
+    minAccessFilter,
+    filteredListings,
+    sortedListings,
+    maxPriceInView,
+    handleRefresh,
+    handleRetry,
+    handleSortToggle,
+    handleMinAccessFilterChange,
+    handleClearFilters,
+    purchase: purchaseListing,
+  } = useMarketplaceListings();
 
   const handleAccessLevelChange = useCallback((e) => {
     setAccessLevel(parseInt(e.target.value, 10));
   }, []);
 
-  const handleMinAccessFilterChange = useCallback((e) => {
-    setMinAccessFilter(parseInt(e.target.value, 10));
-  }, []);
-
-  const handleSortToggle = useCallback(() => {
-    setSortOrder(o => o === 'asc' ? 'desc' : 'asc');
-  }, []);
-
-  const handleClearFilters = useCallback(() => {
-    setMinAccessFilter(0);
-    setSortOrder('asc');
-  }, []);
-
-  const handleRefresh = useCallback(async () => {
-    if (isRefreshing) return;
-    const controller = new AbortController();
-    setIsRefreshing(true);
-    try {
-      await loadListings({ signal: controller.signal });
-    } finally {
-      if (!controller.signal.aborted) setIsRefreshing(false);
-    }
-  }, [isRefreshing, loadListings]);
-
-  const handleRetry = useCallback(async () => {
-    setInitError(null);
-    setIsFetching(true);
-    const controller = new AbortController();
-    try {
-      await loadListings({ signal: controller.signal });
-    } finally {
-      if (!controller.signal.aborted) setIsFetching(false);
-    }
-  }, [loadListings]);
-
   const purchase = useCallback(async (listingId) => {
-    if (loadingId !== null) return;
-    setLoadingId(listingId);
     try {
-      const res = await contractService.purchaseListing({ listingId, desiredAccessLevel: accessLevel });
+      const res = await purchaseListing(listingId, accessLevel);
+      if (!res) return;
       const txPreview = String(res.txId).slice(0, 10);
       const msg = `Access Level ${res.accessLevel} granted. TX: ${txPreview}…`;
       toast.success(msg, { duration: 6000 });
       setStatusAnnouncement(msg);
-      setPurchasedListings(prev => new Set([...prev, listingId]));
     } catch (e) {
       const msg = `Purchase failed: ${e?.message || 'Unknown error'}`;
       toast.error(msg);
       setStatusAnnouncement(msg);
-    } finally {
-      setLoadingId(null);
     }
-  }, [accessLevel, loadingId]);
+  }, [accessLevel, purchaseListing]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0B0B1D] via-[#14102E] to-[#0B0B1D] text-white">
