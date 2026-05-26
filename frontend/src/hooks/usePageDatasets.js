@@ -30,7 +30,7 @@ export function usePageDatasets() {
       const s = await contractService.getStatus();
       setStatus(s);
       const ds = await contractService.listMyDatasets();
-      setDatasets(ds ?? []);
+      setDatasets(Array.isArray(ds) ? ds : []);
       setLoadError(null);
     } catch (err) {
       setLoadError(err?.message || 'Failed to load datasets');
