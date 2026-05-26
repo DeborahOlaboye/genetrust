@@ -73,10 +73,15 @@ export default function ConsentPage() {
   }, []);
 
   const handleRefresh = useCallback(async () => {
+    if (isRefreshing) return;
+    setLoadError(null);
     setIsRefreshing(true);
-    await loadDatasets();
-    setIsRefreshing(false);
-  }, [loadDatasets]);
+    try {
+      await loadDatasets();
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [isRefreshing, loadDatasets]);
 
   const handleConnectWallet = useCallback(async () => {
     await walletService.connect();
