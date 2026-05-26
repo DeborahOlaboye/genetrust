@@ -143,10 +143,12 @@ export default function ResearcherDashboard() {
   }, [loadListings]);
 
   const purchase = useCallback(async (listingId) => {
+    if (loadingId !== null) return;
     setLoadingId(listingId);
     try {
       const res = await contractService.purchaseListing({ listingId, desiredAccessLevel: accessLevel });
-      const msg = `Access Level ${res.accessLevel} granted. TX: ${res.txId.slice(0, 10)}…`;
+      const txPreview = String(res.txId).slice(0, 10);
+      const msg = `Access Level ${res.accessLevel} granted. TX: ${txPreview}…`;
       toast.success(msg, { duration: 6000 });
       setStatusAnnouncement(msg);
       setPurchasedListings(prev => new Set([...prev, listingId]));
@@ -157,7 +159,7 @@ export default function ResearcherDashboard() {
     } finally {
       setLoadingId(null);
     }
-  }, [accessLevel]);
+  }, [accessLevel, loadingId]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0B0B1D] via-[#14102E] to-[#0B0B1D] text-white">
