@@ -5,7 +5,10 @@ import { contractService } from '../services/contractService.js';
 import Navigation from '../components/landing/Navigation.jsx';
 import { MarketplaceListingSkeleton, SectionErrorBoundary } from '../components/common';
 
-const formatSTX = (microSTX) => `${(microSTX / 1_000_000).toFixed(6)} STX`;
+const formatSTX = (microSTX) => {
+  if (microSTX == null || !isFinite(microSTX)) return '— STX';
+  return `${(microSTX / 1_000_000).toFixed(6)} STX`;
+};
 
 const TOAST_OPTIONS = {
   style: { background: '#14102E', color: '#fff', border: '1px solid #8B5CF633' },
