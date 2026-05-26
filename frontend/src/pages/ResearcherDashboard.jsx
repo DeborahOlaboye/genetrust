@@ -192,9 +192,9 @@ export default function ResearcherDashboard() {
           </button>
         </div>
 
-        {/* Stats bar */}
-        {!isFetching && (
-          <div className="flex flex-wrap gap-3">
+        {/* Stats bar — visible after initial fetch; persists during refresh */}
+        {!isFetching && listings.length > 0 && (
+          <div className="flex flex-wrap gap-3" role="group" aria-label="Marketplace statistics">
             <Pill color="#34D399">{listings.length} total listing{listings.length !== 1 ? 's' : ''}</Pill>
             {sortedListings.length !== listings.length && (
               <Pill color="#8B5CF6">{sortedListings.length} shown</Pill>
