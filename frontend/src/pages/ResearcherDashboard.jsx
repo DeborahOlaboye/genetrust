@@ -4,11 +4,7 @@ import toast, { Toaster } from 'react-hot-toast';
 import { contractService } from '../services/contractService.js';
 import Navigation from '../components/landing/Navigation.jsx';
 import { MarketplaceListingSkeleton, SectionErrorBoundary } from '../components/common';
-
-const formatSTX = (microSTX) => {
-  if (microSTX == null || !isFinite(microSTX)) return '— STX';
-  return `${(microSTX / 1_000_000).toFixed(6)} STX`;
-};
+import { formatSTX } from '../lib/stxUtils.js';
 
 const TOAST_OPTIONS = {
   style: { background: '#14102E', color: '#fff', border: '1px solid #8B5CF633' },
