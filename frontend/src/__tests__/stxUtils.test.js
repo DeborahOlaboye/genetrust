@@ -1,4 +1,4 @@
-import { formatSTX, formatMicroSTX, toMicroSTX } from '../lib/stxUtils.js';
+import { formatSTX, formatMicroSTX, toMicroSTX, STX_PLACEHOLDER, MICROSTX_PER_STX } from '../lib/stxUtils.js';
 
 describe('formatSTX', () => {
   it('converts a standard microSTX amount to STX string', () => {
@@ -10,23 +10,23 @@ describe('formatSTX', () => {
   });
 
   it('returns safe placeholder for null input', () => {
-    expect(formatSTX(null)).toBe('— STX');
+    expect(formatSTX(null)).toBe(STX_PLACEHOLDER);
   });
 
   it('returns safe placeholder for undefined input', () => {
-    expect(formatSTX(undefined)).toBe('— STX');
+    expect(formatSTX(undefined)).toBe(STX_PLACEHOLDER);
   });
 
   it('returns safe placeholder for NaN input', () => {
-    expect(formatSTX(NaN)).toBe('— STX');
+    expect(formatSTX(NaN)).toBe(STX_PLACEHOLDER);
   });
 
   it('returns safe placeholder for Infinity input', () => {
-    expect(formatSTX(Infinity)).toBe('— STX');
+    expect(formatSTX(Infinity)).toBe(STX_PLACEHOLDER);
   });
 
   it('returns safe placeholder for -Infinity input', () => {
-    expect(formatSTX(-Infinity)).toBe('— STX');
+    expect(formatSTX(-Infinity)).toBe(STX_PLACEHOLDER);
   });
 
   it('formats 500 000 microSTX as 0.5 STX', () => {
@@ -52,7 +52,7 @@ describe('formatMicroSTX', () => {
 
 describe('toMicroSTX', () => {
   it('converts 1 STX to 1 000 000 microSTX', () => {
-    expect(toMicroSTX(1)).toBe(1_000_000);
+    expect(toMicroSTX(1)).toBe(MICROSTX_PER_STX);
   });
 
   it('converts 0 STX to 0 microSTX', () => {
