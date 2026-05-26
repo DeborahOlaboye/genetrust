@@ -120,10 +120,15 @@ export default function ResearcherDashboard() {
   }, []);
 
   const handleRefresh = useCallback(async () => {
+    if (isRefreshing) return;
+    const controller = new AbortController();
     setIsRefreshing(true);
-    await loadListings();
-    setIsRefreshing(false);
-  }, [loadListings]);
+    try {
+      await loadListings({ signal: controller.signal });
+    } finally {
+      if (!controller.signal.aborted) setIsRefreshing(false);
+    }
+  }, [isRefreshing, loadListings]);
 
   const handleRetry = useCallback(async () => {
     setInitError(null);
