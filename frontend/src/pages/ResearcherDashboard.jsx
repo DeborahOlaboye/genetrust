@@ -232,9 +232,13 @@ export default function ResearcherDashboard() {
               </div>
             )}
             {!isFetching && listings.length > 0 && sortedListings.length === 0 && (
-              <div className="py-8 text-center">
+              <div className="py-8 text-center" role="status" aria-live="polite">
                 <p className="text-[#9AA0B2] text-sm">No listings match your current filters.</p>
-                <button onClick={handleClearFilters} className="mt-2 text-xs text-[#8B5CF6] underline">
+                <button
+                  onClick={handleClearFilters}
+                  className="mt-2 text-xs text-[#8B5CF6] underline"
+                  aria-label="Clear all marketplace filters"
+                >
                   Clear filters
                 </button>
               </div>
