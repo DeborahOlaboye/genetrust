@@ -23,6 +23,9 @@ SectionCard.propTypes = {
   children: PropTypes.node.isRequired,
   border: PropTypes.string,
 };
+SectionCard.defaultProps = {
+  border: '#34D399',
+};
 SectionCard.displayName = 'SectionCard';
 
 const Pill = React.memo(({ children, color = '#34D399' }) => (
