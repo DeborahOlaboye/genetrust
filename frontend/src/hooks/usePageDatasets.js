@@ -2,9 +2,31 @@
  * usePageDatasets — fetches the current user's datasets and manages
  * selected dataset state for the ConsentPage.
  *
- * Keeps loadDatasets referentially stable so the mount effect runs
- * exactly once. The initial auto-selection is handled by a separate
- * effect that only fires when datasets change without a selection.
+ * Design notes:
+ * 1. loadDatasets has no external dependencies so its reference is stable.
+ *    The mount effect ([loadDatasets]) therefore fires exactly once.
+ *    Previously selectedId was a dep of loadDatasets, which caused a second
+ *    fetch whenever the first load set the initial selectedId.
+ *
+ * 2. Auto-selection lives in its own effect ([datasets, selectedId]) so a
+ *    refresh or retry does not reset a selection the user has already made.
+ *
+ * @returns {{
+ *   datasets: Array,
+ *   selectedId: number|null,
+ *   selectedDataset: object|null,
+ *   loading: boolean,
+ *   loadError: string|null,
+ *   walletConnected: boolean,
+ *   status: object|null,
+ *   isRefreshing: boolean,
+ *   isBusy: boolean,
+ *   handleDatasetChange: function,
+ *   handleRefresh: function,
+ *   handleConnectWallet: function,
+ *   handleRetry: function,
+ *   setSelectedId: function
+ * }}
  */
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
