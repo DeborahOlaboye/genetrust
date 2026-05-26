@@ -4,6 +4,35 @@
  *
  * Keeping this logic outside the render tree makes it independently testable
  * and keeps ResearcherDashboard focused on presentation.
+ *
+ * IMPORTANT: filteredListings → sortedListings → maxPriceInView must remain
+ * in this declaration order. maxPriceInView depends on sortedListings, which
+ * depends on filteredListings. Reordering them would cause a Temporal Dead
+ * Zone (TDZ) ReferenceError because `const` bindings cannot be accessed
+ * before their declaration is reached during execution.
+ *
+ * @returns {{
+ *   status: object|null,
+ *   listings: Array,
+ *   isFetching: boolean,
+ *   isRefreshing: boolean,
+ *   isBusy: boolean,
+ *   initError: string|null,
+ *   loadingId: number|null,
+ *   purchasedListings: Set,
+ *   purchaseCount: number,
+ *   sortOrder: 'asc'|'desc',
+ *   minAccessFilter: number,
+ *   filteredListings: Array,
+ *   sortedListings: Array,
+ *   maxPriceInView: number,
+ *   handleRefresh: function,
+ *   handleRetry: function,
+ *   handleSortToggle: function,
+ *   handleMinAccessFilterChange: function,
+ *   handleClearFilters: function,
+ *   purchase: function(listingId: number, accessLevel: number): Promise
+ * }}
  */
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
