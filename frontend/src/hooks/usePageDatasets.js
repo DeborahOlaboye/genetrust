@@ -84,6 +84,7 @@ export function usePageDatasets() {
   }, [loadDatasets]);
 
   const handleRetry = useCallback(async () => {
+    if (loading || isRefreshing) return;
     setLoadError(null);
     setLoading(true);
     try {
@@ -91,7 +92,7 @@ export function usePageDatasets() {
     } catch {
       // loadDatasets already sets loadError internally
     }
-  }, [loadDatasets]);
+  }, [isRefreshing, loading, loadDatasets]);
 
   return {
     datasets,
