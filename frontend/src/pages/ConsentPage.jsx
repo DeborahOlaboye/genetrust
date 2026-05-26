@@ -94,9 +94,13 @@ export default function ConsentPage() {
   }, [loadDatasets]);
 
   const handleRetry = useCallback(async () => {
-    setLoading(true);
     setLoadError(null);
-    await loadDatasets();
+    setLoading(true);
+    try {
+      await loadDatasets();
+    } catch {
+      // loadDatasets already sets loadError internally; nothing extra needed
+    }
   }, [loadDatasets]);
 
   return (
