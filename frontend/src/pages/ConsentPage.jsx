@@ -83,7 +83,9 @@ export default function ConsentPage() {
             <p className="text-sm text-[#9AA0B2] mb-3">Connect your Stacks wallet to manage consent settings.</p>
             <button
               onClick={handleConnectWallet}
-              className="px-5 py-2.5 rounded-lg bg-gradient-to-r from-[#8B5CF6] to-[#6D28D9] text-white font-semibold text-sm"
+              disabled={isBusy}
+              aria-label="Connect your Stacks wallet"
+              className="px-5 py-2.5 rounded-lg bg-gradient-to-r from-[#8B5CF6] to-[#6D28D9] text-white font-semibold text-sm disabled:opacity-60"
             >
               Connect Wallet
             </button>
