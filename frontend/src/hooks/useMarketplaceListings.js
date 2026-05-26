@@ -30,7 +30,7 @@ export function useMarketplaceListings() {
       const ls = await contractService.listMarketplace();
       if (signal?.aborted) return;
       setStatus(s);
-      setListings(ls);
+      setListings(Array.isArray(ls) ? ls : []);
       setInitError(null);
     } catch (err) {
       if (signal?.aborted) return;
