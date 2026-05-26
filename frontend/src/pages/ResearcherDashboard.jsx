@@ -117,6 +117,7 @@ export default function ResearcherDashboard() {
 
   const handleClearFilters = useCallback(() => {
     setMinAccessFilter(0);
+    setSortOrder('asc');
   }, []);
 
   const handleRefresh = useCallback(async () => {
