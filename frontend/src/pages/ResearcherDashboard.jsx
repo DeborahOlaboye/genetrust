@@ -107,7 +107,7 @@ export default function ResearcherDashboard() {
       <main id="marketplace-main" role="main" aria-label="Researcher marketplace" className="max-w-7xl mx-auto px-6 lg:px-8 py-10 space-y-8">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h2 className="text-2xl font-bold text-white">Researcher Marketplace</h2>
+            <h1 className="text-2xl font-bold text-white">Researcher Marketplace</h1>
             <p className="text-sm text-[#9AA0B2] mt-1">
               Browse and purchase access to genomic datasets listed on-chain.
               {status?.mode && (
