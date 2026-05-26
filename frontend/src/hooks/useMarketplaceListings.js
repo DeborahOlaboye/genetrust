@@ -106,6 +106,7 @@ export function useMarketplaceListings() {
   }, []);
 
   const purchase = useCallback(async (listingId, accessLevel) => {
+    if (listingId == null) throw new Error('purchase: listingId is required');
     if (loadingId !== null) return null;
     setLoadingId(listingId);
     try {
