@@ -84,9 +84,13 @@ export default function ConsentPage() {
   }, [isRefreshing, loadDatasets]);
 
   const handleConnectWallet = useCallback(async () => {
-    await walletService.connect();
-    setWalletConnected(true);
-    await loadDatasets();
+    try {
+      await walletService.connect();
+      setWalletConnected(true);
+      await loadDatasets();
+    } catch (err) {
+      setLoadError(err?.message || 'Failed to connect wallet');
+    }
   }, [loadDatasets]);
 
   const handleRetry = useCallback(async () => {
