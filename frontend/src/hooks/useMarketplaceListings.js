@@ -61,7 +61,7 @@ export function useMarketplaceListings() {
   }, [filteredListings, sortOrder]);
 
   const maxPriceInView = useMemo(
-    () => sortedListings.reduce((max, l) => Math.max(max, l.price), 0),
+    () => sortedListings.reduce((max, l) => Math.max(max, l.price ?? 0), 0),
     [sortedListings]
   );
 
