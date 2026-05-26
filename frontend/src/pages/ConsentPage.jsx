@@ -3,105 +3,42 @@
  * Lets users select a dataset and manage its consent policy.
  */
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Navigation from '../components/landing/Navigation.jsx';
 import { ConsentManagementPanel } from '../components/consent/ConsentManagementPanel.jsx';
-import { contractService } from '../services/contractService.js';
-import { walletService } from '../services/walletService.js';
 import { APP_CONFIG } from '../config/app.js';
 import toast, { Toaster } from 'react-hot-toast';
 import { SectionErrorBoundary, SkeletonLoader } from '../components/common';
+import { usePageDatasets } from '../hooks/usePageDatasets.js';
 
 const TOAST_OPTIONS = {
   style: { background: '#1a1a2e', color: '#fff', border: '1px solid rgba(139,92,246,0.3)' },
 };
 
 export default function ConsentPage() {
-  const [datasets, setDatasets] = useState([]);
-  const [selectedId, setSelectedId] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState(null);
   const [saveAnnouncement, setSaveAnnouncement] = useState('');
-  const [walletConnected, setWalletConnected] = useState(false);
-  const [status, setStatus] = useState(null);
-  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const loadDatasets = useCallback(async () => {
-    try {
-      const isConnected = APP_CONFIG.USE_REAL_SDK ? await walletService.isConnected() : true;
-      setWalletConnected(isConnected);
-      await contractService.initialize({ walletAddress: walletService.getAddress() });
-      const s = await contractService.getStatus();
-      setStatus(s);
-      const ds = await contractService.listMyDatasets();
-      setDatasets(ds ?? []);
-      setLoadError(null);
-    } catch (err) {
-      setLoadError(err?.message || 'Failed to load datasets');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    loadDatasets();
-  }, [loadDatasets]);
-
-  // Auto-select the first dataset once datasets are loaded for the first time.
-  // Kept separate from loadDatasets so that reloading datasets (refresh/retry)
-  // does not reset a selection the user has already made.
-  useEffect(() => {
-    if (datasets.length > 0 && selectedId === null) {
-      setSelectedId(datasets[0].id);
-    }
-  }, [datasets, selectedId]);
+  const {
+    datasets,
+    selectedId,
+    selectedDataset,
+    loading,
+    loadError,
+    walletConnected,
+    status,
+    isRefreshing,
+    isBusy,
+    handleDatasetChange,
+    handleRefresh,
+    handleConnectWallet,
+    handleRetry,
+  } = usePageDatasets();
 
   useEffect(() => {
     if (!saveAnnouncement) return;
     const t = setTimeout(() => setSaveAnnouncement(''), 5000);
     return () => clearTimeout(t);
   }, [saveAnnouncement]);
-
-  const isBusy = loading || isRefreshing;
-  const selectedDataset = useMemo(
-    () => datasets.find(d => d.id === selectedId) ?? null,
-    [datasets, selectedId]
-  );
-
-  const handleDatasetChange = useCallback((e) => {
-    setSelectedId(Number(e.target.value));
-  }, []);
-
-  const handleRefresh = useCallback(async () => {
-    if (isRefreshing) return;
-    setLoadError(null);
-    setIsRefreshing(true);
-    try {
-      await loadDatasets();
-    } finally {
-      setIsRefreshing(false);
-    }
-  }, [isRefreshing, loadDatasets]);
-
-  const handleConnectWallet = useCallback(async () => {
-    try {
-      await walletService.connect();
-      setWalletConnected(true);
-      await loadDatasets();
-    } catch (err) {
-      setLoadError(err?.message || 'Failed to connect wallet');
-    }
-  }, [loadDatasets]);
-
-  const handleRetry = useCallback(async () => {
-    setLoadError(null);
-    setLoading(true);
-    try {
-      await loadDatasets();
-    } catch {
-      // loadDatasets already sets loadError internally; nothing extra needed
-    }
-  }, [loadDatasets]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0B0B1D] via-[#14102E] to-[#0B0B1D] text-white">
