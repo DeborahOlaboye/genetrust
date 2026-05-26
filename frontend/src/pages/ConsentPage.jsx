@@ -3,84 +3,42 @@
  * Lets users select a dataset and manage its consent policy.
  */
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Navigation from '../components/landing/Navigation.jsx';
 import { ConsentManagementPanel } from '../components/consent/ConsentManagementPanel.jsx';
-import { contractService } from '../services/contractService.js';
-import { walletService } from '../services/walletService.js';
 import { APP_CONFIG } from '../config/app.js';
 import toast, { Toaster } from 'react-hot-toast';
 import { SectionErrorBoundary, SkeletonLoader } from '../components/common';
+import { usePageDatasets } from '../hooks/usePageDatasets.js';
 
 const TOAST_OPTIONS = {
   style: { background: '#1a1a2e', color: '#fff', border: '1px solid rgba(139,92,246,0.3)' },
 };
 
 export default function ConsentPage() {
-  const [datasets, setDatasets] = useState([]);
-  const [selectedId, setSelectedId] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState(null);
   const [saveAnnouncement, setSaveAnnouncement] = useState('');
-  const [walletConnected, setWalletConnected] = useState(false);
-  const [status, setStatus] = useState(null);
-  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const loadDatasets = useCallback(async () => {
-    try {
-      const isConnected = APP_CONFIG.USE_REAL_SDK ? await walletService.isConnected() : true;
-      setWalletConnected(isConnected);
-      await contractService.initialize({ walletAddress: walletService.getAddress() });
-      const s = await contractService.getStatus();
-      setStatus(s);
-      const ds = await contractService.listMyDatasets();
-      setDatasets(ds ?? []);
-      if (ds?.length && selectedId === null) setSelectedId(ds[0].id);
-      setLoadError(null);
-    } catch (err) {
-      setLoadError(err?.message || 'Failed to load datasets');
-    } finally {
-      setLoading(false);
-    }
-  }, [selectedId]);
-
-  useEffect(() => {
-    loadDatasets();
-  }, [loadDatasets]);
+  const {
+    datasets,
+    selectedId,
+    selectedDataset,
+    loading,
+    loadError,
+    walletConnected,
+    status,
+    isRefreshing,
+    isBusy,
+    handleDatasetChange,
+    handleRefresh,
+    handleConnectWallet,
+    handleRetry,
+  } = usePageDatasets();
 
   useEffect(() => {
     if (!saveAnnouncement) return;
     const t = setTimeout(() => setSaveAnnouncement(''), 5000);
     return () => clearTimeout(t);
   }, [saveAnnouncement]);
-
-  const isBusy = loading || isRefreshing;
-  const selectedDataset = useMemo(
-    () => datasets.find(d => d.id === selectedId) ?? null,
-    [datasets, selectedId]
-  );
-
-  const handleDatasetChange = useCallback((e) => {
-    setSelectedId(Number(e.target.value));
-  }, []);
-
-  const handleRefresh = useCallback(async () => {
-    setIsRefreshing(true);
-    await loadDatasets();
-    setIsRefreshing(false);
-  }, [loadDatasets]);
-
-  const handleConnectWallet = useCallback(async () => {
-    await walletService.connect();
-    setWalletConnected(true);
-    await loadDatasets();
-  }, [loadDatasets]);
-
-  const handleRetry = useCallback(async () => {
-    setLoading(true);
-    setLoadError(null);
-    await loadDatasets();
-  }, [loadDatasets]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0B0B1D] via-[#14102E] to-[#0B0B1D] text-white">
@@ -96,20 +54,22 @@ export default function ConsentPage() {
       <main id="consent-main" role="main" aria-label="Consent management" aria-busy={isBusy} className="max-w-2xl mx-auto px-4 py-10 pb-16 space-y-6">
         {/* Page header */}
         <div className="flex items-start justify-between gap-4">
-          <h1 className="text-2xl font-extrabold mb-1 bg-gradient-to-r from-[#8B5CF6] to-[#06B6D4] bg-clip-text text-transparent">
-            Consent Management
-          </h1>
-          <p className="text-sm text-[#6B7280] flex items-center gap-2">
-            Control how your genomic data may be used and exercise your GDPR rights.
-            {status?.mode && (
-              <span className="text-xs px-2 py-0.5 rounded-full bg-[#8B5CF6]/10 text-[#8B5CF6] border border-[#8B5CF6]/20">
-                {status.mode === 'mock' ? 'Demo' : 'Live'}
-              </span>
-            )}
-          </p>
+          <div>
+            <h1 className="text-2xl font-extrabold mb-1 bg-gradient-to-r from-[#8B5CF6] to-[#06B6D4] bg-clip-text text-transparent">
+              Consent Management
+            </h1>
+            <p className="text-sm text-[#6B7280] flex items-center gap-2">
+              Control how your genomic data may be used and exercise your GDPR rights.
+              {status?.mode && (
+                <span className="text-xs px-2 py-0.5 rounded-full bg-[#8B5CF6]/10 text-[#8B5CF6] border border-[#8B5CF6]/20">
+                  {status.mode === 'mock' ? 'Demo' : 'Live'}
+                </span>
+              )}
+            </p>
+          </div>
           <button
             onClick={handleRefresh}
-            disabled={isBusy || isRefreshing}
+            disabled={isBusy}
             aria-label="Refresh datasets"
             className="mt-1 shrink-0 px-4 py-2 rounded-lg border border-[#8B5CF6]/30 text-[#8B5CF6] text-sm font-medium hover:bg-[#8B5CF6]/10 disabled:opacity-40"
           >
@@ -123,7 +83,9 @@ export default function ConsentPage() {
             <p className="text-sm text-[#9AA0B2] mb-3">Connect your Stacks wallet to manage consent settings.</p>
             <button
               onClick={handleConnectWallet}
-              className="px-5 py-2.5 rounded-lg bg-gradient-to-r from-[#8B5CF6] to-[#6D28D9] text-white font-semibold text-sm"
+              disabled={isBusy}
+              aria-label="Connect your Stacks wallet"
+              className="px-5 py-2.5 rounded-lg bg-gradient-to-r from-[#8B5CF6] to-[#6D28D9] text-white font-semibold text-sm disabled:opacity-60"
             >
               Connect Wallet
             </button>
@@ -180,10 +142,11 @@ export default function ConsentPage() {
         )}
 
         {!loading && datasets.length === 0 && !loadError && (
-          <div className="rounded-2xl p-8 text-center bg-gray-900/10 border border-gray-700/30">
+          <div role="status" className="rounded-2xl p-8 text-center bg-gray-900/10 border border-gray-700/30">
             <p className="text-[#6B7280] text-sm mb-4">No datasets found. Register one first.</p>
             <a
               href="/upload"
+              aria-label="Register a new dataset"
               className="inline-block px-5 py-2.5 rounded-lg bg-gradient-to-r from-[#8B5CF6] to-[#6D28D9] text-white font-semibold text-sm no-underline"
             >
               Register Dataset →

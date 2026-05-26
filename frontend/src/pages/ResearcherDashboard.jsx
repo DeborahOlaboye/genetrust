@@ -1,11 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import toast, { Toaster } from 'react-hot-toast';
-import { contractService } from '../services/contractService.js';
 import Navigation from '../components/landing/Navigation.jsx';
 import { MarketplaceListingSkeleton, SectionErrorBoundary } from '../components/common';
-
-const formatSTX = (microSTX) => `${(microSTX / 1_000_000).toFixed(6)} STX`;
+import { formatSTX } from '../lib/stxUtils.js';
+import { useMarketplaceListings } from '../hooks/useMarketplaceListings.js';
 
 const TOAST_OPTIONS = {
   style: { background: '#14102E', color: '#fff', border: '1px solid #8B5CF633' },
@@ -24,6 +23,9 @@ SectionCard.propTypes = {
   children: PropTypes.node.isRequired,
   border: PropTypes.string,
 };
+SectionCard.defaultProps = {
+  border: '#34D399',
+};
 SectionCard.displayName = 'SectionCard';
 
 const Pill = React.memo(({ children, color = '#34D399' }) => (
@@ -35,20 +37,37 @@ Pill.propTypes = {
   children: PropTypes.node.isRequired,
   color: PropTypes.string,
 };
+Pill.defaultProps = {
+  color: '#34D399',
+};
 Pill.displayName = 'Pill';
 
 export default function ResearcherDashboard() {
-  const [status, setStatus] = useState(null);
-  const [listings, setListings] = useState([]);
-  const [loadingId, setLoadingId] = useState(null);
   const [accessLevel, setAccessLevel] = useState(1);
-  const [isFetching, setIsFetching] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [initError, setInitError] = useState(null);
   const [statusAnnouncement, setStatusAnnouncement] = useState('');
-  const [purchasedListings, setPurchasedListings] = useState(() => new Set());
-  const [sortOrder, setSortOrder] = useState('asc');
-  const [minAccessFilter, setMinAccessFilter] = useState(0);
+
+  const {
+    status,
+    listings,
+    isFetching,
+    isRefreshing,
+    isBusy,
+    initError,
+    loadingId,
+    purchasedListings,
+    purchaseCount,
+    sortOrder,
+    minAccessFilter,
+    filteredListings,
+    sortedListings,
+    maxPriceInView,
+    handleRefresh,
+    handleRetry,
+    handleSortToggle,
+    handleMinAccessFilterChange,
+    handleClearFilters,
+    purchase: purchaseListing,
+  } = useMarketplaceListings();
 
   useEffect(() => {
     if (!statusAnnouncement) return;
@@ -56,94 +75,24 @@ export default function ResearcherDashboard() {
     return () => clearTimeout(t);
   }, [statusAnnouncement]);
 
-  const loadListings = useCallback(async (opts = {}) => {
-    const { signal } = opts;
-    try {
-      await contractService.initialize({});
-      const s = await contractService.getStatus();
-      const ls = await contractService.listMarketplace();
-      if (signal?.aborted) return;
-      setStatus(s);
-      setListings(ls);
-      setInitError(null);
-    } catch (err) {
-      if (signal?.aborted) return;
-      setInitError(err?.message || 'Failed to load marketplace data');
-    }
-  }, []);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    setIsFetching(true);
-    loadListings({ signal: controller.signal }).finally(() => {
-      if (!controller.signal.aborted) setIsFetching(false);
-    });
-    return () => controller.abort();
-  }, [loadListings]);
-
-  const isBusy = isFetching || isRefreshing;
-  const purchaseCount = purchasedListings.size;
-  const maxPriceInView = useMemo(
-    () => sortedListings.reduce((max, l) => Math.max(max, l.price), 0),
-    [sortedListings]
-  );
-
-  const filteredListings = useMemo(() => {
-    if (minAccessFilter === 0) return listings;
-    return listings.filter(l => l.accessLevel >= minAccessFilter);
-  }, [listings, minAccessFilter]);
-
-  const sortedListings = useMemo(() => {
-    const copy = [...filteredListings];
-    copy.sort((a, b) => sortOrder === 'asc' ? a.price - b.price : b.price - a.price);
-    return copy;
-  }, [filteredListings, sortOrder]);
-
   const handleAccessLevelChange = useCallback((e) => {
     setAccessLevel(parseInt(e.target.value, 10));
   }, []);
 
-  const handleMinAccessFilterChange = useCallback((e) => {
-    setMinAccessFilter(parseInt(e.target.value, 10));
-  }, []);
-
-  const handleSortToggle = useCallback(() => {
-    setSortOrder(o => o === 'asc' ? 'desc' : 'asc');
-  }, []);
-
-  const handleClearFilters = useCallback(() => {
-    setMinAccessFilter(0);
-  }, []);
-
-  const handleRefresh = useCallback(async () => {
-    setIsRefreshing(true);
-    await loadListings();
-    setIsRefreshing(false);
-  }, [loadListings]);
-
-  const handleRetry = useCallback(async () => {
-    setInitError(null);
-    setIsFetching(true);
-    await loadListings();
-    setIsFetching(false);
-  }, [loadListings]);
-
   const purchase = useCallback(async (listingId) => {
-    setLoadingId(listingId);
     try {
-      const res = await contractService.purchaseListing({ listingId, desiredAccessLevel: accessLevel });
-      const msg = `Access Level ${res.accessLevel} granted. TX: ${res.txId.slice(0, 10)}…`;
+      const res = await purchaseListing(listingId, accessLevel);
+      if (!res) return;
+      const txPreview = String(res.txId).slice(0, 10);
+      const msg = `Access Level ${res.accessLevel} granted. TX: ${txPreview}…`;
       toast.success(msg, { duration: 6000 });
       setStatusAnnouncement(msg);
-      setPurchasedListings(prev => new Set([...prev, listingId]));
     } catch (e) {
       const msg = `Purchase failed: ${e?.message || 'Unknown error'}`;
       toast.error(msg);
       setStatusAnnouncement(msg);
-    } finally {
-      setLoadingId(null);
     }
-  }, [accessLevel]);
+  }, [accessLevel, purchaseListing]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0B0B1D] via-[#14102E] to-[#0B0B1D] text-white">
@@ -158,7 +107,7 @@ export default function ResearcherDashboard() {
       <main id="marketplace-main" role="main" aria-label="Researcher marketplace" className="max-w-7xl mx-auto px-6 lg:px-8 py-10 space-y-8">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h2 className="text-2xl font-bold text-white">Researcher Marketplace</h2>
+            <h1 className="text-2xl font-bold text-white">Researcher Marketplace</h1>
             <p className="text-sm text-[#9AA0B2] mt-1">
               Browse and purchase access to genomic datasets listed on-chain.
               {status?.mode && (
@@ -178,9 +127,9 @@ export default function ResearcherDashboard() {
           </button>
         </div>
 
-        {/* Stats bar */}
-        {!isFetching && (
-          <div className="flex flex-wrap gap-3">
+        {/* Stats bar — visible after initial fetch; persists during refresh */}
+        {!isFetching && listings.length > 0 && (
+          <div className="flex flex-wrap gap-3" role="group" aria-label="Marketplace statistics">
             <Pill color="#34D399">{listings.length} total listing{listings.length !== 1 ? 's' : ''}</Pill>
             {sortedListings.length !== listings.length && (
               <Pill color="#8B5CF6">{sortedListings.length} shown</Pill>
@@ -223,7 +172,7 @@ export default function ResearcherDashboard() {
           <div className="grid md:grid-cols-3 gap-4">
             <div>
               <label htmlFor="access-level-select" className="text-sm text-[#9AA0B2]">Desired Access Level</label>
-              <select id="access-level-select" value={accessLevel} onChange={handleAccessLevelChange} aria-label="Desired access level" aria-describedby="access-level-hint" className="mt-1 w-full bg-[#14102E] border border-[#8B5CF6]/20 rounded-lg px-3 py-2">
+              <select id="access-level-select" value={accessLevel} onChange={handleAccessLevelChange} disabled={isBusy} aria-label="Desired access level" aria-describedby="access-level-hint" className="mt-1 w-full bg-[#14102E] border border-[#8B5CF6]/20 rounded-lg px-3 py-2 disabled:opacity-50">
                 <option value={1}>1 - Basic</option>
                 <option value={2}>2 - Detailed</option>
                 <option value={3}>3 - Full</option>
@@ -236,7 +185,9 @@ export default function ResearcherDashboard() {
                 id="min-access-filter"
                 value={minAccessFilter}
                 onChange={handleMinAccessFilterChange}
-                className="mt-1 w-full bg-[#14102E] border border-[#8B5CF6]/20 rounded-lg px-3 py-2 text-white"
+                disabled={isBusy}
+                aria-label="Minimum listing access level"
+                className="mt-1 w-full bg-[#14102E] border border-[#8B5CF6]/20 rounded-lg px-3 py-2 text-white disabled:opacity-50"
               >
                 <option value={0}>All levels</option>
                 <option value={1}>1 - Basic+</option>
@@ -248,7 +199,8 @@ export default function ResearcherDashboard() {
               <label className="text-sm text-[#9AA0B2]">Sort by Price</label>
               <button
                 onClick={handleSortToggle}
-                className="mt-1 w-full bg-[#14102E] border border-[#8B5CF6]/20 rounded-lg px-3 py-2 text-white text-left text-sm"
+                disabled={isBusy}
+                className="mt-1 w-full bg-[#14102E] border border-[#8B5CF6]/20 rounded-lg px-3 py-2 text-white text-left text-sm disabled:opacity-50"
                 aria-label={`Sort price ${sortOrder === 'asc' ? 'descending' : 'ascending'}`}
               >
                 Price: {sortOrder === 'asc' ? '↑ Low to High' : '↓ High to Low'}
@@ -280,9 +232,13 @@ export default function ResearcherDashboard() {
               </div>
             )}
             {!isFetching && listings.length > 0 && sortedListings.length === 0 && (
-              <div className="py-8 text-center">
+              <div className="py-8 text-center" role="status" aria-live="polite">
                 <p className="text-[#9AA0B2] text-sm">No listings match your current filters.</p>
-                <button onClick={handleClearFilters} className="mt-2 text-xs text-[#8B5CF6] underline">
+                <button
+                  onClick={handleClearFilters}
+                  className="mt-2 text-xs text-[#8B5CF6] underline"
+                  aria-label="Clear all marketplace filters"
+                >
                   Clear filters
                 </button>
               </div>
@@ -310,7 +266,7 @@ export default function ResearcherDashboard() {
                   ) : (
                     <button
                       onClick={() => purchase(l.listingId)}
-                      disabled={loadingId === l.listingId}
+                      disabled={loadingId !== null || isBusy}
                       aria-busy={loadingId === l.listingId}
                       aria-label={`Purchase listing ${l.listingId}`}
                       className="px-5 py-2 bg-gradient-to-r from-[#34D399] to-[#8B5CF6] rounded-lg font-semibold disabled:opacity-60"
