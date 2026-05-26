@@ -35,18 +35,26 @@ export default function ConsentPage() {
       setStatus(s);
       const ds = await contractService.listMyDatasets();
       setDatasets(ds ?? []);
-      if (ds?.length && selectedId === null) setSelectedId(ds[0].id);
       setLoadError(null);
     } catch (err) {
       setLoadError(err?.message || 'Failed to load datasets');
     } finally {
       setLoading(false);
     }
-  }, [selectedId]);
+  }, []);
 
   useEffect(() => {
     loadDatasets();
   }, [loadDatasets]);
+
+  // Auto-select the first dataset once datasets are loaded for the first time.
+  // Kept separate from loadDatasets so that reloading datasets (refresh/retry)
+  // does not reset a selection the user has already made.
+  useEffect(() => {
+    if (datasets.length > 0 && selectedId === null) {
+      setSelectedId(datasets[0].id);
+    }
+  }, [datasets, selectedId]);
 
   useEffect(() => {
     if (!saveAnnouncement) return;
