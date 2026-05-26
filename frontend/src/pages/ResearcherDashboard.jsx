@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import toast, { Toaster } from 'react-hot-toast';
 import Navigation from '../components/landing/Navigation.jsx';
@@ -62,6 +62,12 @@ export default function ResearcherDashboard() {
     handleClearFilters,
     purchase: purchaseListing,
   } = useMarketplaceListings();
+
+  useEffect(() => {
+    if (!statusAnnouncement) return;
+    const t = setTimeout(() => setStatusAnnouncement(''), 5000);
+    return () => clearTimeout(t);
+  }, [statusAnnouncement]);
 
   const handleAccessLevelChange = useCallback((e) => {
     setAccessLevel(parseInt(e.target.value, 10));
