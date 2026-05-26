@@ -83,10 +83,6 @@ export default function ResearcherDashboard() {
 
   const isBusy = isFetching || isRefreshing;
   const purchaseCount = purchasedListings.size;
-  const maxPriceInView = useMemo(
-    () => sortedListings.reduce((max, l) => Math.max(max, l.price), 0),
-    [sortedListings]
-  );
 
   const filteredListings = useMemo(() => {
     if (minAccessFilter === 0) return listings;
@@ -98,6 +94,11 @@ export default function ResearcherDashboard() {
     copy.sort((a, b) => sortOrder === 'asc' ? a.price - b.price : b.price - a.price);
     return copy;
   }, [filteredListings, sortOrder]);
+
+  const maxPriceInView = useMemo(
+    () => sortedListings.reduce((max, l) => Math.max(max, l.price), 0),
+    [sortedListings]
+  );
 
   const handleAccessLevelChange = useCallback((e) => {
     setAccessLevel(parseInt(e.target.value, 10));
