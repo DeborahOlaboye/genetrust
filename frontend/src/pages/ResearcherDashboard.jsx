@@ -193,7 +193,8 @@ export default function ResearcherDashboard() {
               <label className="text-sm text-[#9AA0B2]">Sort by Price</label>
               <button
                 onClick={handleSortToggle}
-                className="mt-1 w-full bg-[#14102E] border border-[#8B5CF6]/20 rounded-lg px-3 py-2 text-white text-left text-sm"
+                disabled={isBusy}
+                className="mt-1 w-full bg-[#14102E] border border-[#8B5CF6]/20 rounded-lg px-3 py-2 text-white text-left text-sm disabled:opacity-50"
                 aria-label={`Sort price ${sortOrder === 'asc' ? 'descending' : 'ascending'}`}
               >
                 Price: {sortOrder === 'asc' ? '↑ Low to High' : '↓ High to Low'}
