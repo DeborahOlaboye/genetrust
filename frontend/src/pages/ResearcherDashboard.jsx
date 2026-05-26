@@ -37,6 +37,9 @@ Pill.propTypes = {
   children: PropTypes.node.isRequired,
   color: PropTypes.string,
 };
+Pill.defaultProps = {
+  color: '#34D399',
+};
 Pill.displayName = 'Pill';
 
 export default function ResearcherDashboard() {
