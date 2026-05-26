@@ -133,8 +133,12 @@ export default function ResearcherDashboard() {
   const handleRetry = useCallback(async () => {
     setInitError(null);
     setIsFetching(true);
-    await loadListings();
-    setIsFetching(false);
+    const controller = new AbortController();
+    try {
+      await loadListings({ signal: controller.signal });
+    } finally {
+      if (!controller.signal.aborted) setIsFetching(false);
+    }
   }, [loadListings]);
 
   const purchase = useCallback(async (listingId) => {
