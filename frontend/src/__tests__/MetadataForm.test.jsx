@@ -31,6 +31,18 @@ function renderForm(props = {}) {
   );
 }
 
+describe('MetadataForm — file summary', () => {
+  it('displays the selected file name', () => {
+    renderForm();
+    expect(screen.getByText('sample.vcf')).toBeInTheDocument();
+  });
+
+  it('displays a human-readable file size', () => {
+    renderForm({ state: { ...BASE_STATE, fileSize: 1024 } });
+    expect(screen.getByText('1 KB')).toBeInTheDocument();
+  });
+});
+
 describe('MetadataForm — price field', () => {
   it('renders the price input', () => {
     renderForm();
