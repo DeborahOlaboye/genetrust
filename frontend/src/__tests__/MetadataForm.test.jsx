@@ -99,3 +99,33 @@ describe('MetadataForm — description field', () => {
     expect(textarea).not.toHaveAttribute('aria-invalid');
   });
 });
+
+describe('MetadataForm — storage URL field', () => {
+  it('renders the storage URL input', () => {
+    renderForm();
+    expect(screen.getByLabelText(/storage url/i)).toBeInTheDocument();
+  });
+
+  it('shows the auto-generate hint when there is no storageUrl error', () => {
+    renderForm();
+    expect(screen.getByText(/auto-generate/i)).toBeInTheDocument();
+  });
+
+  it('shows storageUrlError inline when fieldErrors.storageUrl is set', () => {
+    const errMsg = 'Storage URL must start with ipfs:// or https://.';
+    renderForm({ fieldErrors: { ...EMPTY_ERRORS, storageUrl: errMsg } });
+    expect(screen.getByText(errMsg)).toBeInTheDocument();
+  });
+
+  it('marks storage URL input as aria-invalid when storageUrlError is set', () => {
+    renderForm({ fieldErrors: { ...EMPTY_ERRORS, storageUrl: 'Bad URL.' } });
+    const input = screen.getByLabelText(/storage url/i);
+    expect(input).toHaveAttribute('aria-invalid', 'true');
+  });
+
+  it('does not mark storage URL input as aria-invalid when there is no error', () => {
+    renderForm();
+    const input = screen.getByLabelText(/storage url/i);
+    expect(input).not.toHaveAttribute('aria-invalid');
+  });
+});
