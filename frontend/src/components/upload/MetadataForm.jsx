@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { ACCESS_LEVELS } from '../../hooks/useDatasetUpload.js';
+import { ACCESS_LEVELS, DESC_MIN_LENGTH } from '../../hooks/useDatasetUpload.js';
 
 const inputStyle = {
   width: '100%',
@@ -28,7 +28,9 @@ const labelStyle = {
 
 const fieldStyle = { display: 'flex', flexDirection: 'column', gap: '0.25rem' };
 
-export function MetadataForm({ state, setField, onBack, onSubmit, submitting = false, step }) {
+const EMPTY_ERRORS = { price: null, description: null, storageUrl: null };
+
+export function MetadataForm({ state, fieldErrors = EMPTY_ERRORS, setField, onBack, onSubmit, submitting = false }) {
   const { price, accessLevel, storageUrl, description, error, fileName, fileSize } = state;
   const submitLabel = submitting ? 'Processing…' : 'Register Dataset →';
 
@@ -74,9 +76,10 @@ export function MetadataForm({ state, setField, onBack, onSubmit, submitting = f
           placeholder="e.g. 100"
           style={inputStyle}
         />
-        <span style={{ color: '#4B5563', fontSize: '0.75rem' }}>
-          Amount researchers will pay for access (in STX)
-        </span>
+        {fieldErrors.price
+          ? <span id="upload-price-error" role="alert" style={{ color: '#EF4444', fontSize: '0.75rem' }}>{fieldErrors.price}</span>
+          : <span id="upload-price-hint" style={{ color: '#4B5563', fontSize: '0.75rem' }}>Amount researchers will pay for access (in STX)</span>
+        }
       </div>
 
       {/* Access Level */}
