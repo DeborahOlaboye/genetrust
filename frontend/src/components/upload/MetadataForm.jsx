@@ -87,14 +87,24 @@ export function MetadataForm({ state, fieldErrors = EMPTY_ERRORS, setField, onBa
 
       {/* Access Level */}
       <div style={fieldStyle}>
-        <span style={labelStyle}>Access Level <span style={{ color: '#EF4444' }}>*</span></span>
-        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+        <span id="access-level-group-label" style={labelStyle}>Access Level <span style={{ color: '#EF4444' }} aria-hidden="true">*</span></span>
+        <div
+          role="radiogroup"
+          aria-labelledby="access-level-group-label"
+          aria-required="true"
+          style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}
+        >
           {ACCESS_LEVELS.map(({ value, label, description: desc }) => {
             const active = accessLevel === value;
             return (
               <button
                 key={value}
                 type="button"
+                role="radio"
+                aria-checked={active}
+                id={`access-level-${value}`}
+                aria-describedby={`access-level-desc-${value}`}
+                tabIndex={active ? 0 : -1}
                 onClick={() => setField('accessLevel', value)}
                 style={{
                   flex: 1,
@@ -110,7 +120,7 @@ export function MetadataForm({ state, fieldErrors = EMPTY_ERRORS, setField, onBa
                 }}
               >
                 <div style={{ fontWeight: 600, fontSize: '0.85rem' }}>{label}</div>
-                <div style={{ fontSize: '0.72rem', color: active ? '#A78BFA' : '#4B5563', marginTop: '0.1rem' }}>{desc}</div>
+                <div id={`access-level-desc-${value}`} style={{ fontSize: '0.72rem', color: active ? '#A78BFA' : '#4B5563', marginTop: '0.1rem' }}>{desc}</div>
               </button>
             );
           })}
