@@ -63,3 +63,22 @@ describe('FileDropZone — live region announcements', () => {
     expect(getLiveRegion().textContent).toMatch(/sample\.vcf.*selected/i);
   });
 });
+
+describe('FileDropZone — error and disabled states', () => {
+  it('renders a file error message with role=alert', () => {
+    render(<FileDropZone onFile={jest.fn()} fileError="File too large." />);
+    expect(screen.getByRole('alert')).toHaveTextContent('File too large.');
+  });
+
+  it('marks the drop zone as aria-disabled when disabled prop is true', () => {
+    render(<FileDropZone onFile={jest.fn()} disabled />);
+    const zone = screen.getByRole('button', { name: /upload genomic file/i });
+    expect(zone).toHaveAttribute('aria-disabled', 'true');
+  });
+
+  it('does not set aria-disabled when disabled prop is false', () => {
+    render(<FileDropZone onFile={jest.fn()} disabled={false} />);
+    const zone = screen.getByRole('button', { name: /upload genomic file/i });
+    expect(zone).not.toHaveAttribute('aria-disabled');
+  });
+});
