@@ -64,11 +64,19 @@ export function HashProgress({ step, hashProgress, hexHash }) {
       {/* Progress bar (hashing only) */}
       {isHashing && (
         <div style={{ width: '100%', maxWidth: '360px' }}>
-          <div style={{
-            height: '6px', borderRadius: '999px',
-            background: 'rgba(139,92,246,0.15)',
-            overflow: 'hidden',
-          }}>
+          <div
+            role="progressbar"
+            aria-valuenow={hashProgress}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuetext={`${hashProgress}% complete`}
+            aria-label="File hashing progress"
+            style={{
+              height: '6px', borderRadius: '999px',
+              background: 'rgba(139,92,246,0.15)',
+              overflow: 'hidden',
+            }}
+          >
             <div style={{
               height: '100%',
               width: `${hashProgress}%`,
@@ -77,7 +85,7 @@ export function HashProgress({ step, hashProgress, hexHash }) {
               transition: 'width 0.3s ease',
             }} />
           </div>
-          <p style={{ color: '#6B7280', fontSize: '0.75rem', marginTop: '0.4rem' }}>
+          <p aria-hidden="true" style={{ color: '#6B7280', fontSize: '0.75rem', marginTop: '0.4rem' }}>
             {hashProgress}%
           </p>
         </div>
