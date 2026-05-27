@@ -71,3 +71,17 @@ describe('WizardStepBar — circle aria-labels', () => {
     expect(screen.getByLabelText(/step 2 of 5.*details.*upcoming/i)).toBeInTheDocument();
   });
 });
+
+describe('WizardStepBar — completed step checkmark', () => {
+  it('renders the SVG checkmark with aria-hidden for completed steps', () => {
+    render(<WizardStepBar currentStep={STEPS.METADATA} />);
+    const svgs = document.querySelectorAll('svg[aria-hidden="true"]');
+    expect(svgs.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('shows the visible step number for upcoming steps', () => {
+    render(<WizardStepBar currentStep={STEPS.FILE_SELECT} />);
+    expect(screen.getByText('2')).toBeInTheDocument();
+    expect(screen.getByText('3')).toBeInTheDocument();
+  });
+});
