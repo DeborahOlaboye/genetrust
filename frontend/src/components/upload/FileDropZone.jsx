@@ -79,6 +79,8 @@ export function FileDropZone({ onFile, fileError, disabled = false }) {
         role="button"
         tabIndex={disabled ? -1 : 0}
         aria-label="Click or drag to upload genomic file"
+        aria-describedby="dropzone-formats"
+        aria-disabled={disabled ? 'true' : undefined}
         onClick={() => !disabled && inputRef.current?.click()}
         onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && !disabled && inputRef.current?.click()}
         onDrop={handleDrop}
@@ -113,7 +115,7 @@ export function FileDropZone({ onFile, fileError, disabled = false }) {
         <p style={{ color: '#6B7280', fontSize: '0.85rem' }}>
           or <span style={{ color: '#8B5CF6' }}>click to browse</span>
         </p>
-        <div style={{ display: 'flex', gap: '0.4rem', justifyContent: 'center', flexWrap: 'wrap', marginTop: '0.75rem' }}>
+        <div id="dropzone-formats" style={{ display: 'flex', gap: '0.4rem', justifyContent: 'center', flexWrap: 'wrap', marginTop: '0.75rem' }}>
           {FORMAT_BADGES.map(({ label, color }) => (
             <span key={label} style={{
               fontSize: '0.65rem', fontWeight: 600, fontFamily: 'monospace',
