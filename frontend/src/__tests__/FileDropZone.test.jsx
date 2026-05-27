@@ -54,4 +54,12 @@ describe('FileDropZone — live region announcements', () => {
     fireEvent.dragLeave(zone);
     expect(getLiveRegion().textContent).toBe('');
   });
+
+  it('announces the filename when a file is selected via the hidden input', () => {
+    render(<FileDropZone onFile={jest.fn()} />);
+    const input = document.querySelector('input[type="file"]');
+    const file = makeFile('sample.vcf');
+    fireEvent.change(input, { target: { files: [file] } });
+    expect(getLiveRegion().textContent).toMatch(/sample\.vcf.*selected/i);
+  });
 });
