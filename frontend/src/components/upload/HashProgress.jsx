@@ -114,12 +114,21 @@ export function HashProgress({ step, hashProgress, hexHash }) {
       )}
 
       {/* Stage checklist */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', width: '100%', maxWidth: '300px', textAlign: 'left' }}>
+      <div
+        role="list"
+        aria-label="Processing stages"
+        style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', width: '100%', maxWidth: '300px', textAlign: 'left' }}
+      >
         {STAGES.map(({ label, icon }, i) => {
           const done = (isSubmitting && i < 2) || (isHashing && hashProgress >= (i === 0 ? 50 : 95) && i < 2);
           return (
-            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-              <span style={{ fontSize: '0.9rem' }}>{done ? '✅' : icon}</span>
+            <div
+              key={i}
+              role="listitem"
+              aria-label={`${label}: ${done ? 'complete' : 'in progress'}`}
+              style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}
+            >
+              <span aria-hidden="true" style={{ fontSize: '0.9rem' }}>{done ? '✅' : icon}</span>
               <span style={{ color: done ? '#34D399' : '#6B7280', fontSize: '0.82rem' }}>
                 {label}
               </span>
