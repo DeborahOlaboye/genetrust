@@ -99,6 +99,7 @@ export function FileDropZone({ onFile, fileError, disabled = false }) {
       >
         {/* Icon */}
         <svg
+          aria-hidden="true"
           width="48" height="48"
           viewBox="0 0 24 24" fill="none"
           stroke={dragging ? '#8B5CF6' : '#6B7280'}
