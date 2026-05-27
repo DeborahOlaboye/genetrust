@@ -67,3 +67,42 @@ describe('validateFields — description validation', () => {
     expect(description).toMatch(/at least/i);
   });
 });
+
+describe('validateFields — storageUrl validation', () => {
+  const valid = { price: '100', description: 'Valid description here' };
+
+  it('returns no error when storageUrl is empty (optional field)', () => {
+    const { storageUrl } = validateFields({ ...valid, storageUrl: '' });
+    expect(storageUrl).toBeNull();
+  });
+
+  it('returns no error for a valid ipfs:// URL', () => {
+    const { storageUrl } = validateFields({ ...valid, storageUrl: 'ipfs://QmHash123' });
+    expect(storageUrl).toBeNull();
+  });
+
+  it('returns no error for a valid https:// URL', () => {
+    const { storageUrl } = validateFields({ ...valid, storageUrl: 'https://example.com/data' });
+    expect(storageUrl).toBeNull();
+  });
+
+  it('returns no error for a valid http:// URL', () => {
+    const { storageUrl } = validateFields({ ...valid, storageUrl: 'http://localhost/data' });
+    expect(storageUrl).toBeNull();
+  });
+
+  it('returns error for a URL without a valid scheme', () => {
+    const { storageUrl } = validateFields({ ...valid, storageUrl: 'ftp://invalid.com' });
+    expect(storageUrl).toMatch(/ipfs:\/\//i);
+  });
+
+  it('returns error for a plain string without a scheme', () => {
+    const { storageUrl } = validateFields({ ...valid, storageUrl: 'example.com/data' });
+    expect(storageUrl).toBeTruthy();
+  });
+
+  it('trims whitespace before validating storageUrl', () => {
+    const { storageUrl } = validateFields({ ...valid, storageUrl: '   ' });
+    expect(storageUrl).toBeNull();
+  });
+});
