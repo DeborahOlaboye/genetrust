@@ -126,11 +126,14 @@ export function MetadataForm({ state, fieldErrors = EMPTY_ERRORS, setField, onBa
           value={storageUrl}
           onChange={e => setField('storageUrl', e.target.value)}
           placeholder="ipfs://Qm... or https://..."
-          style={inputStyle}
+          aria-invalid={fieldErrors.storageUrl ? 'true' : undefined}
+          aria-describedby={fieldErrors.storageUrl ? 'upload-url-error' : 'upload-url-hint'}
+          style={{ ...inputStyle, borderColor: fieldErrors.storageUrl ? '#EF4444' : 'rgba(139,92,246,0.3)' }}
         />
-        <span style={{ color: '#4B5563', fontSize: '0.75rem' }}>
-          Leave blank to auto-generate an IPFS placeholder URI
-        </span>
+        {fieldErrors.storageUrl
+          ? <span id="upload-url-error" role="alert" style={{ color: '#EF4444', fontSize: '0.75rem' }}>{fieldErrors.storageUrl}</span>
+          : <span id="upload-url-hint" style={{ color: '#4B5563', fontSize: '0.75rem' }}>Leave blank to auto-generate an IPFS placeholder URI</span>
+        }
       </div>
 
       {/* Description */}
