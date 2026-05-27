@@ -173,3 +173,36 @@ describe('MetadataForm — submit and back buttons', () => {
     expect(onBack).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('MetadataForm — access level radiogroup', () => {
+  it('renders a radiogroup with the correct accessible label', () => {
+    renderForm();
+    expect(screen.getByRole('radiogroup', { name: /access level/i })).toBeInTheDocument();
+  });
+
+  it('renders three radio options', () => {
+    renderForm();
+    expect(screen.getAllByRole('radio')).toHaveLength(3);
+  });
+
+  it('marks the initially selected level as checked', () => {
+    renderForm();
+    const basic = screen.getByRole('radio', { name: /basic/i });
+    expect(basic).toHaveAttribute('aria-checked', 'true');
+  });
+
+  it('marks the non-selected levels as not checked', () => {
+    renderForm();
+    const detailed = screen.getByRole('radio', { name: /detailed/i });
+    const full = screen.getByRole('radio', { name: /full/i });
+    expect(detailed).toHaveAttribute('aria-checked', 'false');
+    expect(full).toHaveAttribute('aria-checked', 'false');
+  });
+
+  it('calls setField with the new access level when a radio is clicked', () => {
+    const setField = jest.fn();
+    renderForm({ setField });
+    fireEvent.click(screen.getByRole('radio', { name: /detailed/i }));
+    expect(setField).toHaveBeenCalledWith('accessLevel', 2);
+  });
+});
