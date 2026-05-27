@@ -241,5 +241,5 @@ export function useDatasetUpload({ contractService, walletService, onComplete } 
     if (state.step === STEPS.SUBMITTING) dispatch({ type: 'SET_FIELD', field: 'step', value: STEPS.METADATA });
   }, [state.step]);
 
-  return { state, selectFile, setField, submitRegistration, reset, goBack };
+  return { state, selectFile, setField, submitRegistration, reset, goBack, fieldErrors: state.fieldErrors };
 }
