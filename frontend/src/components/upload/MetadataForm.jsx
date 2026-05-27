@@ -158,7 +158,14 @@ export function MetadataForm({ state, fieldErrors = EMPTY_ERRORS, setField, onBa
             ? <span id="upload-desc-error" role="alert" style={{ color: '#EF4444', fontSize: '0.75rem' }}>{fieldErrors.description}</span>
             : <span id="upload-desc-hint" style={{ color: '#4B5563', fontSize: '0.75rem' }}>Minimum {DESC_MIN_LENGTH} characters required</span>
           }
-          <span id="upload-desc-counter" style={{ color: '#4B5563', fontSize: '0.75rem' }}>
+          <span
+            id="upload-desc-counter"
+            aria-label={`${description.length} of 200 characters used`}
+            style={{
+              color: description.length >= 190 ? '#EF4444' : description.length >= 160 ? '#F59E0B' : '#4B5563',
+              fontSize: '0.75rem',
+            }}
+          >
             {description.length}/200
           </span>
         </div>
