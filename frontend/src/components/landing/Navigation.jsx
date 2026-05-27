@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { showConnect } from '@stacks/connect';
 import { AppConfig, UserSession } from '@stacks/auth';
 import toast from 'react-hot-toast';
@@ -20,6 +21,9 @@ const Navigation = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const userSessionRef = useRef(null);
   const mobileMenuRef = useRef(null);
+  const location = useLocation();
+
+  const isPageRoute = (href) => href.startsWith('/') && !href.startsWith('#');
 
   // Navigation menu items from design
   const menuItems = [
@@ -148,7 +152,7 @@ const Navigation = () => {
       <div className="max-w-7xl mx-auto px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <a href="/">
+          <Link to="/" aria-label="Go to homepage">
             <div className="flex items-center">
               <div className="flex-shrink-0 flex items-center space-x-2">
                 <img src="/logo.svg" alt="GeneTrust" className="h-6 w-6" />
@@ -157,22 +161,26 @@ const Navigation = () => {
                 </h1>
               </div>
             </div>
-          </a>
+          </Link>
           {/* Desktop Navigation Menu */}
           <div className="hidden md:block">
             <div className="ml-10 flex items-baseline space-x-8">
               {menuItems.map((item) => {
-                const isActive = typeof window !== 'undefined' && window.location.pathname === item.href;
+                const isActive = isPageRoute(item.href) && location.pathname === item.href;
+                const classes = `px-3 py-2 text-sm font-medium transition-colors duration-200 rounded-lg ${
+                  isActive
+                    ? 'text-[#8B5CF6] bg-[#8B5CF6]/10'
+                    : 'text-gray-300 hover:text-[#8B5CF6] hover:bg-[#8B5CF6]/5'
+                }`;
+                if (isPageRoute(item.href)) {
+                  return (
+                    <Link key={item.label} to={item.href} className={classes}>
+                      {item.label}
+                    </Link>
+                  );
+                }
                 return (
-                  <a
-                    key={item.label}
-                    href={item.href}
-                    className={`px-3 py-2 text-sm font-medium transition-colors duration-200 rounded-lg ${
-                      isActive
-                        ? 'text-[#8B5CF6] bg-[#8B5CF6]/10'
-                        : 'text-gray-300 hover:text-[#8B5CF6] hover:bg-[#8B5CF6]/5'
-                    }`}
-                  >
+                  <a key={item.label} href={item.href} className={classes}>
                     {item.label}
                   </a>
                 );
@@ -246,16 +254,30 @@ const Navigation = () => {
         aria-label="Mobile navigation menu"
       >
         <div className="px-2 pt-2 pb-3 space-y-1 bg-[#14102E]/95 backdrop-blur-lg border-t border-[#8B5CF6]/15 animate-[fadeIn_0.15s_ease-out]">
-          {menuItems.map((item) => (
-            <a
-              key={item.label}
-              href={item.href}
-              onClick={closeMobileMenu}
-              className="text-gray-300 hover:text-[#8B5CF6] block px-3 py-2 text-base font-medium hover:bg-[#8B5CF6]/5 rounded-lg transition-colors duration-200"
-            >
-              {item.label}
-            </a>
-          ))}
+          {menuItems.map((item) => {
+            if (isPageRoute(item.href)) {
+              return (
+                <Link
+                  key={item.label}
+                  to={item.href}
+                  onClick={closeMobileMenu}
+                  className="text-gray-300 hover:text-[#8B5CF6] block px-3 py-2 text-base font-medium hover:bg-[#8B5CF6]/5 rounded-lg transition-colors duration-200"
+                >
+                  {item.label}
+                </Link>
+              );
+            }
+            return (
+              <a
+                key={item.label}
+                href={item.href}
+                onClick={closeMobileMenu}
+                className="text-gray-300 hover:text-[#8B5CF6] block px-3 py-2 text-base font-medium hover:bg-[#8B5CF6]/5 rounded-lg transition-colors duration-200"
+              >
+                {item.label}
+              </a>
+            );
+          })}
           <div className="px-3 py-2">
             <LanguageSelector />
           </div>

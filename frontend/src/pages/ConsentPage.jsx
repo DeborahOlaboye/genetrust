@@ -4,6 +4,7 @@
  */
 
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import Navigation from '../components/landing/Navigation.jsx';
 import { ConsentManagementPanel } from '../components/consent/ConsentManagementPanel.jsx';
 import { APP_CONFIG } from '../config/app.js';
@@ -144,13 +145,13 @@ export default function ConsentPage() {
         {!loading && datasets.length === 0 && !loadError && (
           <div role="status" className="rounded-2xl p-8 text-center bg-gray-900/10 border border-gray-700/30">
             <p className="text-[#6B7280] text-sm mb-4">No datasets found. Register one first.</p>
-            <a
-              href="/upload"
+            <Link
+              to="/upload"
               aria-label="Register a new dataset"
               className="inline-block px-5 py-2.5 rounded-lg bg-gradient-to-r from-[#8B5CF6] to-[#6D28D9] text-white font-semibold text-sm no-underline"
             >
               Register Dataset →
-            </a>
+            </Link>
           </div>
         )}
 
