@@ -82,6 +82,10 @@ function reducer(state, action) {
       return { ...state, fileError: action.message };
     case 'SET_FIELD':
       return { ...state, [action.field]: action.value };
+    case 'SET_FIELD_ERRORS':
+      return { ...state, fieldErrors: { ...state.fieldErrors, ...action.errors }, hasAttemptedSubmit: true };
+    case 'CLEAR_FIELD_ERROR':
+      return { ...state, fieldErrors: { ...state.fieldErrors, [action.field]: null } };
     case 'START_HASH':
       return { ...state, step: STEPS.HASHING, hashProgress: 0, error: null };
     case 'HASH_PROGRESS':
