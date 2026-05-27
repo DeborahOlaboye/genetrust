@@ -28,8 +28,9 @@ const labelStyle = {
 
 const fieldStyle = { display: 'flex', flexDirection: 'column', gap: '0.25rem' };
 
-export function MetadataForm({ state, setField, onBack, onSubmit, submitting = false }) {
+export function MetadataForm({ state, setField, onBack, onSubmit, submitting = false, step }) {
   const { price, accessLevel, storageUrl, description, error, fileName, fileSize } = state;
+  const submitLabel = submitting ? 'Processing…' : 'Register Dataset →';
 
   const formatBytes = (b) => {
     if (b === 0) return '0 B';
@@ -186,7 +187,7 @@ export function MetadataForm({ state, setField, onBack, onSubmit, submitting = f
             fontSize: '0.9rem',
           }}
         >
-          {submitting ? 'Computing hash…' : 'Register Dataset →'}
+          {submitLabel}
         </button>
       </div>
     </div>
