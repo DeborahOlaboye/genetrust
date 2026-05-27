@@ -210,15 +210,18 @@ export function MetadataForm({ state, fieldErrors = EMPTY_ERRORS, setField, onBa
         <button
           type="button"
           onClick={onBack}
+          disabled={submitting}
+          aria-label="Back to file selection"
           style={{
             flex: 1,
             padding: '0.7rem',
             borderRadius: '0.5rem',
             border: '1px solid rgba(139,92,246,0.3)',
             background: 'transparent',
-            color: '#9AA0B2',
-            cursor: 'pointer',
+            color: submitting ? '#4B5563' : '#9AA0B2',
+            cursor: submitting ? 'not-allowed' : 'pointer',
             fontWeight: 500,
+            opacity: submitting ? 0.5 : 1,
           }}
         >
           ← Back
@@ -227,6 +230,8 @@ export function MetadataForm({ state, fieldErrors = EMPTY_ERRORS, setField, onBa
           type="button"
           onClick={onSubmit}
           disabled={submitting}
+          aria-busy={submitting ? 'true' : undefined}
+          aria-label={submitting ? 'Registering dataset, please wait' : 'Register dataset on the blockchain'}
           style={{
             flex: 2,
             padding: '0.7rem',
