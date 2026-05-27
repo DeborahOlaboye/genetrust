@@ -3,8 +3,8 @@
  * User sets price, access level, optional IPFS URL, and description.
  */
 
-import React from 'react';
-import { ACCESS_LEVELS } from '../../hooks/useDatasetUpload.js';
+import React, { useCallback } from 'react';
+import { ACCESS_LEVELS, DESC_MIN_LENGTH } from '../../hooks/useDatasetUpload.js';
 
 const inputStyle = {
   width: '100%',
@@ -28,8 +28,27 @@ const labelStyle = {
 
 const fieldStyle = { display: 'flex', flexDirection: 'column', gap: '0.25rem' };
 
-export function MetadataForm({ state, setField, onBack, onSubmit, submitting = false }) {
+const EMPTY_ERRORS = { price: null, description: null, storageUrl: null };
+
+export function MetadataForm({ state, fieldErrors = EMPTY_ERRORS, hasAttemptedSubmit = false, setField, onBack, onSubmit, submitting = false }) {
   const { price, accessLevel, storageUrl, description, error, fileName, fileSize } = state;
+  const submitLabel = submitting ? 'Processing…' : 'Register Dataset →';
+
+  const handleAccessKeyDown = useCallback((e, currentValue) => {
+    const values = ACCESS_LEVELS.map(l => l.value);
+    const idx = values.indexOf(currentValue);
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+      e.preventDefault();
+      const next = values[(idx + 1) % values.length];
+      setField('accessLevel', next);
+      document.getElementById(`access-level-${next}`)?.focus();
+    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      const prev = values[(idx - 1 + values.length) % values.length];
+      setField('accessLevel', prev);
+      document.getElementById(`access-level-${prev}`)?.focus();
+    }
+  }, [setField]);
 
   const formatBytes = (b) => {
     if (b === 0) return '0 B';
@@ -48,7 +67,7 @@ export function MetadataForm({ state, setField, onBack, onSubmit, submitting = f
         border: '1px solid rgba(52,211,153,0.15)',
         display: 'flex', alignItems: 'center', gap: '0.75rem',
       }}>
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none"
           stroke="#34D399" strokeWidth="2">
           <path strokeLinecap="round" strokeLinejoin="round"
             d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
@@ -62,7 +81,7 @@ export function MetadataForm({ state, setField, onBack, onSubmit, submitting = f
       {/* Price */}
       <div style={fieldStyle}>
         <label htmlFor="upload-price" style={labelStyle}>
-          Price (STX) <span style={{ color: '#EF4444' }}>*</span>
+          Price (STX) <span aria-hidden="true" style={{ color: '#EF4444' }}>*</span>
         </label>
         <input
           id="upload-price"
@@ -71,24 +90,39 @@ export function MetadataForm({ state, setField, onBack, onSubmit, submitting = f
           value={price}
           onChange={e => setField('price', e.target.value)}
           placeholder="e.g. 100"
-          style={inputStyle}
+          aria-required="true"
+          aria-invalid={fieldErrors.price ? 'true' : undefined}
+          aria-describedby={fieldErrors.price ? 'upload-price-error' : 'upload-price-hint'}
+          style={{ ...inputStyle, borderColor: fieldErrors.price ? '#EF4444' : 'rgba(139,92,246,0.3)' }}
         />
-        <span style={{ color: '#4B5563', fontSize: '0.75rem' }}>
-          Amount researchers will pay for access (in STX)
-        </span>
+        {fieldErrors.price
+          ? <span id="upload-price-error" role="alert" style={{ color: '#EF4444', fontSize: '0.75rem' }}>{fieldErrors.price}</span>
+          : <span id="upload-price-hint" style={{ color: '#4B5563', fontSize: '0.75rem' }}>Amount researchers will pay for access (in STX)</span>
+        }
       </div>
 
       {/* Access Level */}
       <div style={fieldStyle}>
-        <span style={labelStyle}>Access Level <span style={{ color: '#EF4444' }}>*</span></span>
-        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+        <span id="access-level-group-label" style={labelStyle}>Access Level <span style={{ color: '#EF4444' }} aria-hidden="true">*</span></span>
+        <div
+          role="radiogroup"
+          aria-labelledby="access-level-group-label"
+          aria-required="true"
+          style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}
+        >
           {ACCESS_LEVELS.map(({ value, label, description: desc }) => {
             const active = accessLevel === value;
             return (
               <button
                 key={value}
                 type="button"
+                role="radio"
+                aria-checked={active}
+                id={`access-level-${value}`}
+                aria-describedby={`access-level-desc-${value}`}
+                tabIndex={active ? 0 : -1}
                 onClick={() => setField('accessLevel', value)}
+                onKeyDown={e => handleAccessKeyDown(e, value)}
                 style={{
                   flex: 1,
                   minWidth: '7rem',
@@ -103,7 +137,7 @@ export function MetadataForm({ state, setField, onBack, onSubmit, submitting = f
                 }}
               >
                 <div style={{ fontWeight: 600, fontSize: '0.85rem' }}>{label}</div>
-                <div style={{ fontSize: '0.72rem', color: active ? '#A78BFA' : '#4B5563', marginTop: '0.1rem' }}>{desc}</div>
+                <div id={`access-level-desc-${value}`} style={{ fontSize: '0.72rem', color: active ? '#A78BFA' : '#4B5563', marginTop: '0.1rem' }}>{desc}</div>
               </button>
             );
           })}
@@ -119,17 +153,20 @@ export function MetadataForm({ state, setField, onBack, onSubmit, submitting = f
           value={storageUrl}
           onChange={e => setField('storageUrl', e.target.value)}
           placeholder="ipfs://Qm... or https://..."
-          style={inputStyle}
+          aria-invalid={fieldErrors.storageUrl ? 'true' : undefined}
+          aria-describedby={fieldErrors.storageUrl ? 'upload-url-error' : 'upload-url-hint'}
+          style={{ ...inputStyle, borderColor: fieldErrors.storageUrl ? '#EF4444' : 'rgba(139,92,246,0.3)' }}
         />
-        <span style={{ color: '#4B5563', fontSize: '0.75rem' }}>
-          Leave blank to auto-generate an IPFS placeholder URI
-        </span>
+        {fieldErrors.storageUrl
+          ? <span id="upload-url-error" role="alert" style={{ color: '#EF4444', fontSize: '0.75rem' }}>{fieldErrors.storageUrl}</span>
+          : <span id="upload-url-hint" style={{ color: '#4B5563', fontSize: '0.75rem' }}>Leave blank to auto-generate an IPFS placeholder URI</span>
+        }
       </div>
 
       {/* Description */}
       <div style={fieldStyle}>
         <label htmlFor="upload-desc" style={labelStyle}>
-          Description <span style={{ color: '#EF4444' }}>*</span>
+          Description <span aria-hidden="true" style={{ color: '#EF4444' }}>*</span>
         </label>
         <textarea
           id="upload-desc"
@@ -138,11 +175,27 @@ export function MetadataForm({ state, setField, onBack, onSubmit, submitting = f
           placeholder="Describe the dataset: population, sequencing method, traits studied…"
           maxLength={200}
           rows={3}
-          style={{ ...inputStyle, resize: 'vertical' }}
+          aria-required="true"
+          aria-invalid={fieldErrors.description ? 'true' : undefined}
+          aria-describedby={`${fieldErrors.description ? 'upload-desc-error' : 'upload-desc-hint'} upload-desc-counter`}
+          style={{ ...inputStyle, resize: 'vertical', borderColor: fieldErrors.description ? '#EF4444' : 'rgba(139,92,246,0.3)' }}
         />
-        <span style={{ color: '#4B5563', fontSize: '0.75rem', textAlign: 'right' }}>
-          {description.length}/200
-        </span>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          {fieldErrors.description
+            ? <span id="upload-desc-error" role="alert" style={{ color: '#EF4444', fontSize: '0.75rem' }}>{fieldErrors.description}</span>
+            : <span id="upload-desc-hint" style={{ color: '#4B5563', fontSize: '0.75rem' }}>Minimum {DESC_MIN_LENGTH} characters required</span>
+          }
+          <span
+            id="upload-desc-counter"
+            aria-label={`${description.length} of 200 characters used`}
+            style={{
+              color: description.length >= 190 ? '#EF4444' : description.length >= 160 ? '#F59E0B' : '#4B5563',
+              fontSize: '0.75rem',
+            }}
+          >
+            {description.length}/200
+          </span>
+        </div>
       </div>
 
       {/* Error */}
@@ -157,15 +210,18 @@ export function MetadataForm({ state, setField, onBack, onSubmit, submitting = f
         <button
           type="button"
           onClick={onBack}
+          disabled={submitting}
+          aria-label="Back to file selection"
           style={{
             flex: 1,
             padding: '0.7rem',
             borderRadius: '0.5rem',
             border: '1px solid rgba(139,92,246,0.3)',
             background: 'transparent',
-            color: '#9AA0B2',
-            cursor: 'pointer',
+            color: submitting ? '#4B5563' : '#9AA0B2',
+            cursor: submitting ? 'not-allowed' : 'pointer',
             fontWeight: 500,
+            opacity: submitting ? 0.5 : 1,
           }}
         >
           ← Back
@@ -174,6 +230,8 @@ export function MetadataForm({ state, setField, onBack, onSubmit, submitting = f
           type="button"
           onClick={onSubmit}
           disabled={submitting}
+          aria-busy={submitting ? 'true' : undefined}
+          aria-label={submitting ? 'Registering dataset, please wait' : 'Register dataset on the blockchain'}
           style={{
             flex: 2,
             padding: '0.7rem',
@@ -186,7 +244,7 @@ export function MetadataForm({ state, setField, onBack, onSubmit, submitting = f
             fontSize: '0.9rem',
           }}
         >
-          {submitting ? 'Computing hash…' : 'Register Dataset →'}
+          {submitLabel}
         </button>
       </div>
     </div>

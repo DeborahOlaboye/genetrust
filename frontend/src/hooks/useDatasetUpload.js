@@ -40,6 +40,12 @@ const ACCEPTED_TYPES = new Set([
 
 // ── initial state ─────────────────────────────────────────────────────────────
 
+const INITIAL_FIELD_ERRORS = {
+  price:       null,
+  description: null,
+  storageUrl:  null,
+};
+
 const INITIAL = {
   step:        STEPS.FILE_SELECT,
   file:        null,          // File object
@@ -55,6 +61,8 @@ const INITIAL = {
   hashProgress: 0,            // 0-100 during hashing
   txId:        null,
   error:       null,
+  fieldErrors: { ...INITIAL_FIELD_ERRORS },
+  hasAttemptedSubmit: false,
 };
 
 // ── reducer ───────────────────────────────────────────────────────────────────
@@ -74,6 +82,10 @@ function reducer(state, action) {
       return { ...state, fileError: action.message };
     case 'SET_FIELD':
       return { ...state, [action.field]: action.value };
+    case 'SET_FIELD_ERRORS':
+      return { ...state, fieldErrors: { ...state.fieldErrors, ...action.errors }, hasAttemptedSubmit: true };
+    case 'CLEAR_FIELD_ERROR':
+      return { ...state, fieldErrors: { ...state.fieldErrors, [action.field]: null } };
     case 'START_HASH':
       return { ...state, step: STEPS.HASHING, hashProgress: 0, error: null };
     case 'HASH_PROGRESS':
@@ -91,7 +103,7 @@ function reducer(state, action) {
     case 'SET_ERROR':
       return { ...state, error: action.message, step: action.step ?? state.step };
     case 'RESET':
-      return { ...INITIAL };
+      return { ...INITIAL, fieldErrors: { ...INITIAL_FIELD_ERRORS } };
     default:
       return state;
   }
@@ -117,6 +129,38 @@ async function hashFile(file, onProgress) {
   return digest;
 }
 
+// ── validation ────────────────────────────────────────────────────────────────
+
+const STORAGE_URL_RE = /^(ipfs:\/\/|https?:\/\/).+/i;
+export const DESC_MIN_LENGTH = 10;
+
+export function validateFields({ price, description, storageUrl }) {
+  const errors = { price: null, description: null, storageUrl: null };
+
+  const priceNum = Number(price);
+  if (!price || isNaN(priceNum) || priceNum <= 0) {
+    errors.price = 'Price must be a positive number.';
+  } else if (!Number.isInteger(priceNum)) {
+    errors.price = 'Price must be a whole number (no decimals).';
+  }
+
+  const trimmedDesc = (description || '').trim();
+  if (!trimmedDesc) {
+    errors.description = 'Description is required.';
+  } else if (trimmedDesc.length < DESC_MIN_LENGTH) {
+    errors.description = `Description must be at least ${DESC_MIN_LENGTH} characters.`;
+  } else if (trimmedDesc.length > 200) {
+    errors.description = 'Description must be 200 characters or fewer.';
+  }
+
+  const trimmedUrl = (storageUrl || '').trim();
+  if (trimmedUrl && !STORAGE_URL_RE.test(trimmedUrl)) {
+    errors.storageUrl = 'Storage URL must start with ipfs:// or https://.';
+  }
+
+  return errors;
+}
+
 // ── hook ──────────────────────────────────────────────────────────────────────
 
 export function useDatasetUpload({ contractService, walletService, onComplete } = {}) {
@@ -135,6 +179,9 @@ export function useDatasetUpload({ contractService, walletService, onComplete } 
   // Step 2: field updates
   const setField = useCallback((field, value) => {
     dispatch({ type: 'SET_FIELD', field, value });
+    if (field in INITIAL_FIELD_ERRORS) {
+      dispatch({ type: 'CLEAR_FIELD_ERROR', field });
+    }
   }, []);
 
   // Step 3 → 4: hash then submit
@@ -148,16 +195,13 @@ export function useDatasetUpload({ contractService, walletService, onComplete } 
 
     const { file, price, accessLevel, storageUrl, description } = state;
 
-    // Basic validation
+    // Per-field validation — collect all errors before bailing out
+    const errors = validateFields({ price, description, storageUrl });
+    if (errors.price || errors.description || errors.storageUrl) {
+      dispatch({ type: 'SET_FIELD_ERRORS', errors });
+      return;
+    }
     const priceNum = Number(price);
-    if (!priceNum || priceNum <= 0) {
-      dispatch({ type: 'SET_ERROR', message: 'Price must be a positive number.' });
-      return;
-    }
-    if (!description.trim()) {
-      dispatch({ type: 'SET_ERROR', message: 'Description is required.' });
-      return;
-    }
     const url = storageUrl.trim() || `ipfs://genetrust/${file.name}`;
 
     // Hash
@@ -197,5 +241,14 @@ export function useDatasetUpload({ contractService, walletService, onComplete } 
     if (state.step === STEPS.SUBMITTING) dispatch({ type: 'SET_FIELD', field: 'step', value: STEPS.METADATA });
   }, [state.step]);
 
-  return { state, selectFile, setField, submitRegistration, reset, goBack };
+  return {
+    state,
+    selectFile,
+    setField,
+    submitRegistration,
+    reset,
+    goBack,
+    fieldErrors: state.fieldErrors,
+    hasAttemptedSubmit: state.hasAttemptedSubmit,
+  };
 }

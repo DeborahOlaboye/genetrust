@@ -42,6 +42,8 @@ export function DatasetUploadWizard({ contractService, walletService, onComplete
   const headingRef = useRef(null);
   const {
     state,
+    fieldErrors,
+    hasAttemptedSubmit,
     selectFile,
     setField,
     submitRegistration,
@@ -92,10 +94,12 @@ export function DatasetUploadWizard({ contractService, walletService, onComplete
       {step === STEPS.METADATA && (
         <MetadataForm
           state={state}
+          fieldErrors={fieldErrors}
+          hasAttemptedSubmit={hasAttemptedSubmit}
           setField={setField}
           onBack={goBack}
           onSubmit={submitRegistration}
-          submitting={false}
+          submitting={isProcessing}
         />
       )}
 

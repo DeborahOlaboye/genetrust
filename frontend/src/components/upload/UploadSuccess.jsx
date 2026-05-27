@@ -4,6 +4,7 @@
  */
 
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { TransactionTracker } from '../TransactionTracker.jsx';
 
 export function UploadSuccess({ txId, hexHash, fileName, onRegisterAnother }) {
@@ -61,6 +62,7 @@ export function UploadSuccess({ txId, hexHash, fileName, onRegisterAnother }) {
         <button
           type="button"
           onClick={onRegisterAnother}
+          aria-label="Start the upload wizard again to register another dataset"
           style={{
             flex: 1,
             padding: '0.7rem',
@@ -75,8 +77,8 @@ export function UploadSuccess({ txId, hexHash, fileName, onRegisterAnother }) {
         >
           Register another dataset
         </button>
-        <a
-          href="/researcher"
+        <Link
+          to="/researcher"
           style={{
             flex: 1,
             padding: '0.7rem',
@@ -84,7 +86,6 @@ export function UploadSuccess({ txId, hexHash, fileName, onRegisterAnother }) {
             border: 'none',
             background: 'linear-gradient(135deg,#8B5CF6,#6D28D9)',
             color: '#fff',
-            cursor: 'pointer',
             fontWeight: 600,
             fontSize: '0.875rem',
             textAlign: 'center',
@@ -95,7 +96,7 @@ export function UploadSuccess({ txId, hexHash, fileName, onRegisterAnother }) {
           }}
         >
           View Marketplace →
-        </a>
+        </Link>
       </div>
     </div>
   );
