@@ -81,7 +81,7 @@ export function MetadataForm({ state, fieldErrors = EMPTY_ERRORS, setField, onBa
       {/* Price */}
       <div style={fieldStyle}>
         <label htmlFor="upload-price" style={labelStyle}>
-          Price (STX) <span style={{ color: '#EF4444' }}>*</span>
+          Price (STX) <span aria-hidden="true" style={{ color: '#EF4444' }}>*</span>
         </label>
         <input
           id="upload-price"
@@ -166,7 +166,7 @@ export function MetadataForm({ state, fieldErrors = EMPTY_ERRORS, setField, onBa
       {/* Description */}
       <div style={fieldStyle}>
         <label htmlFor="upload-desc" style={labelStyle}>
-          Description <span style={{ color: '#EF4444' }}>*</span>
+          Description <span aria-hidden="true" style={{ color: '#EF4444' }}>*</span>
         </label>
         <textarea
           id="upload-desc"
