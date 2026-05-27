@@ -205,4 +205,36 @@ describe('MetadataForm — access level radiogroup', () => {
     fireEvent.click(screen.getByRole('radio', { name: /detailed/i }));
     expect(setField).toHaveBeenCalledWith('accessLevel', 2);
   });
+
+  it('calls setField with the next access level on ArrowRight key', () => {
+    const setField = jest.fn();
+    renderForm({ setField });
+    const basic = screen.getByRole('radio', { name: /basic/i });
+    fireEvent.keyDown(basic, { key: 'ArrowRight' });
+    expect(setField).toHaveBeenCalledWith('accessLevel', 2);
+  });
+
+  it('calls setField with the next access level on ArrowDown key', () => {
+    const setField = jest.fn();
+    renderForm({ setField });
+    const basic = screen.getByRole('radio', { name: /basic/i });
+    fireEvent.keyDown(basic, { key: 'ArrowDown' });
+    expect(setField).toHaveBeenCalledWith('accessLevel', 2);
+  });
+
+  it('calls setField with the previous access level on ArrowLeft key', () => {
+    const setField = jest.fn();
+    renderForm({ state: { ...BASE_STATE, accessLevel: 2 }, setField });
+    const detailed = screen.getByRole('radio', { name: /detailed/i });
+    fireEvent.keyDown(detailed, { key: 'ArrowLeft' });
+    expect(setField).toHaveBeenCalledWith('accessLevel', 1);
+  });
+
+  it('wraps from last to first on ArrowRight', () => {
+    const setField = jest.fn();
+    renderForm({ state: { ...BASE_STATE, accessLevel: 3 }, setField });
+    const full = screen.getByRole('radio', { name: /full/i });
+    fireEvent.keyDown(full, { key: 'ArrowRight' });
+    expect(setField).toHaveBeenCalledWith('accessLevel', 1);
+  });
 });
