@@ -106,3 +106,23 @@ describe('validateFields — storageUrl validation', () => {
     expect(storageUrl).toBeNull();
   });
 });
+
+describe('validateFields — collects all errors without early exit', () => {
+  it('returns errors for all three fields simultaneously when all are invalid', () => {
+    const errors = validateFields({ price: '', description: '', storageUrl: 'ftp://bad' });
+    expect(errors.price).toBeTruthy();
+    expect(errors.description).toBeTruthy();
+    expect(errors.storageUrl).toBeTruthy();
+  });
+
+  it('returns null for all fields when input is fully valid', () => {
+    const errors = validateFields({
+      price: '250',
+      description: 'Genome dataset from European cohort 2024',
+      storageUrl: 'ipfs://QmValidHash',
+    });
+    expect(errors.price).toBeNull();
+    expect(errors.description).toBeNull();
+    expect(errors.storageUrl).toBeNull();
+  });
+});
