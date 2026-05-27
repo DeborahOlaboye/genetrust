@@ -179,6 +179,9 @@ export function useDatasetUpload({ contractService, walletService, onComplete } 
   // Step 2: field updates
   const setField = useCallback((field, value) => {
     dispatch({ type: 'SET_FIELD', field, value });
+    if (field in INITIAL_FIELD_ERRORS) {
+      dispatch({ type: 'CLEAR_FIELD_ERROR', field });
+    }
   }, []);
 
   // Step 3 → 4: hash then submit
