@@ -43,6 +43,7 @@ export function DatasetUploadWizard({ contractService, walletService, onComplete
   const {
     state,
     fieldErrors,
+    hasAttemptedSubmit,
     selectFile,
     setField,
     submitRegistration,
@@ -94,6 +95,7 @@ export function DatasetUploadWizard({ contractService, walletService, onComplete
         <MetadataForm
           state={state}
           fieldErrors={fieldErrors}
+          hasAttemptedSubmit={hasAttemptedSubmit}
           setField={setField}
           onBack={goBack}
           onSubmit={submitRegistration}
