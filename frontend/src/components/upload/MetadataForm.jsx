@@ -30,7 +30,7 @@ const fieldStyle = { display: 'flex', flexDirection: 'column', gap: '0.25rem' };
 
 const EMPTY_ERRORS = { price: null, description: null, storageUrl: null };
 
-export function MetadataForm({ state, fieldErrors = EMPTY_ERRORS, setField, onBack, onSubmit, submitting = false }) {
+export function MetadataForm({ state, fieldErrors = EMPTY_ERRORS, hasAttemptedSubmit = false, setField, onBack, onSubmit, submitting = false }) {
   const { price, accessLevel, storageUrl, description, error, fileName, fileSize } = state;
   const submitLabel = submitting ? 'Processing…' : 'Register Dataset →';
 
