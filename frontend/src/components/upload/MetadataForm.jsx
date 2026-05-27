@@ -3,7 +3,7 @@
  * User sets price, access level, optional IPFS URL, and description.
  */
 
-import React from 'react';
+import React, { useCallback } from 'react';
 import { ACCESS_LEVELS, DESC_MIN_LENGTH } from '../../hooks/useDatasetUpload.js';
 
 const inputStyle = {
@@ -33,6 +33,22 @@ const EMPTY_ERRORS = { price: null, description: null, storageUrl: null };
 export function MetadataForm({ state, fieldErrors = EMPTY_ERRORS, setField, onBack, onSubmit, submitting = false }) {
   const { price, accessLevel, storageUrl, description, error, fileName, fileSize } = state;
   const submitLabel = submitting ? 'Processing…' : 'Register Dataset →';
+
+  const handleAccessKeyDown = useCallback((e, currentValue) => {
+    const values = ACCESS_LEVELS.map(l => l.value);
+    const idx = values.indexOf(currentValue);
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+      e.preventDefault();
+      const next = values[(idx + 1) % values.length];
+      setField('accessLevel', next);
+      document.getElementById(`access-level-${next}`)?.focus();
+    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      const prev = values[(idx - 1 + values.length) % values.length];
+      setField('accessLevel', prev);
+      document.getElementById(`access-level-${prev}`)?.focus();
+    }
+  }, [setField]);
 
   const formatBytes = (b) => {
     if (b === 0) return '0 B';
@@ -106,6 +122,7 @@ export function MetadataForm({ state, fieldErrors = EMPTY_ERRORS, setField, onBa
                 aria-describedby={`access-level-desc-${value}`}
                 tabIndex={active ? 0 : -1}
                 onClick={() => setField('accessLevel', value)}
+                onKeyDown={e => handleAccessKeyDown(e, value)}
                 style={{
                   flex: 1,
                   minWidth: '7rem',
