@@ -40,6 +40,12 @@ const ACCEPTED_TYPES = new Set([
 
 // ── initial state ─────────────────────────────────────────────────────────────
 
+const INITIAL_FIELD_ERRORS = {
+  price:       null,
+  description: null,
+  storageUrl:  null,
+};
+
 const INITIAL = {
   step:        STEPS.FILE_SELECT,
   file:        null,          // File object
@@ -55,6 +61,8 @@ const INITIAL = {
   hashProgress: 0,            // 0-100 during hashing
   txId:        null,
   error:       null,
+  fieldErrors: { ...INITIAL_FIELD_ERRORS },
+  hasAttemptedSubmit: false,
 };
 
 // ── reducer ───────────────────────────────────────────────────────────────────
