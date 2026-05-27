@@ -64,3 +64,38 @@ describe('MetadataForm — price field', () => {
     expect(input).not.toHaveAttribute('aria-invalid');
   });
 });
+
+describe('MetadataForm — description field', () => {
+  it('renders the description textarea', () => {
+    renderForm();
+    expect(screen.getByLabelText(/description/i)).toBeInTheDocument();
+  });
+
+  it('shows character counter with current length and max', () => {
+    renderForm();
+    expect(screen.getByText(`${BASE_STATE.description.length}/200`)).toBeInTheDocument();
+  });
+
+  it('shows the minimum length hint when there is no description error', () => {
+    renderForm();
+    expect(screen.getByText(/minimum.*characters required/i)).toBeInTheDocument();
+  });
+
+  it('shows descriptionError inline when fieldErrors.description is set', () => {
+    const errMsg = 'Description must be at least 10 characters.';
+    renderForm({ fieldErrors: { ...EMPTY_ERRORS, description: errMsg } });
+    expect(screen.getByText(errMsg)).toBeInTheDocument();
+  });
+
+  it('marks textarea as aria-invalid when descriptionError is set', () => {
+    renderForm({ fieldErrors: { ...EMPTY_ERRORS, description: 'Too short.' } });
+    const textarea = screen.getByLabelText(/description/i);
+    expect(textarea).toHaveAttribute('aria-invalid', 'true');
+  });
+
+  it('does not mark textarea as aria-invalid when there is no error', () => {
+    renderForm();
+    const textarea = screen.getByLabelText(/description/i);
+    expect(textarea).not.toHaveAttribute('aria-invalid');
+  });
+});
