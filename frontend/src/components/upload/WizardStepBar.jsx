@@ -48,29 +48,44 @@ export function WizardStepBar({ currentStep }) {
         const labelColor   = done ? '#34D399' : active ? '#E5E7EB' : '#4B5563';
         const connectorBg  = done ? '#34D399' : 'rgba(55,65,81,0.6)';
 
+        const stepStatus = done ? 'completed' : active ? 'current' : 'upcoming';
+        const circleAriaLabel = `Step ${i + 1} of ${STEP_DEFS.length}: ${label} — ${stepStatus}`;
+
         return (
           <React.Fragment key={key}>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '60px' }}>
+            <div
+              role="listitem"
+              aria-current={active ? 'step' : undefined}
+              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '60px' }}
+            >
               {/* Circle */}
-              <div style={{
-                width: '28px', height: '28px',
-                borderRadius: '50%',
-                border: `2px solid ${circleColor}`,
-                background: circleBg,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                transition: 'all 0.2s',
-              }}>
+              <div
+                aria-label={circleAriaLabel}
+                style={{
+                  width: '28px', height: '28px',
+                  borderRadius: '50%',
+                  border: `2px solid ${circleColor}`,
+                  background: circleBg,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  transition: 'all 0.2s',
+                }}
+              >
                 {done ? (
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
-                    stroke="#34D399" strokeWidth="3">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
-                  </svg>
+                  <>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                      stroke="#34D399" strokeWidth="3" aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                    </svg>
+                    <span style={{ position: 'absolute', width: '1px', height: '1px', overflow: 'hidden', clip: 'rect(0,0,0,0)' }}>
+                      Completed
+                    </span>
+                  </>
                 ) : (
-                  <span style={{ color: circleColor, fontSize: '0.72rem', fontWeight: 700 }}>{i + 1}</span>
+                  <span aria-hidden="true" style={{ color: circleColor, fontSize: '0.72rem', fontWeight: 700 }}>{i + 1}</span>
                 )}
               </div>
               {/* Label */}
-              <span style={{
+              <span aria-hidden="true" style={{
                 color: labelColor, fontSize: '0.65rem', fontWeight: active ? 600 : 400,
                 marginTop: '0.3rem', whiteSpace: 'nowrap',
               }}>
@@ -80,7 +95,7 @@ export function WizardStepBar({ currentStep }) {
 
             {/* Connector line */}
             {i < STEP_DEFS.length - 1 && (
-              <div style={{
+              <div aria-hidden="true" style={{
                 flex: 1, height: '2px',
                 background: connectorBg,
                 marginBottom: '1.1rem',
