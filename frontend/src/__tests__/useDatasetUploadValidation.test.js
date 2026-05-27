@@ -94,6 +94,34 @@ describe('useDatasetUpload — field errors cleared on setField', () => {
   });
 });
 
+describe('useDatasetUpload — storageUrl validation via hook', () => {
+  it('sets fieldErrors.storageUrl when a bad URL is provided at submit', async () => {
+    const { result } = setup();
+    act(() => {
+      const file = new File(['data'], 'test.vcf', { type: 'text/plain' });
+      result.current.selectFile(file);
+    });
+    act(() => result.current.setField('description', 'A long enough description for the field'));
+    act(() => result.current.setField('storageUrl', 'ftp://notallowed.com'));
+
+    await act(() => result.current.submitRegistration());
+    expect(result.current.fieldErrors.storageUrl).toBeTruthy();
+  });
+
+  it('does not set fieldErrors.storageUrl when storageUrl is empty', async () => {
+    const { result } = setup();
+    act(() => {
+      const file = new File(['data'], 'test.vcf', { type: 'text/plain' });
+      result.current.selectFile(file);
+    });
+    act(() => result.current.setField('description', 'A long enough description for the field'));
+    act(() => result.current.setField('storageUrl', ''));
+
+    await act(() => result.current.submitRegistration());
+    expect(result.current.fieldErrors.storageUrl).toBeNull();
+  });
+});
+
 describe('useDatasetUpload — reset clears fieldErrors', () => {
   it('resets fieldErrors and hasAttemptedSubmit on RESET action', async () => {
     const { result } = setup();
