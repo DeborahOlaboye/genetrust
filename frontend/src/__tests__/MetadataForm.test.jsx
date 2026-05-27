@@ -129,3 +129,47 @@ describe('MetadataForm — storage URL field', () => {
     expect(input).not.toHaveAttribute('aria-invalid');
   });
 });
+
+describe('MetadataForm — submit and back buttons', () => {
+  it('renders a submit button with default label', () => {
+    renderForm();
+    expect(screen.getByRole('button', { name: /register dataset on the blockchain/i })).toBeInTheDocument();
+  });
+
+  it('shows Processing label and is disabled while submitting', () => {
+    renderForm({ submitting: true });
+    const btn = screen.getByRole('button', { name: /registering dataset/i });
+    expect(btn).toBeDisabled();
+  });
+
+  it('marks submit button as aria-busy while submitting', () => {
+    renderForm({ submitting: true });
+    const btn = screen.getByRole('button', { name: /registering dataset/i });
+    expect(btn).toHaveAttribute('aria-busy', 'true');
+  });
+
+  it('renders back button with descriptive aria-label', () => {
+    renderForm();
+    expect(screen.getByRole('button', { name: /back to file selection/i })).toBeInTheDocument();
+  });
+
+  it('disables back button while submitting', () => {
+    renderForm({ submitting: true });
+    const backBtn = screen.getByRole('button', { name: /back to file selection/i });
+    expect(backBtn).toBeDisabled();
+  });
+
+  it('calls onSubmit when submit button is clicked', () => {
+    const onSubmit = jest.fn();
+    renderForm({ onSubmit });
+    fireEvent.click(screen.getByRole('button', { name: /register dataset on the blockchain/i }));
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+  });
+
+  it('calls onBack when back button is clicked', () => {
+    const onBack = jest.fn();
+    renderForm({ onBack });
+    fireEvent.click(screen.getByRole('button', { name: /back to file selection/i }));
+    expect(onBack).toHaveBeenCalledTimes(1);
+  });
+});
