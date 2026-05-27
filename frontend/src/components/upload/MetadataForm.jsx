@@ -145,6 +145,9 @@ export function MetadataForm({ state, fieldErrors = EMPTY_ERRORS, setField, onBa
           placeholder="Describe the dataset: population, sequencing method, traits studied…"
           maxLength={200}
           rows={3}
+          aria-required="true"
+          aria-invalid={fieldErrors.description ? 'true' : undefined}
+          aria-describedby={`${fieldErrors.description ? 'upload-desc-error' : 'upload-desc-hint'} upload-desc-counter`}
           style={{ ...inputStyle, resize: 'vertical', borderColor: fieldErrors.description ? '#EF4444' : 'rgba(139,92,246,0.3)' }}
         />
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
