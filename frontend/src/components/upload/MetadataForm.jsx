@@ -74,7 +74,8 @@ export function MetadataForm({ state, fieldErrors = EMPTY_ERRORS, setField, onBa
           value={price}
           onChange={e => setField('price', e.target.value)}
           placeholder="e.g. 100"
-          style={inputStyle}
+          aria-invalid={fieldErrors.price ? 'true' : undefined}
+          style={{ ...inputStyle, borderColor: fieldErrors.price ? '#EF4444' : 'rgba(139,92,246,0.3)' }}
         />
         {fieldErrors.price
           ? <span id="upload-price-error" role="alert" style={{ color: '#EF4444', fontSize: '0.75rem' }}>{fieldErrors.price}</span>
