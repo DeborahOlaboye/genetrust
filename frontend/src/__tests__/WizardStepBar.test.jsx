@@ -54,3 +54,20 @@ describe('WizardStepBar — aria-current', () => {
     expect(current).toHaveLength(1);
   });
 });
+
+describe('WizardStepBar — circle aria-labels', () => {
+  it('includes step-of-total in the circle aria-label for the active step', () => {
+    render(<WizardStepBar currentStep={STEPS.METADATA} />);
+    expect(screen.getByLabelText(/step 2 of 5.*details.*current/i)).toBeInTheDocument();
+  });
+
+  it('labels a completed step as completed in the circle aria-label', () => {
+    render(<WizardStepBar currentStep={STEPS.METADATA} />);
+    expect(screen.getByLabelText(/step 1 of 5.*select file.*completed/i)).toBeInTheDocument();
+  });
+
+  it('labels an upcoming step as upcoming in the circle aria-label', () => {
+    render(<WizardStepBar currentStep={STEPS.FILE_SELECT} />);
+    expect(screen.getByLabelText(/step 2 of 5.*details.*upcoming/i)).toBeInTheDocument();
+  });
+});
