@@ -118,6 +118,7 @@ ENV/
 # ─── Temporary and scratch files ──────────────────────────────────────────────
 *.tmp
 *.temp
+*.backup
 *.bak
 *.orig
 *.rej
