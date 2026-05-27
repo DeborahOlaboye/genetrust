@@ -1,4 +1,4 @@
-name: CI — SDK Install
+name: CI
 
 on:
   push:
