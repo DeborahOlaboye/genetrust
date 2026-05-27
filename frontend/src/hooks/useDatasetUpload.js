@@ -132,7 +132,7 @@ async function hashFile(file, onProgress) {
 // ── validation ────────────────────────────────────────────────────────────────
 
 const STORAGE_URL_RE = /^(ipfs:\/\/|https?:\/\/).+/i;
-const DESC_MIN_LENGTH = 10;
+export const DESC_MIN_LENGTH = 10;
 
 export function validateFields({ price, description, storageUrl }) {
   const errors = { price: null, description: null, storageUrl: null };
