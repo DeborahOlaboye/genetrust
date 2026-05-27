@@ -104,6 +104,10 @@ interact-results-*.json
 # Uncomment the line below to ignore them:
 # deployments/*-receipts.json
 
+# ─── Contract backup files ────────────────────────────────────────────────────
+*.backup
+*.bak.clar
+
 # ─── Python / tooling ─────────────────────────────────────────────────────────
 __pycache__/
 *.py[cod]
@@ -118,8 +122,6 @@ ENV/
 # ─── Temporary and scratch files ──────────────────────────────────────────────
 *.tmp
 *.temp
-*.backup
-*.bak
 *.orig
 *.rej
 *.patch
