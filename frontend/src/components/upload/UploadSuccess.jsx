@@ -62,6 +62,7 @@ export function UploadSuccess({ txId, hexHash, fileName, onRegisterAnother }) {
         <button
           type="button"
           onClick={onRegisterAnother}
+          aria-label="Start the upload wizard again to register another dataset"
           style={{
             flex: 1,
             padding: '0.7rem',
