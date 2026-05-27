@@ -3,14 +3,13 @@ import { Routes, Route, BrowserRouter as Router } from 'react-router-dom';
 import { lazyWithRetry } from '../utils/lazyWithRetry';
 import { LoadingSpinner, PageErrorBoundary } from '../components/common';
 
-// Lazy load components with retry
+const GeneTrustLanding = lazyWithRetry(() => import('../components/landing/GeneTrustLanding'));
 const UserDashboard = lazyWithRetry(() => import('../pages/UserDashboard'));
 const ResearcherDashboard = lazyWithRetry(() => import('../pages/ResearcherDashboard'));
-const UploadPage   = lazyWithRetry(() => import('../pages/UploadPage'));
-const ConsentPage  = lazyWithRetry(() => import('../pages/ConsentPage'));
+const UploadPage = lazyWithRetry(() => import('../pages/UploadPage'));
+const ConsentPage = lazyWithRetry(() => import('../pages/ConsentPage'));
 const NotFound = lazyWithRetry(() => import('../pages/NotFound'));
 
-// Suspense fallback component
 const SuspenseFallback = () => (
   <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-[#0B0B1D] via-[#14102E] to-[#0B0B1D]">
     <LoadingSpinner size="lg" label="Loading page…" />
@@ -21,8 +20,9 @@ const AppRouter = () => (
   <Router>
     <Suspense fallback={<SuspenseFallback />}>
       <Routes>
+        <Route path="/" element={<GeneTrustLanding />} />
         <Route
-          path="/"
+          path="/dashboard"
           element={
             <PageErrorBoundary pageName="Dashboard">
               <UserDashboard />
