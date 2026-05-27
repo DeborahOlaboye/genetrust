@@ -25,6 +25,7 @@ const formatBytes = (bytes) => {
 
 export function FileDropZone({ onFile, fileError, disabled = false }) {
   const [dragging, setDragging] = useState(false);
+  const [announcement, setAnnouncement] = useState('');
   const inputRef = useRef(null);
 
   const handleDrop = useCallback((e) => {
@@ -32,19 +33,31 @@ export function FileDropZone({ onFile, fileError, disabled = false }) {
     setDragging(false);
     if (disabled) return;
     const file = e.dataTransfer.files?.[0];
-    if (file) onFile(file);
+    if (file) {
+      setAnnouncement(`${file.name} dropped.`);
+      onFile(file);
+    }
   }, [onFile, disabled]);
 
   const handleDragOver = useCallback((e) => {
     e.preventDefault();
-    if (!disabled) setDragging(true);
-  }, [disabled]);
+    if (!disabled && !dragging) {
+      setDragging(true);
+      setAnnouncement('File detected over drop zone. Release to upload.');
+    }
+  }, [disabled, dragging]);
 
-  const handleDragLeave = useCallback(() => setDragging(false), []);
+  const handleDragLeave = useCallback(() => {
+    setDragging(false);
+    setAnnouncement('');
+  }, []);
 
   const handleChange = useCallback((e) => {
     const file = e.target.files?.[0];
-    if (file) onFile(file);
+    if (file) {
+      setAnnouncement(`${file.name} selected.`);
+      onFile(file);
+    }
     // reset so the same file can be re-selected after error
     e.target.value = '';
   }, [onFile]);
@@ -53,6 +66,15 @@ export function FileDropZone({ onFile, fileError, disabled = false }) {
 
   return (
     <div>
+      {/* Screen-reader live region for drag and file-selection events */}
+      <div
+        aria-live="polite"
+        aria-atomic="true"
+        style={{ position: 'absolute', width: '1px', height: '1px', overflow: 'hidden', clip: 'rect(0,0,0,0)' }}
+      >
+        {announcement}
+      </div>
+
       <div
         role="button"
         tabIndex={disabled ? -1 : 0}
