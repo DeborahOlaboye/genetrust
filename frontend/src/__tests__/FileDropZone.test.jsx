@@ -29,3 +29,29 @@ describe('FileDropZone — structure and initial state', () => {
     expect(btn).toHaveAttribute('aria-describedby', 'dropzone-formats');
   });
 });
+
+describe('FileDropZone — live region announcements', () => {
+  function getLiveRegion() {
+    return document.querySelector('[aria-live="polite"]');
+  }
+
+  it('live region is empty on initial render', () => {
+    render(<FileDropZone onFile={jest.fn()} />);
+    expect(getLiveRegion().textContent).toBe('');
+  });
+
+  it('announces drag-over when a file is dragged over the zone', () => {
+    render(<FileDropZone onFile={jest.fn()} />);
+    const zone = screen.getByRole('button', { name: /upload genomic file/i });
+    fireEvent.dragOver(zone, { preventDefault: () => {} });
+    expect(getLiveRegion().textContent).toMatch(/release to upload/i);
+  });
+
+  it('clears announcement when drag leaves the zone', () => {
+    render(<FileDropZone onFile={jest.fn()} />);
+    const zone = screen.getByRole('button', { name: /upload genomic file/i });
+    fireEvent.dragOver(zone, { preventDefault: () => {} });
+    fireEvent.dragLeave(zone);
+    expect(getLiveRegion().textContent).toBe('');
+  });
+});
