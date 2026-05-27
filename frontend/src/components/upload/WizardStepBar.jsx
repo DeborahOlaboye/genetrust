@@ -29,11 +29,15 @@ export function WizardStepBar({ currentStep }) {
   const current = stepIndex(currentStep);
 
   return (
-    <div style={{
-      display: 'flex', alignItems: 'center',
-      gap: 0, marginBottom: '1.75rem',
-      overflowX: 'auto', paddingBottom: '0.25rem',
-    }}>
+    <nav aria-label="Upload progress">
+    <div
+      role="list"
+      style={{
+        display: 'flex', alignItems: 'center',
+        gap: 0, marginBottom: '1.75rem',
+        overflowX: 'auto', paddingBottom: '0.25rem',
+      }}
+    >
       {STEP_DEFS.map(({ key, label }, i) => {
         const done    = i < current;
         const active  = i === current;
@@ -88,5 +92,6 @@ export function WizardStepBar({ currentStep }) {
         );
       })}
     </div>
+    </nav>
   );
 }
