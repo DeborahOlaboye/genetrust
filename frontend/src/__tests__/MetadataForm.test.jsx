@@ -110,6 +110,20 @@ describe('MetadataForm — description field', () => {
     const textarea = screen.getByLabelText(/description/i);
     expect(textarea).not.toHaveAttribute('aria-invalid');
   });
+
+  it('counter uses amber colour at 160 characters', () => {
+    const desc = 'A'.repeat(160);
+    renderForm({ state: { ...BASE_STATE, description: desc } });
+    const counter = screen.getByLabelText(/160 of 200 characters used/i);
+    expect(counter).toHaveStyle({ color: '#F59E0B' });
+  });
+
+  it('counter uses red colour at 190 characters', () => {
+    const desc = 'A'.repeat(190);
+    renderForm({ state: { ...BASE_STATE, description: desc } });
+    const counter = screen.getByLabelText(/190 of 200 characters used/i);
+    expect(counter).toHaveStyle({ color: '#EF4444' });
+  });
 });
 
 describe('MetadataForm — storage URL field', () => {
