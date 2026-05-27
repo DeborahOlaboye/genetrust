@@ -145,11 +145,17 @@ export function MetadataForm({ state, fieldErrors = EMPTY_ERRORS, setField, onBa
           placeholder="Describe the dataset: population, sequencing method, traits studied…"
           maxLength={200}
           rows={3}
-          style={{ ...inputStyle, resize: 'vertical' }}
+          style={{ ...inputStyle, resize: 'vertical', borderColor: fieldErrors.description ? '#EF4444' : 'rgba(139,92,246,0.3)' }}
         />
-        <span style={{ color: '#4B5563', fontSize: '0.75rem', textAlign: 'right' }}>
-          {description.length}/200
-        </span>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          {fieldErrors.description
+            ? <span id="upload-desc-error" role="alert" style={{ color: '#EF4444', fontSize: '0.75rem' }}>{fieldErrors.description}</span>
+            : <span id="upload-desc-hint" style={{ color: '#4B5563', fontSize: '0.75rem' }}>Minimum {DESC_MIN_LENGTH} characters required</span>
+          }
+          <span id="upload-desc-counter" style={{ color: '#4B5563', fontSize: '0.75rem' }}>
+            {description.length}/200
+          </span>
+        </div>
       </div>
 
       {/* Error */}
