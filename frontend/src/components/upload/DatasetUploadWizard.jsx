@@ -95,7 +95,7 @@ export function DatasetUploadWizard({ contractService, walletService, onComplete
           setField={setField}
           onBack={goBack}
           onSubmit={submitRegistration}
-          submitting={false}
+          submitting={isProcessing}
         />
       )}
 
