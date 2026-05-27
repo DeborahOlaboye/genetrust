@@ -103,7 +103,7 @@ function reducer(state, action) {
     case 'SET_ERROR':
       return { ...state, error: action.message, step: action.step ?? state.step };
     case 'RESET':
-      return { ...INITIAL };
+      return { ...INITIAL, fieldErrors: { ...INITIAL_FIELD_ERRORS } };
     default:
       return state;
   }
