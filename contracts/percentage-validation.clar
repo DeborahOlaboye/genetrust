@@ -1,5 +1,6 @@
 ;; Percentage validation and security helpers
 
+(define-constant ERR-INVALID-PERCENTAGE u1008)
 (define-constant MIN-PERCENTAGE u0)
 (define-constant MAX-PERCENTAGE u100)
 
