@@ -11,6 +11,8 @@
     "test": "jest",
     "test:a11y": "jest --testPathPattern=accessibility",
     "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage --coverageDirectory=coverage",
+    "test:coverage:watch": "jest --coverage --watchAll",
     "a11y:audit": "node scripts/accessibility-audit.js",
     "a11y:lighthouse": "lighthouse --only-categories=accessibility --output=json --output-path=./accessibility-report.json http://localhost:5173"
   },
