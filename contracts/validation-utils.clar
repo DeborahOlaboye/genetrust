@@ -120,7 +120,7 @@
 (define-read-only (validate-not-self (address principal))
     (if (not (is-eq address tx-sender))
         (ok true)
-        (err u610) ;; ERR-SELF-GRANT-NOT-ALLOWED
+        (err ERR-SELF-GRANT-NOT-ALLOWED)
     )
 )
 
