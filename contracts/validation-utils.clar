@@ -213,7 +213,7 @@
 (define-read-only (validate-hash-not-zero (hash (buff 32)))
     (if (not (is-eq hash 0x0000000000000000000000000000000000000000000000000000000000000000))
         (ok true)
-        (err u408) ;; ERR-ZERO-HASH
+        (err ERR-ZERO-HASH)
     )
 )
 
