@@ -1,5 +1,9 @@
 ;; Data ID validation and security helpers
 
+(define-constant ERR-INVALID-DATA-ID u1004)
+(define-constant MIN-DATA-ID u1)
+(define-constant MAX-DATA-ID u999999)
+
 ;; Check if data ID is valid
 (define-read-only (is-valid-data-id-range (data-id uint))
   (ok (and
