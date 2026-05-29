@@ -176,7 +176,7 @@
     (parameters (buff 256))
     (metadata (string-utf8 200)))
     (begin
-        (asserts! (> data-id u0) u400) ;; ERR-INVALID-INPUT
+        (asserts! (> data-id u0) ERR-INVALID-INPUT)
         (try! (validate-proof-type proof-type))
         (try! (validate-hash proof-hash))
         (try! (validate-buffer-size parameters u1 u256))
