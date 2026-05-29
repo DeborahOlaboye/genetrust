@@ -102,7 +102,7 @@
 (define-read-only (validate-access-level (level uint))
     (if (and (>= level u1) (<= level u3))
         (ok true)
-        (err u406) ;; ERR-INVALID-ACCESS-LEVEL
+        (err ERR-INVALID-ACCESS-LEVEL)
     )
 )
 
