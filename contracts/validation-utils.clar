@@ -16,6 +16,12 @@
 (define-constant ERR-INVALID-UINT-BOUNDS (err u400))
 (define-constant ERR-ZERO-VALUE (err u401))
 (define-constant ERR-NEGATIVE-VALUE (err u401))
+(define-constant ERR-INVALID-INPUT (err u400))
+(define-constant ERR-PRICE-TOO-HIGH (err u402))
+(define-constant ERR-INVALID-ACCESS-LEVEL (err u406))
+(define-constant ERR-INVALID-PROOF-TYPE (err u405))
+(define-constant ERR-SELF-GRANT-NOT-ALLOWED (err u610))
+(define-constant ERR-ZERO-HASH (err u408))
 
 ;; Validation constants
 (define-constant MIN-DESCRIPTION-LENGTH u10)
@@ -30,7 +36,10 @@
 
 ;; Validate non-zero uint amount
 (define-read-only (validate-amount (amount uint))
-    (ok (> amount u0))
+    (if (> amount u0)
+        (ok true)
+        (err ERR-INVALID-AMOUNT)
+    )
 )
 
 ;; Validate string length is within bounds
@@ -93,7 +102,7 @@
 (define-read-only (validate-access-level (level uint))
     (if (and (>= level u1) (<= level u3))
         (ok true)
-        (err u406) ;; ERR-INVALID-ACCESS-LEVEL
+        (err ERR-INVALID-ACCESS-LEVEL)
     )
 )
 
@@ -111,7 +120,7 @@
 (define-read-only (validate-not-self (address principal))
     (if (not (is-eq address tx-sender))
         (ok true)
-        (err u610) ;; ERR-SELF-GRANT-NOT-ALLOWED
+        (err ERR-SELF-GRANT-NOT-ALLOWED)
     )
 )
 
@@ -127,7 +136,7 @@
 (define-read-only (validate-proof-type (proof-type uint))
     (if (and (>= proof-type u1) (<= proof-type u4))
         (ok true)
-        (err u405) ;; ERR-INVALID-PROOF-TYPE
+        (err ERR-INVALID-PROOF-TYPE)
     )
 )
 
@@ -136,11 +145,13 @@
     (metadata-hash (buff 32))
     (storage-url (string-utf8 200))
     (description (string-utf8 200))
+    (access-level uint)
     (price uint))
     (begin
         (try! (validate-hash metadata-hash))
         (try! (validate-storage-url storage-url))
         (try! (validate-description description))
+        (try! (validate-access-level access-level))
         (try! (validate-price price))
         (ok true)
     )
@@ -167,7 +178,7 @@
     (parameters (buff 256))
     (metadata (string-utf8 200)))
     (begin
-        (asserts! (> data-id u0) u400) ;; ERR-INVALID-INPUT
+        (asserts! (> data-id u0) ERR-INVALID-INPUT)
         (try! (validate-proof-type proof-type))
         (try! (validate-hash proof-hash))
         (try! (validate-buffer-size parameters u1 u256))
@@ -204,7 +215,7 @@
 (define-read-only (validate-hash-not-zero (hash (buff 32)))
     (if (not (is-eq hash 0x0000000000000000000000000000000000000000000000000000000000000000))
         (ok true)
-        (err u408) ;; ERR-ZERO-HASH
+        (err ERR-ZERO-HASH)
     )
 )
 
@@ -212,7 +223,7 @@
 (define-read-only (validate-principals-differ (principal1 principal) (principal2 principal))
     (if (not (is-eq principal1 principal2))
         (ok true)
-        (err u610) ;; ERR-SELF-GRANT-NOT-ALLOWED
+        (err ERR-SELF-GRANT-NOT-ALLOWED)
     )
 )
 
@@ -230,7 +241,7 @@
         (try! (validate-positive-uint price))
         (if (<= price MAX-PRICE)
             (ok true)
-            (err u402) ;; ERR-PRICE-TOO-HIGH
+            (err ERR-PRICE-TOO-HIGH)
         )
     )
 )
@@ -241,7 +252,7 @@
         (try! (validate-positive-uint level))
         (if (<= level u3)
             (ok true)
-            (err u406) ;; ERR-INVALID-ACCESS-LEVEL
+            (err ERR-INVALID-ACCESS-LEVEL)
         )
     )
 )
@@ -250,8 +261,8 @@
 (define-read-only (validate-description-strict (description (string-utf8 200)))
     (let ((len (len description)))
         (begin
-            (asserts! (> len u0) u407) ;; ERR-INVALID-STRING-LENGTH (empty)
-            (asserts! (<= len u200) u407) ;; ERR-INVALID-STRING-LENGTH (too long)
+            (asserts! (> len u0) ERR-INVALID-STRING-LENGTH)
+            (asserts! (<= len u200) ERR-INVALID-STRING-LENGTH)
             (ok true)
         )
     )

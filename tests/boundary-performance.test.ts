@@ -555,7 +555,7 @@ describe('Boundary Conditions and Performance', () => {
       // Lookup last one
       const result = simnet.callReadOnlyFn(
         'genetic-data',
-        'get-dataset-details',
+        'get-dataset',
         [Cl.uint(10)],
         MOCK_WALLET_1
       );
@@ -569,7 +569,7 @@ describe('Boundary Conditions and Performance', () => {
         [Cl.uint(999)],
         MOCK_WALLET_1
       );
-      expect(result.result).toBeErr(Cl.uint(404)); // ERR_DATASET_NOT_FOUND
+      expect(result.result).toBeErr(Cl.uint(431)); // ERR_DATASET_NOT_FOUND
     });
   });
 
@@ -622,7 +622,7 @@ describe('Boundary Conditions and Performance', () => {
       // Verify 20 succeeds
       const read = simnet.callReadOnlyFn(
         'attestations',
-        'get-verifier-details',
+        'get-verifier',
         [Cl.uint(20)],
         MOCK_WALLET_1
       );
