@@ -1,5 +1,8 @@
 ;; Amount validation and security helpers
 
+(define-constant MAX-AMOUNT u340282366920938463463374607431768211455)
+(define-constant ERR-INVALID-AMOUNT u401)
+
 ;; Check if amount is positive
 (define-read-only (is-positive-amount (amount uint))
   (ok (> amount u0))
