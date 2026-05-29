@@ -1,5 +1,8 @@
 ;; String validation and security helpers
 
+(define-constant ERR-INVALID-STRING u1003)
+(define-constant ERR-EMPTY-INPUT u1005)
+
 ;; Check if string is not empty
 (define-read-only (is-not-empty (str (string-utf8 256)))
   (ok (> (len str) u0))
