@@ -1,5 +1,6 @@
 ;; Timestamp validation and security helpers
 
+(define-constant ERR-INVALID-TIMESTAMP u1009)
 (define-constant MIN-TIMESTAMP u0)
 (define-constant MAX-TIMESTAMP u999999999999)
 
@@ -45,5 +46,3 @@
 (define-read-only (calculate-time-diff (t1 uint) (t2 uint))
   (ok (if (> t1 t2) (- t1 t2) (- t2 t1)))
 )
-
-(define-constant ERR-INVALID-TIMESTAMP u1009)
