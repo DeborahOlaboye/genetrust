@@ -36,7 +36,10 @@
 
 ;; Validate non-zero uint amount
 (define-read-only (validate-amount (amount uint))
-    (ok (> amount u0))
+    (if (> amount u0)
+        (ok true)
+        (err ERR-INVALID-AMOUNT)
+    )
 )
 
 ;; Validate string length is within bounds
