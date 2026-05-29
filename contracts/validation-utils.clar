@@ -136,7 +136,7 @@
 (define-read-only (validate-proof-type (proof-type uint))
     (if (and (>= proof-type u1) (<= proof-type u4))
         (ok true)
-        (err u405) ;; ERR-INVALID-PROOF-TYPE
+        (err ERR-INVALID-PROOF-TYPE)
     )
 )
 
