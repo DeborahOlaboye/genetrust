@@ -221,7 +221,7 @@
 (define-read-only (validate-principals-differ (principal1 principal) (principal2 principal))
     (if (not (is-eq principal1 principal2))
         (ok true)
-        (err u610) ;; ERR-SELF-GRANT-NOT-ALLOWED
+        (err ERR-SELF-GRANT-NOT-ALLOWED)
     )
 )
 
