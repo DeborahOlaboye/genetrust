@@ -1,5 +1,8 @@
 ;; Principal validation and security helpers
 
+(define-constant ERR-INVALID-PRINCIPAL u1001)
+(define-constant ERR-INVALID-SENDER u1006)
+
 ;; Check if principal is not zero address
 (define-read-only (is-not-zero-address (principal principal))
   (ok (not (is-eq principal (as-contract tx-sender))))
