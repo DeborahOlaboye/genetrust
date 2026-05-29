@@ -28,35 +28,35 @@
 (define-constant ERR-INVALID-PERCENTAGE u1008)
 
 ;; Validate principal is not zero address
-(define-public (is-valid-principal (principal principal))
+(define-read-only (is-valid-principal (principal principal))
   (ok (and
     (not (is-eq principal tx-sender))
     (not (is-eq principal (as-contract tx-sender)))))
 )
 
 ;; Validate amount is within bounds
-(define-public (is-valid-amount (amount uint))
+(define-read-only (is-valid-amount (amount uint))
   (ok (and
     (>= amount MIN-AMOUNT)
     (<= amount MAX-AMOUNT)))
 )
 
 ;; Validate percentage (0-100)
-(define-public (is-valid-percentage (percentage uint))
+(define-read-only (is-valid-percentage (percentage uint))
   (ok (and
     (>= percentage u0)
     (<= percentage u100)))
 )
 
 ;; Validate data ID
-(define-public (is-valid-data-id (data-id uint))
+(define-read-only (is-valid-data-id (data-id uint))
   (ok (and
     (>= data-id MIN-DATA-ID)
     (<= data-id MAX-DATA-ID)))
 )
 
 ;; Validate string length
-(define-public (is-valid-string-length (str (string-utf8 256)))
+(define-read-only (is-valid-string-length (str (string-utf8 256)))
   (let ((len (len str)))
     (ok (and
       (>= len MIN-STRING-LENGTH)
