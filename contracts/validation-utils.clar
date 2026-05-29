@@ -239,7 +239,7 @@
         (try! (validate-positive-uint price))
         (if (<= price MAX-PRICE)
             (ok true)
-            (err u402) ;; ERR-PRICE-TOO-HIGH
+            (err ERR-PRICE-TOO-HIGH)
         )
     )
 )
@@ -250,7 +250,7 @@
         (try! (validate-positive-uint level))
         (if (<= level u3)
             (ok true)
-            (err u406) ;; ERR-INVALID-ACCESS-LEVEL
+            (err ERR-INVALID-ACCESS-LEVEL)
         )
     )
 )
@@ -259,8 +259,8 @@
 (define-read-only (validate-description-strict (description (string-utf8 200)))
     (let ((len (len description)))
         (begin
-            (asserts! (> len u0) u407) ;; ERR-INVALID-STRING-LENGTH (empty)
-            (asserts! (<= len u200) u407) ;; ERR-INVALID-STRING-LENGTH (too long)
+            (asserts! (> len u0) ERR-INVALID-STRING-LENGTH)
+            (asserts! (<= len u200) ERR-INVALID-STRING-LENGTH)
             (ok true)
         )
     )
