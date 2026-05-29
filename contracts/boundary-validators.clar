@@ -100,7 +100,7 @@
     (<= timestamp-block stacks-block-height)
 )
 
-;; Validate timestamp is in future
+;; Validate timestamp is in future (value > current block height)
 (define-read-only (is-in-future (timestamp-block uint))
     (> timestamp-block stacks-block-height)
 )
@@ -156,11 +156,6 @@
          (is-valid-hash hash)
          (is-buffer-size-valid params u1 u256)
          (is-string-length-valid meta u0 u200))
-)
-
-;; Validate timestamp is in future (value > current block height)
-(define-read-only (is-in-future (timestamp-block uint))
-    (> timestamp-block stacks-block-height)
 )
 
 ;; Validate timestamp is current or future
