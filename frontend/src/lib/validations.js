@@ -21,6 +21,14 @@ export const confirmPasswordSchema = (fieldName = 'password') =>
     }
   );
 
+// Stacks address validation helper.
+export const isStacksAddress = (value) => {
+  if (typeof value !== 'string') return false;
+  const normalized = value.trim().toUpperCase();
+  const stacksAddressPattern = /^S[PT][0-9A-Z]{39}$/;
+  return stacksAddressPattern.test(normalized);
+};
+
 // Common validation messages
 export const validationMessages = {
   required: 'This field is required',

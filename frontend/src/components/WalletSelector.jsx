@@ -13,6 +13,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import { useWalletContext } from '../contexts/WalletContext';
+import { isStacksAddress } from '../lib/validations';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -38,20 +39,22 @@ const addressColor = (address) => {
 /**
  * Visual badge/chip representing a single account entry.
  */
-const AccountChip = ({ account, isActive, onClick }) => {
+const AccountChip = ({ account, isActive, isFocused, onClick }) => {
   const bg = addressColor(account.address);
   return (
     <button
       type="button"
+      role="option"
+      aria-selected={isActive}
+      aria-current={isFocused ? 'true' : undefined}
       onClick={onClick}
-      aria-pressed={isActive}
       style={{
         display:        'flex',
         alignItems:     'center',
         gap:            '10px',
         width:          '100%',
         padding:        '10px 14px',
-        background:     isActive ? 'rgba(99,102,241,0.12)' : 'transparent',
+        background:     isActive ? 'rgba(99,102,241,0.12)' : isFocused ? 'rgba(99,102,241,0.06)' : 'transparent',
         border:         'none',
         borderRadius:   '8px',
         cursor:         'pointer',
@@ -109,6 +112,7 @@ AccountChip.propTypes = {
     source:  PropTypes.string,
   }).isRequired,
   isActive: PropTypes.bool,
+  isFocused: PropTypes.bool,
   onClick:  PropTypes.func.isRequired,
 };
 
@@ -136,26 +140,99 @@ const WalletSelector = ({ className = '', onSwitch }) => {
     disconnect,
   } = useWalletContext();
 
-  const [open,           setOpen]          = useState(false);
-  const [addMode,        setAddMode]        = useState(false);
-  const [importAddress,  setImportAddress]  = useState('');
-  const [importLabel,    setImportLabel]    = useState('');
-  const [importError,    setImportError]    = useState('');
-  const [ledgerLoading,  setLedgerLoading]  = useState(false);
-  const [ledgerError,    setLedgerError]    = useState('');
+  const [announcement, setAnnouncement] = useState('');
 
-  const panelRef = useRef(null);
+  // Announce errors to screen readers
+  useEffect(() => {
+    if (importError) {
+      setAnnouncement(`Error: ${importError}`);
+    } else if (ledgerError) {
+      setAnnouncement(`Ledger error: ${ledgerError}`);
+    }
+  }, [importError, ledgerError]);
+
+  // Focus trapping in dropdown
+  useEffect(() => {
+    if (!open) return undefined;
+
+    const focusableElements = panelRef.current?.querySelectorAll(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    );
+    const firstElement = focusableElements?.[0];
+    const lastElement = focusableElements?.[focusableElements.length - 1];
+
+    const handleTabKey = (e) => {
+      if (e.key !== 'Tab') return;
+
+      if (e.shiftKey) {
+        if (document.activeElement === firstElement) {
+          e.preventDefault();
+          lastElement?.focus();
+        }
+      } else {
+        if (document.activeElement === lastElement) {
+          e.preventDefault();
+          firstElement?.focus();
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleTabKey);
+    return () => document.removeEventListener('keydown', handleTabKey);
+  }, [open]);
+
+  // Keyboard navigation for the dropdown
+  useEffect(() => {
+    if (!open) return undefined;
+
+    const handleKeyDown = (event) => {
+      if (event.key === 'ArrowDown') {
+        event.preventDefault();
+        setFocusedIndex(prev => (prev + 1) % accounts.length);
+      } else if (event.key === 'ArrowUp') {
+        event.preventDefault();
+        setFocusedIndex(prev => (prev - 1 + accounts.length) % accounts.length);
+      } else if (event.key === 'Home') {
+        event.preventDefault();
+        setFocusedIndex(0);
+      } else if (event.key === 'End') {
+        event.preventDefault();
+        setFocusedIndex(accounts.length - 1);
+      } else if (event.key === 'Enter') {
+        event.preventDefault();
+        handleSwitch(focusedIndex);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [open, accounts.length, focusedIndex, handleSwitch]);
+
 
   // Close dropdown on outside click
   useEffect(() => {
     const handler = (e) => {
       if (panelRef.current && !panelRef.current.contains(e.target)) {
         setOpen(false);
+        setFocusedIndex(0); // Reset focus
       }
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, []);
+
+  useEffect(() => {
+    if (!open) return undefined;
+
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        setOpen(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [open]);
 
   const handleSwitch = useCallback((index) => {
     switchAccount(index);
@@ -166,7 +243,16 @@ const WalletSelector = ({ className = '', onSwitch }) => {
   const handleImport = useCallback(() => {
     setImportError('');
     const trimmed = importAddress.trim();
-    if (!trimmed) { setImportError('Address is required'); return; }
+    if (!trimmed) {
+      setImportError('Please enter a Stacks address to import');
+      return;
+    }
+
+    if (!isStacksAddress(trimmed)) {
+      setImportError('Invalid Stacks address format. Please check and try again');
+      return;
+    }
+
     try {
       addAccount(trimmed, importLabel.trim() || 'Imported Account', 'testnet', 'imported');
       setImportAddress('');
@@ -216,12 +302,17 @@ const WalletSelector = ({ className = '', onSwitch }) => {
 
   return (
     <div ref={panelRef} className={className} style={{ position: 'relative', display: 'inline-block' }}>
+      {/* Screen reader announcements */}
+      <div aria-live="polite" aria-atomic="true" role="status" style={{ position: 'absolute', left: '-10000px', width: '1px', height: '1px', overflow: 'hidden' }}>
+        {announcement}
+      </div>
       {/* Trigger button */}
       <button
         type="button"
         onClick={() => setOpen(v => !v)}
         aria-expanded={open}
         aria-haspopup="listbox"
+        aria-controls={listboxId}
         style={{
           display:      'flex',
           alignItems:   'center',
@@ -254,6 +345,7 @@ const WalletSelector = ({ className = '', onSwitch }) => {
       {/* Dropdown panel */}
       {open && (
         <div
+          id={listboxId}
           role="listbox"
           aria-label="Select wallet account"
           style={{
@@ -274,11 +366,15 @@ const WalletSelector = ({ className = '', onSwitch }) => {
             <p style={{ padding: '6px 14px', fontSize: '11px', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>
               Accounts
             </p>
+            <p style={{ padding: '2px 14px', fontSize: '10px', color: '#9ca3af', margin: 0 }}>
+              Use ↑↓ to navigate, Enter to select, Esc to close
+            </p>
             {accounts.map((acc, idx) => (
               <AccountChip
                 key={acc.address}
                 account={acc}
                 isActive={idx === activeIndex}
+                isFocused={idx === focusedIndex}
                 onClick={() => handleSwitch(idx)}
               />
             ))}
@@ -294,6 +390,7 @@ const WalletSelector = ({ className = '', onSwitch }) => {
                   type="button"
                   onClick={() => setAddMode(true)}
                   style={actionBtnStyle}
+                  aria-label="Import a new Stacks address account"
                 >
                   + Import Address
                 </button>
@@ -304,9 +401,17 @@ const WalletSelector = ({ className = '', onSwitch }) => {
                     onClick={handleConnectLedger}
                     disabled={ledgerLoading}
                     style={actionBtnStyle}
+                    aria-label="Connect a Ledger hardware wallet"
+                    aria-describedby={ledgerLoading ? 'ledger-status' : undefined}
                   >
                     {ledgerLoading ? 'Connecting Ledger…' : '🔑 Connect Ledger'}
                   </button>
+                )}
+
+                {ledgerLoading && (
+                  <p id="ledger-status" style={{ fontSize: '12px', color: '#60a5fa', padding: '4px 14px', margin: 0 }}>
+                    Connecting to Ledger device, please wait...
+                  </p>
                 )}
 
                 {ledgerError && (
@@ -322,16 +427,28 @@ const WalletSelector = ({ className = '', onSwitch }) => {
                   placeholder="Stacks address"
                   value={importAddress}
                   onChange={e => setImportAddress(e.target.value)}
+                  aria-describedby={importError ? 'import-error' : 'address-help'}
+                  aria-invalid={!!importError}
+                  aria-required="true"
                   style={inputStyle}
                 />
+                <div id="address-help" style={{ fontSize: '11px', color: '#6b7280', margin: '2px 0 4px' }}>
+                  Enter a valid Stacks address starting with SP or ST
+                </div>
                 <input
                   type="text"
                   placeholder="Label (optional)"
                   value={importLabel}
                   onChange={e => setImportLabel(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleImport();
+                    }
+                  }}
                   style={{ ...inputStyle, marginTop: '6px' }}
                 />
-                {importError && <p style={{ fontSize: '12px', color: '#f87171', margin: '4px 0 0' }}>{importError}</p>}
+                {importError && <p id="import-error" style={{ fontSize: '12px', color: '#f87171', margin: '4px 0 0' }}>{importError}</p>}
                 <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
                   <button type="button" onClick={handleImport} style={{ ...actionBtnStyle, flex: 1, background: '#6366f1', color: '#fff' }}>
                     Import
@@ -352,6 +469,7 @@ const WalletSelector = ({ className = '', onSwitch }) => {
               type="button"
               onClick={() => { disconnect(); setOpen(false); }}
               style={{ ...actionBtnStyle, color: '#f87171' }}
+              aria-label="Disconnect from wallet and close menu"
             >
               Disconnect
             </button>
