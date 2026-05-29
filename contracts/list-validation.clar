@@ -1,5 +1,8 @@
 ;; List validation and security helpers
 
+(define-constant ERR-EMPTY-LIST u1012)
+(define-constant ERR-INVALID-LIST u1013)
+
 ;; Check if list is not empty
 (define-read-only (is-list-not-empty (items (list 100 principal)))
   (ok (> (len items) u0))
@@ -44,6 +47,3 @@
 (define-read-only (list-has-length (items (list 100 principal)) (expected-len uint))
   (ok (is-eq (len items) expected-len))
 )
-
-(define-constant ERR-EMPTY-LIST u1012)
-(define-constant ERR-INVALID-LIST u1013)
