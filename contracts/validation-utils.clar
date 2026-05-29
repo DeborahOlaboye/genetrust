@@ -16,6 +16,12 @@
 (define-constant ERR-INVALID-UINT-BOUNDS (err u400))
 (define-constant ERR-ZERO-VALUE (err u401))
 (define-constant ERR-NEGATIVE-VALUE (err u401))
+(define-constant ERR-INVALID-INPUT (err u400))
+(define-constant ERR-PRICE-TOO-HIGH (err u402))
+(define-constant ERR-INVALID-ACCESS-LEVEL (err u406))
+(define-constant ERR-INVALID-PROOF-TYPE (err u405))
+(define-constant ERR-SELF-GRANT-NOT-ALLOWED (err u610))
+(define-constant ERR-ZERO-HASH (err u408))
 
 ;; Validation constants
 (define-constant MIN-DESCRIPTION-LENGTH u10)
