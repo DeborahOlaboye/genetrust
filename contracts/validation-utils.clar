@@ -145,11 +145,13 @@
     (metadata-hash (buff 32))
     (storage-url (string-utf8 200))
     (description (string-utf8 200))
+    (access-level uint)
     (price uint))
     (begin
         (try! (validate-hash metadata-hash))
         (try! (validate-storage-url storage-url))
         (try! (validate-description description))
+        (try! (validate-access-level access-level))
         (try! (validate-price price))
         (ok true)
     )
