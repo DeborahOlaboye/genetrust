@@ -1,5 +1,7 @@
 ;; Boolean validation and security helpers
 
+(define-constant ERR-INVALID-BOOLEAN u1011)
+
 ;; Check if boolean is true
 (define-read-only (is-true (value bool))
   (ok value)
@@ -43,5 +45,3 @@
 (define-read-only (booleans-and (b1 bool) (b2 bool))
   (ok (and b1 b2))
 )
-
-(define-constant ERR-INVALID-BOOLEAN u1011)
